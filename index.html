@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ludo Mobile 3D Pro Dice</title>
+    <title>Ludo Mobile Rhino Edition</title>
     <style>
         :root {
             --red: #e41e26; --green: #00a651; --yellow: #fff200; --blue: #2e3192;
@@ -22,7 +22,7 @@
             display: flex; align-items: center; gap: 30px;
         }
 
-        /* --- 3D DICE ENGINE --- */
+        /* --- 3D DICE ENGINE (Tradisional) --- */
         .scene { width: 60px; height: 60px; perspective: 400px; cursor: pointer; }
         .dice {
             width: 100%; height: 100%; position: relative;
@@ -67,7 +67,24 @@
         .cell { border: 0.5px solid #ddd; display: flex; justify-content: center; align-items: center; position: relative; }
         .home { grid-column: span 6; grid-row: span 6; padding: 10px; border: 1px solid var(--border); }
         .home-inner { width: 100%; height: 100%; background: white; display: grid; grid-template: 1fr 1fr / 1fr 1fr; gap: 10px; padding: 10px; box-sizing: border-box; }
-        .pawn { width: 80%; height: 80%; border-radius: 50%; border: 2px solid rgba(0,0,0,0.5); z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        
+        /* --- BIDAK BADAK CSS --- */
+        .pawn {
+            font-size: 2rem; /* Ukuran Badak */
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+        }
+        .pawn:active { transform: scale(1.3); } /* Efek ketuk */
+
+        /* Mewarnai Teks Badak */
+        .green-pawn { color: var(--green); }
+        .yellow-pawn { color: var(--yellow); }
+        .red-pawn { color: var(--red); }
+        .blue-pawn { color: var(--blue); }
+
         .green { background-color: var(--green); }
         .yellow { background-color: var(--yellow); }
         .red { background-color: var(--red); }
@@ -85,32 +102,12 @@
 
     <div class="scene" onclick="rollDice()">
         <div class="dice" id="dice">
-            <div class="dice-face front">
-                <div class="dot" style="grid-area: 2/2"></div>
-            </div>
-            <div class="dice-face back">
-                <div class="dot"></div> <div class="dot"></div>
-                <div class="dot"></div> <div class="dot"></div>
-                <div class="dot"></div> <div class="dot"></div>
-            </div>
-            <div class="dice-face right">
-                <div class="dot" style="grid-area: 1/3"></div>
-                <div class="dot" style="grid-area: 2/2"></div>
-                <div class="dot" style="grid-area: 3/1"></div>
-            </div>
-            <div class="dice-face left">
-                <div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div>
-                <div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div>
-            </div>
-            <div class="dice-face top">
-                <div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div>
-                <div class="dot" style="grid-area: 2/2"></div>
-                <div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div>
-            </div>
-            <div class="dice-face bottom">
-                <div class="dot" style="grid-area: 1/3"></div>
-                <div class="dot" style="grid-area: 3/1"></div>
-            </div>
+            <div class="dice-face front"><div class="dot" style="grid-area: 2/2"></div></div>
+            <div class="dice-face back"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <div class="dice-face right"><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 2/2"></div><div class="dot" style="grid-area: 3/1"></div></div>
+            <div class="dice-face left"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+            <div class="dice-face top"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 2/2"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+            <div class="dice-face bottom"><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 3/1"></div></div>
         </div>
     </div>
 </div>
@@ -133,25 +130,16 @@
     function rollDice() {
         if (isRolling) return;
         isRolling = true;
-        
-        // Putaran visual acak yang dramatis
         const randomX = Math.floor(Math.random() * 5 + 5) * 90;
         const randomY = Math.floor(Math.random() * 5 + 5) * 90;
-        
         dice.style.transition = 'transform 0.8s ease-out';
         dice.style.transform = `rotateX(${randomX}deg) rotateY(${randomY}deg)`;
-
         setTimeout(() => {
             const value = Math.floor(Math.random() * 6) + 1;
             dice.style.transition = 'transform 0.1s';
             dice.className = `dice show-${value}`;
-            
             msg.innerText = `Angka ${value}!`;
-            
-            setTimeout(() => {
-                isRolling = false;
-                nextTurn();
-            }, 800);
+            setTimeout(() => { isRolling = false; nextTurn(); }, 800);
         }, 800);
     }
 
@@ -165,14 +153,17 @@
     }
 
     function init() {
+        // --- BUAT BIDAK BADAK ---
         ['red','green','yellow','blue'].forEach(c => {
             const home = document.getElementById(`h-${c}`);
             for(let i=0; i<4; i++) {
                 const p = document.createElement('div');
-                p.className = `pawn ${c}`;
+                p.className = `pawn ${c}-pawn`; // Beri kelas warna bidak
+                p.innerText = '🦏'; // Karakter Badak Unicode
                 home.appendChild(p);
             }
         });
+        // --- BUAT LINTASAN ---
         for (let r = 1; r <= 15; r++) {
             for (let c = 1; c <= 15; c++) {
                 if (((r > 6 && r < 10) || (c > 6 && c < 10)) && !(r > 6 && r < 10 && c > 6 && c < 10)) {
