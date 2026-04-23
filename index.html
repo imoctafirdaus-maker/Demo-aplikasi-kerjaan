@@ -3,267 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Modern 3D - Pro Edition</title>
+    <title>Ludo Master Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
-            --red: #ff4757; --blue: #1e90ff; --green: #2ed573; --yellow: #ffa502;
-            --bg: #2f3542;
+            --green: #00a651; --yellow: #fff200;
+            --red: #ed1c24; --blue: #2e3192;
+            --white: #ffffff; --black: #000000;
         }
 
         body {
-            background: var(--bg);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
-            overflow: hidden;
+            font-family: Arial, sans-serif;
+            margin: 0; padding: 20px;
         }
 
-        #game-header {
-            margin: 10px;
-            text-align: center;
-        }
-
-        .status-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .player-card {
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-weight: bold;
-            opacity: 0.4;
-            transition: 0.3s;
-        }
-
-        .player-card.active {
-            opacity: 1;
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(255,255,255,0.3);
-        }
-
-        #ludo-board {
-            width: 90vw;
-            max-width: 500px;
-            aspect-ratio: 1/1;
-            background: #fff;
+        /* Container Utama Papan */
+        #ludo-container {
+            width: 600px; height: 600px;
+            background: var(--black);
             display: grid;
             grid-template-columns: repeat(15, 1fr);
             grid-template-rows: repeat(15, 1fr);
-            border: 8px solid #333;
+            border: 5px solid #333;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .cell { background: var(--white); border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; position: relative; }
+
+        /* Home Base (Kotak Besar) */
+        .home-base { grid-column: span 6; grid-row: span 6; padding: 30px; }
+        .inner-base { 
+            width: 100%; height: 100%; background: white; 
+            border: 20px solid transparent; display: grid; 
+            grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Bidak di dalam Base */
+        .base-token { width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(0,0,0,0.3); }
+
+        /* Warna Spesifik */
+        .bg-green { background-color: var(--green); }
+        .bg-yellow { background-color: var(--yellow); }
+        .bg-red { background-color: var(--red); }
+        .bg-blue { background-color: var(--blue); }
+
+        /* Pusat Papan (Segitiga) */
+        .center-area {
+            grid-column: span 3; grid-row: span 3;
+            background: white;
+            clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%); /* Placeholder */
             position: relative;
         }
-
-        /* Styling dasar kotak papan */
-        .cell { border: 0.1px solid #ddd; position: relative; }
-        .red { background-color: var(--red); }
-        .blue { background-color: var(--blue); }
-        .green { background-color: var(--green); }
-        .yellow { background-color: var(--yellow); }
-
-        /* Area Kontrol Dadu */
-        #controls {
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
+        
+        .triangle {
+            position: absolute; width: 0; height: 0;
+            border-style: solid;
         }
+        .tri-green { border-width: 75px 75px 0 75px; border-color: var(--green) transparent transparent transparent; top:0; }
+        .tri-blue { border-width: 75px 0 75px 75px; border-color: transparent transparent transparent var(--blue); right:0; }
+        .tri-red { border-width: 0 75px 75px 75px; border-color: transparent transparent var(--red) transparent; bottom:0; }
+        .tri-yellow { border-width: 75px 75px 75px 0; border-color: transparent var(--yellow) transparent transparent; left:0; }
 
-        #dice-canvas {
-            width: 100px;
-            height: 100px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-        }
+        /* Simbol Bintang (Safe Zone) */
+        .star::after { content: "★"; font-size: 24px; color: #555; }
 
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            background: #fff;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        button:hover { background: #eee; transform: translateY(-3px); }
-        button:disabled { background: #777; cursor: not-allowed; }
-
-        /* Bidak/Tokens */
-        .token {
-            width: 70%;
-            height: 70%;
-            border-radius: 50%;
-            position: absolute;
-            top: 15%;
-            left: 15%;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            cursor: pointer;
-            z-index: 100;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        /* Kontrol */
+        #ui-panel { margin-top: 20px; display: flex; gap: 20px; align-items: center; color: white; }
+        #dice-box { width: 80px; height: 80px; background: #333; border-radius: 10px; }
+        button { padding: 15px 30px; cursor: pointer; font-weight: bold; border-radius: 5px; border: none; }
     </style>
 </head>
 <body>
 
-    <div id="game-header">
-        <h2>LUDO WEB 3D</h2>
-        <div class="status-bar">
-            <div id="p1-card" class="player-card active" style="background: var(--red);">P1</div>
-            <div id="p2-card" class="player-card" style="background: var(--blue);">P2</div>
-            <div id="p3-card" class="player-card" style="background: var(--green);">P3</div>
-            <div id="p4-card" class="player-card" style="background: var(--yellow);">P4</div>
-        </div>
-    </div>
-
-    <div id="ludo-board">
+    <div id="ludo-container">
+        <div class="home-base bg-green" style="grid-area: 1 / 1 / 7 / 7;">
+            <div class="inner-base"><div class="base-token bg-green"></div><div class="base-token bg-green"></div><div class="base-token bg-green"></div><div class="base-token bg-green"></div></div>
         </div>
 
-    <div id="controls">
-        <div id="dice-canvas"></div>
-        <button id="roll-btn">ROLL!</button>
-        <h1 id="dice-value">?</h1>
+        <div class="cell" style="grid-area: 1/8">↓</div><div class="cell bg-yellow" style="grid-area: 2/8"></div><div class="cell bg-yellow" style="grid-area: 3/8"></div><div class="cell bg-yellow" style="grid-area: 4/8"></div><div class="cell bg-yellow" style="grid-area: 5/8"></div><div class="cell bg-yellow" style="grid-area: 6/8"></div>
+        <div class="cell star" style="grid-area: 2/7"></div> <div class="home-base bg-yellow" style="grid-area: 1 / 10 / 7 / 16;">
+            <div class="inner-base"><div class="base-token bg-yellow"></div><div class="base-token bg-yellow"></div><div class="base-token bg-yellow"></div><div class="base-token bg-yellow"></div></div>
+        </div>
+
+        <div class="center-area" style="grid-area: 7/7/10/10">
+            <div class="triangle tri-green"></div>
+            <div class="triangle tri-blue"></div>
+            <div class="triangle tri-red"></div>
+            <div class="triangle tri-yellow"></div>
+        </div>
+
+        <div class="cell" style="grid-area: 7/2">→</div><div class="cell bg-green" style="grid-area: 8/2"></div><div class="cell bg-green" style="grid-area: 8/3"></div><div class="cell bg-green" style="grid-area: 8/4"></div><div class="cell bg-green" style="grid-area: 8/5"></div><div class="cell bg-green" style="grid-area: 8/6"></div>
+        <div class="cell star" style="grid-area: 9/3"></div> <div class="home-base bg-red" style="grid-area: 10 / 1 / 16 / 7;">
+            <div class="inner-base"><div class="base-token bg-red"></div><div class="base-token bg-red"></div><div class="base-token bg-red"></div><div class="base-token bg-red"></div></div>
+        </div>
+
+        <div class="home-base bg-blue" style="grid-area: 10 / 10 / 16 / 16;">
+            <div class="inner-base"><div class="base-token bg-blue"></div><div class="base-token bg-blue"></div><div class="base-token bg-blue"></div><div class="base-token bg-blue"></div></div>
+        </div>
+
+        <div class="cell" style="grid-area: 9/8">↑</div><div class="cell bg-red" style="grid-area: 10/8"></div><div class="cell bg-red" style="grid-area: 11/8"></div><div class="cell bg-red" style="grid-area: 12/8"></div><div class="cell bg-red" style="grid-area: 13/8"></div><div class="cell bg-red" style="grid-area: 14/8"></div>
+        <div class="cell star" style="grid-area: 13/9"></div> <div class="cell" style="grid-area: 8/14">←</div><div class="cell bg-blue" style="grid-area: 8/13"></div><div class="cell bg-blue" style="grid-area: 8/12"></div><div class="cell bg-blue" style="grid-area: 8/11"></div><div class="cell bg-blue" style="grid-area: 8/10"></div>
+        <div class="cell star" style="grid-area: 7/13"></div> </div>
+
+    <div id="ui-panel">
+        <div id="dice-box"></div>
+        <button id="roll-btn">KOCOK DADU</button>
+        <h2 id="status">Giliran: Hijau</h2>
     </div>
 
     <script>
-        /** * Bagian 1: Logika Game & UI Papan 
-         */
-        const board = document.getElementById('ludo-board');
-        let currentPlayer = 1;
-        let lastRoll = 0;
-        let canRoll = true;
-
-        // Inisialisasi Papan (Sederhana)
-        function createBoard() {
-            for (let i = 0; i < 225; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                // Logika pewarnaan dasar (Visual saja)
-                let row = Math.floor(i / 15);
-                let col = i % 15;
-                
-                if (row < 6 && col < 6) cell.classList.add('red');
-                else if (row < 6 && col > 8) cell.classList.add('blue');
-                else if (row > 8 && col < 6) cell.classList.add('green');
-                else if (row > 8 && col > 8) cell.classList.add('yellow');
-                
-                board.appendChild(cell);
-            }
-        }
-
-        /** * Bagian 2: Three.js 3D Dice 
-         */
+        // Setup Three.js Dice (Sama seperti sebelumnya namun diintegrasikan ke dice-box)
         let scene, camera, renderer, dice;
-
-        function init3DDice() {
+        function initDice() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(100, 100);
-            document.getElementById('dice-canvas').appendChild(renderer.domElement);
+            renderer.setSize(80, 80);
+            document.getElementById('dice-box').appendChild(renderer.domElement);
 
             const geometry = new THREE.BoxGeometry(2, 2, 2);
-            
-            // Membuat texture angka dadu sederhana dengan Canvas
             const materials = [];
-            for (let i = 1; i <= 6; i++) {
+            for(let i=1; i<=6; i++) {
                 const canvas = document.createElement('canvas');
                 canvas.width = 64; canvas.height = 64;
                 const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0,0,64,64);
-                ctx.fillStyle = 'black';
-                ctx.font = 'bold 40px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(i, 32, 45);
-                const texture = new THREE.CanvasTexture(canvas);
-                materials.push(new THREE.MeshStandardMaterial({ map: texture }));
+                ctx.fillStyle = 'white'; ctx.fillRect(0,0,64,64);
+                ctx.fillStyle = 'black'; ctx.font = '40px Arial'; ctx.textAlign = 'center';
+                ctx.fillText(i, 32, 48);
+                materials.push(new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) }));
             }
-
             dice = new THREE.Mesh(geometry, materials);
             scene.add(dice);
-
-            const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(2, 2, 5).normalize();
-            scene.add(light);
-            scene.add(new THREE.AmbientLight(0x404040));
-
-            camera.position.z = 5;
-            animate();
+            const light = new THREE.PointLight(0xffffff, 1, 100); light.position.set(5, 5, 5);
+            scene.add(light); scene.add(new THREE.AmbientLight(0x404040));
+            camera.position.z = 4;
+            render();
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
+        function render() { requestAnimationFrame(render); renderer.render(scene, camera); }
 
-        function rollDiceAnimation(value) {
-            canRoll = false;
-            const btn = document.getElementById('roll-btn');
-            btn.disabled = true;
-
-            let rotations = {
-                1: { x: 0, y: 0 },
-                2: { x: 0, y: Math.PI / 2 },
-                3: { x: Math.PI / 2, y: 0 },
-                4: { x: -Math.PI / 2, y: 0 },
-                5: { x: 0, y: -Math.PI / 2 },
-                6: { x: Math.PI, y: 0 }
-            };
-
-            const target = rotations[value];
-            const startTime = Date.now();
-            const duration = 1000;
-
-            function update() {
-                const now = Date.now();
-                const t = Math.min(1, (now - startTime) / duration);
-                
-                dice.rotation.x = t * (Math.PI * 8) + target.x;
-                dice.rotation.y = t * (Math.PI * 8) + target.y;
-
-                if (t < 1) requestAnimationFrame(update);
-                else {
-                    document.getElementById('dice-value').innerText = value;
-                    finishTurn();
+        document.getElementById('roll-btn').onclick = function() {
+            const val = Math.floor(Math.random() * 6) + 1;
+            this.disabled = true;
+            let count = 0;
+            const anim = setInterval(() => {
+                dice.rotation.x += 0.5; dice.rotation.y += 0.5;
+                count++;
+                if(count > 20) {
+                    clearInterval(anim);
+                    this.disabled = false;
+                    alert("Dadu: " + val);
                 }
-            }
-            update();
-        }
-
-        /** * Bagian 3: Alur Permainan 
-         */
-        document.getElementById('roll-btn').onclick = () => {
-            if (!canRoll) return;
-            const result = Math.floor(Math.random() * 6) + 1;
-            lastRoll = result;
-            rollDiceAnimation(result);
+            }, 50);
         };
 
-        function finishTurn() {
-            // Logika sederhana pindah giliran
-            setTimeout(() => {
-                document.getElementById(`p${currentPlayer}-card`).classList.remove('active');
-                currentPlayer = (currentPlayer % 4) + 1;
-                document.getElementById(`p${currentPlayer}-card`).classList.add('active');
-                
-                canRoll = true;
-                document.getElementById('roll-btn').disabled = false;
-                document.getElementById('dice-value').innerText = "?";
-            }, 1000);
+        initDice();
+        
+        // Mengisi sel kosong yang belum didefinisikan secara otomatis
+        const container = document.getElementById('ludo-container');
+        for (let r = 1; r <= 15; r++) {
+            for (let c = 1; c <= 15; c++) {
+                const exists = Array.from(container.children).some(child => 
+                    child.style.gridArea.includes(`${r} / ${c}`) || 
+                    child.style.gridArea.includes(`${r}/${c}`)
+                );
+                if (!exists) {
+                    // Logika sederhana untuk mengisi cell putih di jalur
+                    if ((r > 6 && r < 10) || (c > 6 && c < 10)) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.style.gridArea = `${r}/${c}`;
+                        container.appendChild(cell);
+                    }
+                }
+            }
         }
-
-        // Jalankan Inisialisasi
-        createBoard();
-        init3DDice();
-
     </script>
 </body>
 </html>
