@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TrackCust JTM - Official</title>
+    <title>TrackCust JTM - Leaflet Map</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
@@ -22,22 +26,15 @@
         
         .page { display: none; height: 100%; flex-direction: column; }
         .page.active { display: flex; }
-        
-        .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
-        
-        /* Map Page Styling */
-        .map-card { background: white; border-radius: 2rem; padding: 2rem; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: auto; max-width: 320px; }
+
+        /* Style Peta */
+        #map { height: 100%; width: 100%; z-index: 1; background: #f1f5f9; }
+
+        #deliveryStatusBar { max-height: 80px; overflow-y: auto; border-bottom: 2px solid #e2e8f0; }
+        .status-item { border-left: 4px solid #006491; margin-bottom: 2px; padding: 4px 8px; font-size: 9px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
-
-    <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4" onclick="this.style.display='none'">
-        <button class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center"><i class="fa fa-times text-2xl"></i></button>
-        <div id="modalContent" class="flex flex-col items-center">
-             <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
-             <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
-        </div>
-    </div>
 
     <div id="pinOverlay" class="fixed inset-0 dominos-blue z-[10000] flex flex-col items-center justify-center p-6">
         <div class="text-center mb-8 text-white">
@@ -60,64 +57,23 @@
             </div>
         </nav>
         
-        <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic"></div>
-        <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-2 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
+        <div id="deliveryStatusBar" class="bg-white hidden flex flex-col"></div>
 
-        <main class="flex-1 overflow-hidden relative flex flex-col">
+        <main class="flex-1 overflow-hidden relative">
             <div id="page-list" class="page active p-4 overflow-y-auto">
-                <div class="flex justify-between items-center mb-3">
-                    <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
-                    <div id="countActive" class="bg-red-500 text-white px-3 py-2 rounded-xl text-[10px] font-black italic">0 AKTIF</div>
-                </div>
                 <div id="activeList" class="space-y-4 pb-32"></div>
             </div>
 
-            <div id="page-maps" class="page p-6 bg-gray-100 flex items-center justify-center">
-                <div class="map-card">
-                    <div class="w-20 h-20 dominos-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white">
-                        <i class="fa fa-map-marker-alt text-white text-3xl"></i>
-                    </div>
-                    <h2 class="font-black text-blue-900 uppercase italic text-lg leading-tight mb-2">Peta Base Store</h2>
-                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-6 tracking-widest">Domino's Pizza Jatimakmur</p>
-                    
-                    <div class="space-y-3">
-                        <a href="https://www.google.com/maps/search/?api=1&query=-6.282504,106.931086" target="_blank" class="block w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-lg">
-                            <i class="fa fa-external-link-alt mr-2"></i> Buka Di Google Maps
-                        </a>
-                        <p class="text-[8px] font-black text-red-500 uppercase italic">Klik tombol di atas untuk melihat rute kembali ke store</p>
-                    </div>
-                </div>
+            <div id="page-maps" class="page">
+                <div id="map"></div>
             </div>
 
-            <div id="page-add" class="page p-4 overflow-y-auto">
-                <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900 space-y-3">
-                    <h2 id="formTitle" class="font-black text-blue-900 text-center uppercase text-xs">Tambah Antaran</h2>
-                    <input type="hidden" id="editId">
-                    <input type="text" id="custArea" placeholder="KODE AREA (A-1)" class="w-full bg-yellow-50 p-4 rounded-xl text-sm font-bold uppercase outline-none">
-                    <input type="text" id="custName" placeholder="Nama Pelanggan" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
-                    <input type="tel" id="custPhone" placeholder="Nomor HP" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
-                    <input type="text" id="custMaps" placeholder="Link Google Maps" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none">
-                    
-                    <div class="bg-blue-50 p-4 rounded-xl border-2 border-dashed border-blue-200 text-center relative">
-                        <label class="cursor-pointer">
-                            <i class="fa fa-camera text-blue-400 text-xl"></i>
-                            <p class="text-[9px] font-black text-blue-900 uppercase mt-1" id="photoStatus">Foto Rumah</p>
-                            <input type="file" id="housePhoto" accept="image/*" class="hidden" onchange="processImage(this)">
-                        </label>
-                        <button onclick="removePhoto()" id="btnRemovePhoto" class="hidden absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-times text-[10px]"></i></button>
-                        <img id="imgPrev" class="hidden w-full h-32 object-cover rounded-lg mt-2 border-2 border-white">
-                    </div>
-                    <button onclick="saveData()" id="saveBtn" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
-                    <button onclick="cancelEdit()" id="cancelBtn" class="hidden w-full bg-gray-400 text-white py-3 rounded-xl font-bold uppercase text-[10px]">Batal</button>
-                </div>
-            </div>
-
-            <div id="page-chat" class="page p-6 bg-gray-100 flex flex-col items-center">
-                <div class="bg-white p-6 rounded-[2rem] shadow-xl w-full max-w-sm text-center">
-                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
-                    <h2 class="font-black text-blue-900 uppercase text-xs mb-4">Input Nomor Manual</h2>
-                    <input type="tel" id="waDirectNumber" placeholder="CONTOH: 0812..." class="w-full p-4 bg-gray-100 rounded-2xl text-center font-black text-blue-900 text-lg mb-4 outline-none">
-                    <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md">Kirim Pesan</button>
+            <div id="page-add" class="page p-4">
+                <div class="bg-white p-6 rounded-3xl shadow-xl">
+                    <input type="text" id="custArea" placeholder="KODE AREA" class="w-full p-4 bg-gray-100 rounded-xl mb-3 uppercase font-bold">
+                    <input type="text" id="custName" placeholder="NAMA" class="w-full p-4 bg-gray-100 rounded-xl mb-3 font-bold">
+                    <input type="tel" id="custPhone" placeholder="NOMOR HP" class="w-full p-4 bg-gray-100 rounded-xl mb-3 font-bold">
+                    <button onclick="saveData()" class="w-full dominos-red text-white py-4 rounded-xl font-black">SIMPAN</button>
                 </div>
             </div>
         </main>
@@ -126,86 +82,31 @@
             <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
             <div onclick="showPage('maps')" class="nav-item" id="nav-maps"><i class="fa fa-map-marked-alt mb-1 text-xl"></i><span>Peta JTM</span></div>
             <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
-            <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
             <div onclick="handleLogout()" class="nav-item"><i class="fa fa-sign-out-alt mb-1 text-xl"></i><span>Out</span></div>
         </div>
     </div>
 
     <script>
-        const userPins = { 
-            "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
-            "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "0972", 
-            "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
-            "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
-        };
-
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
-            databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
-            projectId: "trackcust-jtm" 
-        };
+        const userPins = { "Okta": "0972", "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Pak KUR (Mgt)": "0000" };
+        const firebaseConfig = { apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "trackcust-jtm" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        
+
         let currentUser = localStorage.getItem('jtm_user') || "";
-        let allData = {}; let photoBase64 = ""; let renderTimer;
+        let map, markers = {};
+        const jtmLocation = [-6.2848, 106.9284];
 
         window.onload = () => {
             const logSel = document.getElementById('selectUser');
             logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
             Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
             if(currentUser) bukaApp(currentUser);
-            setInterval(updateTimers, 1000);
-            updatePresence();
-            startDeliveryStatusListener();
         };
-
-        function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
-
-        function pushDeliveryStatus(nama) { 
-            db.ref('delivery_activity/' + nama).set({ 
-                name: nama, 
-                timestamp: Date.now(),
-                expires: Date.now() + 900000 
-            }); 
-        }
-
-        function startDeliveryStatusListener() {
-            db.ref('delivery_activity').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar'); bar.innerHTML = "";
-                const now = Date.now(); let hasData = false;
-                s.forEach(child => {
-                    const d = child.val();
-                    if (now > d.expires) { db.ref('delivery_activity/' + child.key).remove(); } 
-                    else { hasData = true; bar.innerHTML += `<div class="p-1 border-b border-blue-50 italic">(${d.name} SEDANG MENGANTAR)</div>`; }
-                });
-                bar.style.display = hasData ? "block" : "none";
-            });
-        }
-
-        function openWaDirect() {
-            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
-            if(!n) return alert("Nomor kosong!");
-            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-            pushDeliveryStatus(currentUser);
-            const msg = `Halo, saya ${currentUser} dari Domino's Jatimakmur...`;
-            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function updatePresence() {
-            if(!currentUser) return;
-            db.ref('presence/' + currentUser).set(true);
-            db.ref('presence/' + currentUser).onDisconnect().remove();
-            db.ref('presence').on('value', s => {
-                const el = document.getElementById('onlineBar'); el.innerHTML = "";
-                s.forEach(u => el.innerHTML += `<span class="mr-2"><i class="fa fa-circle text-[5px] text-green-500"></i> ${u.key}</span>`);
-            });
-        }
 
         function prosesLogin() {
             const u = document.getElementById('selectUser').value;
             const p = document.getElementById('inputPin').value;
-            if(p === userPins[u]) { bukaApp(u); updatePresence(); } else alert("PIN SALAH!");
+            if(p === userPins[u]) { bukaApp(u); } else alert("PIN SALAH!");
         }
 
         function bukaApp(n) {
@@ -213,121 +114,101 @@
             document.getElementById('userDisplay').innerText = n;
             document.getElementById('pinOverlay').style.display = "none";
             document.getElementById('mainContent').style.display = "flex";
-            db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+            initMap();
+            db.ref('customers').on('value', s => { renderList(s.val()); });
+            startDeliveryStatusListener();
         }
 
-        function handleLogout() { if(confirm("Keluar?")) { db.ref('presence/'+currentUser).remove(); localStorage.removeItem('jtm_user'); location.reload(); } }
+        function initMap() {
+            if (map) return;
+            map = L.map('map').setView(jtmLocation, 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.marker(jtmLocation).addTo(map).bindPopup("<b>Domino's Jatimakmur</b>").openPopup();
 
-        function render() {
+            db.ref('tracking').on('value', snapshot => {
+                const trackers = snapshot.val();
+                const now = Date.now();
+                Object.values(markers).forEach(m => map.removeLayer(m));
+                markers = {};
+                if (trackers) {
+                    Object.keys(trackers).forEach(name => {
+                        const data = trackers[name];
+                        if (now < data.expiry) {
+                            markers[name] = L.marker([data.lat, data.lng]).addTo(map)
+                                .bindPopup(`<b>Driver: ${name}</b><br>Sisa: ${Math.ceil((data.expiry - now)/60000)} mnt`);
+                        } else {
+                            db.ref('tracking/' + name).remove();
+                        }
+                    });
+                }
+            });
+        }
+
+        function activateTracking() {
+            if (!navigator.geolocation) return alert("GPS tidak didukung");
+            navigator.geolocation.getCurrentPosition(pos => {
+                db.ref('tracking/' + currentUser).set({
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    expiry: Date.now() + (15 * 60 * 1000)
+                });
+            }, err => console.error(err), { enableHighAccuracy: true });
+        }
+
+        function openWa(num) {
+            activateTracking();
+            window.open(`https://wa.me/${num.replace(/\D/g, '')}`, '_blank');
+        }
+
+        function renderList(data) {
             const list = document.getElementById('activeList');
-            const filter = document.getElementById('searchInput').value.toLowerCase();
-            let activeCount = 0; let listHTML = "";
-
-            Object.keys(allData).reverse().forEach(id => {
-                const i = allData[id];
-                if(i.status === 'done') return; 
-                const searchStr = `${i.name} ${i.phone} ${i.area}`.toLowerCase();
-                if(!searchStr.includes(filter)) return;
-
-                activeCount++;
-                let wa = (i.phone || "").replace(/\D/g, '');
-                if(wa.startsWith('0')) wa = '62' + wa.slice(1);
-                const waLink = `https://wa.me/${wa}?text=Halo%20${i.name}%20saya%20${currentUser}%20dari%20Dominos%20Jatimakmur...`;
-
-                listHTML += `
-                <div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 border-red-500">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
-                            <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
-                            <div class="flex items-center gap-2 mt-1">
-                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">READY</p>
-                                ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg"><i class="fa fa-edit text-[10px]"></i></button>
-                            <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg"><i class="fa fa-trash text-[10px]"></i></button>
-                            <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl shadow-md"><i class="fa fa-check"></i></button>
-                            <button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl shadow-md ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white'}"><i class="fa fa-motorcycle"></i></button>
-                        </div>
-                    </div>
+            list.innerHTML = "";
+            if(!data) return;
+            Object.keys(data).reverse().forEach(id => {
+                const i = data[id];
+                if(i.status === 'done') return;
+                list.innerHTML += `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
+                    <h3 class="font-black text-blue-900">${i.name} (${i.area})</h3>
                     <div class="flex gap-2 mt-3">
-                        <a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 uppercase">Buka Maps</a>
-                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 uppercase">Chat WA</a>
+                        <button onclick="openWa('${i.phone}')" class="bg-green-500 text-white flex-1 py-2 rounded-lg font-bold text-xs uppercase">Chat WA</button>
+                        <button onclick="db.ref('customers/${id}').update({status:'done'})" class="bg-yellow-400 text-white px-4 rounded-lg"><i class="fa fa-check"></i></button>
                     </div>
                 </div>`;
             });
-            list.innerHTML = listHTML;
-            document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
         }
 
-        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
-        
-        function processImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const c = document.createElement('canvas'); const MAX = 600;
-                        c.width = MAX; c.height = img.height * (MAX / img.width);
-                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                        photoBase64 = c.toDataURL('image/jpeg', 0.7);
-                        document.getElementById('imgPrev').src = photoBase64;
-                        document.getElementById('imgPrev').classList.remove('hidden');
-                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
+        function startDeliveryStatusListener() {
+            db.ref('tracking').on('value', s => {
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = "";
+                const now = Date.now();
+                let active = false;
+                s.forEach(child => {
+                    if (now < child.val().expiry) {
+                        active = true;
+                        bar.innerHTML += `<div class="status-item italic">(${child.key} SEDANG MENGANTAR)</div>`;
+                    }
+                });
+                bar.classList.toggle('hidden', !active);
+            });
         }
 
-        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); }
+        function showPage(p) {
+            document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(nv => nv.classList.remove('active'));
+            document.getElementById('page-' + p).classList.add('active');
+            if(document.getElementById('nav-' + p)) document.getElementById('nav-' + p).classList.add('active');
+            if(p === 'maps' && map) { setTimeout(() => map.invalidateSize(), 300); }
+        }
+
+        function handleLogout() { localStorage.removeItem('jtm_user'); location.reload(); }
 
         function saveData() {
-            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value;
-            if(!a || !n) return alert("Lengkapi data!");
-            const d = { area: a.toUpperCase(), name: n, phone: document.getElementById('custPhone').value, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
-            const eid = document.getElementById('editId').value;
-            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
-            ref.then(() => resetForm());
-        }
-
-        function editData(id) {
-            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
-            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
-            showPage('add');
-        }
-
-        function resetForm() {
-            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
-            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            removePhoto(); showPage('list');
-        }
-
-        function goOTW(id) { if(allData[id].status !== 'otw') { db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); pushDeliveryStatus(currentUser); } }
-        function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
-
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
-        }
-
-        function updateTimers() {
-            Object.keys(allData).forEach(id => {
-                if(allData[id].status === 'otw') {
-                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
-                    const rem = (20 * 60) - elapsed;
-                    const el = document.getElementById('timer-'+id);
-                    if(el) {
-                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
-                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
-                        if(rem < 0) el.classList.add('text-red-600');
-                    }
-                }
-            });
+            const a = document.getElementById('custArea').value;
+            const n = document.getElementById('custName').value;
+            const p = document.getElementById('custPhone').value;
+            if(a && n) db.ref('customers').push({ area: a, name: n, phone: p, status: 'active' }).then(() => showPage('list'));
         }
     </script>
 </body>
