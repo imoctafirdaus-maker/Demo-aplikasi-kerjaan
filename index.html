@@ -3,201 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ludo Board Classic</title>
+    <title>Ludo Mobile 3D Dice</title>
     <style>
         :root {
-            --red: #e41e26;
-            --green: #00a651;
-            --yellow: #fff200;
-            --blue: #2e3192;
-            --white: #ffffff;
-            --border: #222;
+            --red: #e41e26; --green: #00a651; --yellow: #fff200; --blue: #2e3192;
+            --white: #ffffff; --border: #222;
         }
 
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a;
-            font-family: sans-serif;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; height: 100vh; margin: 0;
+            background-color: #1a1a1a; font-family: sans-serif;
+            overflow: hidden; touch-action: manipulation;
         }
 
-        /* Container Papan */
+        /* --- UI LAYER --- */
+        #ui-layer {
+            margin-bottom: 30px; text-align: center; color: white;
+            display: flex; align-items: center; gap: 40px;
+        }
+
+        /* --- 3D DICE CSS --- */
+        .scene {
+            width: 60px; height: 60px; perspective: 300px; cursor: pointer;
+        }
+
+        .dice {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            transform: rotateX(-20deg) rotateY(-20deg);
+        }
+
+        .dice-face {
+            position: absolute; width: 60px; height: 60px;
+            background: white; border: 2px solid #ccc;
+            display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 5px; box-sizing: border-box; border-radius: 8px;
+        }
+
+        /* Titik-titik Dadu */
+        .dot { background: #333; border-radius: 50%; width: 10px; height: 10px; align-self: center; justify-self: center; }
+
+        /* Posisi Sisi Kubus */
+        .front  { transform: rotateY(0deg) translateZ(30px); }
+        .back   { transform: rotateY(180deg) translateZ(30px); }
+        .right  { transform: rotateY(90deg) translateZ(30px); }
+        .left   { transform: rotateY(-90deg) translateZ(30px); }
+        .top    { transform: rotateX(90deg) translateZ(30px); }
+        .bottom { transform: rotateX(-90deg) translateZ(30px); }
+
+        /* Rotasi Hasil Dadu */
+        .show-1 { transform: rotateX(0deg) rotateY(0deg); }
+        .show-2 { transform: rotateX(-90deg) rotateY(0deg); }
+        .show-3 { transform: rotateY(-90deg) rotateX(0deg); }
+        .show-4 { transform: rotateY(90deg) rotateX(0deg); }
+        .show-5 { transform: rotateX(90deg) rotateY(0deg); }
+        .show-6 { transform: rotateX(180deg) rotateY(0deg); }
+
+        /* --- BOARD CSS --- */
         .ludo-board {
-            display: grid;
-            grid-template-columns: repeat(15, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            width: 95vw;
-            max-width: 500px;
-            aspect-ratio: 1/1;
-            background-color: var(--white);
-            border: 4px solid var(--border);
-            position: relative;
+            display: grid; grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr); width: 92vw; max-width: 450px;
+            aspect-ratio: 1/1; background-color: var(--white); border: 4px solid var(--border);
         }
 
-        /* Dasar Sel */
-        .cell {
-            border: 0.5px solid #ccc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-sizing: border-box;
-            position: relative;
-            font-size: 1.2rem;
+        .cell { border: 0.5px solid #ddd; display: flex; justify-content: center; align-items: center; position: relative; }
+        .home { grid-column: span 6; grid-row: span 6; padding: 10px; border: 1px solid var(--border); }
+        .home-inner { width: 100%; height: 100%; background: white; display: grid; grid-template: 1fr 1fr / 1fr 1fr; gap: 10px; padding: 10px; box-sizing: border-box; }
+        
+        .pawn {
+            width: 80%; height: 80%; border-radius: 50%; border: 2px solid rgba(0,0,0,0.5);
+            z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
-        /* Area Rumah (Besar) */
-        .home {
-            grid-column: span 6;
-            grid-row: span 6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            border: 1px solid var(--border);
-        }
-
-        .home-inner {
-            width: 80%;
-            height: 80%;
-            background: white;
-            border: 2px solid #333;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 15px;
-            padding: 10px;
-        }
-
-        .base-pawn {
-            border-radius: 50%;
-            border: 2px solid #333;
-        }
-
-        /* Pewarnaan Area */
         .green { background-color: var(--green); }
         .yellow { background-color: var(--yellow); }
         .red { background-color: var(--red); }
         .blue { background-color: var(--blue); }
-
-        /* Area Tengah (Segitiga) */
-        .center-home {
-            grid-column: 7 / 10;
-            grid-row: 7 / 10;
-            position: relative;
-            border: 1px solid var(--border);
-            background: 
-                linear-gradient(to bottom right, var(--green) 50%, transparent 50.5%),
-                linear-gradient(to bottom left, var(--yellow) 50%, transparent 50.5%),
-                linear-gradient(to top right, var(--red) 50%, transparent 50.5%),
-                linear-gradient(to top left, var(--blue) 50%, transparent 50.5%);
-        }
-
-        /* Simbol Bintang & Panah */
-        .star::after { content: '☆'; font-weight: bold; color: #333; }
-        .arrow-up::after { content: '↑'; color: var(--red); font-weight: bold; }
-        .arrow-down::after { content: '↓'; color: var(--yellow); font-weight: bold; }
-        .arrow-left::after { content: '←'; color: var(--green); font-weight: bold; }
-        .arrow-right::after { content: '→'; color: var(--blue); font-weight: bold; }
-
+        .center-home { grid-column: 7 / 10; grid-row: 7 / 10; background: conic-gradient(var(--green) 0% 25%, var(--yellow) 25% 50%, var(--blue) 50% 75%, var(--red) 75% 100%); }
     </style>
 </head>
 <body>
 
+<div id="ui-layer">
+    <div style="text-align: left;">
+        <div id="turn-text">Giliran: <b id="color-label" style="color:var(--red)">MERAH</b></div>
+        <div id="msg" style="font-size: 0.8rem; opacity: 0.8;">Ketuk dadu untuk memutar</div>
+    </div>
+
+    <div class="scene" onclick="rollDice()">
+        <div class="dice" id="dice">
+            <div class="dice-face front"><div class="dot" style="grid-area: 2/2"></div></div>
+            <div class="dice-face back">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="dice-face right">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="dice-face left">
+                <div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="dice-face top">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot" style="grid-area: 2/2"></div><div class="dot"></div>
+            </div>
+            <div class="dice-face bottom">
+                <div class="dot"></div><div class="dot"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="ludo-board" id="board">
-    <div class="home green" style="grid-area: 1 / 1 / 7 / 7;">
-        <div class="home-inner">
-            <div class="base-pawn green"></div>
-            <div class="base-pawn green"></div>
-            <div class="base-pawn green"></div>
-            <div class="base-pawn green"></div>
-        </div>
-    </div>
-
-    <div class="home yellow" style="grid-area: 1 / 10 / 7 / 16;">
-        <div class="home-inner">
-            <div class="base-pawn yellow"></div>
-            <div class="base-pawn yellow"></div>
-            <div class="base-pawn yellow"></div>
-            <div class="base-pawn yellow"></div>
-        </div>
-    </div>
-
-    <div class="home red" style="grid-area: 10 / 1 / 16 / 7;">
-        <div class="home-inner">
-            <div class="base-pawn red"></div>
-            <div class="base-pawn red"></div>
-            <div class="base-pawn red"></div>
-            <div class="base-pawn red"></div>
-        </div>
-    </div>
-
-    <div class="home blue" style="grid-area: 10 / 10 / 16 / 16;">
-        <div class="home-inner">
-            <div class="base-pawn blue"></div>
-            <div class="base-pawn blue"></div>
-            <div class="base-pawn blue"></div>
-            <div class="base-pawn blue"></div>
-        </div>
-    </div>
-
+    <div class="home green" style="grid-area: 1/1/7/7;"><div class="home-inner" id="h-green"></div></div>
+    <div class="home yellow" style="grid-area: 1/10/7/16;"><div class="home-inner" id="h-yellow"></div></div>
+    <div class="home red" style="grid-area: 10/1/16/7;"><div class="home-inner" id="h-red"></div></div>
+    <div class="home blue" style="grid-area: 10/10/16/16;"><div class="home-inner" id="h-blue"></div></div>
     <div class="center-home"></div>
-
-    </div>
+</div>
 
 <script>
-    const board = document.getElementById('board');
+    const dice = document.getElementById('dice');
+    const colorLabel = document.getElementById('color-label');
+    const msg = document.getElementById('msg');
+    let turn = 'red';
+    let isRolling = false;
 
-    // Fungsi untuk membuat sel di posisi spesifik
-    function createCell(row, col, className = "") {
-        const cell = document.createElement('div');
-        cell.className = 'cell ' + className;
-        cell.style.gridRow = row;
-        cell.style.gridColumn = col;
-        board.appendChild(cell);
-        return cell;
+    function rollDice() {
+        if (isRolling) return;
+        isRolling = true;
+        
+        // Animasi Putar Acak
+        const randomX = Math.floor(Math.random() * 4) * 90 + 720;
+        const randomY = Math.floor(Math.random() * 4) * 90 + 720;
+        dice.style.transition = 'transform 1s';
+        dice.style.transform = `rotateX(${randomX}deg) rotateY(${randomY}deg)`;
+
+        setTimeout(() => {
+            const value = Math.floor(Math.random() * 6) + 1;
+            // Reset transition untuk snap ke posisi sisi yang benar
+            dice.style.transition = 'transform 0.2s';
+            dice.className = `dice show-${value}`;
+            
+            msg.innerText = `Anda mendapat angka ${value}!`;
+            
+            setTimeout(() => {
+                isRolling = false;
+                nextTurn();
+            }, 1000);
+        }, 1000);
     }
 
-    // Generate Lintasan (Horizontal & Vertical Paths)
-    for (let r = 1; r <= 15; r++) {
-        for (let c = 1; c <= 15; c++) {
-            // Hanya buat sel jika bukan area Home atau Center
-            if (
-                ((r > 6 && r < 10) || (c > 6 && c < 10)) && 
-                !(r > 6 && r < 10 && c > 6 && c < 10)
-            ) {
-                let extraClass = "";
-                
-                // Jalur Masuk (Home Stretch)
-                if (r === 8 && c > 1 && c < 7) extraClass = "green";
-                if (r === 8 && c > 9 && c < 15) extraClass = "blue";
-                if (c === 8 && r > 1 && r < 7) extraClass = "yellow";
-                if (c === 8 && r > 9 && r < 15) extraClass = "red";
+    function nextTurn() {
+        const sequence = ['red', 'green', 'yellow', 'blue'];
+        let idx = (sequence.indexOf(turn) + 1) % 4;
+        turn = sequence[idx];
+        const colors = { red: 'var(--red)', green: 'var(--green)', yellow: 'var(--yellow)', blue: 'var(--blue)' };
+        colorLabel.innerText = turn.toUpperCase();
+        colorLabel.style.color = colors[turn];
+        msg.innerText = "Ketuk dadu!";
+    }
 
-                // Titik Start
-                if (r === 7 && c === 2) extraClass = "green";
-                if (r === 9 && c === 14) extraClass = "blue";
-                if (r === 2 && c === 9) extraClass = "yellow";
-                if (r === 14 && c === 7) extraClass = "red";
+    // Inisialisasi Papan & Bidak
+    function init() {
+        // Buat Bidak
+        ['red','green','yellow','blue'].forEach(c => {
+            const home = document.getElementById(`h-${c}`);
+            for(let i=0; i<4; i++) {
+                const p = document.createElement('div');
+                p.className = `pawn ${c}`;
+                home.appendChild(p);
+            }
+        });
 
-                // Bintang & Panah (Sesuai Gambar)
-                const cell = createCell(r, c, extraClass);
-                
-                if (r === 9 && c === 3) cell.classList.add('star');
-                if (r === 3 && c === 7) cell.classList.add('star');
-                if (r === 7 && c === 13) cell.classList.add('star');
-                if (r === 13 && c === 9) cell.classList.add('star');
-
-                if (r === 15 && c === 8) cell.classList.add('arrow-up');
-                if (r === 1 && c === 8) cell.classList.add('arrow-down');
-                if (r === 8 && c === 1) cell.classList.add('arrow-left');
-                if (r === 8 && c === 15) cell.classList.add('arrow-right');
+        // Buat Lintasan
+        for (let r = 1; r <= 15; r++) {
+            for (let c = 1; c <= 15; c++) {
+                if (((r > 6 && r < 10) || (c > 6 && c < 10)) && !(r > 6 && r < 10 && c > 6 && c < 10)) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.style.gridRow = r; cell.style.gridColumn = c;
+                    if (r === 8 && c > 1 && c < 7) cell.classList.add('green');
+                    if (c === 8 && r > 1 && r < 7) cell.classList.add('yellow');
+                    if (r === 8 && c > 9 && c < 15) cell.classList.add('blue');
+                    if (c === 8 && r > 9 && r < 15) cell.classList.add('red');
+                    document.getElementById('board').appendChild(cell);
+                }
             }
         }
     }
+    init();
 </script>
-
 </body>
 </html>
