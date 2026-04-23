@@ -149,7 +149,9 @@
         
         let currentUser = localStorage.getItem('jtm_user') || "";
         let map, markers = {}; let allData = {}; let photoBase64 = ""; let stream = null;
-        const jtmLocation = [-6.28488, 106.92843]; // Koordinat Presisi Jatimakmur
+        
+        // ALAMAT DOMINO'S JATIMAKMUR (KOORDINAT AKURAT)
+        const jtmLocation = [-6.28488, 106.92843]; 
 
         window.onload = () => {
             const logSel = document.getElementById('selectUser');
@@ -180,7 +182,16 @@
             if (map) return;
             map = L.map('map').setView(jtmLocation, 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            L.marker(jtmLocation).addTo(map).bindPopup("<b>Domino's Jatimakmur</b>").openPopup();
+            
+            // Marker Tetap Toko
+            const storeIcon = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/1261/1261163.png',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40]
+            });
+            L.marker(jtmLocation, {icon: storeIcon}).addTo(map)
+                .bindPopup("<b>DOMINO'S PIZZA JATIMAKMUR</b><br>Base Camp")
+                .openPopup();
         }
 
         function startTrackingListener() {
@@ -195,7 +206,8 @@
                         if (now < d.expiry) {
                             activeCount++;
                             bar.innerHTML += `<div class="status-item italic">(${name} SEDANG MENGANTAR)</div>`;
-                            markers[name] = L.marker([d.lat, d.lng]).addTo(map).bindPopup(`<b>Driver: ${name}</b>`);
+                            markers[name] = L.marker([d.lat, d.lng]).addTo(map)
+                                .bindPopup(`<b>Driver: ${name}</b><br>Aktif`);
                         } else { db.ref('tracking/' + name).remove(); }
                     });
                 }
@@ -206,7 +218,11 @@
         function activateTracking() {
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(pos => {
-                db.ref('tracking/' + currentUser).set({ lat: pos.coords.latitude, lng: pos.coords.longitude, expiry: Date.now() + (20 * 60 * 1000) });
+                db.ref('tracking/' + currentUser).set({ 
+                    lat: pos.coords.latitude, 
+                    lng: pos.coords.longitude, 
+                    expiry: Date.now() + (20 * 60 * 1000) 
+                });
             }, null, { enableHighAccuracy: true });
         }
 
@@ -233,17 +249,25 @@
                             <div><p class="text-[8px] font-black text-red-500 uppercase">${i.area}</p><h3 class="font-black text-blue-900">${i.name}</h3></div>
                             <div class="flex gap-1"><p id="timer-${id}" class="text-[9px] font-bold text-gray-400 italic">READY</p>${i.driverBy?`<span class="driver-badge">${i.driverBy}</span>`:''}</div>
                         </div>
-                        ${i.photo?`<img src="${i.photo}" onclick="openFullImg('${i.photo}')" class="w-full h-24 object-cover rounded-xl mt-2">`:''}
+                        ${i.photo?`<img src="${i.photo}" onclick="openFullImg('${i.photo}')" class="w-full h-24 object-cover rounded-xl mt-2 cursor-pointer">`:''}
                         <div class="flex gap-2 mt-3">
                             <a href="${i.maps}" target="_blank" class="dominos-blue text-white flex-1 py-2 rounded-lg text-center font-bold text-[9px] uppercase">Peta</a>
-                            <button onclick="openWaDirect()" class="bg-green-500 text-white flex-1 py-2 rounded-lg font-bold text-xs uppercase">Chat</button>
+                            <button onclick="openWaLinkCustom('${i.phone}', '${i.name}')" class="bg-green-500 text-white flex-1 py-2 rounded-lg font-bold text-xs uppercase">Chat</button>
                             <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white px-4 rounded-lg"><i class="fa fa-check"></i></button>
-                            <button onclick="goOTW('${id}')" class="px-4 rounded-lg ${i.status==='otw'?'bg-gray-200':'bg-blue-500 text-white'}"><i class="fa fa-motorcycle"></i></button>
+                            <button onclick="goOTW('${id}')" class="px-4 rounded-lg ${i.status==='otw'?'bg-gray-200 text-gray-400':'bg-blue-500 text-white'}"><i class="fa fa-motorcycle"></i></button>
                         </div>
                     </div>`;
                 }
             });
             document.getElementById('countActive').innerText = `${count} AKTIF`;
+        }
+
+        function openWaLinkCustom(phone, name) {
+            activateTracking();
+            let n = phone.replace(/\D/g, '');
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
+            const msg = `Halo Bapak/Ibu ${name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan sedang diantar...`;
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function showPage(p) {
@@ -253,7 +277,11 @@
             if(p !== 'chat') stopCamera();
         }
 
-        function goOTW(id) { db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); activateTracking(); }
+        function goOTW(id) { 
+            db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+            activateTracking(); 
+        }
+
         function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
 
         function updateTimers() {
@@ -271,11 +299,13 @@
         }
 
         async function startCamera() {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('scannerVideo').srcObject = stream;
-            document.getElementById('btnStartCam').classList.add('hidden');
-            document.getElementById('btnStopCam').classList.remove('hidden');
-            document.getElementById('scannerOverlay').style.display = 'block';
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                document.getElementById('scannerVideo').srcObject = stream;
+                document.getElementById('btnStartCam').classList.add('hidden');
+                document.getElementById('btnStopCam').classList.remove('hidden');
+                document.getElementById('scannerOverlay').style.display = 'block';
+            } catch (e) { alert("Izin kamera ditolak"); }
         }
 
         function stopCamera() {
@@ -289,10 +319,17 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    photoBase64 = e.target.result;
-                    document.getElementById('imgPrev').src = photoBase64;
-                    document.getElementById('imgPrev').classList.remove('hidden');
-                    document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas'); const MAX = 600;
+                        c.width = MAX; c.height = img.height * (MAX / img.width);
+                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('imgPrev').src = photoBase64;
+                        document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -304,14 +341,25 @@
         function updatePresence() { db.ref('presence/' + currentUser).set(true); db.ref('presence/' + currentUser).onDisconnect().remove(); }
 
         function saveData() {
-            const d = { area: document.getElementById('custArea').value, name: document.getElementById('custName').value, phone: document.getElementById('custPhone').value, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const d = { 
+                area: document.getElementById('custArea').value, 
+                name: document.getElementById('custName').value, 
+                phone: document.getElementById('custPhone').value, 
+                maps: document.getElementById('custMaps').value, 
+                photo: photoBase64, 
+                status: 'active', 
+                timestamp: Date.now() 
+            };
             if(d.area && d.name) db.ref('customers').push(d).then(() => { resetForm(); showPage('list'); });
         }
 
         function resetForm() {
             document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
-            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = ""; removePhoto();
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = ""; 
+            removePhoto();
         }
+
+        function debounceRender() { render(); }
     </script>
 </body>
 </html>
