@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     
     <style>
         .dominos-blue { background-color: #006491; }
@@ -24,21 +23,10 @@
         .page { display: none; height: 100%; flex-direction: column; }
         .page.active { display: flex; }
         
-        .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
         .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
         
-        .scanner-container { position: relative; width: 100%; height: 200px; background: black; border-radius: 1.5rem; overflow: hidden; margin-bottom: 1rem; border: 4px solid #006491; }
-        #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
-        .scanner-overlay { position: absolute; inset: 0; border: 30px solid rgba(0,0,0,0.5); pointer-events: none; display: none; }
-        .scanner-box { width: 100%; height: 100%; border: 2px solid #e31837; position: relative; }
-        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
-        @keyframes scanAnim { 0% { top: 0%; } 100% { top: 100%; } }
-
-        #deliveryStatusBar { max-height: 60px; overflow-y: auto; border-bottom: 1px solid #e2e8f0; }
-        .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
-        
-        #map-container { width: 100%; height: 100%; position: relative; background-color: #f8fafc; }
-        iframe { width: 100%; height: 100%; border: 0; }
+        /* Map Page Styling */
+        .map-card { background: white; border-radius: 2rem; padding: 2rem; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: auto; max-width: 320px; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -75,7 +63,7 @@
         <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic"></div>
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-2 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
-        <main class="flex-1 overflow-hidden relative">
+        <main class="flex-1 overflow-hidden relative flex flex-col">
             <div id="page-list" class="page active p-4 overflow-y-auto">
                 <div class="flex justify-between items-center mb-3">
                     <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
@@ -84,15 +72,19 @@
                 <div id="activeList" class="space-y-4 pb-32"></div>
             </div>
 
-            <div id="page-maps" class="page h-full">
-                <div id="map-container">
-                    <iframe 
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.02700582046!2d106.9315579758682!3d-6.260165593728565!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e698d6263304565%3A0xc32a4e21a2082f4d!2sDomino&#39;s%20Pizza%20Jatimakmur!5e0!3m2!1sid!2sid!4v1714200000000!5m2!1sid!2sid" 
-                        allowfullscreen="" 
-                        loading="lazy">
-                    </iframe>
-                    <div class="absolute top-4 left-4 bg-white/90 p-2 rounded-lg shadow-lg border-2 border-blue-900">
-                        <p class="text-[9px] font-black text-blue-900 uppercase italic"><i class="fa fa-store mr-1 text-blue-600"></i> Store Base: Jatimakmur</p>
+            <div id="page-maps" class="page p-6 bg-gray-100 flex items-center justify-center">
+                <div class="map-card">
+                    <div class="w-20 h-20 dominos-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white">
+                        <i class="fa fa-map-marker-alt text-white text-3xl"></i>
+                    </div>
+                    <h2 class="font-black text-blue-900 uppercase italic text-lg leading-tight mb-2">Peta Base Store</h2>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-6 tracking-widest">Domino's Pizza Jatimakmur</p>
+                    
+                    <div class="space-y-3">
+                        <a href="https://www.google.com/maps/search/?api=1&query=-6.282504,106.931086" target="_blank" class="block w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-lg">
+                            <i class="fa fa-external-link-alt mr-2"></i> Buka Di Google Maps
+                        </a>
+                        <p class="text-[8px] font-black text-red-500 uppercase italic">Klik tombol di atas untuk melihat rute kembali ke store</p>
                     </div>
                 </div>
             </div>
@@ -120,26 +112,12 @@
                 </div>
             </div>
 
-            <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
-                <div class="wa-card mb-20 mx-auto">
-                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
-                    <h2 class="font-black text-blue-900 uppercase italic text-[12px] mb-3">Scanner & Manual Input</h2>
-                    <div class="scanner-container">
-                        <video id="scannerVideo" autoplay playsinline></video>
-                        <div id="scannerOverlay" class="scanner-overlay"><div class="scanner-box"><div class="laser"></div></div></div>
-                    </div>
-
-                    <div class="flex gap-2 mb-3">
-                        <button id="btnStartCam" onclick="startCamera()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px]">Buka Kamera</button>
-                        <button id="btnStopCam" onclick="stopCamera()" class="hidden flex-1 bg-gray-500 text-white py-3 rounded-xl font-black uppercase text-[10px]">Tutup</button>
-                        <button onclick="captureAndScan()" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-black uppercase text-[10px]">Scan Nomor</button>
-                    </div>
-                    <div id="ocrLoading" class="hidden mb-3 text-[9px] font-bold text-blue-900 uppercase italic"><div class="loader-ocr"></div> Menganalisa...</div>
-                    <input type="tel" id="waDirectNumber" placeholder="Input Nomor Manual" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm mb-3">
-                    <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
-                    <div id="scanResultArea" class="hidden text-left border-t-2 border-gray-100 pt-4">
-                        <table class="w-full text-[10px] bg-white rounded-lg border divide-y"><thead class="bg-blue-900 text-white italic uppercase"><tr><th class="p-2">Hasil Scan</th><th class="p-2">Chat</th></tr></thead><tbody id="addressTableBody" class="font-bold divide-y"></tbody></table>
-                    </div>
+            <div id="page-chat" class="page p-6 bg-gray-100 flex flex-col items-center">
+                <div class="bg-white p-6 rounded-[2rem] shadow-xl w-full max-w-sm text-center">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                    <h2 class="font-black text-blue-900 uppercase text-xs mb-4">Input Nomor Manual</h2>
+                    <input type="tel" id="waDirectNumber" placeholder="CONTOH: 0812..." class="w-full p-4 bg-gray-100 rounded-2xl text-center font-black text-blue-900 text-lg mb-4 outline-none">
+                    <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md">Kirim Pesan</button>
                 </div>
             </div>
         </main>
@@ -161,13 +139,16 @@
             "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
         };
 
-        const firebaseConfig = { apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "trackcust-jtm" };
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
+            databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "trackcust-jtm" 
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         
         let currentUser = localStorage.getItem('jtm_user') || "";
-        let allData = {}; let photoBase64 = "";
-        let stream = null; let renderTimer;
+        let allData = {}; let photoBase64 = ""; let renderTimer;
 
         window.onload = () => {
             const logSel = document.getElementById('selectUser');
@@ -191,53 +172,24 @@
 
         function startDeliveryStatusListener() {
             db.ref('delivery_activity').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = "";
-                const now = Date.now();
-                let hasData = false;
+                const bar = document.getElementById('deliveryStatusBar'); bar.innerHTML = "";
+                const now = Date.now(); let hasData = false;
                 s.forEach(child => {
                     const d = child.val();
-                    if (now > d.expires) {
-                        db.ref('delivery_activity/' + child.key).remove();
-                    } else { 
-                        hasData = true; 
-                        bar.innerHTML += `<div class="status-item flex items-center px-1"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; 
-                    }
+                    if (now > d.expires) { db.ref('delivery_activity/' + child.key).remove(); } 
+                    else { hasData = true; bar.innerHTML += `<div class="p-1 border-b border-blue-50 italic">(${d.name} SEDANG MENGANTAR)</div>`; }
                 });
                 bar.style.display = hasData ? "block" : "none";
             });
-        }
-
-        async function startCamera() {
-            try {
-                if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                document.getElementById('scannerVideo').srcObject = stream;
-                document.getElementById('btnStartCam').classList.add('hidden');
-                document.getElementById('btnStopCam').classList.remove('hidden');
-                document.getElementById('scannerOverlay').style.display = 'block';
-            } catch (err) { alert("Kamera Error"); }
-        }
-
-        function stopCamera() {
-            if (stream) stream.getTracks().forEach(t => t.stop());
-            stream = null; 
-            document.getElementById('btnStartCam').classList.remove('hidden');
-            document.getElementById('btnStopCam').classList.add('hidden');
-            document.getElementById('scannerOverlay').style.display = 'none';
-        }
-
-        function openWaLinkCustom(n) {
-            pushDeliveryStatus(currentUser); 
-            const msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu? Terimakasih 😊`;
-            window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function openWaDirect() {
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
             if(!n) return alert("Nomor kosong!");
             let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-            openWaLinkCustom(wa);
+            pushDeliveryStatus(currentUser);
+            const msg = `Halo, saya ${currentUser} dari Domino's Jatimakmur...`;
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function updatePresence() {
@@ -246,7 +198,7 @@
             db.ref('presence/' + currentUser).onDisconnect().remove();
             db.ref('presence').on('value', s => {
                 const el = document.getElementById('onlineBar'); el.innerHTML = "";
-                s.forEach(u => el.innerHTML += `<span class="flex items-center gap-1"><i class="fa fa-circle text-[5px] text-green-500"></i> ${u.key}</span>`);
+                s.forEach(u => el.innerHTML += `<span class="mr-2"><i class="fa fa-circle text-[5px] text-green-500"></i> ${u.key}</span>`);
             });
         }
 
@@ -274,49 +226,42 @@
             Object.keys(allData).reverse().forEach(id => {
                 const i = allData[id];
                 if(i.status === 'done') return; 
+                const searchStr = `${i.name} ${i.phone} ${i.area}`.toLowerCase();
+                if(!searchStr.includes(filter)) return;
 
-                const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
                 activeCount++;
-                
                 let wa = (i.phone || "").replace(/\D/g, '');
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
-                const msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar...`;
-                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
+                const waLink = `https://wa.me/${wa}?text=Halo%20${i.name}%20saya%20${currentUser}%20dari%20Dominos%20Jatimakmur...`;
 
-                if(searchStr.includes(filter)) {
-                    listHTML += `
-                    <div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 border-red-500">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
-                                <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">READY</p>
-                                    ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
-                                <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
-                                <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                                <button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
+                listHTML += `
+                <div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 border-red-500">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
+                            <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">READY</p>
+                                ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
                             </div>
                         </div>
-                        <div class="mt-3">
-                            ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="w-full h-24 object-cover rounded-xl border">` : ''}
+                        <div class="flex gap-2">
+                            <button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg"><i class="fa fa-edit text-[10px]"></i></button>
+                            <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg"><i class="fa fa-trash text-[10px]"></i></button>
+                            <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl shadow-md"><i class="fa fa-check"></i></button>
+                            <button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl shadow-md ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white'}"><i class="fa fa-motorcycle"></i></button>
                         </div>
-                        <div class="flex gap-2 mt-3">
-                            <a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>
-                            <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
-                        </div>
-                    </div>`;
-                }
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 uppercase">Buka Maps</a>
+                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 uppercase">Chat WA</a>
+                    </div>
+                </div>`;
             });
             list.innerHTML = listHTML;
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
         }
 
-        function openFullImg(url, cap) { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = cap; document.getElementById('imgModal').style.display = 'flex'; }
         function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
         
         function processImage(input) {
@@ -332,7 +277,6 @@
                         document.getElementById('imgPrev').src = photoBase64;
                         document.getElementById('imgPrev').classList.remove('hidden');
                         document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                        document.getElementById('photoStatus').innerText = "FOTO SIAP!";
                     };
                     img.src = e.target.result;
                 };
@@ -340,12 +284,13 @@
             }
         }
 
-        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); }
 
         function saveData() {
-            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const eid = document.getElementById('editId').value;
+            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value;
             if(!a || !n) return alert("Lengkapi data!");
             const d = { area: a.toUpperCase(), name: n, phone: document.getElementById('custPhone').value, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const eid = document.getElementById('editId').value;
             const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
             ref.then(() => resetForm());
         }
@@ -353,25 +298,21 @@
         function editData(id) {
             const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
             document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
-            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); }
-            document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
+            showPage('add');
         }
 
         function resetForm() {
             document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
             document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
-            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+            removePhoto(); showPage('list');
         }
 
-        function cancelEdit() { resetForm(); }
         function goOTW(id) { if(allData[id].status !== 'otw') { db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); pushDeliveryStatus(currentUser); } }
         function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
 
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
-            if(id !== 'chat') stopCamera();
         }
 
         function updateTimers() {
@@ -383,7 +324,7 @@
                     if(el) {
                         const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
                         el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
-                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
+                        if(rem < 0) el.classList.add('text-red-600');
                     }
                 }
             });
