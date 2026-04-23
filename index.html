@@ -10,9 +10,9 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     
     <style>
         .dominos-blue { background-color: #006491; }
@@ -29,13 +29,26 @@
         
         #map { height: 100%; width: 100%; z-index: 1; background: #f1f5f9; }
         
+        .scanner-container { position: relative; width: 100%; height: 200px; background: black; border-radius: 1.5rem; overflow: hidden; margin-bottom: 1rem; border: 4px solid #006491; }
+        #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
+        .scanner-overlay { position: absolute; inset: 0; border: 30px solid rgba(0,0,0,0.5); pointer-events: none; display: none; }
+        .scanner-box { width: 100%; height: 100%; border: 2px solid #e31837; position: relative; }
+        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; top: 50%; animation: scanAnim 2s infinite; }
+        @keyframes scanAnim { 0% { top: 0%; } 100% { top: 100%; } }
+
         #deliveryStatusBar { max-height: 80px; overflow-y: auto; border-bottom: 2px solid #e2e8f0; }
         .status-item { border-left: 4px solid #006491; padding-left: 8px; margin-bottom: 2px; }
-        
         .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
+
+    <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4" onclick="this.style.display='none'">
+        <div id="modalContent" class="flex flex-col items-center">
+             <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
+             <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
+        </div>
+    </div>
 
     <div id="pinOverlay" class="fixed inset-0 dominos-blue z-[10000] flex flex-col items-center justify-center p-6">
         <div class="text-center mb-8 text-white">
@@ -81,7 +94,34 @@
                     <input type="text" id="custName" placeholder="Nama Pelanggan" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
                     <input type="tel" id="custPhone" placeholder="Nomor HP" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
                     <input type="text" id="custMaps" placeholder="Link Google Maps" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none">
-                    <button onclick="saveData()" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
+                    
+                    <div class="bg-blue-50 p-4 rounded-xl border-2 border-dashed border-blue-200 text-center relative">
+                        <label class="cursor-pointer">
+                            <i class="fa fa-camera text-blue-400 text-xl"></i>
+                            <p class="text-[9px] font-black text-blue-900 uppercase mt-1" id="photoStatus">Foto Rumah</p>
+                            <input type="file" id="housePhoto" accept="image/*" class="hidden" onchange="processImage(this)">
+                        </label>
+                        <button onclick="removePhoto()" id="btnRemovePhoto" class="hidden absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-times text-[10px]"></i></button>
+                        <img id="imgPrev" class="hidden w-full h-32 object-cover rounded-lg mt-2 border-2 border-white">
+                    </div>
+                    <button onclick="saveData()" id="saveBtn" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
+                </div>
+            </div>
+
+            <div id="page-chat" class="page p-4 items-center bg-gray-100 overflow-y-auto">
+                <div class="bg-white p-6 rounded-[2rem] shadow-xl w-full max-w-sm text-center mb-20">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                    <div class="scanner-container">
+                        <video id="scannerVideo" autoplay playsinline></video>
+                        <div id="scannerOverlay" class="scanner-overlay"><div class="scanner-box"><div class="laser"></div></div></div>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                        <button onclick="startCamera()" id="btnStartCam" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px]">Buka Kamera</button>
+                        <button onclick="stopCamera()" id="btnStopCam" class="hidden flex-1 bg-gray-500 text-white py-3 rounded-xl font-black uppercase text-[10px]">Tutup</button>
+                        <button onclick="captureAndScan()" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-black uppercase text-[10px]">Scan</button>
+                    </div>
+                    <input type="tel" id="waDirectNumber" placeholder="Input Nomor Manual" class="w-full p-4 bg-gray-100 rounded-2xl text-center font-black text-blue-900 text-lg mb-4 outline-none">
+                    <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md">Kirim Pesan</button>
                 </div>
             </div>
         </main>
@@ -90,26 +130,33 @@
             <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
             <div onclick="showPage('maps')" class="nav-item" id="nav-maps"><i class="fa fa-map-marked-alt mb-1 text-xl"></i><span>Peta JTM</span></div>
             <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
+            <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
             <div onclick="handleLogout()" class="nav-item"><i class="fa fa-sign-out-alt mb-1 text-xl"></i><span>Out</span></div>
         </div>
     </div>
 
     <script>
-        const userPins = { "Okta": "0972", "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Pak KUR (Mgt)": "0000" };
+        const userPins = { 
+            "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
+            "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "0972", 
+            "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
+            "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
+        };
+
         const firebaseConfig = { apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "trackcust-jtm" };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         
         let currentUser = localStorage.getItem('jtm_user') || "";
-        let map, markers = {};
-        const jtmLocation = [-6.2848, 106.9284];
+        let map, markers = {}; let allData = {}; let photoBase64 = ""; let stream = null;
+        const jtmLocation = [-6.28488, 106.92843]; // Koordinat Presisi Jatimakmur
 
         window.onload = () => {
             const logSel = document.getElementById('selectUser');
             logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
             Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
             if(currentUser) bukaApp(currentUser);
+            setInterval(updateTimers, 1000);
         };
 
         function prosesLogin() {
@@ -124,40 +171,32 @@
             document.getElementById('pinOverlay').style.display = "none";
             document.getElementById('mainContent').style.display = "flex";
             initMap();
-            db.ref('customers').on('value', s => { renderList(s.val()); });
+            db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
             startTrackingListener();
             updatePresence();
         }
 
         function initMap() {
             if (map) return;
-            map = L.map('map').setView(jtmLocation, 15);
+            map = L.map('map').setView(jtmLocation, 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.marker(jtmLocation).addTo(map).bindPopup("<b>Domino's Jatimakmur</b>").openPopup();
         }
 
         function startTrackingListener() {
             db.ref('tracking').on('value', snapshot => {
-                const trackers = snapshot.val();
-                const now = Date.now();
-                const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = "";
-                let activeCount = 0;
-
+                const trackers = snapshot.val(); const now = Date.now();
+                const bar = document.getElementById('deliveryStatusBar'); bar.innerHTML = "";
                 Object.values(markers).forEach(m => map.removeLayer(m));
-                markers = {};
-
+                markers = {}; let activeCount = 0;
                 if (trackers) {
                     Object.keys(trackers).forEach(name => {
-                        const data = trackers[name];
-                        if (now < data.expiry) {
+                        const d = trackers[name];
+                        if (now < d.expiry) {
                             activeCount++;
                             bar.innerHTML += `<div class="status-item italic">(${name} SEDANG MENGANTAR)</div>`;
-                            markers[name] = L.marker([data.lat, data.lng]).addTo(map)
-                                .bindPopup(`<b>Driver: ${name}</b><br>Sisa: ${Math.ceil((data.expiry - now)/60000)} mnt`);
-                        } else {
-                            db.ref('tracking/' + name).remove();
-                        }
+                            markers[name] = L.marker([d.lat, d.lng]).addTo(map).bindPopup(`<b>Driver: ${name}</b>`);
+                        } else { db.ref('tracking/' + name).remove(); }
                     });
                 }
                 bar.classList.toggle('hidden', activeCount === 0);
@@ -167,72 +206,112 @@
         function activateTracking() {
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(pos => {
-                db.ref('tracking/' + currentUser).set({
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    expiry: Date.now() + (15 * 60 * 1000)
-                });
+                db.ref('tracking/' + currentUser).set({ lat: pos.coords.latitude, lng: pos.coords.longitude, expiry: Date.now() + (20 * 60 * 1000) });
             }, null, { enableHighAccuracy: true });
         }
 
-        function openWa(num, name) {
+        function openWaDirect() {
+            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
+            if(!n) return alert("Nomor kosong!");
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
             activateTracking();
-            const msg = `Halo Bapak/Ibu ${name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan sedang diantar...`;
-            window.open(`https://wa.me/${num.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+            const msg = `Halo, saya ${currentUser} dari Domino's Jatimakmur...`;
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        function showPage(p) {
-            document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(nv => nv.classList.remove('active'));
-            document.getElementById('page-' + p).classList.add('active');
-            if(document.getElementById('nav-' + p)) document.getElementById('nav-' + p).classList.add('active');
-            if(p === 'maps' && map) setTimeout(() => map.invalidateSize(), 300);
-        }
-
-        function renderList(data) {
+        function render() {
             const list = document.getElementById('activeList');
-            list.innerHTML = "";
-            let count = 0;
-            if(!data) return;
-            Object.keys(data).reverse().forEach(id => {
-                const i = data[id];
-                if(i.status === 'done') return;
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            list.innerHTML = ""; let count = 0;
+            Object.keys(allData).reverse().forEach(id => {
+                const i = allData[id]; if(i.status === 'done') return;
                 count++;
-                list.innerHTML += `
-                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
-                    <p class="text-[8px] font-black text-red-500 uppercase">${i.area}</p>
-                    <h3 class="font-black text-blue-900">${i.name}</h3>
-                    <div class="flex gap-2 mt-3">
-                        <button onclick="openWa('${i.phone}', '${i.name}')" class="bg-green-500 text-white flex-1 py-2 rounded-lg font-bold text-xs uppercase">Chat WA</button>
-                        <button onclick="db.ref('customers/${id}').update({status:'done'})" class="bg-yellow-400 text-white px-4 rounded-lg"><i class="fa fa-check"></i></button>
-                    </div>
-                </div>`;
+                if(`${i.name} ${i.area}`.toLowerCase().includes(filter)) {
+                    list.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
+                        <div class="flex justify-between">
+                            <div><p class="text-[8px] font-black text-red-500 uppercase">${i.area}</p><h3 class="font-black text-blue-900">${i.name}</h3></div>
+                            <div class="flex gap-1"><p id="timer-${id}" class="text-[9px] font-bold text-gray-400 italic">READY</p>${i.driverBy?`<span class="driver-badge">${i.driverBy}</span>`:''}</div>
+                        </div>
+                        ${i.photo?`<img src="${i.photo}" onclick="openFullImg('${i.photo}')" class="w-full h-24 object-cover rounded-xl mt-2">`:''}
+                        <div class="flex gap-2 mt-3">
+                            <a href="${i.maps}" target="_blank" class="dominos-blue text-white flex-1 py-2 rounded-lg text-center font-bold text-[9px] uppercase">Peta</a>
+                            <button onclick="openWaDirect()" class="bg-green-500 text-white flex-1 py-2 rounded-lg font-bold text-xs uppercase">Chat</button>
+                            <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white px-4 rounded-lg"><i class="fa fa-check"></i></button>
+                            <button onclick="goOTW('${id}')" class="px-4 rounded-lg ${i.status==='otw'?'bg-gray-200':'bg-blue-500 text-white'}"><i class="fa fa-motorcycle"></i></button>
+                        </div>
+                    </div>`;
+                }
             });
             document.getElementById('countActive').innerText = `${count} AKTIF`;
         }
 
-        function updatePresence() {
-            db.ref('presence/' + currentUser).set(true);
-            db.ref('presence/' + currentUser).onDisconnect().remove();
-            db.ref('presence').on('value', s => {
-                const el = document.getElementById('onlineBar'); el.innerHTML = "";
-                s.forEach(u => el.innerHTML += `<span><i class="fa fa-circle text-[5px] text-green-500"></i> ${u.key}</span>`);
+        function showPage(p) {
+            document.querySelectorAll('.page').forEach(pg => pg.classList.toggle('active', pg.id === 'page-'+p));
+            document.querySelectorAll('.nav-item').forEach(nv => nv.classList.toggle('active', nv.id === 'nav-'+p));
+            if(p === 'maps' && map) setTimeout(() => map.invalidateSize(), 300);
+            if(p !== 'chat') stopCamera();
+        }
+
+        function goOTW(id) { db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); activateTracking(); }
+        function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
+
+        function updateTimers() {
+            Object.keys(allData).forEach(id => {
+                if(allData[id].status === 'otw') {
+                    const rem = (20 * 60) - Math.floor((Date.now() - allData[id].startTime) / 1000);
+                    const el = document.getElementById('timer-'+id);
+                    if(el) {
+                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
+                        el.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+                        if(rem < 0) el.classList.add('text-red-600');
+                    }
+                }
             });
         }
+
+        async function startCamera() {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('scannerVideo').srcObject = stream;
+            document.getElementById('btnStartCam').classList.add('hidden');
+            document.getElementById('btnStopCam').classList.remove('hidden');
+            document.getElementById('scannerOverlay').style.display = 'block';
+        }
+
+        function stopCamera() {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            document.getElementById('btnStartCam').classList.remove('hidden');
+            document.getElementById('btnStopCam').classList.add('hidden');
+            document.getElementById('scannerOverlay').style.display = 'none';
+        }
+
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    photoBase64 = e.target.result;
+                    document.getElementById('imgPrev').src = photoBase64;
+                    document.getElementById('imgPrev').classList.remove('hidden');
+                    document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); }
+        function openFullImg(u) { document.getElementById('fullImg').src = u; document.getElementById('imgModal').style.display = 'flex'; }
+        function handleLogout() { localStorage.removeItem('jtm_user'); location.reload(); }
+        function updatePresence() { db.ref('presence/' + currentUser).set(true); db.ref('presence/' + currentUser).onDisconnect().remove(); }
 
         function saveData() {
-            const a = document.getElementById('custArea').value;
-            const n = document.getElementById('custName').value;
-            const p = document.getElementById('custPhone').value;
-            const m = document.getElementById('custMaps').value;
-            if(a && n) db.ref('customers').push({ area: a, name: n, phone: p, maps: m, status: 'active', timestamp: Date.now() }).then(() => {
-                document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
-                showPage('list');
-            });
+            const d = { area: document.getElementById('custArea').value, name: document.getElementById('custName').value, phone: document.getElementById('custPhone').value, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            if(d.area && d.name) db.ref('customers').push(d).then(() => { resetForm(); showPage('list'); });
         }
 
-        function handleLogout() { localStorage.removeItem('jtm_user'); location.reload(); }
-        function debounceRender() { renderList(allData); } // Simple version
+        function resetForm() {
+            document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = ""; removePhoto();
+        }
     </script>
 </body>
 </html>
