@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TrackCust JTM - Leaflet Map</title>
+    <title>TrackCust JTM - Official</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -26,12 +26,13 @@
         
         .page { display: none; height: 100%; flex-direction: column; }
         .page.active { display: flex; }
-
-        /* Style Peta */
+        
         #map { height: 100%; width: 100%; z-index: 1; background: #f1f5f9; }
-
+        
         #deliveryStatusBar { max-height: 80px; overflow-y: auto; border-bottom: 2px solid #e2e8f0; }
-        .status-item { border-left: 4px solid #006491; margin-bottom: 2px; padding: 4px 8px; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+        .status-item { border-left: 4px solid #006491; padding-left: 8px; margin-bottom: 2px; }
+        
+        .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -57,10 +58,15 @@
             </div>
         </nav>
         
-        <div id="deliveryStatusBar" class="bg-white hidden flex flex-col"></div>
+        <div id="deliveryStatusBar" class="bg-white px-4 py-2 hidden text-[9px] font-black text-blue-900 uppercase italic"></div>
+        <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-2 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
             <div id="page-list" class="page active p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-3">
+                    <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
+                    <div id="countActive" class="bg-red-500 text-white px-3 py-2 rounded-xl text-[10px] font-black italic">0 AKTIF</div>
+                </div>
                 <div id="activeList" class="space-y-4 pb-32"></div>
             </div>
 
@@ -68,12 +74,14 @@
                 <div id="map"></div>
             </div>
 
-            <div id="page-add" class="page p-4">
-                <div class="bg-white p-6 rounded-3xl shadow-xl">
-                    <input type="text" id="custArea" placeholder="KODE AREA" class="w-full p-4 bg-gray-100 rounded-xl mb-3 uppercase font-bold">
-                    <input type="text" id="custName" placeholder="NAMA" class="w-full p-4 bg-gray-100 rounded-xl mb-3 font-bold">
-                    <input type="tel" id="custPhone" placeholder="NOMOR HP" class="w-full p-4 bg-gray-100 rounded-xl mb-3 font-bold">
-                    <button onclick="saveData()" class="w-full dominos-red text-white py-4 rounded-xl font-black">SIMPAN</button>
+            <div id="page-add" class="page p-4 overflow-y-auto">
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900 space-y-3">
+                    <input type="hidden" id="editId">
+                    <input type="text" id="custArea" placeholder="KODE AREA (A-1)" class="w-full bg-yellow-50 p-4 rounded-xl text-sm font-bold uppercase outline-none">
+                    <input type="text" id="custName" placeholder="Nama Pelanggan" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="tel" id="custPhone" placeholder="Nomor HP" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="text" id="custMaps" placeholder="Link Google Maps" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none">
+                    <button onclick="saveData()" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
                 </div>
             </div>
         </main>
@@ -89,9 +97,10 @@
     <script>
         const userPins = { "Okta": "0972", "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Pak KUR (Mgt)": "0000" };
         const firebaseConfig = { apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "trackcust-jtm" };
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
+        
         let currentUser = localStorage.getItem('jtm_user') || "";
         let map, markers = {};
         const jtmLocation = [-6.2848, 106.9284];
@@ -106,7 +115,7 @@
         function prosesLogin() {
             const u = document.getElementById('selectUser').value;
             const p = document.getElementById('inputPin').value;
-            if(p === userPins[u]) { bukaApp(u); } else alert("PIN SALAH!");
+            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
         }
 
         function bukaApp(n) {
@@ -116,7 +125,8 @@
             document.getElementById('mainContent').style.display = "flex";
             initMap();
             db.ref('customers').on('value', s => { renderList(s.val()); });
-            startDeliveryStatusListener();
+            startTrackingListener();
+            updatePresence();
         }
 
         function initMap() {
@@ -124,16 +134,25 @@
             map = L.map('map').setView(jtmLocation, 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.marker(jtmLocation).addTo(map).bindPopup("<b>Domino's Jatimakmur</b>").openPopup();
+        }
 
+        function startTrackingListener() {
             db.ref('tracking').on('value', snapshot => {
                 const trackers = snapshot.val();
                 const now = Date.now();
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = "";
+                let activeCount = 0;
+
                 Object.values(markers).forEach(m => map.removeLayer(m));
                 markers = {};
+
                 if (trackers) {
                     Object.keys(trackers).forEach(name => {
                         const data = trackers[name];
                         if (now < data.expiry) {
+                            activeCount++;
+                            bar.innerHTML += `<div class="status-item italic">(${name} SEDANG MENGANTAR)</div>`;
                             markers[name] = L.marker([data.lat, data.lng]).addTo(map)
                                 .bindPopup(`<b>Driver: ${name}</b><br>Sisa: ${Math.ceil((data.expiry - now)/60000)} mnt`);
                         } else {
@@ -141,57 +160,25 @@
                         }
                     });
                 }
+                bar.classList.toggle('hidden', activeCount === 0);
             });
         }
 
         function activateTracking() {
-            if (!navigator.geolocation) return alert("GPS tidak didukung");
+            if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(pos => {
                 db.ref('tracking/' + currentUser).set({
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude,
                     expiry: Date.now() + (15 * 60 * 1000)
                 });
-            }, err => console.error(err), { enableHighAccuracy: true });
+            }, null, { enableHighAccuracy: true });
         }
 
-        function openWa(num) {
+        function openWa(num, name) {
             activateTracking();
-            window.open(`https://wa.me/${num.replace(/\D/g, '')}`, '_blank');
-        }
-
-        function renderList(data) {
-            const list = document.getElementById('activeList');
-            list.innerHTML = "";
-            if(!data) return;
-            Object.keys(data).reverse().forEach(id => {
-                const i = data[id];
-                if(i.status === 'done') return;
-                list.innerHTML += `
-                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
-                    <h3 class="font-black text-blue-900">${i.name} (${i.area})</h3>
-                    <div class="flex gap-2 mt-3">
-                        <button onclick="openWa('${i.phone}')" class="bg-green-500 text-white flex-1 py-2 rounded-lg font-bold text-xs uppercase">Chat WA</button>
-                        <button onclick="db.ref('customers/${id}').update({status:'done'})" class="bg-yellow-400 text-white px-4 rounded-lg"><i class="fa fa-check"></i></button>
-                    </div>
-                </div>`;
-            });
-        }
-
-        function startDeliveryStatusListener() {
-            db.ref('tracking').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = "";
-                const now = Date.now();
-                let active = false;
-                s.forEach(child => {
-                    if (now < child.val().expiry) {
-                        active = true;
-                        bar.innerHTML += `<div class="status-item italic">(${child.key} SEDANG MENGANTAR)</div>`;
-                    }
-                });
-                bar.classList.toggle('hidden', !active);
-            });
+            const msg = `Halo Bapak/Ibu ${name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan sedang diantar...`;
+            window.open(`https://wa.me/${num.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function showPage(p) {
@@ -199,17 +186,53 @@
             document.querySelectorAll('.nav-item').forEach(nv => nv.classList.remove('active'));
             document.getElementById('page-' + p).classList.add('active');
             if(document.getElementById('nav-' + p)) document.getElementById('nav-' + p).classList.add('active');
-            if(p === 'maps' && map) { setTimeout(() => map.invalidateSize(), 300); }
+            if(p === 'maps' && map) setTimeout(() => map.invalidateSize(), 300);
         }
 
-        function handleLogout() { localStorage.removeItem('jtm_user'); location.reload(); }
+        function renderList(data) {
+            const list = document.getElementById('activeList');
+            list.innerHTML = "";
+            let count = 0;
+            if(!data) return;
+            Object.keys(data).reverse().forEach(id => {
+                const i = data[id];
+                if(i.status === 'done') return;
+                count++;
+                list.innerHTML += `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
+                    <p class="text-[8px] font-black text-red-500 uppercase">${i.area}</p>
+                    <h3 class="font-black text-blue-900">${i.name}</h3>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="openWa('${i.phone}', '${i.name}')" class="bg-green-500 text-white flex-1 py-2 rounded-lg font-bold text-xs uppercase">Chat WA</button>
+                        <button onclick="db.ref('customers/${id}').update({status:'done'})" class="bg-yellow-400 text-white px-4 rounded-lg"><i class="fa fa-check"></i></button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('countActive').innerText = `${count} AKTIF`;
+        }
+
+        function updatePresence() {
+            db.ref('presence/' + currentUser).set(true);
+            db.ref('presence/' + currentUser).onDisconnect().remove();
+            db.ref('presence').on('value', s => {
+                const el = document.getElementById('onlineBar'); el.innerHTML = "";
+                s.forEach(u => el.innerHTML += `<span><i class="fa fa-circle text-[5px] text-green-500"></i> ${u.key}</span>`);
+            });
+        }
 
         function saveData() {
             const a = document.getElementById('custArea').value;
             const n = document.getElementById('custName').value;
             const p = document.getElementById('custPhone').value;
-            if(a && n) db.ref('customers').push({ area: a, name: n, phone: p, status: 'active' }).then(() => showPage('list'));
+            const m = document.getElementById('custMaps').value;
+            if(a && n) db.ref('customers').push({ area: a, name: n, phone: p, maps: m, status: 'active', timestamp: Date.now() }).then(() => {
+                document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
+                showPage('list');
+            });
         }
+
+        function handleLogout() { localStorage.removeItem('jtm_user'); location.reload(); }
+        function debounceRender() { renderList(allData); } // Simple version
     </script>
 </body>
 </html>
