@@ -102,20 +102,17 @@
                     <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
-
                 <div class="space-y-3">
                     <div onclick="alert('Fitur Pengaturan Segera Hadir')" class="profile-bubble">
                         <div class="profile-icon bg-blue-50 text-blue-600"><i class="fa fa-cog"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Pengaturan Akun</span>
                         <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
                     </div>
-
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
                         <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
                     </div>
-
                     <div onclick="handleLogout()" class="profile-bubble">
                         <div class="profile-icon bg-red-50 text-red-600"><i class="fa fa-sign-out-alt"></i></div>
                         <span class="font-black text-red-600 uppercase italic text-[11px] flex-1">Keluar Sistem</span>
@@ -148,7 +145,6 @@
                     <input type="text" id="custName" placeholder="Nama Pelanggan" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
                     <input type="tel" id="custPhone" placeholder="Nomor HP" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
                     <input type="text" id="custMaps" placeholder="Link Google Maps" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none">
-                    
                     <div class="bg-blue-50 p-4 rounded-xl border-2 border-dashed border-blue-200 text-center relative">
                         <label class="cursor-pointer">
                             <i class="fa fa-camera text-blue-400 text-xl"></i>
@@ -215,32 +211,15 @@
         </main>
 
         <div class="bottom-nav">
-            <div onclick="showPage('list')" class="nav-item active" id="nav-list">
-                <i class="fa fa-motorcycle mb-1 text-xl"></i>
-                <span>Antaran</span>
-            </div>
-            <div onclick="showPage('history')" class="nav-item" id="nav-history">
-                <i class="fa fa-history mb-1 text-xl"></i>
-                <span>History</span>
-            </div>
-            
-            <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add">
-                <i class="fa fa-plus text-2xl"></i>
-            </div>
-            
-            <div onclick="showPage('chat')" class="nav-item" id="nav-chat">
-                <i class="fab fa-whatsapp mb-1 text-xl"></i>
-                <span>WA Direct</span>
-            </div>
-            <div onclick="showPage('home')" class="nav-item" id="nav-home">
-                <i class="fa fa-user mb-1 text-xl"></i>
-                <span>Profil</span>
-            </div>
+            <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
+            <div onclick="showPage('history')" class="nav-item" id="nav-history"><i class="fa fa-history mb-1 text-xl"></i><span>History</span></div>
+            <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
+            <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
+            <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span></div>
         </div>
     </div>
 
     <script>
-        // --- LOGIC TETAP (TIDAK ADA PERUBAHAN) ---
         const userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -268,95 +247,34 @@
             startDeliveryStatusListener();
         };
 
-        function changeProfilePhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    document.getElementById('userAvatar').src = base64;
-                    localStorage.setItem('profile_pic_' + currentUser, base64);
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function changePinPrompt() {
-            const old = prompt("Masukkan PIN Lama:");
-            if (old === userPins[currentUser]) {
-                const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) {
-                    userPins[currentUser] = baru;
-                    alert("PIN Berhasil diubah!");
-                } else { alert("PIN harus 4 digit!"); }
-            } else { alert("PIN Salah!"); }
-        }
-
-        function updateProfileUI() {
-            document.getElementById('userNameFull').innerText = currentUser;
-            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
-            if (savedPic) {
-                document.getElementById('userAvatar').src = savedPic;
-            } else {
-                document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
-            }
-        }
-
-        function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
-
-        function pushDeliveryStatus(nama) { db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); }
-
-        function startDeliveryStatusListener() {
-            db.ref('delivery_activity').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = "";
-                const now = Date.now();
-                let hasData = false;
-                s.forEach(child => {
-                    const d = child.val();
-                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { 
-                        hasData = true; 
-                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; 
-                    }
-                });
-                bar.style.display = hasData ? "block" : "none";
-            });
-        }
-
-        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
-
-        function setBWMode(mode) {
-            bwMode = mode;
-            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
-            document.getElementById('manualBWControls').classList.toggle('hidden', mode !== 'manual');
-            updateVisualFilters();
-        }
-
-        function updateVisualFilters() {
-            const v = document.getElementById('scannerVideo'); if(!v) return;
-            if(bwMode === 'manual') v.style.filter = `grayscale(100%) brightness(${document.getElementById('brSlider').value}%) contrast(${document.getElementById('ctSlider').value}%)`;
-            else if(bwMode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
-            else v.style.filter = `none`;
-        }
-
+        // --- KAMERA LOGIC (Fokus Otomatis Dikembalikan) ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: 1280 } });
+                // Menggunakan constraints standar untuk memicu auto-focus bawaan browser
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: "environment", 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
                 const v = document.getElementById('scannerVideo');
                 v.srcObject = stream;
                 videoTrack = stream.getVideoTracks()[0];
+                
                 document.getElementById('btnStartCam').classList.add('hidden');
                 document.getElementById('btnStopCam').classList.remove('hidden');
                 document.getElementById('camControls').classList.remove('hidden');
                 document.getElementById('scannerOverlay').style.display = 'block';
                 startAutoScan();
-            } catch (err) { alert("Kamera Error"); }
+            } catch (err) { alert("Kamera Error. Pastikan izin kamera diaktifkan."); }
         }
 
         function stopCamera() {
             if (stream) stream.getTracks().forEach(t => t.stop());
-            stream = null; document.getElementById('scannerVideo').srcObject = null;
+            stream = null; 
+            document.getElementById('scannerVideo').srcObject = null;
             document.getElementById('btnStartCam').classList.remove('hidden');
             document.getElementById('btnStopCam').classList.add('hidden');
             document.getElementById('camControls').classList.add('hidden');
@@ -371,6 +289,20 @@
                 videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(l, caps.zoom.max) }] });
                 document.querySelectorAll('.btn-zoom').forEach(b => b.classList.toggle('active', b.id === 'z'+l));
             }
+        }
+
+        function setBWMode(mode) {
+            bwMode = mode;
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
+            document.getElementById('manualBWControls').classList.toggle('hidden', mode !== 'manual');
+            updateVisualFilters();
+        }
+
+        function updateVisualFilters() {
+            const v = document.getElementById('scannerVideo'); if(!v) return;
+            if(bwMode === 'manual') v.style.filter = `grayscale(100%) brightness(${document.getElementById('brSlider').value}%) contrast(${document.getElementById('ctSlider').value}%)`;
+            else if(bwMode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
+            else v.style.filter = `none`;
         }
 
         async function startAutoScan() {
@@ -395,6 +327,68 @@
             }, 3000);
         }
 
+        async function captureAndScan() {
+            const l = document.getElementById('ocrLoading'); l.classList.remove('hidden');
+            const v = document.getElementById('scannerVideo');
+            const c = document.createElement('canvas');
+            c.width = v.videoWidth; c.height = v.videoHeight;
+            const ctx = c.getContext('2d'); 
+            ctx.filter = v.style.filter; 
+            ctx.drawImage(v, 0, 0);
+            try {
+                const res = await Tesseract.recognize(c.toDataURL(), 'eng');
+                const matches = res.data.text.match(/(\+?62|08|021|\(\d{3,4}\))[\s-]?\d{3,4}[\s-]?\d{3,5}/g);
+                if (matches) renderAddressTable(matches); else alert("Nomor tidak terdeteksi.");
+            } catch (e) {} finally { l.classList.add('hidden'); }
+        }
+
+        // --- CORE FUNCTIONS (SAVE/RENDER/LOGIN) ---
+        function changeProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('userAvatar').src = base64;
+                    localStorage.setItem('profile_pic_' + currentUser, base64);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function changePinPrompt() {
+            const old = prompt("Masukkan PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("Masukkan PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) { userPins[currentUser] = baru; alert("PIN Berhasil diubah!"); }
+                else { alert("PIN harus 4 digit!"); }
+            } else { alert("PIN Salah!"); }
+        }
+
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            if (savedPic) document.getElementById('userAvatar').src = savedPic;
+            else document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+        }
+
+        function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
+        function pushDeliveryStatus(nama) { db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); }
+
+        function startDeliveryStatusListener() {
+            db.ref('delivery_activity').on('value', s => {
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                s.forEach(child => {
+                    const d = child.val();
+                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
+                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
+                });
+                bar.style.display = hasData ? "block" : "none";
+            });
+        }
+
+        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+
         function renderAddressTable(matches) {
             const b = document.getElementById('addressTableBody'); b.innerHTML = '';
             [...new Set(matches.map(m => m.replace(/\D/g, '')))].forEach(n => {
@@ -403,19 +397,6 @@
                 b.innerHTML += `<tr><td class="p-3 text-center text-blue-900 text-sm font-black">${n}</td><td class="p-3 text-center"><button onclick="openWaLinkCustom('${wa}')" class="bg-green-500 text-white w-8 h-8 rounded-lg"><i class="fab fa-whatsapp"></i></button></td></tr>`;
             });
             document.getElementById('scanResultArea').classList.remove('hidden');
-        }
-
-        async function captureAndScan() {
-            const l = document.getElementById('ocrLoading'); l.classList.remove('hidden');
-            const v = document.getElementById('scannerVideo');
-            const c = document.createElement('canvas');
-            c.width = v.videoWidth; c.height = v.videoHeight;
-            const ctx = c.getContext('2d'); ctx.filter = v.style.filter; ctx.drawImage(v, 0, 0);
-            try {
-                const res = await Tesseract.recognize(c.toDataURL(), 'eng');
-                const matches = res.data.text.match(/(\+?62|08|021|\(\d{3,4}\))[\s-]?\d{3,4}[\s-]?\d{3,5}/g);
-                if (matches) renderAddressTable(matches); else alert("Nomor tidak terdeteksi.");
-            } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
         function openWaLinkCustom(n) {
@@ -453,31 +434,23 @@
         function prosesLogin() {
             const u = document.getElementById('selectUser').value;
             const p = document.getElementById('inputPin').value;
-            if(p === userPins[u]) { bukaApp(u); } else alert("PIN SALAH!");
+            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
         }
 
         function bukaApp(n) {
             const isOkta = (n === "Okta");
-            db.ref('presence/' + n).once('value', (snapshot) => {
+            db.ref('presence/' + n).once('value', snapshot => {
                 const existingData = snapshot.val();
                 if (!isOkta && existingData && existingData.session !== sessionID) {
-                    const konfirmasi = confirm(`⚠️ Nama "${n}" sedang digunakan di perangkat lain. Masuk sekarang akan mengeluarkan perangkat lama. Lanjutkan?`);
-                    if (!konfirmasi) return;
+                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
                 }
-                currentUser = n; 
-                localStorage.setItem('jtm_user', n);
+                currentUser = n; localStorage.setItem('jtm_user', n);
                 document.getElementById('userDisplay').innerText = n;
                 document.getElementById('pinOverlay').style.display = "none";
                 document.getElementById('mainContent').style.display = "flex";
-                
-                updatePresence();
-                updateProfileUI();
-
-                db.ref('presence/' + n + '/session').on('value', (snap) => {
-                    if (!isOkta && snap.exists() && snap.val() !== sessionID) {
-                        alert("⚠️ Seseorang telah masuk menggunakan nama Anda di perangkat lain. Anda akan dikeluarkan secara otomatis.");
-                        handleLogout(false);
-                    }
+                updatePresence(); updateProfileUI();
+                db.ref('presence/' + n + '/session').on('value', snap => {
+                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
                 });
                 db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
             });
@@ -485,17 +458,12 @@
 
         function handleLogout(withConfirm = true) { 
             if(withConfirm && !confirm("Keluar?")) return;
-            if(currentUser) {
-                db.ref('presence/' + currentUser).off();
-                db.ref('presence/'+currentUser).remove();
-            }
-            localStorage.removeItem('jtm_user'); 
-            location.reload(); 
+            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+            localStorage.removeItem('jtm_user'); location.reload(); 
         }
 
         function render() {
-            const list = document.getElementById('activeList');
-            const hist = document.getElementById('historyList');
+            const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
             const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
             Object.keys(allData).reverse().forEach(id => {
@@ -504,7 +472,7 @@
                 if(i.status !== 'done') activeCount++;
                 let wa = (i.phone || "").replace(/\D/g, '');
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
-                const msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu untuk beberapa saat,dan dimohon untuk tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                const msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu ya 😊.`;
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}"><div class="flex justify-between items-start"><div class="flex-1"><p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p><h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3><div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}</div></div><div class="flex gap-2">${i.status !== 'done' ? `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button><button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button><button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button><button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}</div></div><div class="mt-3 ${i.status==='done'?'hidden':''}">${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="w-full h-24 object-cover rounded-xl border">` : ''}</div><div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}<a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a></div></div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
@@ -520,7 +488,7 @@
         function processImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = e => {
                     const img = new Image();
                     img.onload = () => {
                         const c = document.createElement('canvas'); const MAX = 600;
@@ -554,7 +522,7 @@
                     const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
                     return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
                 });
-                if (isDuplicate) { alert("⚠️ NOMOR HP INI SUDAH ADA DI DAFTAR ANTARAN AKTIF!"); return; }
+                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
             }
             const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
             const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
