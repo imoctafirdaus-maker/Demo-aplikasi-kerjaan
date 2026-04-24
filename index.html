@@ -3,138 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Playable Stickman</title>
+    <title>Ludo Playable Stickman 3D</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
             --green: #00a651; --yellow: #fff200; --red: #ed1c24; --blue: #2e3192;
+            --white: #ffffff; --black: #333;
         }
-        body { background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; margin: 0; padding: 10px; }
-        
+
+        body {
+            background: #1a1a1a; color: white;
+            display: flex; flex-direction: column; align-items: center;
+            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px;
+        }
+
+        /* BOARD LAYOUT */
         #ludo-board {
             width: 95vw; max-width: 500px; aspect-ratio: 1/1;
-            background: white; display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr);
-            border: 5px solid #333; position: relative;
+            background: white; display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            border: 8px solid #444; position: relative;
         }
 
-        .cell { border: 0.1px solid #ddd; position: relative; display: flex; align-items: center; justify-content: center; z-index: 1; }
-        .base { grid-column: span 6; grid-row: span 6; display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 10px; }
+        .cell { border: 0.1px solid #eee; position: relative; display: flex; align-items: center; justify-content: center; }
         
-        /* Stickman Style */
-        .token {
-            width: 20px; height: 20px; border-radius: 50%; background: currentColor;
-            position: relative; cursor: pointer; transition: all 0.3s ease; z-index: 100;
+        .home-base { grid-column: span 6; grid-row: span 6; padding: 15px; }
+        .inner-base { 
+            width: 100%; height: 100%; background: white; border-radius: 8px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; box-sizing: border-box;
         }
-        .token::before { content: ""; position: absolute; top: 15px; left: 5px; width: 10px; height: 15px; background: currentColor; border-radius: 3px; }
-        .token.active-turn { animation: bounce 0.5s infinite alternate; filter: brightness(1.2); }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 
-        .center { grid-area: 7/7/10/10; background: #eee; position: relative; }
-        #controls { margin-top: 20px; display: flex; align-items: center; gap: 20px; background: #333; padding: 15px; border-radius: 10px; }
-        #dice-view { width: 60px; height: 60px; }
-        button { padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; }
-        button:disabled { opacity: 0.5; }
+        /* STICKMAN PIECE */
+        .token-slot { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        
+        .stickman {
+            width: 18px; height: 18px; background: currentColor; border-radius: 50%;
+            position: relative; cursor: pointer; z-index: 100;
+            transition: transform 0.2s, left 0.3s, top 0.3s;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .stickman::before {
+            content: ""; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+            width: 12px; height: 18px; background: currentColor; border-radius: 4px;
+        }
+        .stickman.active-piece { animation: jump 0.4s infinite alternate; }
+        @keyframes jump { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+        /* CENTER TRIANGLE */
+        .center-area { grid-area: 7/7/10/10; position: relative; }
+        .tri { position: absolute; width: 0; height: 0; border-style: solid; }
+        .tri-g { border-width: 50px 50px 0 50px; border-color: var(--green) transparent transparent transparent; top:0; }
+        .tri-y { border-width: 50px 50px 50px 0; border-color: transparent var(--yellow) transparent transparent; right:0; }
+        .tri-r { border-width: 0 50px 50px 50px; border-color: transparent transparent var(--red) transparent; bottom:0; }
+        .tri-b { border-width: 50px 0 50px 50px; border-color: transparent transparent transparent var(--blue); left:0; }
+
+        /* CONTROLS */
+        #ui-layer { margin-top: 15px; display: flex; align-items: center; gap: 20px; background: #222; padding: 15px; border-radius: 15px; width: 90%; max-width: 400px; }
+        #dice-3d-container { width: 80px; height: 80px; background: #000; border-radius: 10px; }
+        #roll-btn { padding: 12px 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: gold; color: #1a1a1a; }
+        #roll-btn:disabled { background: #555; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <h2 id="status">Giliran: <span style="color: var(--green);">HIJAU</span></h2>
+    <h3 id="turn-display">GILIRAN: <span style="color: var(--green)">HIJAU</span></h3>
 
     <div id="ludo-board">
-        <div id="base-green" class="base" style="grid-area: 1/1/7/7; background: var(--green);"></div>
-        <div id="base-yellow" class="base" style="grid-area: 1/10/7/16; background: var(--yellow);"></div>
-        <div id="base-red" class="base" style="grid-area: 10/1/16/7; background: var(--red);"></div>
-        <div id="base-blue" class="base" style="grid-area: 10/10/16/16; background: var(--blue);"></div>
-        <div class="center"></div>
+        <div class="home-base bg-green" style="grid-area: 1/1/7/7"><div class="inner-base" id="base-green"></div></div>
+        <div class="home-base bg-yellow" style="grid-area: 1/10/7/16"><div class="inner-base" id="base-yellow"></div></div>
+        <div class="home-base bg-red" style="grid-area: 10/1/16/7"><div class="inner-base" id="base-red"></div></div>
+        <div class="home-base bg-blue" style="grid-area: 10/10/16/16"><div class="inner-base" id="base-blue"></div></div>
+        
+        <div class="center-area">
+            <div class="tri tri-g"></div><div class="tri tri-y"></div><div class="tri tri-r"></div><div class="tri tri-b"></div>
+        </div>
     </div>
 
-    <div id="controls">
-        <div id="dice-view"></div>
-        <button id="roll-btn">KOCOK DADU</button>
-        <h1 id="dice-val">0</h1>
+    <div id="ui-layer">
+        <div id="dice-3d-container"></div>
+        <div style="flex-grow: 1;">
+            <button id="roll-btn">ROLL DADU</button>
+            <p id="msg" style="font-size: 0.8rem; margin-top: 5px; color: #aaa;">Klik tombol untuk mulai</p>
+        </div>
     </div>
 
     <script>
+        /** LOGIKA GAME **/
         let currentPlayer = 'green';
+        const colors = ['green', 'yellow', 'blue', 'red'];
         let diceValue = 0;
-        let canMove = false;
+        let isRolling = false;
 
-        const players = {
-            green: { color: 'var(--green)', pos: [-1, -1, -1, -1], start: "7/2", path: ["7/1","7/2","7/3","7/4","7/5","7/6","6/7","5/7","4/7","3/7","2/7","1/7","1/8","1/9","2/9","3/9","4/9","5/9","6/9","7/10"] }, 
-            // Path di atas hanya contoh singkat, untuk full game perlu koordinat lengkap 52 kotak.
+        // Path koordinat (Sederhana untuk demo - Hijau)
+        const paths = {
+            green: ["7/2", "7/3", "7/4", "7/5", "7/6", "6/7", "5/7", "4/7", "3/7", "2/7", "1/7", "1/8", "1/9"]
         };
 
-        // Render Bidak di Base
-        function initTokens() {
-            ['green', 'yellow', 'red', 'blue'].forEach(p => {
-                const base = document.getElementById(`base-${p}`);
-                for(let i=0; i<4; i++) {
-                    const t = document.createElement('div');
-                    t.className = 'token';
-                    t.style.color = `var(--${p})`;
-                    t.onclick = () => tryMove(p, i);
-                    base.appendChild(t);
+        function initBoard() {
+            const board = document.getElementById('ludo-board');
+            // Buat jalur sel putih
+            for(let r=1; r<=15; r++){
+                for(let c=1; c<=15; c++){
+                    const isBase = (r<7&&c<7)||(r<7&&c>9)||(r>9&&c<7)||(r>9&&c>9);
+                    const isCenter = (r>6&&r<10&&c>6&&c<10);
+                    if(!isBase && !isCenter){
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.id = `cell-${r}-${c}`;
+                        cell.style.gridArea = `${r}/${c}`;
+                        board.appendChild(cell);
+                    }
+                }
+            }
+            spawnTokens();
+        }
+
+        function spawnTokens() {
+            colors.forEach(color => {
+                const base = document.getElementById(`base-${color}`);
+                for(let i=0; i<4; i++){
+                    const slot = document.createElement('div');
+                    slot.className = 'token-slot';
+                    const s = document.createElement('div');
+                    s.className = 'stickman';
+                    s.style.color = `var(--${color})`;
+                    s.dataset.color = color;
+                    s.dataset.pos = "-1"; // -1 artinya di base
+                    s.onclick = () => handleTokenClick(s);
+                    slot.appendChild(s);
+                    base.appendChild(slot);
                 }
             });
         }
 
-        // Logic Kocok Dadu
-        document.getElementById('roll-btn').onclick = function() {
-            diceValue = Math.floor(Math.random() * 6) + 1;
-            document.getElementById('dice-val').innerText = diceValue;
+        /** THREE.JS DICE **/
+        let scene, camera, renderer, dice;
+        function initDice() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(80, 80);
+            document.getElementById('dice-3d-container').appendChild(renderer.domElement);
+
+            const geometry = new THREE.BoxGeometry(2, 2, 2);
+            const materials = [];
+            for(let i=1; i<=6; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white'; ctx.fillRect(0,0,128,128);
+                ctx.fillStyle = 'black'; ctx.font = 'bold 80px Arial'; ctx.textAlign = 'center';
+                ctx.fillText(i, 64, 90);
+                materials.push(new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) }));
+            }
+            dice = new THREE.Mesh(geometry, materials);
+            scene.add(dice);
+            const light = new THREE.PointLight(0xffffff, 1); light.position.set(10, 10, 10);
+            scene.add(light); scene.add(new THREE.AmbientLight(0x404040));
+            camera.position.z = 4;
+            animate();
+        }
+
+        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+
+        document.getElementById('roll-btn').onclick = async function() {
+            if(isRolling) return;
+            isRolling = true;
             this.disabled = true;
-            canMove = true;
             
-            // Highlight bidak yang bisa jalan
-            document.querySelectorAll(`.token`).forEach(t => {
-                if(t.style.color === `var(--${currentPlayer})`) t.classList.add('active-turn');
-            });
+            diceValue = Math.floor(Math.random() * 6) + 1;
+            
+            // Animasi Putar
+            for(let i=0; i<20; i++){
+                dice.rotation.x += 0.5; dice.rotation.y += 0.5;
+                await new Promise(r => setTimeout(r, 50));
+            }
+            
+            document.getElementById('msg').innerText = `Angka keluar: ${diceValue}`;
+            checkMoves();
         };
 
-        function tryMove(player, index) {
-            if(!canMove || player !== currentPlayer) return;
-            
-            // Logika: Harus 6 untuk keluar base
-            if (diceValue === 6) {
-                alert("Bidak keluar base!");
-                // Simulasi pindah ke kotak start (7/2 untuk hijau)
-                const startCell = document.querySelector(`[style*="grid-area: 7 / 2"]`) || createCell(7,2);
-                const token = document.querySelector(`.token[style*="color: var(--${player})"]`);
-                startCell.appendChild(token);
+        function checkMoves() {
+            const myTokens = document.querySelectorAll(`.stickman`);
+            let possible = false;
+            myTokens.forEach(t => {
+                if(t.dataset.color === currentPlayer) {
+                    if(t.dataset.pos === "-1" && diceValue === 6) {
+                        t.classList.add('active-piece');
+                        possible = true;
+                    } else if(t.dataset.pos !== "-1") {
+                        t.classList.add('active-piece');
+                        possible = true;
+                    }
+                }
+            });
+
+            if(!possible) {
+                document.getElementById('msg').innerText = "Tidak ada langkah. Ganti giliran.";
+                setTimeout(nextTurn, 1000);
             } else {
-                alert("Butuh angka 6 untuk keluar base!");
+                document.getElementById('msg').innerText = "Klik bidak untuk jalan!";
             }
-
-            resetTurn();
         }
 
-        function resetTurn() {
-            canMove = false;
-            document.getElementById('roll-btn').disabled = false;
-            document.querySelectorAll('.token').forEach(t => t.classList.remove('active-turn'));
-            // Ganti player (Sederhana: Green -> Red)
-            currentPlayer = currentPlayer === 'green' ? 'red' : 'green';
-            document.getElementById('status').innerHTML = `Giliran: <span style="color: var(--${currentPlayer})">${currentPlayer.toUpperCase()}</span>`;
-        }
-
-        function createCell(r, c) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.style.gridArea = `${r}/${c}`;
-            document.getElementById('ludo-board').appendChild(cell);
-            return cell;
-        }
-
-        // Generate Jalur Putih
-        for(let r=1; r<=15; r++) {
-            for(let c=1; c<=15; c++) {
-                if(((r>6 && r<10) || (c>6 && c<10)) && !(r>6 && r<10 && c>6 && c<10)) {
-                    createCell(r,c);
+        function handleTokenClick(token) {
+            if(!token.classList.contains('active-piece')) return;
+            
+            document.querySelectorAll('.stickman').forEach(t => t.classList.remove('active-piece'));
+            
+            if(token.dataset.pos === "-1" && diceValue === 6) {
+                // Keluar Base
+                const startCell = document.getElementById('cell-7-2'); // Start Hijau
+                startCell.appendChild(token);
+                token.dataset.pos = "0";
+            } else {
+                // Jalan (Hanya demo untuk hijau)
+                if(token.dataset.color === 'green') {
+                    let cur = parseInt(token.dataset.pos);
+                    let target = cur + diceValue;
+                    if(target < paths.green.length) {
+                        const coords = paths.green[target].split('/');
+                        const cell = document.getElementById(`cell-${coords[0]}-${coords[1]}`);
+                        cell.appendChild(token);
+                        token.dataset.pos = target;
+                    }
                 }
             }
+            
+            nextTurn();
         }
 
-        initTokens();
+        function nextTurn() {
+            const idx = colors.indexOf(currentPlayer);
+            currentPlayer = colors[(idx + 1) % 4];
+            document.getElementById('turn-display').innerHTML = `GILIRAN: <span style="color: var(--${currentPlayer})">${currentPlayer.toUpperCase()}</span>`;
+            document.getElementById('roll-btn').disabled = false;
+            isRolling = false;
+        }
+
+        initBoard();
+        initDice();
     </script>
 </body>
 </html>
