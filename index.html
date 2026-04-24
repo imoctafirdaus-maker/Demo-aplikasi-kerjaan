@@ -177,6 +177,18 @@
                                 <button onclick="setBWMode('manual')" id="bw-manual" class="btn-mode">MANUAL</button>
                             </div>
                         </div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
+                            <div class="flex gap-1">
+                                <button onclick="setFocusMode('continuous')" id="f-auto" class="btn-mode active">AUTO</button>
+                                <button onclick="setFocusMode('manual')" id="f-manual" class="btn-mode">MANUAL</button>
+                            </div>
+                        </div>
+                        <div id="manualFocusSlider" class="hidden mb-2 p-2 bg-white rounded-xl border">
+                            <span class="text-[8px] font-black text-blue-900 uppercase italic">Jarak Fokus:</span>
+                            <input type="range" id="focusRange" min="0" max="100" value="0" oninput="applyManualFocus(this.value)" class="w-full accent-red-600">
+                        </div>
+
                         <div id="manualBWControls" class="hidden grid grid-cols-2 gap-2 mb-2 p-2 bg-white rounded-xl border">
                             <div class="flex flex-col">
                                 <span class="text-[8px] font-black text-blue-900 uppercase italic">BRIGHT:</span>
@@ -187,15 +199,6 @@
                                 <input type="range" id="ctSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
                             </div>
                         </div>
-                        
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
-                            <div class="flex gap-1">
-                                <button onclick="setFocusMode('continuous')" id="foc-auto" class="btn-mode active">AUTO</button>
-                                <button onclick="setFocusMode('manual')" id="foc-manual" class="btn-mode">MANUAL</button>
-                            </div>
-                        </div>
-
                         <div class="flex items-center gap-2 mb-2">
                             <span class="text-[9px] font-black text-blue-900 uppercase">Zoom:</span>
                             <button onclick="setZoom(1)" id="z1" class="btn-zoom active">1x</button>
@@ -256,7 +259,7 @@
             startDeliveryStatusListener();
         };
 
-        // --- KAMERA LOGIC ---
+        // --- KAMERA LOGIC (Fokus Otomatis Dikembalikan) ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
@@ -275,24 +278,8 @@
                 document.getElementById('btnStopCam').classList.remove('hidden');
                 document.getElementById('camControls').classList.remove('hidden');
                 document.getElementById('scannerOverlay').style.display = 'block';
-                
-                // Pastikan UI fokus sinkron saat mulai
-                setFocusMode('continuous'); 
-                
                 startAutoScan();
             } catch (err) { alert("Kamera Error. Pastikan izin kamera diaktifkan."); }
-        }
-
-        async function setFocusMode(mode) {
-            if (!videoTrack) return;
-            try {
-                const caps = videoTrack.getCapabilities();
-                if (caps.focusMode) {
-                    document.getElementById('foc-auto').classList.toggle('active', mode === 'continuous');
-                    document.getElementById('foc-manual').classList.toggle('active', mode === 'manual');
-                    await videoTrack.applyConstraints({ advanced: [{ focusMode: mode }] });
-                }
-            } catch (e) { console.error("Fokus tidak didukung perangkat ini."); }
         }
 
         function stopCamera() {
@@ -304,6 +291,40 @@
             document.getElementById('camControls').classList.add('hidden');
             document.getElementById('scannerOverlay').style.display = 'none';
             clearInterval(autoScanInterval);
+        }
+
+        // BARU: Fungsi Set Focus Mode
+        async function setFocusMode(mode) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            document.getElementById('f-auto').classList.toggle('active', mode === 'continuous');
+            document.getElementById('f-manual').classList.toggle('active', mode === 'manual');
+            document.getElementById('manualFocusSlider').classList.toggle('hidden', mode !== 'manual');
+            try {
+                if (mode === 'continuous') {
+                    if (caps.focusMode && caps.focusMode.includes('continuous')) {
+                        await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                    }
+                } else {
+                    if (caps.focusMode && caps.focusMode.includes('manual')) {
+                        await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] });
+                    } else { alert("Fokus manual tidak didukung perangkat ini."); }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // BARU: Fungsi Apply Manual Focus
+        async function applyManualFocus(val) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            if (caps.focusDistance) {
+                const min = caps.focusDistance.min;
+                const max = caps.focusDistance.max;
+                const targetFocus = min + (val / 100) * (max - min);
+                try {
+                    await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: targetFocus }] });
+                } catch (e) { console.error(e); }
+            }
         }
 
         function setZoom(l) {
@@ -366,7 +387,7 @@
             } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
-        // --- CORE FUNCTIONS ---
+        // --- CORE FUNCTIONS (SAVE/RENDER/LOGIN) ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
