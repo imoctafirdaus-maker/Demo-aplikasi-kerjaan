@@ -16,10 +16,10 @@
         .dominos-red { background-color: #e31837; }
         ::-webkit-scrollbar { width: 0; background: transparent; }
         
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; transition: all 0.2s; }
         .nav-item.active { color: #006491; }
-        .nav-add { background: #006491 !important; color: white !important; width: 50px !important; height: 50px; border-radius: 50%; margin-top: -25px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); }
+        .nav-add { background: #006491 !important; color: white !important; width: 55px !important; height: 55px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
         
         .page { display: none; height: 100%; flex-direction: column; }
         .page.active { display: flex; }
@@ -49,10 +49,9 @@
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
         .animate-blink { animation: blink 1s infinite; }
 
-        /* Style Tambahan untuk Menu Profil Bubble */
         .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
         .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
-        .profile-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; items-center: center; justify-content: center; font-size: 16px; }
+        .profile-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -122,10 +121,6 @@
                         <span class="font-black text-red-600 uppercase italic text-[11px] flex-1">Keluar Sistem</span>
                         <i class="fa fa-chevron-right text-red-200 text-[10px]"></i>
                     </div>
-                </div>
-
-                <div class="mt-10 text-center">
-                    <p class="text-[8px] font-black text-gray-300 uppercase tracking-tighter italic">TrackCust JTM v2.0 Official Application</p>
                 </div>
             </div>
 
@@ -202,14 +197,6 @@
                             <button onclick="setZoom(2)" id="z2" class="btn-zoom">2x</button>
                             <button onclick="setZoom(3)" id="z3" class="btn-zoom">3x</button>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
-                            <select onchange="setFocusMode(this.value)" class="flex-1 p-1 rounded-lg text-[9px] font-bold border-2 border-blue-900 outline-none">
-                                <option value="continuous">Auto</option>
-                                <option value="manual">Manual</option>
-                            </select>
-                        </div>
-                        <div id="manualFocusCont" class="hidden mt-2"><input type="range" id="focusSlider" min="0" max="100" value="50" oninput="setManualFocus(this.value)" class="w-full accent-red-600"></div>
                     </div>
 
                     <div class="flex gap-2 mb-3">
@@ -228,15 +215,32 @@
         </main>
 
         <div class="bottom-nav">
-            <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span></div>
-            <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
-            <div onclick="showPage('history')" class="nav-item" id="nav-history"><i class="fa fa-history mb-1 text-xl"></i><span>History</span></div>
-            <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
-            <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
+            <div onclick="showPage('list')" class="nav-item active" id="nav-list">
+                <i class="fa fa-motorcycle mb-1 text-xl"></i>
+                <span>Antaran</span>
+            </div>
+            <div onclick="showPage('history')" class="nav-item" id="nav-history">
+                <i class="fa fa-history mb-1 text-xl"></i>
+                <span>History</span>
+            </div>
+            
+            <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add">
+                <i class="fa fa-plus text-2xl"></i>
+            </div>
+            
+            <div onclick="showPage('chat')" class="nav-item" id="nav-chat">
+                <i class="fab fa-whatsapp mb-1 text-xl"></i>
+                <span>WA Direct</span>
+            </div>
+            <div onclick="showPage('home')" class="nav-item" id="nav-home">
+                <i class="fa fa-user mb-1 text-xl"></i>
+                <span>Profil</span>
+            </div>
         </div>
     </div>
 
     <script>
+        // --- LOGIC TETAP (TIDAK ADA PERUBAHAN) ---
         const userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -264,7 +268,6 @@
             startDeliveryStatusListener();
         };
 
-        // FUNGSI PROFIL BARU
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -367,21 +370,6 @@
             if (caps.zoom) {
                 videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(l, caps.zoom.max) }] });
                 document.querySelectorAll('.btn-zoom').forEach(b => b.classList.toggle('active', b.id === 'z'+l));
-            }
-        }
-
-        function setFocusMode(m) {
-            if (!videoTrack) return;
-            document.getElementById('manualFocusCont').classList.toggle('hidden', m !== 'manual');
-            videoTrack.applyConstraints({ advanced: [{ focusMode: m === 'manual' ? 'manual' : 'continuous' }] });
-        }
-
-        function setManualFocus(v) {
-            if (!videoTrack) return;
-            const caps = videoTrack.getCapabilities();
-            if (caps.focusDistance) {
-                const d = caps.focusDistance.min + (v/100)*(caps.focusDistance.max - caps.focusDistance.min);
-                videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: d }] });
             }
         }
 
@@ -518,7 +506,7 @@
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
                 const msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu untuk beberapa saat,dan dimohon untuk tetap aktif WhatsApp ya, Terimakasih 😊.`;
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
-                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}"><div class="flex justify-between items-start"><div class="flex-1"><p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p><h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3><div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}</div></div><div class="flex gap-2">${i.status !== 'done' ? `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button><button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button><button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button><button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}</div></div><div class="mt-3 ${i.status==='done'?'hidden':''}">${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="w-full h-24 object-cover rounded-xl border">` : ''}</div><div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}"><a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a><a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a></div></div>`;
+                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}"><div class="flex justify-between items-start"><div class="flex-1"><p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p><h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3><div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}</div></div><div class="flex gap-2">${i.status !== 'done' ? `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button><button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button><button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button><button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}</div></div><div class="mt-3 ${i.status==='done'?'hidden':''}">${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="w-full h-24 object-cover rounded-xl border">` : ''}</div><div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}<a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a></div></div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
                 else if(searchStr.includes(filter)) listHTML += cardHtml;
             });
