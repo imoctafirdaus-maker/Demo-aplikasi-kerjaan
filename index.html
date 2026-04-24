@@ -3,253 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Stickman 3D Edition</title>
+    <title>Ludo Playable Stickman</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
-            --green: #00a651; --yellow: #fff200;
-            --red: #ed1c24; --blue: #2e3192;
-            --white: #ffffff; --black: #000000;
+            --green: #00a651; --yellow: #fff200; --red: #ed1c24; --blue: #2e3192;
+        }
+        body { background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; margin: 0; padding: 10px; }
+        
+        #ludo-board {
+            width: 95vw; max-width: 500px; aspect-ratio: 1/1;
+            background: white; display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr);
+            border: 5px solid #333; position: relative;
         }
 
-        body {
-            background: #1a1a1a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0; padding: 10px;
-            color: white;
+        .cell { border: 0.1px solid #ddd; position: relative; display: flex; align-items: center; justify-content: center; z-index: 1; }
+        .base { grid-column: span 6; grid-row: span 6; display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 10px; }
+        
+        /* Stickman Style */
+        .token {
+            width: 20px; height: 20px; border-radius: 50%; background: currentColor;
+            position: relative; cursor: pointer; transition: all 0.3s ease; z-index: 100;
         }
+        .token::before { content: ""; position: absolute; top: 15px; left: 5px; width: 10px; height: 15px; background: currentColor; border-radius: 3px; }
+        .token.active-turn { animation: bounce 0.5s infinite alternate; filter: brightness(1.2); }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 
-        /* --- LUDO BOARD GRID --- */
-        #ludo-container {
-            width: 95vw; max-width: 550px;
-            aspect-ratio: 1/1;
-            background: var(--black);
-            display: grid;
-            grid-template-columns: repeat(15, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            border: 8px solid #333;
-            box-shadow: 0 0 50px rgba(0,0,0,0.7);
-        }
-
-        .cell { background: var(--white); border: 0.5px solid #ccc; position: relative; display: flex; align-items: center; justify-content: center; }
-        .bg-green { background-color: var(--green) !important; }
-        .bg-yellow { background-color: var(--yellow) !important; }
-        .bg-red { background-color: var(--red) !important; }
-        .bg-blue { background-color: var(--blue) !important; }
-
-        /* Home Base Area */
-        .home-base { grid-column: span 6; grid-row: span 6; padding: 20px; }
-        .inner-base { 
-            width: 100%; height: 100%; background: white; 
-            display: grid; grid-template-columns: 1fr 1fr; 
-            gap: 15px; padding: 15px; box-sizing: border-box;
-            border-radius: 5px;
-        }
-
-        /* --- STICKMAN 3D PIECES --- */
-        .token-container {
-            width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center;
-            position: relative; z-index: 10;
-        }
-
-        .stickman {
-            width: 16px; height: 16px;
-            background: currentColor;
-            border-radius: 50%; /* Kepala */
-            position: relative;
-            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.4);
-            transition: 0.3s;
-        }
-
-        .stickman::before {
-            content: "";
-            position: absolute; top: 14px; left: 50%;
-            transform: translateX(-50%);
-            width: 10px; height: 16px;
-            background: currentColor;
-            border-radius: 4px 4px 2px 2px; /* Badan */
-            box-shadow: inset -2px -1px 3px rgba(0,0,0,0.4);
-        }
-
-        .stickman::after {
-            content: "";
-            position: absolute; top: 32px; left: 50%;
-            transform: translateX(-50%);
-            width: 18px; height: 4px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 50%; /* Shadow Lantai */
-            filter: blur(1.5px);
-        }
-
-        /* Triangle Center */
-        .center-area { grid-area: 7/7/10/10; position: relative; background: white; }
-        .triangle { position: absolute; width: 0; height: 0; border-style: solid; }
-        .tri-green { border-width: 55px 55px 0 55px; border-color: var(--green) transparent transparent transparent; top:0; left:0; }
-        .tri-blue { border-width: 55px 0 55px 55px; border-color: transparent transparent transparent var(--blue); right:0; top:0; }
-        .tri-red { border-width: 0 55px 55px 55px; border-color: transparent transparent var(--red) transparent; bottom:0; left:0; }
-        .tri-yellow { border-width: 55px 55px 55px 0; border-color: transparent var(--yellow) transparent transparent; right:0; top:0; }
-
-        .star::after { content: "★"; color: #444; font-size: 1.2rem; }
-
-        /* UI Controls */
-        #controls {
-            margin-top: 15px; display: flex; align-items: center; gap: 20px;
-            background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px;
-        }
-        #dice-container { width: 80px; height: 80px; }
-        button {
-            padding: 12px 25px; font-size: 1.1rem; font-weight: bold;
-            border: none; border-radius: 10px; cursor: pointer;
-            background: #fff; color: #333; transition: 0.2s;
-        }
-        button:hover { background: var(--yellow); transform: scale(1.05); }
+        .center { grid-area: 7/7/10/10; background: #eee; position: relative; }
+        #controls { margin-top: 20px; display: flex; align-items: center; gap: 20px; background: #333; padding: 15px; border-radius: 10px; }
+        #dice-view { width: 60px; height: 60px; }
+        button { padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; }
+        button:disabled { opacity: 0.5; }
     </style>
 </head>
 <body>
 
-    <h2 style="margin: 10px 0;">LUDO STICKMAN 3D</h2>
+    <h2 id="status">Giliran: <span style="color: var(--green);">HIJAU</span></h2>
 
-    <div id="ludo-container">
-        <div class="home-base bg-green" style="grid-area: 1/1/7/7;">
-            <div class="inner-base">
-                <div class="token-container" style="color: var(--green);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--green);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--green);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--green);"><div class="stickman"></div></div>
-            </div>
-        </div>
-
-        <div class="home-base bg-yellow" style="grid-area: 1/10/7/16;">
-            <div class="inner-base">
-                <div class="token-container" style="color: var(--yellow);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--yellow);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--yellow);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--yellow);"><div class="stickman"></div></div>
-            </div>
-        </div>
-
-        <div class="home-base bg-red" style="grid-area: 10/1/16/7;">
-            <div class="inner-base">
-                <div class="token-container" style="color: var(--red);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--red);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--red);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--red);"><div class="stickman"></div></div>
-            </div>
-        </div>
-
-        <div class="home-base bg-blue" style="grid-area: 10/10/16/16;">
-            <div class="inner-base">
-                <div class="token-container" style="color: var(--blue);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--blue);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--blue);"><div class="stickman"></div></div>
-                <div class="token-container" style="color: var(--blue);"><div class="stickman"></div></div>
-            </div>
-        </div>
-
-        <div class="center-area">
-            <div class="triangle tri-green"></div>
-            <div class="triangle tri-yellow"></div>
-            <div class="triangle tri-red"></div>
-            <div class="triangle tri-blue"></div>
-        </div>
+    <div id="ludo-board">
+        <div id="base-green" class="base" style="grid-area: 1/1/7/7; background: var(--green);"></div>
+        <div id="base-yellow" class="base" style="grid-area: 1/10/7/16; background: var(--yellow);"></div>
+        <div id="base-red" class="base" style="grid-area: 10/1/16/7; background: var(--red);"></div>
+        <div id="base-blue" class="base" style="grid-area: 10/10/16/16; background: var(--blue);"></div>
+        <div class="center"></div>
     </div>
 
     <div id="controls">
-        <div id="dice-container"></div>
-        <button id="roll-btn">ROLL DICE</button>
-        <h3 id="info-text">Turn: <span style="color: var(--green);">Green</span></h3>
+        <div id="dice-view"></div>
+        <button id="roll-btn">KOCOK DADU</button>
+        <h1 id="dice-val">0</h1>
     </div>
 
     <script>
-        const container = document.getElementById('ludo-container');
+        let currentPlayer = 'green';
+        let diceValue = 0;
+        let canMove = false;
 
-        // 1. GENERATE JALUR (PATH)
-        function generatePath() {
-            for (let r = 1; r <= 15; r++) {
-                for (let c = 1; c <= 15; c++) {
-                    const isBase = (r<=6 && c<=6) || (r<=6 && c>=10) || (r>=10 && c<=6) || (r>=10 && c>=10);
-                    const isCenter = (r>=7 && r<=9 && c>=7 && c<=9);
-                    
-                    if (!isBase && !isCenter) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        cell.style.gridArea = `${r}/${c}`;
-
-                        // Safe Zones & Home Paths
-                        if (r === 8 && c >= 2 && c <= 6) cell.classList.add('bg-green');
-                        if (r === 8 && c >= 10 && c <= 14) cell.classList.add('bg-blue');
-                        if (c === 8 && r >= 2 && r <= 6) cell.classList.add('bg-yellow');
-                        if (c === 8 && r >= 10 && r <= 14) cell.classList.add('bg-red');
-
-                        // Bintang (Safe Zone)
-                        if ((r===7 && c===3) || (r===3 && c===9) || (r===9 && c===13) || (r===13 && c===7)) {
-                            cell.classList.add('star');
-                        }
-                        
-                        container.appendChild(cell);
-                    }
-                }
-            }
-        }
-
-        // 2. THREE.JS 3D DICE
-        let scene, camera, renderer, dice;
-        function init3DDice() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(80, 80);
-            document.getElementById('dice-container').appendChild(renderer.domElement);
-
-            const geometry = new THREE.BoxGeometry(2.2, 2.2, 2.2);
-            const materials = [];
-            for(let i=1; i<=6; i++) {
-                const canvas = document.createElement('canvas');
-                canvas.width = 128; canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'white'; ctx.fillRect(0,0,128,128);
-                ctx.fillStyle = 'black'; ctx.font = 'bold 70px Arial'; ctx.textAlign = 'center';
-                ctx.fillText(i, 64, 85);
-                materials.push(new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) }));
-            }
-            dice = new THREE.Mesh(geometry, materials);
-            scene.add(dice);
-            const light = new THREE.DirectionalLight(0xffffff, 1); light.position.set(2, 5, 5);
-            scene.add(light); scene.add(new THREE.AmbientLight(0x404040));
-            camera.position.z = 5;
-            animateDice();
-        }
-
-        function animateDice() {
-            requestAnimationFrame(animateDice);
-            renderer.render(scene, camera);
-        }
-
-        // 3. GAMEPLAY LOGIC (SIMPLE)
-        document.getElementById('roll-btn').onclick = function() {
-            const result = Math.floor(Math.random() * 6) + 1;
-            this.disabled = true;
-            
-            let count = 0;
-            const timer = setInterval(() => {
-                dice.rotation.x += 0.6; dice.rotation.y += 0.6;
-                count++;
-                if(count > 15) {
-                    clearInterval(timer);
-                    this.disabled = false;
-                    // Reset rotasi dadu sesuai angka (penyederhanaan visual)
-                    dice.rotation.set(result, result, 0); 
-                    alert("Kamu mendapat angka: " + result);
-                }
-            }, 60);
+        const players = {
+            green: { color: 'var(--green)', pos: [-1, -1, -1, -1], start: "7/2", path: ["7/1","7/2","7/3","7/4","7/5","7/6","6/7","5/7","4/7","3/7","2/7","1/7","1/8","1/9","2/9","3/9","4/9","5/9","6/9","7/10"] }, 
+            // Path di atas hanya contoh singkat, untuk full game perlu koordinat lengkap 52 kotak.
         };
 
-        generatePath();
-        init3DDice();
+        // Render Bidak di Base
+        function initTokens() {
+            ['green', 'yellow', 'red', 'blue'].forEach(p => {
+                const base = document.getElementById(`base-${p}`);
+                for(let i=0; i<4; i++) {
+                    const t = document.createElement('div');
+                    t.className = 'token';
+                    t.style.color = `var(--${p})`;
+                    t.onclick = () => tryMove(p, i);
+                    base.appendChild(t);
+                }
+            });
+        }
+
+        // Logic Kocok Dadu
+        document.getElementById('roll-btn').onclick = function() {
+            diceValue = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('dice-val').innerText = diceValue;
+            this.disabled = true;
+            canMove = true;
+            
+            // Highlight bidak yang bisa jalan
+            document.querySelectorAll(`.token`).forEach(t => {
+                if(t.style.color === `var(--${currentPlayer})`) t.classList.add('active-turn');
+            });
+        };
+
+        function tryMove(player, index) {
+            if(!canMove || player !== currentPlayer) return;
+            
+            // Logika: Harus 6 untuk keluar base
+            if (diceValue === 6) {
+                alert("Bidak keluar base!");
+                // Simulasi pindah ke kotak start (7/2 untuk hijau)
+                const startCell = document.querySelector(`[style*="grid-area: 7 / 2"]`) || createCell(7,2);
+                const token = document.querySelector(`.token[style*="color: var(--${player})"]`);
+                startCell.appendChild(token);
+            } else {
+                alert("Butuh angka 6 untuk keluar base!");
+            }
+
+            resetTurn();
+        }
+
+        function resetTurn() {
+            canMove = false;
+            document.getElementById('roll-btn').disabled = false;
+            document.querySelectorAll('.token').forEach(t => t.classList.remove('active-turn'));
+            // Ganti player (Sederhana: Green -> Red)
+            currentPlayer = currentPlayer === 'green' ? 'red' : 'green';
+            document.getElementById('status').innerHTML = `Giliran: <span style="color: var(--${currentPlayer})">${currentPlayer.toUpperCase()}</span>`;
+        }
+
+        function createCell(r, c) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.style.gridArea = `${r}/${c}`;
+            document.getElementById('ludo-board').appendChild(cell);
+            return cell;
+        }
+
+        // Generate Jalur Putih
+        for(let r=1; r<=15; r++) {
+            for(let c=1; c<=15; c++) {
+                if(((r>6 && r<10) || (c>6 && c<10)) && !(r>6 && r<10 && c>6 && c<10)) {
+                    createCell(r,c);
+                }
+            }
+        }
+
+        initTokens();
     </script>
 </body>
 </html>
