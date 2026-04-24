@@ -275,7 +275,6 @@
             startDeliveryStatusListener();
         };
 
-        // All existing functions (startCamera, stopCamera, etc.) go here...
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
@@ -455,12 +454,27 @@
             const userStatusRef = db.ref('presence/' + currentUser);
             userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
             userStatusRef.onDisconnect().remove();
+            
             db.ref('presence').on('value', s => {
                 const el = document.getElementById('onlineBar'); el.innerHTML = "";
                 s.forEach(u => {
                     const data = u.val();
-                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
-                    el.innerHTML += `<span class="flex items-center gap-1"><img src="${photoUrl}" class="online-avatar"> ${u.key}</span>`;
+                    const userName = u.key;
+                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${userName}&background=006491&color=fff`;
+                    
+                    const userSpan = document.createElement('span');
+                    userSpan.className = "flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5";
+                    
+                    const imgEl = document.createElement('img');
+                    imgEl.src = photoUrl;
+                    imgEl.className = "online-avatar cursor-pointer hover:opacity-80 active:scale-90 transition-transform shadow-sm";
+                    imgEl.onclick = () => openFullImg(photoUrl, `PROFIL: ${userName}`);
+                    
+                    userSpan.appendChild(imgEl);
+                    const nameText = document.createTextNode(` ${userName}`);
+                    userSpan.appendChild(nameText);
+                    
+                    el.appendChild(userSpan);
                 });
             });
         }
