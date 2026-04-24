@@ -532,9 +532,9 @@
                 // Pesan WhatsApp Card
                 let msgWa = "";
                 if (cashiersOnly.includes(currentUser)) {
-                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
+                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's pizza jatimakmur,saya ingin mengkonfirmasi pesanan atas nama (${i.name}) mohon maaf pak/bu sebelumnya `;
                 } else {
-                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu ya 😊.`;
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. .`;
                 }
                 
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
