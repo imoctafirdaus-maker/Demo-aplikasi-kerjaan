@@ -48,6 +48,11 @@
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
         .animate-blink { animation: blink 1s infinite; }
+
+        /* Style Tambahan untuk Menu Profil Bubble */
+        .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
+        .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
+        .profile-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; items-center: center; justify-content: center; font-size: 16px; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -86,43 +91,41 @@
 
         <main class="flex-1 overflow-hidden relative">
             
-            <div id="page-home" class="page p-4 overflow-y-auto bg-gray-50">
+            <div id="page-home" class="page p-6 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
-                    <div class="relative">
-                        <img id="profileImgDisplay" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover">
-                        <label class="absolute bottom-0 right-0 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-white cursor-pointer">
+                    <div class="relative group">
+                        <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff" class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover">
+                        <label class="absolute bottom-0 right-0 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-white cursor-pointer shadow-lg">
                             <i class="fa fa-camera text-[10px]"></i>
-                            <input type="file" class="hidden" accept="image/*" onchange="updateProfilePhoto(this)">
+                            <input type="file" accept="image/*" class="hidden" onchange="changeProfilePhoto(this)">
                         </label>
                     </div>
-                    <h2 id="profileNameDisplay" class="font-black text-blue-900 uppercase italic mt-4 text-lg">Nama User</h2>
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Domino's Jatimakmur Team</p>
+                    <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
 
-                <div class="flex flex-col gap-3">
-                    <div onclick="alert('Fitur Pengaturan Segera Hadir')" class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between cursor-pointer border-b-2 border-gray-100">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><i class="fa fa-cog"></i></div>
-                            <span class="font-black text-blue-900 uppercase italic text-xs">Pengaturan Aplikasi</span>
-                        </div>
+                <div class="space-y-3">
+                    <div onclick="alert('Fitur Pengaturan Segera Hadir')" class="profile-bubble">
+                        <div class="profile-icon bg-blue-50 text-blue-600"><i class="fa fa-cog"></i></div>
+                        <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Pengaturan Akun</span>
                         <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
                     </div>
 
-                    <div onclick="changePinPrompt()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between cursor-pointer border-b-2 border-gray-100">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center"><i class="fa fa-key"></i></div>
-                            <span class="font-black text-blue-900 uppercase italic text-xs">Ganti PIN Akses</span>
-                        </div>
+                    <div onclick="changePinPrompt()" class="profile-bubble">
+                        <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
+                        <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
                         <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
                     </div>
 
-                    <div onclick="handleLogout()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between cursor-pointer border-b-2 border-red-100">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center"><i class="fa fa-sign-out-alt"></i></div>
-                            <span class="font-black text-red-600 uppercase italic text-xs">Keluar Akun</span>
-                        </div>
+                    <div onclick="handleLogout()" class="profile-bubble">
+                        <div class="profile-icon bg-red-50 text-red-600"><i class="fa fa-sign-out-alt"></i></div>
+                        <span class="font-black text-red-600 uppercase italic text-[11px] flex-1">Keluar Sistem</span>
                         <i class="fa fa-chevron-right text-red-200 text-[10px]"></i>
                     </div>
+                </div>
+
+                <div class="mt-10 text-center">
+                    <p class="text-[8px] font-black text-gray-300 uppercase tracking-tighter italic">TrackCust JTM v2.0 Official Application</p>
                 </div>
             </div>
 
@@ -261,44 +264,40 @@
             startDeliveryStatusListener();
         };
 
-        // --- FUNGSI HALAMAN HOME / PROFIL ---
-        function updateProfileUI() {
-            document.getElementById('profileNameDisplay').innerText = currentUser;
-            const savedPhoto = localStorage.getItem('profile_photo_' + currentUser);
-            document.getElementById('profileImgDisplay').src = savedPhoto ? savedPhoto : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
-        }
-
-        function updateProfilePhoto(input) {
+        // FUNGSI PROFIL BARU
+        function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const c = document.createElement('canvas');
-                        c.width = 200; c.height = 200;
-                        c.getContext('2d').drawImage(img, 0, 0, 200, 200);
-                        const base64 = c.toDataURL('image/jpeg');
-                        document.getElementById('profileImgDisplay').src = base64;
-                        localStorage.setItem('profile_photo_' + currentUser, base64);
-                    };
-                    img.src = e.target.result;
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('userAvatar').src = base64;
+                    localStorage.setItem('profile_pic_' + currentUser, base64);
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
         function changePinPrompt() {
-            const oldPin = prompt("Masukkan PIN Lama:");
-            if (oldPin === userPins[currentUser]) {
-                const newPin = prompt("Masukkan PIN Baru (4 Digit):");
-                if (newPin && newPin.length === 4) {
-                    userPins[currentUser] = newPin;
-                    alert("PIN Berhasil diubah sementara!");
+            const old = prompt("Masukkan PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("Masukkan PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) {
+                    userPins[currentUser] = baru;
+                    alert("PIN Berhasil diubah!");
                 } else { alert("PIN harus 4 digit!"); }
             } else { alert("PIN Salah!"); }
         }
 
-        // --- LOGIKA APLIKASI ---
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            if (savedPic) {
+                document.getElementById('userAvatar').src = savedPic;
+            } else {
+                document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            }
+        }
+
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
 
         function pushDeliveryStatus(nama) { db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); }
@@ -484,7 +483,7 @@
                 document.getElementById('mainContent').style.display = "flex";
                 
                 updatePresence();
-                updateProfileUI(); // Update UI Profile di Home
+                updateProfileUI();
 
                 db.ref('presence/' + n + '/session').on('value', (snap) => {
                     if (!isOkta && snap.exists() && snap.val() !== sessionID) {
