@@ -187,6 +187,15 @@
                                 <input type="range" id="ctSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
                             </div>
                         </div>
+                        
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
+                            <div class="flex gap-1">
+                                <button onclick="setFocusMode('continuous')" id="foc-auto" class="btn-mode active">AUTO</button>
+                                <button onclick="setFocusMode('manual')" id="foc-manual" class="btn-mode">MANUAL</button>
+                            </div>
+                        </div>
+
                         <div class="flex items-center gap-2 mb-2">
                             <span class="text-[9px] font-black text-blue-900 uppercase">Zoom:</span>
                             <button onclick="setZoom(1)" id="z1" class="btn-zoom active">1x</button>
@@ -247,11 +256,10 @@
             startDeliveryStatusListener();
         };
 
-        // --- KAMERA LOGIC (Fokus Otomatis Dikembalikan) ---
+        // --- KAMERA LOGIC ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
-                // Menggunakan constraints standar untuk memicu auto-focus bawaan browser
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: "environment", 
@@ -267,8 +275,24 @@
                 document.getElementById('btnStopCam').classList.remove('hidden');
                 document.getElementById('camControls').classList.remove('hidden');
                 document.getElementById('scannerOverlay').style.display = 'block';
+                
+                // Pastikan UI fokus sinkron saat mulai
+                setFocusMode('continuous'); 
+                
                 startAutoScan();
             } catch (err) { alert("Kamera Error. Pastikan izin kamera diaktifkan."); }
+        }
+
+        async function setFocusMode(mode) {
+            if (!videoTrack) return;
+            try {
+                const caps = videoTrack.getCapabilities();
+                if (caps.focusMode) {
+                    document.getElementById('foc-auto').classList.toggle('active', mode === 'continuous');
+                    document.getElementById('foc-manual').classList.toggle('active', mode === 'manual');
+                    await videoTrack.applyConstraints({ advanced: [{ focusMode: mode }] });
+                }
+            } catch (e) { console.error("Fokus tidak didukung perangkat ini."); }
         }
 
         function stopCamera() {
@@ -342,7 +366,7 @@
             } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
-        // --- CORE FUNCTIONS (SAVE/RENDER/LOGIN) ---
+        // --- CORE FUNCTIONS ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
