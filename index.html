@@ -2,248 +2,616 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Playable Stickman 3D</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TrackCust JTM - Official</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
+    
     <style>
-        :root {
-            --green: #00a651; --yellow: #fff200; --red: #ed1c24; --blue: #2e3192;
-            --white: #ffffff; --black: #333;
-        }
-
-        body {
-            background: #1a1a1a; color: white;
-            display: flex; flex-direction: column; align-items: center;
-            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px;
-        }
-
-        /* BOARD LAYOUT */
-        #ludo-board {
-            width: 95vw; max-width: 500px; aspect-ratio: 1/1;
-            background: white; display: grid;
-            grid-template-columns: repeat(15, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            border: 8px solid #444; position: relative;
-        }
-
-        .cell { border: 0.1px solid #eee; position: relative; display: flex; align-items: center; justify-content: center; }
+        .dominos-blue { background-color: #006491; }
+        .dominos-red { background-color: #e31837; }
+        ::-webkit-scrollbar { width: 0; background: transparent; }
         
-        .home-base { grid-column: span 6; grid-row: span 6; padding: 15px; }
-        .inner-base { 
-            width: 100%; height: 100%; background: white; border-radius: 8px;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; box-sizing: border-box;
-        }
-
-        /* STICKMAN PIECE */
-        .token-slot { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; }
+        .nav-item.active { color: #006491; }
+        .nav-add { background: #006491 !important; color: white !important; width: 50px !important; height: 50px; border-radius: 50%; margin-top: -25px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); }
         
-        .stickman {
-            width: 18px; height: 18px; background: currentColor; border-radius: 50%;
-            position: relative; cursor: pointer; z-index: 100;
-            transition: transform 0.2s, left 0.3s, top 0.3s;
-            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.3);
-        }
-        .stickman::before {
-            content: ""; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-            width: 12px; height: 18px; background: currentColor; border-radius: 4px;
-        }
-        .stickman.active-piece { animation: jump 0.4s infinite alternate; }
-        @keyframes jump { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        .page { display: none; height: 100%; flex-direction: column; }
+        .page.active { display: flex; }
+        
+        .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
+        .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
+        
+        .scanner-container { position: relative; width: 100%; height: 200px; background: black; border-radius: 1.5rem; overflow: hidden; margin-bottom: 1rem; border: 4px solid #006491; }
+        #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
+        .scanner-overlay { position: absolute; inset: 0; border: 30px solid rgba(0,0,0,0.5); pointer-events: none; display: none; }
+        .scanner-box { width: 100%; height: 100%; border: 2px solid #e31837; position: relative; }
+        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
+        @keyframes scanAnim { 0% { top: 0%; } 100% { top: 100%; } }
 
-        /* CENTER TRIANGLE */
-        .center-area { grid-area: 7/7/10/10; position: relative; }
-        .tri { position: absolute; width: 0; height: 0; border-style: solid; }
-        .tri-g { border-width: 50px 50px 0 50px; border-color: var(--green) transparent transparent transparent; top:0; }
-        .tri-y { border-width: 50px 50px 50px 0; border-color: transparent var(--yellow) transparent transparent; right:0; }
-        .tri-r { border-width: 0 50px 50px 50px; border-color: transparent transparent var(--red) transparent; bottom:0; }
-        .tri-b { border-width: 50px 0 50px 50px; border-color: transparent transparent transparent var(--blue); left:0; }
+        .cam-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
+        .btn-mode { padding: 4px 8px; border-radius: 6px; font-size: 8px; font-weight: 900; border: 1px solid #cbd5e1; background: white; color: #64748b; }
+        .btn-mode.active { background: #e31837; color: white; border-color: #e31837; }
+        .btn-zoom { flex: 1; padding: 6px; background: white; border: 2px solid #006491; color: #006491; border-radius: 8px; font-size: 10px; font-weight: 900; }
+        .btn-zoom.active { background: #006491; color: white; }
 
-        /* CONTROLS */
-        #ui-layer { margin-top: 15px; display: flex; align-items: center; gap: 20px; background: #222; padding: 15px; border-radius: 15px; width: 90%; max-width: 400px; }
-        #dice-3d-container { width: 80px; height: 80px; background: #000; border-radius: 10px; }
-        #roll-btn { padding: 12px 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: gold; color: #1a1a1a; }
-        #roll-btn:disabled { background: #555; cursor: not-allowed; }
+        .loader-ocr { border: 3px solid #f3f3f3; border-top: 3px solid #006491; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #deliveryStatusBar { max-height: 60px; overflow-y: auto; border-bottom: 1px solid #e2e8f0; }
+        .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .animate-blink { animation: blink 1s infinite; }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
 
-    <h3 id="turn-display">GILIRAN: <span style="color: var(--green)">HIJAU</span></h3>
-
-    <div id="ludo-board">
-        <div class="home-base bg-green" style="grid-area: 1/1/7/7"><div class="inner-base" id="base-green"></div></div>
-        <div class="home-base bg-yellow" style="grid-area: 1/10/7/16"><div class="inner-base" id="base-yellow"></div></div>
-        <div class="home-base bg-red" style="grid-area: 10/1/16/7"><div class="inner-base" id="base-red"></div></div>
-        <div class="home-base bg-blue" style="grid-area: 10/10/16/16"><div class="inner-base" id="base-blue"></div></div>
-        
-        <div class="center-area">
-            <div class="tri tri-g"></div><div class="tri tri-y"></div><div class="tri tri-r"></div><div class="tri tri-b"></div>
+    <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4" onclick="this.style.display='none'">
+        <button class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center"><i class="fa fa-times text-2xl"></i></button>
+        <div id="modalContent" class="flex flex-col items-center">
+             <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
+             <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
         </div>
     </div>
 
-    <div id="ui-layer">
-        <div id="dice-3d-container"></div>
-        <div style="flex-grow: 1;">
-            <button id="roll-btn">ROLL DADU</button>
-            <p id="msg" style="font-size: 0.8rem; margin-top: 5px; color: #aaa;">Klik tombol untuk mulai</p>
+    <div id="pinOverlay" class="fixed inset-0 dominos-blue z-[10000] flex flex-col items-center justify-center p-6">
+        <div class="text-center mb-8 text-white">
+            <h1 class="font-black italic text-4xl uppercase">Domino's</h1>
+            <p class="text-red-400 font-bold uppercase tracking-widest text-sm">JTM Track System</p>
+        </div>
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm text-center">
+            <select id="selectUser" class="w-full p-4 bg-gray-100 rounded-2xl mb-4 font-bold text-blue-900 outline-none uppercase text-xs"></select>
+            <input type="password" id="inputPin" maxlength="4" placeholder="PIN 4 DIGIT" inputmode="numeric" class="w-full text-center text-2xl font-black p-4 bg-gray-100 rounded-2xl mb-6 outline-none">
+            <button onclick="prosesLogin()" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase shadow-lg">Masuk</button>
+        </div>
+    </div>
+
+    <div id="mainContent" style="display:none;" class="flex flex-col h-full">
+        <nav class="dominos-blue p-4 text-white shadow-md flex justify-between items-center">
+            <h1 class="font-black italic uppercase text-lg">Domino's <span class="text-red-400">JTM</span></h1>
+            <div class="flex items-center gap-2">
+                <span id="userDisplay" class="bg-white text-blue-900 px-3 py-1 rounded-full text-[10px] font-black uppercase">User</span>
+                <button onclick="location.reload()" class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center"><i class="fa fa-sync-alt text-[10px]"></i></button>
+            </div>
+        </nav>
+        
+        <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic"></div>
+        <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-2 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
+
+        <main class="flex-1 overflow-hidden relative">
+            
+            <div id="page-home" class="page p-4 overflow-y-auto bg-gray-50">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="relative">
+                        <img id="profileImgDisplay" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover">
+                        <label class="absolute bottom-0 right-0 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-white cursor-pointer">
+                            <i class="fa fa-camera text-[10px]"></i>
+                            <input type="file" class="hidden" accept="image/*" onchange="updateProfilePhoto(this)">
+                        </label>
+                    </div>
+                    <h2 id="profileNameDisplay" class="font-black text-blue-900 uppercase italic mt-4 text-lg">Nama User</h2>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Domino's Jatimakmur Team</p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div onclick="alert('Fitur Pengaturan Segera Hadir')" class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between cursor-pointer border-b-2 border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><i class="fa fa-cog"></i></div>
+                            <span class="font-black text-blue-900 uppercase italic text-xs">Pengaturan Aplikasi</span>
+                        </div>
+                        <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
+                    </div>
+
+                    <div onclick="changePinPrompt()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between cursor-pointer border-b-2 border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center"><i class="fa fa-key"></i></div>
+                            <span class="font-black text-blue-900 uppercase italic text-xs">Ganti PIN Akses</span>
+                        </div>
+                        <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
+                    </div>
+
+                    <div onclick="handleLogout()" class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between cursor-pointer border-b-2 border-red-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center"><i class="fa fa-sign-out-alt"></i></div>
+                            <span class="font-black text-red-600 uppercase italic text-xs">Keluar Akun</span>
+                        </div>
+                        <i class="fa fa-chevron-right text-red-200 text-[10px]"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-list" class="page active p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-3">
+                    <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Driver/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
+                    <div id="countActive" class="bg-red-500 text-white px-3 py-2 rounded-xl text-[10px] font-black italic">0 AKTIF</div>
+                </div>
+                <div id="activeList" class="space-y-4 pb-32"></div>
+            </div>
+
+            <div id="page-history" class="page p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4 bg-gray-100 p-3 rounded-2xl border-b-2 border-gray-200">
+                    <h3 class="font-black text-blue-900 uppercase italic text-[11px]">Daftar Selesai</h3>
+                    <button onclick="clearAllHistory()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-md"><i class="fa fa-trash-alt mr-1"></i> Kosongkan</button>
+                </div>
+                <div id="historyList" class="space-y-4 pb-32"></div>
+            </div>
+
+            <div id="page-add" class="page p-4 overflow-y-auto">
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900 space-y-3">
+                    <h2 id="formTitle" class="font-black text-blue-900 text-center uppercase text-xs">Tambah Antaran</h2>
+                    <input type="hidden" id="editId">
+                    <input type="text" id="custArea" placeholder="KODE AREA (A-1)" class="w-full bg-yellow-50 p-4 rounded-xl text-sm font-bold uppercase outline-none">
+                    <input type="text" id="custName" placeholder="Nama Pelanggan" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="tel" id="custPhone" placeholder="Nomor HP" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="text" id="custMaps" placeholder="Link Google Maps" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none">
+                    
+                    <div class="bg-blue-50 p-4 rounded-xl border-2 border-dashed border-blue-200 text-center relative">
+                        <label class="cursor-pointer">
+                            <i class="fa fa-camera text-blue-400 text-xl"></i>
+                            <p class="text-[9px] font-black text-blue-900 uppercase mt-1" id="photoStatus">Foto Rumah</p>
+                            <input type="file" id="housePhoto" accept="image/*" class="hidden" onchange="processImage(this)">
+                        </label>
+                        <button onclick="removePhoto()" id="btnRemovePhoto" class="hidden absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-times text-[10px]"></i></button>
+                        <img id="imgPrev" class="hidden w-full h-32 object-cover rounded-lg mt-2 border-2 border-white">
+                    </div>
+                    <button onclick="saveData()" id="saveBtn" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
+                    <button onclick="cancelEdit()" id="cancelBtn" class="hidden w-full bg-gray-400 text-white py-3 rounded-xl font-bold uppercase text-[10px]">Batal</button>
+                </div>
+            </div>
+
+            <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
+                <div class="wa-card mb-20 mx-auto">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                    <h2 class="font-black text-blue-900 uppercase italic text-[12px] mb-3">Scanner & Manual Input</h2>
+                    <div class="scanner-container">
+                        <video id="scannerVideo" autoplay playsinline></video>
+                        <div id="scannerOverlay" class="scanner-overlay"><div class="scanner-box"><div class="laser"></div></div></div>
+                    </div>
+
+                    <div id="camControls" class="hidden cam-controls text-left p-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[9px] font-black text-blue-900 uppercase">Mode BW:</span>
+                            <div class="flex gap-1">
+                                <button onclick="setBWMode('off')" id="bw-off" class="btn-mode active">OFF</button>
+                                <button onclick="setBWMode('auto')" id="bw-auto" class="btn-mode">AUTO</button>
+                                <button onclick="setBWMode('manual')" id="bw-manual" class="btn-mode">MANUAL</button>
+                            </div>
+                        </div>
+                        <div id="manualBWControls" class="hidden grid grid-cols-2 gap-2 mb-2 p-2 bg-white rounded-xl border">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black text-blue-900 uppercase italic">BRIGHT:</span>
+                                <input type="range" id="brSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black text-blue-900 uppercase italic">CONTRAST:</span>
+                                <input type="range" id="ctSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-[9px] font-black text-blue-900 uppercase">Zoom:</span>
+                            <button onclick="setZoom(1)" id="z1" class="btn-zoom active">1x</button>
+                            <button onclick="setZoom(2)" id="z2" class="btn-zoom">2x</button>
+                            <button onclick="setZoom(3)" id="z3" class="btn-zoom">3x</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
+                            <select onchange="setFocusMode(this.value)" class="flex-1 p-1 rounded-lg text-[9px] font-bold border-2 border-blue-900 outline-none">
+                                <option value="continuous">Auto</option>
+                                <option value="manual">Manual</option>
+                            </select>
+                        </div>
+                        <div id="manualFocusCont" class="hidden mt-2"><input type="range" id="focusSlider" min="0" max="100" value="50" oninput="setManualFocus(this.value)" class="w-full accent-red-600"></div>
+                    </div>
+
+                    <div class="flex gap-2 mb-3">
+                        <button id="btnStartCam" onclick="startCamera()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px]">Buka Kamera</button>
+                        <button id="btnStopCam" onclick="stopCamera()" class="hidden flex-1 bg-gray-500 text-white py-3 rounded-xl font-black uppercase text-[10px]">Tutup</button>
+                        <button onclick="captureAndScan()" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-black uppercase text-[10px]">Scan Nomor</button>
+                    </div>
+                    <div id="ocrLoading" class="hidden mb-3 text-[9px] font-bold text-blue-900 uppercase italic"><div class="loader-ocr"></div> Menganalisa...</div>
+                    <input type="tel" id="waDirectNumber" placeholder="Input Nomor Manual" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm mb-3">
+                    <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
+                    <div id="scanResultArea" class="hidden text-left border-t-2 border-gray-100 pt-4">
+                        <table class="w-full text-[10px] bg-white rounded-lg border divide-y"><thead class="bg-blue-900 text-white italic uppercase"><tr><th class="p-2">Hasil Scan</th><th class="p-2">Chat</th></tr></thead><tbody id="addressTableBody" class="font-bold divide-y"></tbody></table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="bottom-nav">
+            <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span></div>
+            <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
+            <div onclick="showPage('history')" class="nav-item" id="nav-history"><i class="fa fa-history mb-1 text-xl"></i><span>History</span></div>
+            <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
+            <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
         </div>
     </div>
 
     <script>
-        /** LOGIKA GAME **/
-        let currentPlayer = 'green';
-        const colors = ['green', 'yellow', 'blue', 'red'];
-        let diceValue = 0;
-        let isRolling = false;
-
-        // Path koordinat (Sederhana untuk demo - Hijau)
-        const paths = {
-            green: ["7/2", "7/3", "7/4", "7/5", "7/6", "6/7", "5/7", "4/7", "3/7", "2/7", "1/7", "1/8", "1/9"]
+        const userPins = { 
+            "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
+            "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
+            "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
+            "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
         };
 
-        function initBoard() {
-            const board = document.getElementById('ludo-board');
-            // Buat jalur sel putih
-            for(let r=1; r<=15; r++){
-                for(let c=1; c<=15; c++){
-                    const isBase = (r<7&&c<7)||(r<7&&c>9)||(r>9&&c<7)||(r>9&&c>9);
-                    const isCenter = (r>6&&r<10&&c>6&&c<10);
-                    if(!isBase && !isCenter){
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        cell.id = `cell-${r}-${c}`;
-                        cell.style.gridArea = `${r}/${c}`;
-                        board.appendChild(cell);
-                    }
-                }
-            }
-            spawnTokens();
+        const firebaseConfig = { apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "trackcust-jtm" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        let currentUser = localStorage.getItem('jtm_user') || "";
+        let sessionID = Math.random().toString(36).substring(2, 15);
+        let allData = {}; let photoBase64 = "";
+        let stream = null; let videoTrack = null;
+        let bwMode = 'off'; let isScanning = false; let autoScanInterval = null;
+        let renderTimer;
+
+        window.onload = () => {
+            const logSel = document.getElementById('selectUser');
+            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
+            Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+            if(currentUser) bukaApp(currentUser);
+            setInterval(updateTimers, 1000);
+            startDeliveryStatusListener();
+        };
+
+        // --- FUNGSI HALAMAN HOME / PROFIL ---
+        function updateProfileUI() {
+            document.getElementById('profileNameDisplay').innerText = currentUser;
+            const savedPhoto = localStorage.getItem('profile_photo_' + currentUser);
+            document.getElementById('profileImgDisplay').src = savedPhoto ? savedPhoto : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
         }
 
-        function spawnTokens() {
-            colors.forEach(color => {
-                const base = document.getElementById(`base-${color}`);
-                for(let i=0; i<4; i++){
-                    const slot = document.createElement('div');
-                    slot.className = 'token-slot';
-                    const s = document.createElement('div');
-                    s.className = 'stickman';
-                    s.style.color = `var(--${color})`;
-                    s.dataset.color = color;
-                    s.dataset.pos = "-1"; // -1 artinya di base
-                    s.onclick = () => handleTokenClick(s);
-                    slot.appendChild(s);
-                    base.appendChild(slot);
-                }
+        function updateProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas');
+                        c.width = 200; c.height = 200;
+                        c.getContext('2d').drawImage(img, 0, 0, 200, 200);
+                        const base64 = c.toDataURL('image/jpeg');
+                        document.getElementById('profileImgDisplay').src = base64;
+                        localStorage.setItem('profile_photo_' + currentUser, base64);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function changePinPrompt() {
+            const oldPin = prompt("Masukkan PIN Lama:");
+            if (oldPin === userPins[currentUser]) {
+                const newPin = prompt("Masukkan PIN Baru (4 Digit):");
+                if (newPin && newPin.length === 4) {
+                    userPins[currentUser] = newPin;
+                    alert("PIN Berhasil diubah sementara!");
+                } else { alert("PIN harus 4 digit!"); }
+            } else { alert("PIN Salah!"); }
+        }
+
+        // --- LOGIKA APLIKASI ---
+        function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
+
+        function pushDeliveryStatus(nama) { db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); }
+
+        function startDeliveryStatusListener() {
+            db.ref('delivery_activity').on('value', s => {
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = "";
+                const now = Date.now();
+                let hasData = false;
+                s.forEach(child => {
+                    const d = child.val();
+                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
+                    else { 
+                        hasData = true; 
+                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; 
+                    }
+                });
+                bar.style.display = hasData ? "block" : "none";
             });
         }
 
-        /** THREE.JS DICE **/
-        let scene, camera, renderer, dice;
-        function initDice() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(80, 80);
-            document.getElementById('dice-3d-container').appendChild(renderer.domElement);
+        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
 
-            const geometry = new THREE.BoxGeometry(2, 2, 2);
-            const materials = [];
-            for(let i=1; i<=6; i++) {
-                const canvas = document.createElement('canvas');
-                canvas.width = 128; canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'white'; ctx.fillRect(0,0,128,128);
-                ctx.fillStyle = 'black'; ctx.font = 'bold 80px Arial'; ctx.textAlign = 'center';
-                ctx.fillText(i, 64, 90);
-                materials.push(new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) }));
-            }
-            dice = new THREE.Mesh(geometry, materials);
-            scene.add(dice);
-            const light = new THREE.PointLight(0xffffff, 1); light.position.set(10, 10, 10);
-            scene.add(light); scene.add(new THREE.AmbientLight(0x404040));
-            camera.position.z = 4;
-            animate();
+        function setBWMode(mode) {
+            bwMode = mode;
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
+            document.getElementById('manualBWControls').classList.toggle('hidden', mode !== 'manual');
+            updateVisualFilters();
         }
 
-        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        function updateVisualFilters() {
+            const v = document.getElementById('scannerVideo'); if(!v) return;
+            if(bwMode === 'manual') v.style.filter = `grayscale(100%) brightness(${document.getElementById('brSlider').value}%) contrast(${document.getElementById('ctSlider').value}%)`;
+            else if(bwMode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
+            else v.style.filter = `none`;
+        }
 
-        document.getElementById('roll-btn').onclick = async function() {
-            if(isRolling) return;
-            isRolling = true;
-            this.disabled = true;
-            
-            diceValue = Math.floor(Math.random() * 6) + 1;
-            
-            // Animasi Putar
-            for(let i=0; i<20; i++){
-                dice.rotation.x += 0.5; dice.rotation.y += 0.5;
-                await new Promise(r => setTimeout(r, 50));
+        async function startCamera() {
+            try {
+                if (stream) stream.getTracks().forEach(t => t.stop());
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: 1280 } });
+                const v = document.getElementById('scannerVideo');
+                v.srcObject = stream;
+                videoTrack = stream.getVideoTracks()[0];
+                document.getElementById('btnStartCam').classList.add('hidden');
+                document.getElementById('btnStopCam').classList.remove('hidden');
+                document.getElementById('camControls').classList.remove('hidden');
+                document.getElementById('scannerOverlay').style.display = 'block';
+                startAutoScan();
+            } catch (err) { alert("Kamera Error"); }
+        }
+
+        function stopCamera() {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            stream = null; document.getElementById('scannerVideo').srcObject = null;
+            document.getElementById('btnStartCam').classList.remove('hidden');
+            document.getElementById('btnStopCam').classList.add('hidden');
+            document.getElementById('camControls').classList.add('hidden');
+            document.getElementById('scannerOverlay').style.display = 'none';
+            clearInterval(autoScanInterval);
+        }
+
+        function setZoom(l) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            if (caps.zoom) {
+                videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(l, caps.zoom.max) }] });
+                document.querySelectorAll('.btn-zoom').forEach(b => b.classList.toggle('active', b.id === 'z'+l));
             }
-            
-            document.getElementById('msg').innerText = `Angka keluar: ${diceValue}`;
-            checkMoves();
-        };
+        }
 
-        function checkMoves() {
-            const myTokens = document.querySelectorAll(`.stickman`);
-            let possible = false;
-            myTokens.forEach(t => {
-                if(t.dataset.color === currentPlayer) {
-                    if(t.dataset.pos === "-1" && diceValue === 6) {
-                        t.classList.add('active-piece');
-                        possible = true;
-                    } else if(t.dataset.pos !== "-1") {
-                        t.classList.add('active-piece');
-                        possible = true;
+        function setFocusMode(m) {
+            if (!videoTrack) return;
+            document.getElementById('manualFocusCont').classList.toggle('hidden', m !== 'manual');
+            videoTrack.applyConstraints({ advanced: [{ focusMode: m === 'manual' ? 'manual' : 'continuous' }] });
+        }
+
+        function setManualFocus(v) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            if (caps.focusDistance) {
+                const d = caps.focusDistance.min + (v/100)*(caps.focusDistance.max - caps.focusDistance.min);
+                videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: d }] });
+            }
+        }
+
+        async function startAutoScan() {
+            autoScanInterval = setInterval(async () => {
+                if (isScanning || !stream) return;
+                isScanning = true;
+                const v = document.getElementById('scannerVideo');
+                const c = document.createElement('canvas');
+                c.width = v.videoWidth; c.height = v.videoHeight;
+                c.getContext('2d').drawImage(v, 0, 0);
+                try {
+                    const res = await Tesseract.recognize(c.toDataURL(), 'eng');
+                    const matches = res.data.text.match(/(?:\+62|62|08)[0-9\-\(\)\s]{8,15}/g);
+                    if (matches) {
+                        let n = matches[0].replace(/\D/g, '');
+                        if (n.length >= 10 && document.getElementById('waDirectNumber').value !== n) {
+                            document.getElementById('waDirectNumber').value = n;
+                            renderAddressTable(matches);
+                        }
+                    }
+                } catch (e) {} finally { isScanning = false; }
+            }, 3000);
+        }
+
+        function renderAddressTable(matches) {
+            const b = document.getElementById('addressTableBody'); b.innerHTML = '';
+            [...new Set(matches.map(m => m.replace(/\D/g, '')))].forEach(n => {
+                if (n.length < 10) return;
+                let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
+                b.innerHTML += `<tr><td class="p-3 text-center text-blue-900 text-sm font-black">${n}</td><td class="p-3 text-center"><button onclick="openWaLinkCustom('${wa}')" class="bg-green-500 text-white w-8 h-8 rounded-lg"><i class="fab fa-whatsapp"></i></button></td></tr>`;
+            });
+            document.getElementById('scanResultArea').classList.remove('hidden');
+        }
+
+        async function captureAndScan() {
+            const l = document.getElementById('ocrLoading'); l.classList.remove('hidden');
+            const v = document.getElementById('scannerVideo');
+            const c = document.createElement('canvas');
+            c.width = v.videoWidth; c.height = v.videoHeight;
+            const ctx = c.getContext('2d'); ctx.filter = v.style.filter; ctx.drawImage(v, 0, 0);
+            try {
+                const res = await Tesseract.recognize(c.toDataURL(), 'eng');
+                const matches = res.data.text.match(/(\+?62|08|021|\(\d{3,4}\))[\s-]?\d{3,4}[\s-]?\d{3,5}/g);
+                if (matches) renderAddressTable(matches); else alert("Nomor tidak terdeteksi.");
+            } catch (e) {} finally { l.classList.add('hidden'); }
+        }
+
+        function openWaLinkCustom(n) {
+            pushDeliveryStatus(currentUser);
+            const msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
+            window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function openWaDirect() {
+            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
+            if(!n) return alert("Nomor kosong!");
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
+            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
+            const activeId = Object.keys(allData).find(id => {
+                const dataN = (allData[id].phone || "").replace(/\D/g, '');
+                return allData[id].status !== 'done' && dataN.includes(searchN);
+            });
+            if (activeId) {
+                document.getElementById('searchInput').value = allData[activeId].phone;
+                render(); showPage('list'); stopCamera();
+            } else { openWaLinkCustom(wa); }
+        }
+
+        function updatePresence() {
+            if(!currentUser) return;
+            const userStatusRef = db.ref('presence/' + currentUser);
+            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now() });
+            userStatusRef.onDisconnect().remove();
+            db.ref('presence').on('value', s => {
+                const el = document.getElementById('onlineBar'); el.innerHTML = "";
+                s.forEach(u => el.innerHTML += `<span class="flex items-center gap-1"><i class="fa fa-circle text-[5px] text-green-500"></i> ${u.key}</span>`);
+            });
+        }
+
+        function prosesLogin() {
+            const u = document.getElementById('selectUser').value;
+            const p = document.getElementById('inputPin').value;
+            if(p === userPins[u]) { bukaApp(u); } else alert("PIN SALAH!");
+        }
+
+        function bukaApp(n) {
+            const isOkta = (n === "Okta");
+            db.ref('presence/' + n).once('value', (snapshot) => {
+                const existingData = snapshot.val();
+                if (!isOkta && existingData && existingData.session !== sessionID) {
+                    const konfirmasi = confirm(`⚠️ Nama "${n}" sedang digunakan di perangkat lain. Masuk sekarang akan mengeluarkan perangkat lama. Lanjutkan?`);
+                    if (!konfirmasi) return;
+                }
+                currentUser = n; 
+                localStorage.setItem('jtm_user', n);
+                document.getElementById('userDisplay').innerText = n;
+                document.getElementById('pinOverlay').style.display = "none";
+                document.getElementById('mainContent').style.display = "flex";
+                
+                updatePresence();
+                updateProfileUI(); // Update UI Profile di Home
+
+                db.ref('presence/' + n + '/session').on('value', (snap) => {
+                    if (!isOkta && snap.exists() && snap.val() !== sessionID) {
+                        alert("⚠️ Seseorang telah masuk menggunakan nama Anda di perangkat lain. Anda akan dikeluarkan secara otomatis.");
+                        handleLogout(false);
+                    }
+                });
+                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+            });
+        }
+
+        function handleLogout(withConfirm = true) { 
+            if(withConfirm && !confirm("Keluar?")) return;
+            if(currentUser) {
+                db.ref('presence/' + currentUser).off();
+                db.ref('presence/'+currentUser).remove();
+            }
+            localStorage.removeItem('jtm_user'); 
+            location.reload(); 
+        }
+
+        function render() {
+            const list = document.getElementById('activeList');
+            const hist = document.getElementById('historyList');
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            let activeCount = 0; let listHTML = ""; let histHTML = "";
+            Object.keys(allData).reverse().forEach(id => {
+                const i = allData[id];
+                const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
+                if(i.status !== 'done') activeCount++;
+                let wa = (i.phone || "").replace(/\D/g, '');
+                if(wa.startsWith('0')) wa = '62' + wa.slice(1);
+                const msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu untuk beberapa saat,dan dimohon untuk tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
+                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}"><div class="flex justify-between items-start"><div class="flex-1"><p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p><h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3><div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}</div></div><div class="flex gap-2">${i.status !== 'done' ? `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button><button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button><button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button><button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}</div></div><div class="mt-3 ${i.status==='done'?'hidden':''}">${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="w-full h-24 object-cover rounded-xl border">` : ''}</div><div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}"><a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a><a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a></div></div>`;
+                if(i.status === 'done') histHTML += cardHtml; 
+                else if(searchStr.includes(filter)) listHTML += cardHtml;
+            });
+            list.innerHTML = listHTML; hist.innerHTML = histHTML;
+            document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
+        }
+
+        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
+        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
+
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas'); const MAX = 600;
+                        c.width = MAX; c.height = img.height * (MAX / img.width);
+                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('imgPrev').src = photoBase64;
+                        document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                        document.getElementById('photoStatus').innerText = "FOTO SIAP!";
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
+
+        function saveData() {
+            const a = document.getElementById('custArea').value; 
+            const n = document.getElementById('custName').value; 
+            const ph = document.getElementById('custPhone').value;
+            const eid = document.getElementById('editId').value;
+            if(!a || !n) return alert("Lengkapi data!");
+            if (ph) {
+                const cleanInputPhone = ph.replace(/\D/g, '');
+                const isDuplicate = Object.keys(allData).some(id => {
+                    if (id === eid) return false; 
+                    const item = allData[id];
+                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
+                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
+                });
+                if (isDuplicate) { alert("⚠️ NOMOR HP INI SUDAH ADA DI DAFTAR ANTARAN AKTIF!"); return; }
+            }
+            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
+            ref.then(() => resetForm());
+        }
+
+        function editData(id) {
+            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
+            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
+            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); }
+            document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
+            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
+            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+        }
+
+        function cancelEdit() { resetForm(); }
+        function goOTW(id) { if(allData[id].status !== 'otw') { db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); pushDeliveryStatus(currentUser); } }
+        function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
+            if(id !== 'chat') stopCamera();
+        }
+
+        function updateTimers() {
+            Object.keys(allData).forEach(id => {
+                if(allData[id].status === 'otw') {
+                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
+                    const rem = (20 * 60) - elapsed;
+                    const el = document.getElementById('timer-'+id);
+                    if(el) {
+                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
+                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
+                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
                     }
                 }
             });
-
-            if(!possible) {
-                document.getElementById('msg').innerText = "Tidak ada langkah. Ganti giliran.";
-                setTimeout(nextTurn, 1000);
-            } else {
-                document.getElementById('msg').innerText = "Klik bidak untuk jalan!";
-            }
         }
-
-        function handleTokenClick(token) {
-            if(!token.classList.contains('active-piece')) return;
-            
-            document.querySelectorAll('.stickman').forEach(t => t.classList.remove('active-piece'));
-            
-            if(token.dataset.pos === "-1" && diceValue === 6) {
-                // Keluar Base
-                const startCell = document.getElementById('cell-7-2'); // Start Hijau
-                startCell.appendChild(token);
-                token.dataset.pos = "0";
-            } else {
-                // Jalan (Hanya demo untuk hijau)
-                if(token.dataset.color === 'green') {
-                    let cur = parseInt(token.dataset.pos);
-                    let target = cur + diceValue;
-                    if(target < paths.green.length) {
-                        const coords = paths.green[target].split('/');
-                        const cell = document.getElementById(`cell-${coords[0]}-${coords[1]}`);
-                        cell.appendChild(token);
-                        token.dataset.pos = target;
-                    }
-                }
-            }
-            
-            nextTurn();
-        }
-
-        function nextTurn() {
-            const idx = colors.indexOf(currentPlayer);
-            currentPlayer = colors[(idx + 1) % 4];
-            document.getElementById('turn-display').innerHTML = `GILIRAN: <span style="color: var(--${currentPlayer})">${currentPlayer.toUpperCase()}</span>`;
-            document.getElementById('roll-btn').disabled = false;
-            isRolling = false;
-        }
-
-        initBoard();
-        initDice();
     </script>
 </body>
 </html>
