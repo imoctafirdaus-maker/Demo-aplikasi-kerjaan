@@ -249,6 +249,9 @@
             "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
         };
 
+        const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
+        const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
+
         const firebaseConfig = { apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "trackcust-jtm" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -394,7 +397,10 @@
         }
 
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
-        function pushDeliveryStatus(nama) { db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); }
+        function pushDeliveryStatus(nama) { 
+            if(mgtAndCashiers.includes(nama)) return; // Blokir status delivery untuk mgt & kasir
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
+        }
 
         function startDeliveryStatusListener() {
             db.ref('delivery_activity').on('value', s => {
@@ -416,14 +422,22 @@
             [...new Set(matches.map(m => m.replace(/\D/g, '')))].forEach(n => {
                 if (n.length < 10) return;
                 let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-                b.innerHTML += `<tr><td class="p-3 text-center text-blue-900 text-sm font-black">${n}</td><td class="p-3 text-center"><button onclick="openWaLinkCustom('${wa}')" class="bg-green-500 text-white w-8 h-8 rounded-lg"><i class="fab fa-whatsapp"></i></button></td></tr>`;
+                b.innerHTML += `<tr><td class="p-3 text-center text-blue-900 text-sm font-black">${n}</td><td class="p-3 text-center"><button onclick="openWaLinkCustom('${wa}', '${n}')" class="bg-green-500 text-white w-8 h-8 rounded-lg"><i class="fab fa-whatsapp"></i></button></td></tr>`;
             });
             document.getElementById('scanResultArea').classList.remove('hidden');
         }
 
-        function openWaLinkCustom(n) {
+        function openWaLinkCustom(n, originalNum = "") {
             pushDeliveryStatus(currentUser);
-            const msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
+            let msg = "";
+            if (cashiersOnly.includes(currentUser)) {
+                // Format khusus Kasir (Sintiya / Ridha)
+                const identity = originalNum || n;
+                msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${identity}) saya ingin mengkonfirmasi .....`;
+            } else {
+                // Format standar Driver
+                msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
+            }
             window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
@@ -439,7 +453,7 @@
             if (activeId) {
                 document.getElementById('searchInput').value = allData[activeId].phone;
                 render(); showPage('list'); stopCamera();
-            } else { openWaLinkCustom(wa); }
+            } else { openWaLinkCustom(wa, n); }
         }
 
         function updatePresence() {
@@ -514,9 +528,19 @@
                 if(i.status !== 'done') activeCount++;
                 let wa = (i.phone || "").replace(/\D/g, '');
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
-                const msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan dimohon untuk tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                
+                // Pesan WhatsApp Card
+                let msgWa = "";
+                if (cashiersOnly.includes(currentUser)) {
+                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
+                } else {
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu ya 😊.`;
+                }
+                
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
-                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}"><div class="flex justify-between items-start"><div class="flex-1"><p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p><h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3><div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}</div></div><div class="flex gap-2">${i.status !== 'done' ? `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button><button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button><button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button><button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}</div></div><div class="mt-3 ${i.status==='done'?'hidden':''}">${i.photo ? `<img src="${i.photo}" onmousedown="this.classList.add('pressed')" ontouchstart="this.classList.add('pressed')" onmouseup="this.classList.remove('pressed'); openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" onmouseleave="this.classList.remove('pressed')" ontouchend="this.classList.remove('pressed'); openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}</div><div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}<a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a></div></div>`;
+                const isBlockedUser = mgtAndCashiers.includes(currentUser);
+
+                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}"><div class="flex justify-between items-start"><div class="flex-1"><p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p><h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3><div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}</div></div><div class="flex gap-2">${i.status !== 'done' ? `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button><button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button><button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button><button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}</div></div><div class="mt-3 ${i.status==='done'?'hidden':''}">${i.photo ? `<img src="${i.photo}" onmousedown="this.classList.add('pressed')" ontouchstart="this.classList.add('pressed')" onmouseup="this.classList.remove('pressed'); openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" onmouseleave="this.classList.remove('pressed')" ontouchend="this.classList.remove('pressed'); openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}</div><div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}<a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a></div></div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
                 else if(searchStr.includes(filter)) listHTML += cardHtml;
             });
@@ -577,7 +601,13 @@
             document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
         }
         function cancelEdit() { resetForm(); }
-        function goOTW(id) { if(allData[id].status !== 'otw') { db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); pushDeliveryStatus(currentUser); } }
+        function goOTW(id) { 
+            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
+            if(allData[id].status !== 'otw') { 
+                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+                pushDeliveryStatus(currentUser); 
+            } 
+        }
         function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
