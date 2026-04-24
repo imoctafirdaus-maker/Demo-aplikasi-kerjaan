@@ -52,6 +52,10 @@
         .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
         .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
         .profile-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+        /* Style Baru Untuk Header Foto */
+        .header-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; object-fit: cover; }
+        .online-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -80,13 +84,14 @@
         <nav class="dominos-blue p-4 text-white shadow-md flex justify-between items-center">
             <h1 class="font-black italic uppercase text-lg">Domino's <span class="text-red-400">JTM</span></h1>
             <div class="flex items-center gap-2">
+                <img id="navUserAvatar" src="" class="header-avatar hidden">
                 <span id="userDisplay" class="bg-white text-blue-900 px-3 py-1 rounded-full text-[10px] font-black uppercase">User</span>
-                <button onclick="location.reload()" class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center"><i class="fa fa-sync-alt text-[10px]"></i></button>
+                <button onclick="location.reload()" class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center shadow-inner active:scale-90 transition-transform"><i class="fa fa-sync-alt text-[10px]"></i></button>
             </div>
         </nav>
         
         <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic"></div>
-        <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-2 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
+        <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
             
@@ -188,7 +193,6 @@
                             <span class="text-[8px] font-black text-blue-900 uppercase italic">Jarak Fokus:</span>
                             <input type="range" id="focusRange" min="0" max="100" value="0" oninput="applyManualFocus(this.value)" class="w-full accent-red-600">
                         </div>
-
                         <div id="manualBWControls" class="hidden grid grid-cols-2 gap-2 mb-2 p-2 bg-white rounded-xl border">
                             <div class="flex flex-col">
                                 <span class="text-[8px] font-black text-blue-900 uppercase italic">BRIGHT:</span>
@@ -259,21 +263,12 @@
             startDeliveryStatusListener();
         };
 
-        // --- KAMERA LOGIC (Fokus Otomatis Dikembalikan) ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: "environment", 
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                });
-                const v = document.getElementById('scannerVideo');
-                v.srcObject = stream;
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } });
+                const v = document.getElementById('scannerVideo'); v.srcObject = stream;
                 videoTrack = stream.getVideoTracks()[0];
-                
                 document.getElementById('btnStartCam').classList.add('hidden');
                 document.getElementById('btnStopCam').classList.remove('hidden');
                 document.getElementById('camControls').classList.remove('hidden');
@@ -293,7 +288,6 @@
             clearInterval(autoScanInterval);
         }
 
-        // BARU: Fungsi Set Focus Mode
         async function setFocusMode(mode) {
             if (!videoTrack) return;
             const caps = videoTrack.getCapabilities();
@@ -301,29 +295,18 @@
             document.getElementById('f-manual').classList.toggle('active', mode === 'manual');
             document.getElementById('manualFocusSlider').classList.toggle('hidden', mode !== 'manual');
             try {
-                if (mode === 'continuous') {
-                    if (caps.focusMode && caps.focusMode.includes('continuous')) {
-                        await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-                    }
-                } else {
-                    if (caps.focusMode && caps.focusMode.includes('manual')) {
-                        await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] });
-                    } else { alert("Fokus manual tidak didukung perangkat ini."); }
-                }
+                if (mode === 'continuous') { if (caps.focusMode && caps.focusMode.includes('continuous')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } 
+                else { if (caps.focusMode && caps.focusMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] }); else alert("Fokus manual tidak didukung."); }
             } catch (e) { console.error(e); }
         }
 
-        // BARU: Fungsi Apply Manual Focus
         async function applyManualFocus(val) {
             if (!videoTrack) return;
             const caps = videoTrack.getCapabilities();
             if (caps.focusDistance) {
-                const min = caps.focusDistance.min;
-                const max = caps.focusDistance.max;
+                const min = caps.focusDistance.min; const max = caps.focusDistance.max;
                 const targetFocus = min + (val / 100) * (max - min);
-                try {
-                    await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: targetFocus }] });
-                } catch (e) { console.error(e); }
+                try { await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: targetFocus }] }); } catch (e) { console.error(e); }
             }
         }
 
@@ -387,7 +370,6 @@
             } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
-        // --- CORE FUNCTIONS (SAVE/RENDER/LOGIN) ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -395,6 +377,8 @@
                     const base64 = e.target.result;
                     document.getElementById('userAvatar').src = base64;
                     localStorage.setItem('profile_pic_' + currentUser, base64);
+                    updateProfileUI(); // Sync header UI
+                    updatePresence(); // Push photo to DB
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -412,8 +396,17 @@
         function updateProfileUI() {
             document.getElementById('userNameFull').innerText = currentUser;
             const savedPic = localStorage.getItem('profile_pic_' + currentUser);
-            if (savedPic) document.getElementById('userAvatar').src = savedPic;
-            else document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            const navAvatar = document.getElementById('navUserAvatar');
+            if (savedPic) {
+                document.getElementById('userAvatar').src = savedPic;
+                navAvatar.src = savedPic;
+                navAvatar.classList.remove('hidden');
+            } else {
+                const defaultUrl = `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+                document.getElementById('userAvatar').src = defaultUrl;
+                navAvatar.src = defaultUrl;
+                navAvatar.classList.remove('hidden');
+            }
         }
 
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
@@ -467,12 +460,17 @@
 
         function updatePresence() {
             if(!currentUser) return;
+            const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
             const userStatusRef = db.ref('presence/' + currentUser);
-            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now() });
+            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
             userStatusRef.onDisconnect().remove();
             db.ref('presence').on('value', s => {
                 const el = document.getElementById('onlineBar'); el.innerHTML = "";
-                s.forEach(u => el.innerHTML += `<span class="flex items-center gap-1"><i class="fa fa-circle text-[5px] text-green-500"></i> ${u.key}</span>`);
+                s.forEach(u => {
+                    const data = u.val();
+                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
+                    el.innerHTML += `<span class="flex items-center gap-1"><img src="${photoUrl}" class="online-avatar"> ${u.key}</span>`;
+                });
             });
         }
 
@@ -554,11 +552,8 @@
         function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
 
         function saveData() {
-            const a = document.getElementById('custArea').value; 
-            const n = document.getElementById('custName').value; 
-            const ph = document.getElementById('custPhone').value;
-            const eid = document.getElementById('editId').value;
-            if(!a || !n) return alert("Lengkapi data!");
+            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
+            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
             if (ph) {
                 const cleanInputPhone = ph.replace(/\D/g, '');
                 const isDuplicate = Object.keys(allData).some(id => {
