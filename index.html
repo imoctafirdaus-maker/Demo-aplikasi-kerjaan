@@ -55,6 +55,11 @@
         .online-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
         .antaran-photo { cursor: pointer; transition: transform 0.2s; }
         .antaran-photo:active { transform: scale(0.92); }
+
+        /* Custom Style for Download Button */
+        .bg-download { background: linear-gradient(135deg, #006491 0%, #004a6d 100%); border: 1px solid rgba(255,255,255,0.1); }
+        .download-icon { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-5px);} 60% {transform: translateY(-3px);} }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -108,6 +113,15 @@
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
                 <div class="space-y-3">
+                    <div onclick="downloadApk()" class="profile-bubble bg-download">
+                        <div class="profile-icon bg-blue-100 text-blue-900 download-icon"><i class="fa fa-download"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-white uppercase italic text-[11px]">Unduh APK Sistem</span>
+                            <span class="text-[8px] text-blue-200 font-bold uppercase">Simpan ke Memori HP</span>
+                        </div>
+                        <i class="fa fa-chevron-right text-white/30 text-[10px]"></i>
+                    </div>
+
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
@@ -381,7 +395,6 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    // TANPA KOMPRESI: Profil tetap resolusi asli agar jelas
                     const base64 = e.target.result;
                     document.getElementById('userAvatar').src = base64;
                     localStorage.setItem('profile_pic_' + currentUser, base64);
@@ -513,7 +526,6 @@
         function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
         function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
         
-        // --- LOGIKA KOMPRESI KHUSUS FOTO ANTARAN ---
         function processImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -521,17 +533,13 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas'); 
-                        const MAX_W = 150; // Ukuran kecil agar database ringan
+                        const MAX_W = 150; 
                         canvas.width = MAX_W; 
                         canvas.height = img.height * (MAX_W / img.width);
                         const ctx = canvas.getContext('2d');
                         ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        
-                        // Kualitas dikompresi ke 0.5 (50%)
                         photoBase64 = canvas.toDataURL('image/jpeg', 0.5);
-                        
                         document.getElementById('imgPrev').src = photoBase64;
                         document.getElementById('imgPrev').classList.remove('hidden');
                         document.getElementById('btnRemovePhoto').classList.remove('hidden');
@@ -546,16 +554,6 @@
         function saveData() {
             const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
             const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
-            if (ph) {
-                const cleanInputPhone = ph.replace(/\D/g, '');
-                const isDuplicate = Object.keys(allData).some(id => {
-                    if (id === eid) return false; 
-                    const item = allData[id];
-                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
-                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
-                });
-                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
-            }
             const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
             const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
             ref.then(() => resetForm());
@@ -628,6 +626,7 @@
         function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
         function cancelEdit() { resetForm(); }
         function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+        
         function changePinPrompt() {
             const old = prompt("Masukkan PIN Lama:");
             if (old === userPins[currentUser]) {
@@ -635,6 +634,23 @@
                 if (baru && baru.length === 4) { userPins[currentUser] = baru; alert("PIN Berhasil diubah!"); }
                 else { alert("PIN harus 4 digit!"); }
             } else { alert("PIN Salah!"); }
+        }
+
+        // LOGIKA UNDUH APK (Self-Download)
+        function downloadApk() {
+            try {
+                const htmlContent = document.documentElement.outerHTML;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'TrackCust-JTM-Official.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                alert("Sistem berhasil diunduh! Buka file 'TrackCust-JTM-Official.html' di folder Download untuk menjalankan aplikasi offline.");
+            } catch (e) {
+                alert("Gagal mengunduh: " + e.message);
+            }
         }
 
         function renderAddressTable(matches) {
@@ -649,12 +665,9 @@
 
         function openWaLinkCustom(n, originalNum = "") {
             pushDeliveryStatus(currentUser);
-            let msg = "";
-            if (cashiersOnly.includes(currentUser)) {
-                msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${originalNum || n}) saya ingin mengkonfirmasi .....`;
-            } else {
-                msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
-            }
+            let msg = cashiersOnly.includes(currentUser) ? 
+                `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${originalNum || n}) saya ingin mengkonfirmasi .....` :
+                `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
             window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
@@ -663,11 +676,8 @@
             if(!n) return alert("Nomor kosong!");
             let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
             const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
-            const activeId = Object.keys(allData).find(id => {
-                const dataN = (allData[id].phone || "").replace(/\D/g, '');
-                return allData[id].status !== 'done' && dataN.includes(searchN);
-            });
-            if (activeId) {
+            const activeId = Object.keys(allData).find(id => (allData[id].phone || "").replace(/\D/g, '').includes(searchN));
+            if (activeId && allData[activeId].status !== 'done') {
                 document.getElementById('searchInput').value = allData[activeId].phone;
                 render(); showPage('list'); stopCamera();
             } else { openWaLinkCustom(wa, n); }
