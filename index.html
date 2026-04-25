@@ -235,7 +235,6 @@
     </div>
 
     <script>
-        // Configuration & Database Users
         const userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -269,7 +268,7 @@
             startDeliveryStatusListener();
         };
 
-        // --- CAMERA & OCR LOGIC ---
+        // --- CORE CAMERA & OCR ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
@@ -382,6 +381,7 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
+                    // TANPA KOMPRESI: Profil tetap resolusi asli agar jelas
                     const base64 = e.target.result;
                     document.getElementById('userAvatar').src = base64;
                     localStorage.setItem('profile_pic_' + currentUser, base64);
@@ -513,24 +513,24 @@
         function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
         function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
         
+        // --- LOGIKA KOMPRESI KHUSUS FOTO ANTARAN ---
         function processImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = e => {
                     const img = new Image();
                     img.onload = () => {
-                        const c = document.createElement('canvas'); 
-                        // KOMPRESI EXTREME: Lebar cuma 150px agar database sangat ringan
-                        const THUMB_W = 150; 
-                        c.width = THUMB_W; 
-                        c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d');
+                        const canvas = document.createElement('canvas'); 
+                        const MAX_W = 150; // Ukuran kecil agar database ringan
+                        canvas.width = MAX_W; 
+                        canvas.height = img.height * (MAX_W / img.width);
+                        const ctx = canvas.getContext('2d');
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
-                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         
-                        // Kualitas diturunkan ke 0.5 (50%) agar size file sangat kecil
-                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
+                        // Kualitas dikompresi ke 0.5 (50%)
+                        photoBase64 = canvas.toDataURL('image/jpeg', 0.5);
                         
                         document.getElementById('imgPrev').src = photoBase64;
                         document.getElementById('imgPrev').classList.remove('hidden');
