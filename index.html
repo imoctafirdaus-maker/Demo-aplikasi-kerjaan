@@ -519,14 +519,23 @@
                 reader.onload = e => {
                     const img = new Image();
                     img.onload = () => {
-                        const c = document.createElement('canvas'); const MAX = 600;
-                        c.width = MAX; c.height = img.height * (MAX / img.width);
-                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                        photoBase64 = c.toDataURL('image/jpeg', 0.7);
+                        const c = document.createElement('canvas'); 
+                        // KOMPRESI EXTREME: Lebar cuma 150px agar database sangat ringan
+                        const THUMB_W = 150; 
+                        c.width = THUMB_W; 
+                        c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        
+                        // Kualitas diturunkan ke 0.5 (50%) agar size file sangat kecil
+                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
+                        
                         document.getElementById('imgPrev').src = photoBase64;
                         document.getElementById('imgPrev').classList.remove('hidden');
                         document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                        document.getElementById('photoStatus').innerText = "FOTO SIAP!";
+                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
                     };
                     img.src = e.target.result;
                 };
