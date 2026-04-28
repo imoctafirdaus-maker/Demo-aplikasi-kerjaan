@@ -55,11 +55,6 @@
         .online-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
         .antaran-photo { cursor: pointer; transition: transform 0.2s; }
         .antaran-photo:active { transform: scale(0.92); }
-
-        /* Custom Style for Download Button */
-        .bg-download { background: linear-gradient(135deg, #006491 0%, #004a6d 100%); border: 1px solid rgba(255,255,255,0.1); }
-        .download-icon { animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-5px);} 60% {transform: translateY(-3px);} }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -98,6 +93,7 @@
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
+            
             <div id="page-home" class="page p-6 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
@@ -112,14 +108,15 @@
                     <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
+
                 <div class="space-y-3">
-                    <div onclick="downloadApk()" class="profile-bubble bg-download">
-                        <div class="profile-icon bg-blue-100 text-blue-900 download-icon"><i class="fa fa-download"></i></div>
-                        <div class="flex flex-col flex-1">
-                            <span class="font-black text-white uppercase italic text-[11px]">Unduh APK Sistem</span>
-                            <span class="text-[8px] text-blue-200 font-bold uppercase">Simpan ke Memori HP</span>
+                    <div id="adminMenu" class="hidden space-y-3">
+                        <p class="text-[9px] font-black text-blue-900/40 uppercase tracking-widest ml-2">Manajemen Kontrol</p>
+                        <div onclick="showPage('manage-crew')" class="profile-bubble border-blue-200 bg-blue-50/50">
+                            <div class="profile-icon bg-blue-100 text-blue-600"><i class="fa fa-users-cog"></i></div>
+                            <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Manajemen Crew</span>
+                            <i class="fa fa-chevron-right text-blue-300 text-[10px]"></i>
                         </div>
-                        <i class="fa fa-chevron-right text-white/30 text-[10px]"></i>
                     </div>
 
                     <div onclick="changePinPrompt()" class="profile-bubble">
@@ -133,6 +130,19 @@
                         <i class="fa fa-chevron-right text-red-200 text-[10px]"></i>
                     </div>
                 </div>
+            </div>
+
+            <div id="page-manage-crew" class="page p-4 overflow-y-auto">
+                <div class="bg-white rounded-3xl p-6 shadow-xl mb-6">
+                    <h3 class="font-black text-blue-900 uppercase italic text-center text-sm mb-4">Tambah / Edit Crew</h3>
+                    <div class="space-y-3">
+                        <input type="text" id="adminCrewName" placeholder="Nama Lengkap Crew" class="w-full bg-gray-50 p-4 rounded-xl text-sm font-bold outline-none">
+                        <input type="tel" id="adminCrewPin" maxlength="4" placeholder="PIN Akses (4 Digit)" class="w-full bg-gray-50 p-4 rounded-xl text-sm font-bold outline-none">
+                        <button onclick="adminSaveCrew()" class="w-full dominos-blue text-white py-3 rounded-xl font-black uppercase text-[11px]">Simpan Perubahan</button>
+                    </div>
+                </div>
+                <div id="crewListContainer" class="space-y-2 pb-24">
+                    </div>
             </div>
 
             <div id="page-list" class="page active p-4 overflow-y-auto">
@@ -191,27 +201,6 @@
                                 <button onclick="setBWMode('manual')" id="bw-manual" class="btn-mode">MANUAL</button>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
-                            <div class="flex gap-1">
-                                <button onclick="setFocusMode('continuous')" id="f-auto" class="btn-mode active">AUTO</button>
-                                <button onclick="setFocusMode('manual')" id="f-manual" class="btn-mode">MANUAL</button>
-                            </div>
-                        </div>
-                        <div id="manualFocusSlider" class="hidden mb-2 p-2 bg-white rounded-xl border">
-                            <span class="text-[8px] font-black text-blue-900 uppercase italic">Jarak Fokus:</span>
-                            <input type="range" id="focusRange" min="0" max="100" value="0" oninput="applyManualFocus(this.value)" class="w-full accent-red-600">
-                        </div>
-                        <div id="manualBWControls" class="hidden grid grid-cols-2 gap-2 mb-2 p-2 bg-white rounded-xl border">
-                            <div class="flex flex-col">
-                                <span class="text-[8px] font-black text-blue-900 uppercase italic">BRIGHT:</span>
-                                <input type="range" id="brSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-[8px] font-black text-blue-900 uppercase italic">CONTRAST:</span>
-                                <input type="range" id="ctSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
-                            </div>
-                        </div>
                         <div class="flex items-center gap-2 mb-2">
                             <span class="text-[9px] font-black text-blue-900 uppercase">Zoom:</span>
                             <button onclick="setZoom(1)" id="z1" class="btn-zoom active">1x</button>
@@ -249,14 +238,13 @@
     </div>
 
     <script>
-        const userPins = { 
+        // CONFIG & DB CREW (Okta bisa edit ini dari dalam aplikasi)
+        let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
             "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
             "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
         };
-        const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
-        const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
 
         const firebaseConfig = { 
             apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
@@ -273,16 +261,78 @@
         let bwMode = 'off'; let isScanning = false; let autoScanInterval = null;
         let renderTimer;
 
+        // SYNC USER PINS WITH FIREBASE (Agar Okta bisa kelola secara remote)
+        function syncCrewData() {
+            db.ref('crew_settings').on('value', s => {
+                const data = s.val();
+                if(data) { userPins = data; updateLoginDropdown(); renderAdminCrewList(); }
+                else { db.ref('crew_settings').set(userPins); }
+            });
+        }
+
         window.onload = () => {
-            const logSel = document.getElementById('selectUser');
-            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
-            Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+            syncCrewData();
             if(currentUser) bukaApp(currentUser);
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
         };
 
-        // --- CORE CAMERA & OCR ---
+        function updateLoginDropdown() {
+            const logSel = document.getElementById('selectUser');
+            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
+            Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+        }
+
+        // --- ADMIN FUNCTIONS (OKTA ONLY) ---
+        function renderAdminCrewList() {
+            const container = document.getElementById('crewListContainer');
+            if(!container) return;
+            container.innerHTML = "";
+            Object.keys(userPins).forEach(name => {
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-gray-100">
+                        <div>
+                            <p class="font-black text-blue-900 text-xs italic uppercase">${name}</p>
+                            <p class="text-[10px] font-bold text-gray-400">PIN: ${userPins[name]}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="adminEditCrew('${name}')" class="bg-blue-50 text-blue-600 p-2 rounded-lg text-xs"><i class="fa fa-edit"></i></button>
+                            <button onclick="adminDeleteCrew('${name}')" class="bg-red-50 text-red-600 p-2 rounded-lg text-xs"><i class="fa fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function adminEditCrew(name) {
+            document.getElementById('adminCrewName').value = name;
+            document.getElementById('adminCrewPin').value = userPins[name];
+        }
+
+        function adminSaveCrew() {
+            const name = document.getElementById('adminCrewName').value.trim();
+            const pin = document.getElementById('adminCrewPin').value.trim();
+            if(!name || pin.length !== 4) return alert("Nama harus diisi & PIN wajib 4 digit!");
+            
+            const newPins = {...userPins};
+            newPins[name] = pin;
+            db.ref('crew_settings').set(newPins).then(() => {
+                alert("Data crew diperbarui!");
+                document.getElementById('adminCrewName').value = "";
+                document.getElementById('adminCrewPin').value = "";
+            });
+        }
+
+        function adminDeleteCrew(name) {
+            if(name === "Okta") return alert("Tidak bisa menghapus diri sendiri!");
+            if(confirm(`Hapus crew ${name}?`)) {
+                const newPins = {...userPins};
+                delete newPins[name];
+                db.ref('crew_settings').set(newPins);
+            }
+        }
+
+        // --- CAMERA & OCR LOGIC ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
@@ -308,28 +358,6 @@
             clearInterval(autoScanInterval);
         }
 
-        async function setFocusMode(mode) {
-            if (!videoTrack) return;
-            const caps = videoTrack.getCapabilities();
-            document.getElementById('f-auto').classList.toggle('active', mode === 'continuous');
-            document.getElementById('f-manual').classList.toggle('active', mode === 'manual');
-            document.getElementById('manualFocusSlider').classList.toggle('hidden', mode !== 'manual');
-            try {
-                if (mode === 'continuous') { if (caps.focusMode && caps.focusMode.includes('continuous')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } 
-                else { if (caps.focusMode && caps.focusMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] }); else alert("Fokus manual tidak didukung."); }
-            } catch (e) { console.error(e); }
-        }
-
-        async function applyManualFocus(val) {
-            if (!videoTrack) return;
-            const caps = videoTrack.getCapabilities();
-            if (caps.focusDistance) {
-                const min = caps.focusDistance.min; const max = caps.focusDistance.max;
-                const targetFocus = min + (val / 100) * (max - min);
-                try { await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: targetFocus }] }); } catch (e) { console.error(e); }
-            }
-        }
-
         function setZoom(l) {
             if (!videoTrack) return;
             const caps = videoTrack.getCapabilities();
@@ -342,14 +370,8 @@
         function setBWMode(mode) {
             bwMode = mode;
             document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
-            document.getElementById('manualBWControls').classList.toggle('hidden', mode !== 'manual');
-            updateVisualFilters();
-        }
-
-        function updateVisualFilters() {
-            const v = document.getElementById('scannerVideo'); if(!v) return;
-            if(bwMode === 'manual') v.style.filter = `grayscale(100%) brightness(${document.getElementById('brSlider').value}%) contrast(${document.getElementById('ctSlider').value}%)`;
-            else if(bwMode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
+            const v = document.getElementById('scannerVideo');
+            if(mode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
             else v.style.filter = `none`;
         }
 
@@ -390,7 +412,7 @@
             } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
-        // --- USER & AUTH LOGIC ---
+        // --- AUTH LOGIC ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -414,6 +436,13 @@
             document.getElementById('userAvatar').src = targetSrc;
             navAvatar.src = targetSrc;
             navAvatar.classList.remove('hidden');
+
+            // Toggle Admin Menu
+            if(currentUser === "Okta") {
+                document.getElementById('adminMenu').classList.remove('hidden');
+            } else {
+                document.getElementById('adminMenu').classList.add('hidden');
+            }
         }
 
         function prosesLogin() {
@@ -451,7 +480,7 @@
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
         
         function pushDeliveryStatus(nama) { 
-            if(mgtAndCashiers.includes(nama)) return; 
+            if(nama.includes("Mgt") || nama.includes("Cashier")) return; 
             db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
         }
 
@@ -480,14 +509,14 @@
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
                 
                 let msgWa = "";
-                if (cashiersOnly.includes(currentUser)) {
+                if (currentUser.includes("Cashier")) {
                     msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
                 } else {
-                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu ya 😊.`;
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap akti WhatsApp ya, Terimakasih 😊.`;
                 }
                 
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
-                const isBlockedUser = mgtAndCashiers.includes(currentUser);
+                const isBlockedUser = currentUser.includes("Mgt") || currentUser.includes("Cashier");
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
@@ -524,7 +553,12 @@
         }
 
         function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
-        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
+        
+        function secureDelete(id) { 
+            const p = prompt("PIN:"); 
+            if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); 
+            else alert("PIN SALAH!");
+        }
         
         function processImage(input) {
             if (input.files && input.files[0]) {
@@ -532,18 +566,16 @@
                 reader.onload = e => {
                     const img = new Image();
                     img.onload = () => {
-                        const canvas = document.createElement('canvas'); 
-                        const MAX_W = 150; 
-                        canvas.width = MAX_W; 
-                        canvas.height = img.height * (MAX_W / img.width);
-                        const ctx = canvas.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        photoBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                        const c = document.createElement('canvas'); 
+                        const THUMB_W = 150; 
+                        c.width = THUMB_W; 
+                        c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d');
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
                         document.getElementById('imgPrev').src = photoBase64;
                         document.getElementById('imgPrev').classList.remove('hidden');
                         document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
                     };
                     img.src = e.target.result;
                 };
@@ -567,11 +599,9 @@
         }
 
         function goOTW(id) { 
-            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
-            if(allData[id].status !== 'otw') { 
-                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
-                pushDeliveryStatus(currentUser); 
-            } 
+            if(currentUser.includes("Mgt") || currentUser.includes("Cashier")) return alert("Tidak diizinkan mengantar!");
+            db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+            pushDeliveryStatus(currentUser); 
         }
 
         function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
@@ -591,7 +621,6 @@
                     if(el) {
                         const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
                         el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
-                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
                     }
                 }
             });
@@ -610,7 +639,7 @@
                     const data = u.val();
                     const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
                     el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
+                        <img src="${photoUrl}" class="online-avatar"> ${u.key}
                     </span>`;
                 });
             });
@@ -623,7 +652,7 @@
             document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
         }
 
-        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); }
         function cancelEdit() { resetForm(); }
         function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
         
@@ -631,26 +660,13 @@
             const old = prompt("Masukkan PIN Lama:");
             if (old === userPins[currentUser]) {
                 const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { userPins[currentUser] = baru; alert("PIN Berhasil diubah!"); }
+                if (baru && baru.length === 4) { 
+                    const newPins = {...userPins};
+                    newPins[currentUser] = baru;
+                    db.ref('crew_settings').set(newPins).then(() => alert("PIN Berhasil diubah!"));
+                }
                 else { alert("PIN harus 4 digit!"); }
             } else { alert("PIN Salah!"); }
-        }
-
-        // LOGIKA UNDUH APK (Self-Download)
-        function downloadApk() {
-            try {
-                const htmlContent = document.documentElement.outerHTML;
-                const blob = new Blob([htmlContent], { type: 'text/html' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'TrackCust-JTM-Official.html';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                alert("Sistem berhasil diunduh! Buka file 'TrackCust-JTM-Official.html' di folder Download untuk menjalankan aplikasi offline.");
-            } catch (e) {
-                alert("Gagal mengunduh: " + e.message);
-            }
         }
 
         function renderAddressTable(matches) {
@@ -665,9 +681,12 @@
 
         function openWaLinkCustom(n, originalNum = "") {
             pushDeliveryStatus(currentUser);
-            let msg = cashiersOnly.includes(currentUser) ? 
-                `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${originalNum || n}) saya ingin mengkonfirmasi .....` :
-                `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
+            let msg = "";
+            if (currentUser.includes("Cashier")) {
+                msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${originalNum || n}) saya ingin mengkonfirmasi .....`;
+            } else {
+                msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
+            }
             window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
@@ -675,12 +694,7 @@
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
             if(!n) return alert("Nomor kosong!");
             let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
-            const activeId = Object.keys(allData).find(id => (allData[id].phone || "").replace(/\D/g, '').includes(searchN));
-            if (activeId && allData[activeId].status !== 'done') {
-                document.getElementById('searchInput').value = allData[activeId].phone;
-                render(); showPage('list'); stopCamera();
-            } else { openWaLinkCustom(wa, n); }
+            openWaLinkCustom(wa, n);
         }
     </script>
 </body>
