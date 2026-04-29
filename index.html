@@ -139,10 +139,10 @@
                         <input type="text" id="adminCrewName" placeholder="Nama Lengkap Crew" class="w-full bg-gray-50 p-4 rounded-xl text-sm font-bold outline-none">
                         <input type="tel" id="adminCrewPin" maxlength="4" placeholder="PIN Akses (4 Digit)" class="w-full bg-gray-50 p-4 rounded-xl text-sm font-bold outline-none">
                         <button onclick="adminSaveCrew()" class="w-full dominos-blue text-white py-3 rounded-xl font-black uppercase text-[11px]">Simpan Perubahan</button>
+                        <button onclick="showPage('home')" class="w-full bg-gray-200 text-gray-600 py-2 rounded-xl font-black uppercase text-[9px]">Kembali</button>
                     </div>
                 </div>
-                <div id="crewListContainer" class="space-y-2 pb-24">
-                    </div>
+                <div id="crewListContainer" class="space-y-2 pb-24"></div>
             </div>
 
             <div id="page-list" class="page active p-4 overflow-y-auto">
@@ -198,7 +198,6 @@
                             <div class="flex gap-1">
                                 <button onclick="setBWMode('off')" id="bw-off" class="btn-mode active">OFF</button>
                                 <button onclick="setBWMode('auto')" id="bw-auto" class="btn-mode">AUTO</button>
-                                <button onclick="setBWMode('manual')" id="bw-manual" class="btn-mode">MANUAL</button>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
@@ -238,7 +237,7 @@
     </div>
 
     <script>
-        // CONFIG & DB CREW (Okta bisa edit ini dari dalam aplikasi)
+        // CONFIG & DATABASE SYNC
         let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -261,12 +260,17 @@
         let bwMode = 'off'; let isScanning = false; let autoScanInterval = null;
         let renderTimer;
 
-        // SYNC USER PINS WITH FIREBASE (Agar Okta bisa kelola secara remote)
+        // SYNC CREW DATA FROM FIREBASE
         function syncCrewData() {
             db.ref('crew_settings').on('value', s => {
                 const data = s.val();
-                if(data) { userPins = data; updateLoginDropdown(); renderAdminCrewList(); }
-                else { db.ref('crew_settings').set(userPins); }
+                if(data) { 
+                    userPins = data; 
+                    updateLoginDropdown(); 
+                    renderAdminCrewList(); 
+                } else { 
+                    db.ref('crew_settings').set(userPins); 
+                }
             });
         }
 
@@ -279,11 +283,12 @@
 
         function updateLoginDropdown() {
             const logSel = document.getElementById('selectUser');
+            if(!logSel) return;
             logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
             Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
         }
 
-        // --- ADMIN FUNCTIONS (OKTA ONLY) ---
+        // ADMIN CREW MANAGEMENT FUNCTIONS
         function renderAdminCrewList() {
             const container = document.getElementById('crewListContainer');
             if(!container) return;
@@ -332,7 +337,84 @@
             }
         }
 
-        // --- CAMERA & OCR LOGIC ---
+        // AUTH & PROFILE LOGIC
+        function prosesLogin() {
+            const u = document.getElementById('selectUser').value;
+            const p = document.getElementById('inputPin').value;
+            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
+        }
+
+        function bukaApp(n) {
+            const isOkta = (n === "Okta");
+            db.ref('presence/' + n).once('value', snapshot => {
+                const existingData = snapshot.val();
+                if (!isOkta && existingData && existingData.session !== sessionID) {
+                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
+                }
+                currentUser = n; localStorage.setItem('jtm_user', n);
+                document.getElementById('userDisplay').innerText = n;
+                document.getElementById('pinOverlay').style.display = "none";
+                document.getElementById('mainContent').style.display = "flex";
+                updatePresence(); updateProfileUI();
+                db.ref('presence/' + n + '/session').on('value', snap => {
+                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
+                });
+                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+            });
+        }
+
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            const navAvatar = document.getElementById('navUserAvatar');
+            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            
+            document.getElementById('userAvatar').src = targetSrc;
+            navAvatar.src = targetSrc;
+            navAvatar.classList.remove('hidden');
+
+            // Admin Menu Toggle
+            if(currentUser === "Okta") {
+                document.getElementById('adminMenu').classList.remove('hidden');
+            } else {
+                document.getElementById('adminMenu').classList.add('hidden');
+            }
+        }
+
+        function changeProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('userAvatar').src = base64;
+                    localStorage.setItem('profile_pic_' + currentUser, base64);
+                    updateProfileUI(); 
+                    updatePresence();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function changePinPrompt() {
+            const old = prompt("Masukkan PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("Masukkan PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) { 
+                    const newPins = {...userPins};
+                    newPins[currentUser] = baru;
+                    db.ref('crew_settings').set(newPins).then(() => alert("PIN Berhasil diubah!"));
+                }
+                else { alert("PIN harus 4 digit!"); }
+            } else { alert("PIN Salah!"); }
+        }
+
+        function handleLogout(withConfirm = true) { 
+            if(withConfirm && !confirm("Keluar?")) return;
+            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+            localStorage.removeItem('jtm_user'); location.reload(); 
+        }
+
+        // CAMERA & OCR FUNCTIONS
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
@@ -358,6 +440,14 @@
             clearInterval(autoScanInterval);
         }
 
+        function setBWMode(mode) {
+            bwMode = mode;
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
+            const v = document.getElementById('scannerVideo');
+            if(mode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
+            else v.style.filter = `none`;
+        }
+
         function setZoom(l) {
             if (!videoTrack) return;
             const caps = videoTrack.getCapabilities();
@@ -365,14 +455,6 @@
                 videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(l, caps.zoom.max) }] });
                 document.querySelectorAll('.btn-zoom').forEach(b => b.classList.toggle('active', b.id === 'z'+l));
             }
-        }
-
-        function setBWMode(mode) {
-            bwMode = mode;
-            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
-            const v = document.getElementById('scannerVideo');
-            if(mode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
-            else v.style.filter = `none`;
         }
 
         async function startAutoScan() {
@@ -412,99 +494,19 @@
             } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
-        // --- AUTH LOGIC ---
-        function changeProfilePhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    document.getElementById('userAvatar').src = base64;
-                    localStorage.setItem('profile_pic_' + currentUser, base64);
-                    updateProfileUI(); 
-                    updatePresence();
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function updateProfileUI() {
-            document.getElementById('userNameFull').innerText = currentUser;
-            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
-            const navAvatar = document.getElementById('navUserAvatar');
-            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
-            
-            document.getElementById('userAvatar').src = targetSrc;
-            navAvatar.src = targetSrc;
-            navAvatar.classList.remove('hidden');
-
-            // Toggle Admin Menu
-            if(currentUser === "Okta") {
-                document.getElementById('adminMenu').classList.remove('hidden');
-            } else {
-                document.getElementById('adminMenu').classList.add('hidden');
-            }
-        }
-
-        function prosesLogin() {
-            const u = document.getElementById('selectUser').value;
-            const p = document.getElementById('inputPin').value;
-            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
-        }
-
-        function bukaApp(n) {
-            const isOkta = (n === "Okta");
-            db.ref('presence/' + n).once('value', snapshot => {
-                const existingData = snapshot.val();
-                if (!isOkta && existingData && existingData.session !== sessionID) {
-                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
-                }
-                currentUser = n; localStorage.setItem('jtm_user', n);
-                document.getElementById('userDisplay').innerText = n;
-                document.getElementById('pinOverlay').style.display = "none";
-                document.getElementById('mainContent').style.display = "flex";
-                updatePresence(); updateProfileUI();
-                db.ref('presence/' + n + '/session').on('value', snap => {
-                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
-                });
-                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
-            });
-        }
-
-        function handleLogout(withConfirm = true) { 
-            if(withConfirm && !confirm("Keluar?")) return;
-            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
-            localStorage.removeItem('jtm_user'); location.reload(); 
-        }
-
-        // --- CORE FUNCTIONALITY ---
+        // CUSTOMER DATA MANAGEMENT
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
-        
-        function pushDeliveryStatus(nama) { 
-            if(nama.includes("Mgt") || nama.includes("Cashier")) return; 
-            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
-        }
-
-        function startDeliveryStatusListener() {
-            db.ref('delivery_activity').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
-                s.forEach(child => {
-                    const d = child.val();
-                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
-                });
-                bar.style.display = hasData ? "block" : "none";
-            });
-        }
 
         function render() {
             const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
             const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
+            
             Object.keys(allData).reverse().forEach(id => {
                 const i = allData[id];
                 const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
                 if(i.status !== 'done') activeCount++;
+                
                 let wa = (i.phone || "").replace(/\D/g, '');
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
                 
@@ -545,6 +547,7 @@
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                 </div>`;
+                
                 if(i.status === 'done') histHTML += cardHtml; 
                 else if(searchStr.includes(filter)) listHTML += cardHtml;
             });
@@ -552,38 +555,6 @@
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
         }
 
-        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
-        
-        function secureDelete(id) { 
-            const p = prompt("PIN:"); 
-            if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); 
-            else alert("PIN SALAH!");
-        }
-        
-        function processImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const c = document.createElement('canvas'); 
-                        const THUMB_W = 150; 
-                        c.width = THUMB_W; 
-                        c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d');
-                        ctx.drawImage(img, 0, 0, c.width, c.height);
-                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
-                        document.getElementById('imgPrev').src = photoBase64;
-                        document.getElementById('imgPrev').classList.remove('hidden');
-                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // LOGIKA BARU: CEK GANDA & AUTO SWITCH (DIPANGGIL DI DALAM SAVEDATA)
         function saveData() {
             const a = document.getElementById('custArea').value; 
             const n = document.getElementById('custName').value.trim(); 
@@ -592,37 +563,30 @@
             
             if(!a || !n) return alert("Lengkapi data!");
 
-            // [LOGIKA PENCEGAHAN GANDA]
-            if (!eid) { // Hanya cek ganda jika input baru (bukan edit)
+            if (!eid) {
                 const isDuplicate = Object.values(allData).some(item => {
                     const phoneMatch = ph && item.phone === ph && item.status !== 'done';
-                    const nameMatch = item.name.toLowerCase() === n.toLowerCase() && item.area === a.toUpperCase() && item.status !== 'done';
-                    return phoneMatch || nameMatch;
+                    return phoneMatch;
                 });
-
                 if (isDuplicate) {
-                    const konfirmasi = confirm("⚠️ Data dengan Nama/Nomor HP yang sama sudah ada di daftar AKTIF. Tetap simpan?");
-                    if (!konfirmasi) return; 
+                    if (!confirm("⚠️ Nomor HP sudah ada di daftar AKTIF. Tetap simpan?")) return; 
                 }
             }
 
             const d = { 
-                area: a.toUpperCase(), 
-                name: n, 
-                phone: ph, 
+                area: a.toUpperCase(), name: n, phone: ph, 
                 maps: document.getElementById('custMaps').value, 
-                photo: photoBase64, 
-                status: 'active', 
-                timestamp: Date.now() 
+                photo: photoBase64, status: 'active', timestamp: Date.now() 
             };
 
             const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
-            
-            // Auto Switch & Reset
-            ref.then(() => {
-                resetForm();
-                showPage('list');
-            });
+            ref.then(() => { resetForm(); showPage('list'); });
+        }
+
+        function secureDelete(id) { 
+            const p = prompt("PIN:"); 
+            if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); 
+            else alert("PIN SALAH!");
         }
 
         function editData(id) {
@@ -640,10 +604,23 @@
 
         function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
 
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
-            if(id !== 'chat') stopCamera();
+        // UTILITY FUNCTIONS
+        function pushDeliveryStatus(nama) { 
+            if(nama.includes("Mgt") || nama.includes("Cashier")) return; 
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
+        }
+
+        function startDeliveryStatusListener() {
+            db.ref('delivery_activity').on('value', s => {
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                s.forEach(child => {
+                    const d = child.val();
+                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
+                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
+                });
+                bar.style.display = hasData ? "block" : "none";
+            });
         }
 
         function updateTimers() {
@@ -679,28 +656,61 @@
             });
         }
 
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
+            if(id !== 'chat') stopCamera();
+        }
+
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas'); 
+                        const THUMB_W = 150; 
+                        c.width = THUMB_W; 
+                        c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d');
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
+                        document.getElementById('imgPrev').src = photoBase64;
+                        document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function openFullImg(url, caption = "") { 
+            document.getElementById('fullImg').src = url; 
+            document.getElementById('modalCaption').innerText = caption; 
+            document.getElementById('imgModal').style.display = 'flex'; 
+        }
+
         function resetForm() {
             document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
             document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
-            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+            photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden');
+            document.getElementById('formTitle').innerText = "Tambah Antaran";
+            document.getElementById('cancelBtn').classList.add('hidden');
         }
 
-        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); }
-        function cancelEdit() { resetForm(); }
-        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+        function removePhoto() { 
+            photoBase64 = ""; 
+            document.getElementById('imgPrev').classList.add('hidden'); 
+            document.getElementById('btnRemovePhoto').classList.add('hidden'); 
+        }
+
+        function cancelEdit() { resetForm(); showPage('list'); }
         
-        function changePinPrompt() {
-            const old = prompt("Masukkan PIN Lama:");
-            if (old === userPins[currentUser]) {
-                const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { 
-                    const newPins = {...userPins};
-                    newPins[currentUser] = baru;
-                    db.ref('crew_settings').set(newPins).then(() => alert("PIN Berhasil diubah!"));
-                }
-                else { alert("PIN harus 4 digit!"); }
-            } else { alert("PIN Salah!"); }
+        function clearAllHistory() { 
+            if (confirm("Kosongkan history?")) { 
+                Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); 
+            } 
         }
 
         function renderAddressTable(matches) {
