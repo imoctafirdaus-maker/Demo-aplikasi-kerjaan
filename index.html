@@ -31,7 +31,7 @@
         #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
         .scanner-overlay { position: absolute; inset: 0; border: 30px solid rgba(0,0,0,0.5); pointer-events: none; display: none; }
         .scanner-box { width: 100%; height: 100%; border: 2px solid #e31837; position: relative; }
-        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
+        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; box-shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
         @keyframes scanAnim { 0% { top: 0%; } 100% { top: 100%; } }
 
         .cam-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
@@ -93,7 +93,6 @@
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
-            
             <div id="page-home" class="page p-6 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
@@ -108,17 +107,7 @@
                     <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
-
                 <div class="space-y-3">
-                    <div id="adminMenu" class="hidden space-y-3">
-                        <p class="text-[9px] font-black text-blue-900/40 uppercase tracking-widest ml-2">Manajemen Kontrol</p>
-                        <div onclick="showPage('manage-crew')" class="profile-bubble border-blue-200 bg-blue-50/50">
-                            <div class="profile-icon bg-blue-100 text-blue-600"><i class="fa fa-users-cog"></i></div>
-                            <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Manajemen Crew</span>
-                            <i class="fa fa-chevron-right text-blue-300 text-[10px]"></i>
-                        </div>
-                    </div>
-
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
@@ -130,19 +119,6 @@
                         <i class="fa fa-chevron-right text-red-200 text-[10px]"></i>
                     </div>
                 </div>
-            </div>
-
-            <div id="page-manage-crew" class="page p-4 overflow-y-auto">
-                <div class="bg-white rounded-3xl p-6 shadow-xl mb-6">
-                    <h3 class="font-black text-blue-900 uppercase italic text-center text-sm mb-4">Tambah / Edit Crew</h3>
-                    <div class="space-y-3">
-                        <input type="text" id="adminCrewName" placeholder="Nama Lengkap Crew" class="w-full bg-gray-50 p-4 rounded-xl text-sm font-bold outline-none">
-                        <input type="tel" id="adminCrewPin" maxlength="4" placeholder="PIN Akses (4 Digit)" class="w-full bg-gray-50 p-4 rounded-xl text-sm font-bold outline-none">
-                        <button onclick="adminSaveCrew()" class="w-full dominos-blue text-white py-3 rounded-xl font-black uppercase text-[11px]">Simpan Perubahan</button>
-                        <button onclick="showPage('home')" class="w-full bg-gray-200 text-gray-600 py-2 rounded-xl font-black uppercase text-[9px]">Kembali</button>
-                    </div>
-                </div>
-                <div id="crewListContainer" class="space-y-2 pb-24"></div>
             </div>
 
             <div id="page-list" class="page active p-4 overflow-y-auto">
@@ -198,6 +174,28 @@
                             <div class="flex gap-1">
                                 <button onclick="setBWMode('off')" id="bw-off" class="btn-mode active">OFF</button>
                                 <button onclick="setBWMode('auto')" id="bw-auto" class="btn-mode">AUTO</button>
+                                <button onclick="setBWMode('manual')" id="bw-manual" class="btn-mode">MANUAL</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
+                            <div class="flex gap-1">
+                                <button onclick="setFocusMode('continuous')" id="f-auto" class="btn-mode active">AUTO</button>
+                                <button onclick="setFocusMode('manual')" id="f-manual" class="btn-mode">MANUAL</button>
+                            </div>
+                        </div>
+                        <div id="manualFocusSlider" class="hidden mb-2 p-2 bg-white rounded-xl border">
+                            <span class="text-[8px] font-black text-blue-900 uppercase italic">Jarak Fokus:</span>
+                            <input type="range" id="focusRange" min="0" max="100" value="0" oninput="applyManualFocus(this.value)" class="w-full accent-red-600">
+                        </div>
+                        <div id="manualBWControls" class="hidden grid grid-cols-2 gap-2 mb-2 p-2 bg-white rounded-xl border">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black text-blue-900 uppercase italic">BRIGHT:</span>
+                                <input type="range" id="brSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black text-blue-900 uppercase italic">CONTRAST:</span>
+                                <input type="range" id="ctSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
                             </div>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
@@ -237,13 +235,14 @@
     </div>
 
     <script>
-        // CONFIG & DATABASE SYNC
-        let userPins = { 
+        const userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
             "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
             "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
         };
+        const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
+        const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
 
         const firebaseConfig = { 
             apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
@@ -260,161 +259,16 @@
         let bwMode = 'off'; let isScanning = false; let autoScanInterval = null;
         let renderTimer;
 
-        // SYNC CREW DATA FROM FIREBASE
-        function syncCrewData() {
-            db.ref('crew_settings').on('value', s => {
-                const data = s.val();
-                if(data) { 
-                    userPins = data; 
-                    updateLoginDropdown(); 
-                    renderAdminCrewList(); 
-                } else { 
-                    db.ref('crew_settings').set(userPins); 
-                }
-            });
-        }
-
         window.onload = () => {
-            syncCrewData();
+            const logSel = document.getElementById('selectUser');
+            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
+            Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
             if(currentUser) bukaApp(currentUser);
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
         };
 
-        function updateLoginDropdown() {
-            const logSel = document.getElementById('selectUser');
-            if(!logSel) return;
-            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
-            Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
-        }
-
-        // ADMIN CREW MANAGEMENT FUNCTIONS
-        function renderAdminCrewList() {
-            const container = document.getElementById('crewListContainer');
-            if(!container) return;
-            container.innerHTML = "";
-            Object.keys(userPins).forEach(name => {
-                container.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-gray-100">
-                        <div>
-                            <p class="font-black text-blue-900 text-xs italic uppercase">${name}</p>
-                            <p class="text-[10px] font-bold text-gray-400">PIN: ${userPins[name]}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="adminEditCrew('${name}')" class="bg-blue-50 text-blue-600 p-2 rounded-lg text-xs"><i class="fa fa-edit"></i></button>
-                            <button onclick="adminDeleteCrew('${name}')" class="bg-red-50 text-red-600 p-2 rounded-lg text-xs"><i class="fa fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function adminEditCrew(name) {
-            document.getElementById('adminCrewName').value = name;
-            document.getElementById('adminCrewPin').value = userPins[name];
-        }
-
-        function adminSaveCrew() {
-            const name = document.getElementById('adminCrewName').value.trim();
-            const pin = document.getElementById('adminCrewPin').value.trim();
-            if(!name || pin.length !== 4) return alert("Nama harus diisi & PIN wajib 4 digit!");
-            
-            const newPins = {...userPins};
-            newPins[name] = pin;
-            db.ref('crew_settings').set(newPins).then(() => {
-                alert("Data crew diperbarui!");
-                document.getElementById('adminCrewName').value = "";
-                document.getElementById('adminCrewPin').value = "";
-            });
-        }
-
-        function adminDeleteCrew(name) {
-            if(name === "Okta") return alert("Tidak bisa menghapus diri sendiri!");
-            if(confirm(`Hapus crew ${name}?`)) {
-                const newPins = {...userPins};
-                delete newPins[name];
-                db.ref('crew_settings').set(newPins);
-            }
-        }
-
-        // AUTH & PROFILE LOGIC
-        function prosesLogin() {
-            const u = document.getElementById('selectUser').value;
-            const p = document.getElementById('inputPin').value;
-            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
-        }
-
-        function bukaApp(n) {
-            const isOkta = (n === "Okta");
-            db.ref('presence/' + n).once('value', snapshot => {
-                const existingData = snapshot.val();
-                if (!isOkta && existingData && existingData.session !== sessionID) {
-                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
-                }
-                currentUser = n; localStorage.setItem('jtm_user', n);
-                document.getElementById('userDisplay').innerText = n;
-                document.getElementById('pinOverlay').style.display = "none";
-                document.getElementById('mainContent').style.display = "flex";
-                updatePresence(); updateProfileUI();
-                db.ref('presence/' + n + '/session').on('value', snap => {
-                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
-                });
-                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
-            });
-        }
-
-        function updateProfileUI() {
-            document.getElementById('userNameFull').innerText = currentUser;
-            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
-            const navAvatar = document.getElementById('navUserAvatar');
-            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
-            
-            document.getElementById('userAvatar').src = targetSrc;
-            navAvatar.src = targetSrc;
-            navAvatar.classList.remove('hidden');
-
-            // Admin Menu Toggle
-            if(currentUser === "Okta") {
-                document.getElementById('adminMenu').classList.remove('hidden');
-            } else {
-                document.getElementById('adminMenu').classList.add('hidden');
-            }
-        }
-
-        function changeProfilePhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    document.getElementById('userAvatar').src = base64;
-                    localStorage.setItem('profile_pic_' + currentUser, base64);
-                    updateProfileUI(); 
-                    updatePresence();
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function changePinPrompt() {
-            const old = prompt("Masukkan PIN Lama:");
-            if (old === userPins[currentUser]) {
-                const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { 
-                    const newPins = {...userPins};
-                    newPins[currentUser] = baru;
-                    db.ref('crew_settings').set(newPins).then(() => alert("PIN Berhasil diubah!"));
-                }
-                else { alert("PIN harus 4 digit!"); }
-            } else { alert("PIN Salah!"); }
-        }
-
-        function handleLogout(withConfirm = true) { 
-            if(withConfirm && !confirm("Keluar?")) return;
-            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
-            localStorage.removeItem('jtm_user'); location.reload(); 
-        }
-
-        // CAMERA & OCR FUNCTIONS
+        // --- CAMERA & OCR LOGIC ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
@@ -440,12 +294,26 @@
             clearInterval(autoScanInterval);
         }
 
-        function setBWMode(mode) {
-            bwMode = mode;
-            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
-            const v = document.getElementById('scannerVideo');
-            if(mode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
-            else v.style.filter = `none`;
+        async function setFocusMode(mode) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            document.getElementById('f-auto').classList.toggle('active', mode === 'continuous');
+            document.getElementById('f-manual').classList.toggle('active', mode === 'manual');
+            document.getElementById('manualFocusSlider').classList.toggle('hidden', mode !== 'manual');
+            try {
+                if (mode === 'continuous') { if (caps.focusMode && caps.focusMode.includes('continuous')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } 
+                else { if (caps.focusMode && caps.focusMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] }); else alert("Fokus manual tidak didukung."); }
+            } catch (e) { console.error(e); }
+        }
+
+        async function applyManualFocus(val) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            if (caps.focusDistance) {
+                const min = caps.focusDistance.min; const max = caps.focusDistance.max;
+                const targetFocus = min + (val / 100) * (max - min);
+                try { await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: targetFocus }] }); } catch (e) { console.error(e); }
+            }
         }
 
         function setZoom(l) {
@@ -455,6 +323,20 @@
                 videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(l, caps.zoom.max) }] });
                 document.querySelectorAll('.btn-zoom').forEach(b => b.classList.toggle('active', b.id === 'z'+l));
             }
+        }
+
+        function setBWMode(mode) {
+            bwMode = mode;
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
+            document.getElementById('manualBWControls').classList.toggle('hidden', mode !== 'manual');
+            updateVisualFilters();
+        }
+
+        function updateVisualFilters() {
+            const v = document.getElementById('scannerVideo'); if(!v) return;
+            if(bwMode === 'manual') v.style.filter = `grayscale(100%) brightness(${document.getElementById('brSlider').value}%) contrast(${document.getElementById('ctSlider').value}%)`;
+            else if(bwMode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
+            else v.style.filter = `none`;
         }
 
         async function startAutoScan() {
@@ -494,31 +376,104 @@
             } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
-        // CUSTOMER DATA MANAGEMENT
+        // --- USER & AUTH LOGIC ---
+        function changeProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('userAvatar').src = base64;
+                    localStorage.setItem('profile_pic_' + currentUser, base64);
+                    updatePresence();
+                    updateProfileUI(); 
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            const navAvatar = document.getElementById('navUserAvatar');
+            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            
+            document.getElementById('userAvatar').src = targetSrc;
+            navAvatar.src = targetSrc;
+            navAvatar.classList.remove('hidden');
+        }
+
+        function prosesLogin() {
+            const u = document.getElementById('selectUser').value;
+            const p = document.getElementById('inputPin').value;
+            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
+        }
+
+        function bukaApp(n) {
+            const isOkta = (n === "Okta");
+            db.ref('presence/' + n).once('value', snapshot => {
+                const existingData = snapshot.val();
+                if (!isOkta && existingData && existingData.session !== sessionID) {
+                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
+                }
+                currentUser = n; localStorage.setItem('jtm_user', n);
+                document.getElementById('userDisplay').innerText = n;
+                document.getElementById('pinOverlay').style.display = "none";
+                document.getElementById('mainContent').style.display = "flex";
+                updatePresence(); updateProfileUI();
+                db.ref('presence/' + n + '/session').on('value', snap => {
+                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
+                });
+                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+            });
+        }
+
+        function handleLogout(withConfirm = true) { 
+            if(withConfirm && !confirm("Keluar?")) return;
+            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+            localStorage.removeItem('jtm_user'); location.reload(); 
+        }
+
+        // --- CORE FUNCTIONALITY ---
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
+        
+        function pushDeliveryStatus(nama) { 
+            if(mgtAndCashiers.includes(nama)) return; 
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
+        }
+
+        function startDeliveryStatusListener() {
+            db.ref('delivery_activity').on('value', s => {
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                s.forEach(child => {
+                    const d = child.val();
+                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
+                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
+                });
+                bar.style.display = hasData ? "block" : "none";
+            });
+        }
 
         function render() {
             const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
             const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
-            
             Object.keys(allData).reverse().forEach(id => {
                 const i = allData[id];
                 const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
                 if(i.status !== 'done') activeCount++;
-                
                 let wa = (i.phone || "").replace(/\D/g, '');
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
                 
                 let msgWa = "";
-                if (currentUser.includes("Cashier")) {
+                if (cashiersOnly.includes(currentUser)) {
                     msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
                 } else {
                     msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
                 }
                 
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
-                const isBlockedUser = currentUser.includes("Mgt") || currentUser.includes("Cashier");
+                const isBlockedUser = mgtAndCashiers.includes(currentUser);
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
@@ -547,7 +502,6 @@
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                 </div>`;
-                
                 if(i.status === 'done') histHTML += cardHtml; 
                 else if(searchStr.includes(filter)) listHTML += cardHtml;
             });
@@ -555,38 +509,51 @@
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
         }
 
-        function saveData() {
-            const a = document.getElementById('custArea').value; 
-            const n = document.getElementById('custName').value.trim(); 
-            const ph = document.getElementById('custPhone').value.trim();
-            const eid = document.getElementById('editId').value; 
-            
-            if(!a || !n) return alert("Lengkapi data!");
-
-            if (!eid) {
-                const isDuplicate = Object.values(allData).some(item => {
-                    const phoneMatch = ph && item.phone === ph && item.status !== 'done';
-                    return phoneMatch;
-                });
-                if (isDuplicate) {
-                    if (!confirm("⚠️ Nomor HP sudah ada di daftar AKTIF. Tetap simpan?")) return; 
-                }
+        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
+        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
+        
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas'); 
+                        const THUMB_W = 150; 
+                        c.width = THUMB_W; 
+                        c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
+                        document.getElementById('imgPrev').src = photoBase64;
+                        document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
             }
-
-            const d = { 
-                area: a.toUpperCase(), name: n, phone: ph, 
-                maps: document.getElementById('custMaps').value, 
-                photo: photoBase64, status: 'active', timestamp: Date.now() 
-            };
-
-            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
-            ref.then(() => { resetForm(); showPage('list'); });
         }
 
-        function secureDelete(id) { 
-            const p = prompt("PIN:"); 
-            if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); 
-            else alert("PIN SALAH!");
+        function saveData() {
+            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
+            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
+            if (ph) {
+                const cleanInputPhone = ph.replace(/\D/g, '');
+                const isDuplicate = Object.keys(allData).some(id => {
+                    if (id === eid) return false; 
+                    const item = allData[id];
+                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
+                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
+                });
+                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
+            }
+            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
+            ref.then(() => resetForm());
         }
 
         function editData(id) {
@@ -597,30 +564,19 @@
         }
 
         function goOTW(id) { 
-            if(currentUser.includes("Mgt") || currentUser.includes("Cashier")) return alert("Tidak diizinkan mengantar!");
-            db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
-            pushDeliveryStatus(currentUser); 
+            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
+            if(allData[id].status !== 'otw') { 
+                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+                pushDeliveryStatus(currentUser); 
+            } 
         }
 
         function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
 
-        // UTILITY FUNCTIONS
-        function pushDeliveryStatus(nama) { 
-            if(nama.includes("Mgt") || nama.includes("Cashier")) return; 
-            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
-        }
-
-        function startDeliveryStatusListener() {
-            db.ref('delivery_activity').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
-                s.forEach(child => {
-                    const d = child.val();
-                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
-                });
-                bar.style.display = hasData ? "block" : "none";
-            });
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
+            if(id !== 'chat') stopCamera();
         }
 
         function updateTimers() {
@@ -632,6 +588,7 @@
                     if(el) {
                         const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
                         el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
+                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
                     }
                 }
             });
@@ -650,67 +607,29 @@
                     const data = u.val();
                     const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
                     el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar"> ${u.key}
+                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
                     </span>`;
                 });
             });
         }
 
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
-            if(id !== 'chat') stopCamera();
-        }
-
-        function processImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const c = document.createElement('canvas'); 
-                        const THUMB_W = 150; 
-                        c.width = THUMB_W; 
-                        c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d');
-                        ctx.drawImage(img, 0, 0, c.width, c.height);
-                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
-                        document.getElementById('imgPrev').src = photoBase64;
-                        document.getElementById('imgPrev').classList.remove('hidden');
-                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function openFullImg(url, caption = "") { 
-            document.getElementById('fullImg').src = url; 
-            document.getElementById('modalCaption').innerText = caption; 
-            document.getElementById('imgModal').style.display = 'flex'; 
-        }
-
         function resetForm() {
             document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
             document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden');
-            document.getElementById('formTitle').innerText = "Tambah Antaran";
-            document.getElementById('cancelBtn').classList.add('hidden');
+            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
+            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
         }
 
-        function removePhoto() { 
-            photoBase64 = ""; 
-            document.getElementById('imgPrev').classList.add('hidden'); 
-            document.getElementById('btnRemovePhoto').classList.add('hidden'); 
-        }
-
-        function cancelEdit() { resetForm(); showPage('list'); }
-        
-        function clearAllHistory() { 
-            if (confirm("Kosongkan history?")) { 
-                Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); 
-            } 
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
+        function cancelEdit() { resetForm(); }
+        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+        function changePinPrompt() {
+            const old = prompt("Masukkan PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("Masukkan PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) { userPins[currentUser] = baru; alert("PIN Berhasil diubah!"); }
+                else { alert("PIN harus 4 digit!"); }
+            } else { alert("PIN Salah!"); }
         }
 
         function renderAddressTable(matches) {
@@ -726,7 +645,7 @@
         function openWaLinkCustom(n, originalNum = "") {
             pushDeliveryStatus(currentUser);
             let msg = "";
-            if (currentUser.includes("Cashier")) {
+            if (cashiersOnly.includes(currentUser)) {
                 msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${originalNum || n}) saya ingin mengkonfirmasi .....`;
             } else {
                 msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
@@ -738,7 +657,15 @@
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
             if(!n) return alert("Nomor kosong!");
             let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-            openWaLinkCustom(wa, n);
+            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
+            const activeId = Object.keys(allData).find(id => {
+                const dataN = (allData[id].phone || "").replace(/\D/g, '');
+                return allData[id].status !== 'done' && dataN.includes(searchN);
+            });
+            if (activeId) {
+                document.getElementById('searchInput').value = allData[activeId].phone;
+                render(); showPage('list'); stopCamera();
+            } else { openWaLinkCustom(wa, n); }
         }
     </script>
 </body>
