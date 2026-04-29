@@ -583,10 +583,39 @@
             }
         }
 
+        // LOGIKA BARU: CEK GANDA (DIPANGGIL DI DALAM SAVEDATA)
         function saveData() {
-            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
-            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
-            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const a = document.getElementById('custArea').value; 
+            const n = document.getElementById('custName').value.trim(); 
+            const ph = document.getElementById('custPhone').value.trim();
+            const eid = document.getElementById('editId').value; 
+            
+            if(!a || !n) return alert("Lengkapi data!");
+
+            // [LOGIKA PENCEGAHAN GANDA]
+            if (!eid) { // Hanya cek ganda jika input baru (bukan edit)
+                const isDuplicate = Object.values(allData).some(item => {
+                    const phoneMatch = ph && item.phone === ph && item.status !== 'done';
+                    const nameMatch = item.name.toLowerCase() === n.toLowerCase() && item.area === a.toUpperCase() && item.status !== 'done';
+                    return phoneMatch || nameMatch;
+                });
+
+                if (isDuplicate) {
+                    const konfirmasi = confirm("⚠️ Data dengan Nama/Nomor HP yang sama sudah ada di daftar AKTIF. Tetap simpan?");
+                    if (!konfirmasi) return; 
+                }
+            }
+
+            const d = { 
+                area: a.toUpperCase(), 
+                name: n, 
+                phone: ph, 
+                maps: document.getElementById('custMaps').value, 
+                photo: photoBase64, 
+                status: 'active', 
+                timestamp: Date.now() 
+            };
+
             const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
             ref.then(() => resetForm());
         }
