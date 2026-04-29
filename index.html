@@ -31,7 +31,7 @@
         #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
         .scanner-overlay { position: absolute; inset: 0; border: 30px solid rgba(0,0,0,0.5); pointer-events: none; display: none; }
         .scanner-box { width: 100%; height: 100%; border: 2px solid #e31837; position: relative; }
-        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
+        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; box-shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
         @keyframes scanAnim { 0% { top: 0%; } 100% { top: 100%; } }
 
         .cam-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
@@ -50,7 +50,6 @@
         .header-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; object-fit: cover; cursor: pointer; }
         .online-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
         
-        /* Modal Style */
         .admin-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 20000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .admin-content { background: white; border-radius: 2rem; padding: 25px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
     </style>
@@ -129,7 +128,6 @@
                             <i class="fa fa-chevron-right text-red-300 text-[10px]"></i>
                         </div>
                     </div>
-
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
@@ -145,7 +143,7 @@
 
             <div id="page-list" class="page active p-4 overflow-y-auto">
                 <div class="flex justify-between items-center mb-3">
-                    <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Driver/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
+                    <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
                     <div id="countActive" class="bg-red-500 text-white px-3 py-2 rounded-xl text-[10px] font-black italic">0 AKTIF</div>
                 </div>
                 <div id="activeList" class="space-y-4 pb-32"></div>
@@ -202,19 +200,6 @@
                             <span class="text-[8px] font-black text-blue-900 uppercase italic">Jarak Fokus:</span>
                             <input type="range" id="focusRange" min="0" max="100" value="0" oninput="applyManualFocus(this.value)" class="w-full accent-red-600">
                         </div>
-
-                        <div class="flex justify-between items-center mb-2 mt-2">
-                            <span class="text-[9px] font-black text-blue-900 uppercase">Brightness:</span>
-                            <div class="flex gap-1">
-                                <button onclick="setExpMode('continuous')" id="exp-auto" class="btn-mode active">AUTO</button>
-                                <button onclick="setExpMode('manual')" id="exp-manual" class="btn-mode">MANUAL</button>
-                            </div>
-                        </div>
-                        <div id="manualExpSlider" class="hidden mb-2 p-2 bg-white rounded-xl border">
-                            <span class="text-[8px] font-black text-blue-900 uppercase italic">Kecerahan (EV):</span>
-                            <input type="range" id="expRange" min="-2" max="2" step="0.1" value="0" oninput="applyManualExp(this.value)" class="w-full accent-red-600">
-                        </div>
-
                         <div class="flex items-center gap-2 mb-2">
                             <span class="text-[9px] font-black text-blue-900 uppercase">Zoom:</span>
                             <button onclick="setZoom(1)" id="z1" class="btn-zoom active">1x</button>
@@ -252,7 +237,7 @@
     </div>
 
     <script>
-        // Data Crew Awal (Bisa dimodifikasi via Admin Okta)
+        // --- KONFIGURASI & VARIABEL GLOBAL ---
         let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -284,7 +269,7 @@
             startDeliveryStatusListener();
         };
 
-        // --- ADMIN CREW LOGIC (OKTA ONLY) ---
+        // --- MANAJEMEN CREW ---
         function loadCrewFromDB() {
             db.ref('crew_list').on('value', snap => {
                 const data = snap.val();
@@ -296,6 +281,7 @@
 
         function updateLoginDropdown() {
             const logSel = document.getElementById('selectUser');
+            if(!logSel) return;
             logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
             Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
         }
@@ -350,21 +336,20 @@
             });
         }
 
-        // --- CAMERA & OCR LOGIC ---
+        // --- KAMERA & SCANNER (OCR) ---
         async function startCamera() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } });
-                const v = document.getElementById('scannerVideo'); v.srcObject = stream;
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
+                });
+                const v = document.getElementById('scannerVideo'); 
+                v.srcObject = stream;
                 videoTrack = stream.getVideoTracks()[0];
                 document.getElementById('btnStartCam').classList.add('hidden');
                 document.getElementById('btnStopCam').classList.remove('hidden');
                 document.getElementById('camControls').classList.remove('hidden');
                 document.getElementById('scannerOverlay').style.display = 'block';
-                
-                // Initialize Brightness Constraints
-                initExpConstraints();
-                
                 startAutoScan();
             } catch (err) { alert("Kamera Error. Pastikan izin kamera diaktifkan."); }
         }
@@ -387,8 +372,13 @@
             document.getElementById('f-manual').classList.toggle('active', mode === 'manual');
             document.getElementById('manualFocusSlider').classList.toggle('hidden', mode !== 'manual');
             try {
-                if (mode === 'continuous') { if (caps.focusMode && caps.focusMode.includes('continuous')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } 
-                else { if (caps.focusMode && caps.focusMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] }); }
+                if (mode === 'continuous') { 
+                    if (caps.focusMode && caps.focusMode.includes('continuous')) 
+                        await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); 
+                } else { 
+                    if (caps.focusMode && caps.focusMode.includes('manual')) 
+                        await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] }); 
+                }
             } catch (e) { console.error(e); }
         }
 
@@ -399,39 +389,6 @@
                 const min = caps.focusDistance.min; const max = caps.focusDistance.max;
                 const targetFocus = min + (val / 100) * (max - min);
                 try { await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: targetFocus }] }); } catch (e) { console.error(e); }
-            }
-        }
-
-        async function setExpMode(mode) {
-            if (!videoTrack) return;
-            const caps = videoTrack.getCapabilities();
-            document.getElementById('exp-auto').classList.toggle('active', mode === 'continuous');
-            document.getElementById('exp-manual').classList.toggle('active', mode === 'manual');
-            document.getElementById('manualExpSlider').classList.toggle('hidden', mode !== 'manual');
-            try {
-                if (mode === 'continuous') { if (caps.exposureMode && caps.exposureMode.includes('continuous')) await videoTrack.applyConstraints({ advanced: [{ exposureMode: "continuous" }] }); } 
-                else { if (caps.exposureMode && caps.exposureMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ exposureMode: "manual" }] }); }
-            } catch (e) { console.error(e); }
-        }
-
-        async function applyManualExp(val) {
-            if (!videoTrack) return;
-            const caps = videoTrack.getCapabilities();
-            if (caps.exposureCompensation) {
-                try { await videoTrack.applyConstraints({ advanced: [{ exposureCompensation: parseFloat(val) }] }); } catch (e) { console.error(e); }
-            }
-        }
-
-        function initExpConstraints() {
-            if (!videoTrack) return;
-            const caps = videoTrack.getCapabilities();
-            const slider = document.getElementById('expRange');
-            if (caps.exposureCompensation) {
-                slider.min = caps.exposureCompensation.min;
-                slider.max = caps.exposureCompensation.max;
-                slider.step = caps.exposureCompensation.step || 0.1;
-            } else {
-                document.getElementById('exp-manual').style.display = 'none';
             }
         }
 
@@ -467,7 +424,8 @@
         }
 
         async function captureAndScan() {
-            const l = document.getElementById('ocrLoading'); l.classList.remove('hidden');
+            const l = document.getElementById('ocrLoading'); 
+            l.classList.remove('hidden');
             const v = document.getElementById('scannerVideo');
             const c = document.createElement('canvas');
             c.width = v.videoWidth; c.height = v.videoHeight;
@@ -483,6 +441,7 @@
         function prosesLogin() {
             const u = document.getElementById('selectUser').value;
             const p = document.getElementById('inputPin').value;
+            if(!u) return alert("Pilih Nama!");
             if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
         }
 
@@ -492,12 +451,8 @@
             document.getElementById('pinOverlay').style.display = "none";
             document.getElementById('mainContent').style.display = "flex";
             
-            // Tampilkan fitur admin hanya jika itu Okta
-            if (n === "Okta") {
-                document.getElementById('adminFeature').classList.remove('hidden');
-            } else {
-                document.getElementById('adminFeature').classList.add('hidden');
-            }
+            if (n === "Okta") document.getElementById('adminFeature').classList.remove('hidden');
+            else document.getElementById('adminFeature').classList.add('hidden');
 
             updatePresence(); updateProfileUI();
             db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
@@ -509,7 +464,7 @@
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
 
-        // --- CORE FUNCTIONALITY (LIST & DATA) ---
+        // --- ANTARAN & CORE ---
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
         
         function pushDeliveryStatus(nama) { 
@@ -535,6 +490,7 @@
             const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
             const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
+            
             Object.keys(allData).reverse().forEach(id => {
                 const i = allData[id];
                 const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
@@ -543,12 +499,9 @@
                 let wa = (i.phone || "").replace(/\D/g, '');
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
                 
-                let msgWa = "";
-                if (cashiersOnly.includes(currentUser)) {
-                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama (${i.name})....`;
-                } else {
-                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar, mohon ditunggu ya, Terimakasih 😊.`;
-                }
+                let msgWa = cashiersOnly.includes(currentUser) ? 
+                    `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama (${i.name})....` : 
+                    `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar, mohon ditunggu ya, Terimakasih 😊.`;
                 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
@@ -588,7 +541,6 @@
             const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
             const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
             
-            // Pencegahan Data Ganda
             if (ph) {
                 const cleanInputPhone = ph.replace(/\D/g, '');
                 const isDuplicate = Object.keys(allData).some(id => {
@@ -608,7 +560,6 @@
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
             if(!n) return alert("Nomor kosong!");
             
-            // Fitur Auto Direct: Cek apakah nomor ada di list aktif
             const activeId = Object.keys(allData).find(id => {
                 const dataN = (allData[id].phone || "").replace(/\D/g, '');
                 return allData[id].status !== 'done' && dataN.includes(n.slice(-8));
@@ -616,27 +567,39 @@
 
             if (activeId) {
                 document.getElementById('searchInput').value = allData[activeId].phone;
-                render(); showPage('list'); stopCamera();
+                render(); showPage('list');
             } else {
                 let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
                 openWaLinkCustom(wa, n);
             }
         }
 
-        // Helper functions
+        // --- UTILITIES ---
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
             if(id !== 'chat') stopCamera();
         }
-        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
-        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser] || currentUser === "Okta") db.ref('customers/' + id).remove(); }
+
+        function openFullImg(url, caption = "") { 
+            document.getElementById('fullImg').src = url; 
+            document.getElementById('modalCaption').innerText = caption; 
+            document.getElementById('imgModal').style.display = 'flex'; 
+        }
+
+        function secureDelete(id) { 
+            const p = prompt("PIN:"); 
+            if(p === userPins[currentUser] || currentUser === "Okta") db.ref('customers/' + id).remove(); 
+        }
+
         function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
+
         function goOTW(id) { 
             if(mgtAndCashiers.includes(currentUser)) return alert("Kasir/Management dilarang antar!");
             db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
             pushDeliveryStatus(currentUser);
         }
+
         function processImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -656,12 +619,15 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
         function resetForm() {
             document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
             document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
             removePhoto(); showPage('list');
         }
+
         function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); }
+
         function changePinPrompt() {
             const old = prompt("PIN Lama:");
             if (old === userPins[currentUser]) {
@@ -669,6 +635,7 @@
                 if (baru && baru.length === 4) { userPins[currentUser] = baru; db.ref('crew_list').set(userPins); alert("PIN Diubah!"); }
             }
         }
+
         function updateTimers() {
             Object.keys(allData).forEach(id => {
                 if(allData[id].status === 'otw') {
@@ -683,12 +650,15 @@
                 }
             });
         }
+
         function updatePresence() {
             if(!currentUser) return;
             const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
             db.ref('presence/' + currentUser).set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
             db.ref('presence').on('value', s => {
-                const el = document.getElementById('onlineBar'); el.innerHTML = "";
+                const el = document.getElementById('onlineBar'); 
+                if(!el) return;
+                el.innerHTML = "";
                 s.forEach(u => {
                     const d = u.val();
                     el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border">
@@ -697,6 +667,7 @@
                 });
             });
         }
+
         function updateProfileUI() {
             document.getElementById('userNameFull').innerText = currentUser;
             const savedPic = localStorage.getItem('profile_pic_' + currentUser);
@@ -705,6 +676,7 @@
             document.getElementById('navUserAvatar').src = target;
             document.getElementById('navUserAvatar').classList.remove('hidden');
         }
+
         function renderAddressTable(matches) {
             const b = document.getElementById('addressTableBody'); b.innerHTML = '';
             [...new Set(matches.map(m => m.replace(/\D/g, '')))].forEach(n => {
@@ -714,15 +686,24 @@
             });
             document.getElementById('scanResultArea').classList.remove('hidden');
         }
+
         function openWaLinkCustom(n, originalNum = "") {
             let msg = cashiersOnly.includes(currentUser) ? `Halo, saya ${currentUser} dari kasir Domino's...` : `Halo, saya ${currentUser} dari Domino's, boleh minta sharelokasinya?`;
             window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
         }
+
         function editData(id) {
             const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
             document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
             if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); }
             showPage('add');
+        }
+
+        function clearAllHistory() {
+            if(!confirm("Hapus semua history?")) return;
+            Object.keys(allData).forEach(id => {
+                if(allData[id].status === 'done') db.ref('customers/' + id).remove();
+            });
         }
     </script>
 </body>
