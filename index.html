@@ -512,7 +512,7 @@
                 if (currentUser.includes("Cashier")) {
                     msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
                 } else {
-                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap akti WhatsApp ya, Terimakasih 😊.`;
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
                 }
                 
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
@@ -583,7 +583,7 @@
             }
         }
 
-        // LOGIKA BARU: CEK GANDA (DIPANGGIL DI DALAM SAVEDATA)
+        // LOGIKA BARU: CEK GANDA & AUTO SWITCH (DIPANGGIL DI DALAM SAVEDATA)
         function saveData() {
             const a = document.getElementById('custArea').value; 
             const n = document.getElementById('custName').value.trim(); 
@@ -617,7 +617,12 @@
             };
 
             const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
-            ref.then(() => resetForm());
+            
+            // Auto Switch & Reset
+            ref.then(() => {
+                resetForm();
+                showPage('list');
+            });
         }
 
         function editData(id) {
