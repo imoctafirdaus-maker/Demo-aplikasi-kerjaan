@@ -202,6 +202,19 @@
                             <span class="text-[8px] font-black text-blue-900 uppercase italic">Jarak Fokus:</span>
                             <input type="range" id="focusRange" min="0" max="100" value="0" oninput="applyManualFocus(this.value)" class="w-full accent-red-600">
                         </div>
+
+                        <div class="flex justify-between items-center mb-2 mt-2">
+                            <span class="text-[9px] font-black text-blue-900 uppercase">Brightness:</span>
+                            <div class="flex gap-1">
+                                <button onclick="setExpMode('continuous')" id="exp-auto" class="btn-mode active">AUTO</button>
+                                <button onclick="setExpMode('manual')" id="exp-manual" class="btn-mode">MANUAL</button>
+                            </div>
+                        </div>
+                        <div id="manualExpSlider" class="hidden mb-2 p-2 bg-white rounded-xl border">
+                            <span class="text-[8px] font-black text-blue-900 uppercase italic">Kecerahan (EV):</span>
+                            <input type="range" id="expRange" min="-2" max="2" step="0.1" value="0" oninput="applyManualExp(this.value)" class="w-full accent-red-600">
+                        </div>
+
                         <div class="flex items-center gap-2 mb-2">
                             <span class="text-[9px] font-black text-blue-900 uppercase">Zoom:</span>
                             <button onclick="setZoom(1)" id="z1" class="btn-zoom active">1x</button>
@@ -348,6 +361,10 @@
                 document.getElementById('btnStopCam').classList.remove('hidden');
                 document.getElementById('camControls').classList.remove('hidden');
                 document.getElementById('scannerOverlay').style.display = 'block';
+                
+                // Initialize Brightness Constraints
+                initExpConstraints();
+                
                 startAutoScan();
             } catch (err) { alert("Kamera Error. Pastikan izin kamera diaktifkan."); }
         }
@@ -382,6 +399,39 @@
                 const min = caps.focusDistance.min; const max = caps.focusDistance.max;
                 const targetFocus = min + (val / 100) * (max - min);
                 try { await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: targetFocus }] }); } catch (e) { console.error(e); }
+            }
+        }
+
+        async function setExpMode(mode) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            document.getElementById('exp-auto').classList.toggle('active', mode === 'continuous');
+            document.getElementById('exp-manual').classList.toggle('active', mode === 'manual');
+            document.getElementById('manualExpSlider').classList.toggle('hidden', mode !== 'manual');
+            try {
+                if (mode === 'continuous') { if (caps.exposureMode && caps.exposureMode.includes('continuous')) await videoTrack.applyConstraints({ advanced: [{ exposureMode: "continuous" }] }); } 
+                else { if (caps.exposureMode && caps.exposureMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ exposureMode: "manual" }] }); }
+            } catch (e) { console.error(e); }
+        }
+
+        async function applyManualExp(val) {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            if (caps.exposureCompensation) {
+                try { await videoTrack.applyConstraints({ advanced: [{ exposureCompensation: parseFloat(val) }] }); } catch (e) { console.error(e); }
+            }
+        }
+
+        function initExpConstraints() {
+            if (!videoTrack) return;
+            const caps = videoTrack.getCapabilities();
+            const slider = document.getElementById('expRange');
+            if (caps.exposureCompensation) {
+                slider.min = caps.exposureCompensation.min;
+                slider.max = caps.exposureCompensation.max;
+                slider.step = caps.exposureCompensation.step || 0.1;
+            } else {
+                document.getElementById('exp-manual').style.display = 'none';
             }
         }
 
