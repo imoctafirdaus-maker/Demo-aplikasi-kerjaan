@@ -31,7 +31,7 @@
         #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
         .scanner-overlay { position: absolute; inset: 0; border: 30px solid rgba(0,0,0,0.5); pointer-events: none; display: none; }
         .scanner-box { width: 100%; height: 100%; border: 2px solid #e31837; position: relative; }
-        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; box-shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
+        .laser { position: absolute; width: 100%; height: 2px; background: #e31837; shadow: 0 0 10px #e31837; top: 50%; animation: scanAnim 2s infinite; }
         @keyframes scanAnim { 0% { top: 0%; } 100% { top: 100%; } }
 
         .cam-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
@@ -43,18 +43,16 @@
         .loader-ocr { border: 3px solid #f3f3f3; border-top: 3px solid #006491; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
-        .animate-blink { animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-
         .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
         .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
         .profile-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
 
         .header-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; object-fit: cover; cursor: pointer; }
         .online-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
-        .antaran-photo { cursor: pointer; transition: transform 0.2s; }
-        .antaran-photo:active { transform: scale(0.92); }
+        
+        /* Modal Style */
+        .admin-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 20000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .admin-content { background: white; border-radius: 2rem; padding: 25px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -64,6 +62,21 @@
         <div id="modalContent" class="flex flex-col items-center">
              <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
              <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
+        </div>
+    </div>
+
+    <div id="adminCrewModal" class="admin-modal">
+        <div class="admin-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-black text-blue-900 uppercase">Manage Crew</h3>
+                <button onclick="closeAdminModal()" class="text-red-500 font-bold">TUTUP</button>
+            </div>
+            <div class="space-y-3 mb-6 bg-blue-50 p-4 rounded-2xl">
+                <input type="text" id="newCrewName" placeholder="Nama Crew" class="w-full p-3 rounded-xl border text-sm font-bold uppercase">
+                <input type="password" id="newCrewPin" maxlength="4" placeholder="PIN 4 Digit" class="w-full p-3 rounded-xl border text-sm font-bold">
+                <button onclick="saveCrew()" class="w-full dominos-blue text-white py-3 rounded-xl font-black text-xs uppercase">Simpan Crew Baru</button>
+            </div>
+            <div id="crewListAdmin" class="space-y-2"></div>
         </div>
     </div>
 
@@ -107,7 +120,16 @@
                     <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
+
                 <div class="space-y-3">
+                    <div id="adminFeature" class="hidden">
+                        <div onclick="openAdminModal()" class="profile-bubble border-red-200 bg-red-50/30">
+                            <div class="profile-icon bg-red-600 text-white shadow-md"><i class="fa fa-users-cog"></i></div>
+                            <span class="font-black text-red-600 uppercase italic text-[11px] flex-1">Database Crew (Admin)</span>
+                            <i class="fa fa-chevron-right text-red-300 text-[10px]"></i>
+                        </div>
+                    </div>
+
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
@@ -170,14 +192,6 @@
                     
                     <div id="camControls" class="hidden cam-controls text-left p-3">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-[9px] font-black text-blue-900 uppercase">Mode BW:</span>
-                            <div class="flex gap-1">
-                                <button onclick="setBWMode('off')" id="bw-off" class="btn-mode active">OFF</button>
-                                <button onclick="setBWMode('auto')" id="bw-auto" class="btn-mode">AUTO</button>
-                                <button onclick="setBWMode('manual')" id="bw-manual" class="btn-mode">MANUAL</button>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center mb-2">
                             <span class="text-[9px] font-black text-blue-900 uppercase">Focus:</span>
                             <div class="flex gap-1">
                                 <button onclick="setFocusMode('continuous')" id="f-auto" class="btn-mode active">AUTO</button>
@@ -187,16 +201,6 @@
                         <div id="manualFocusSlider" class="hidden mb-2 p-2 bg-white rounded-xl border">
                             <span class="text-[8px] font-black text-blue-900 uppercase italic">Jarak Fokus:</span>
                             <input type="range" id="focusRange" min="0" max="100" value="0" oninput="applyManualFocus(this.value)" class="w-full accent-red-600">
-                        </div>
-                        <div id="manualBWControls" class="hidden grid grid-cols-2 gap-2 mb-2 p-2 bg-white rounded-xl border">
-                            <div class="flex flex-col">
-                                <span class="text-[8px] font-black text-blue-900 uppercase italic">BRIGHT:</span>
-                                <input type="range" id="brSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-[8px] font-black text-blue-900 uppercase italic">CONTRAST:</span>
-                                <input type="range" id="ctSlider" min="50" max="200" value="100" oninput="updateVisualFilters()" class="accent-blue-900">
-                            </div>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
                             <span class="text-[9px] font-black text-blue-900 uppercase">Zoom:</span>
@@ -235,7 +239,8 @@
     </div>
 
     <script>
-        const userPins = { 
+        // Data Crew Awal (Bisa dimodifikasi via Admin Okta)
+        let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
             "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
@@ -256,17 +261,81 @@
         let sessionID = Math.random().toString(36).substring(2, 15);
         let allData = {}; let photoBase64 = "";
         let stream = null; let videoTrack = null;
-        let bwMode = 'off'; let isScanning = false; let autoScanInterval = null;
+        let isScanning = false; let autoScanInterval = null;
         let renderTimer;
 
         window.onload = () => {
-            const logSel = document.getElementById('selectUser');
-            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
-            Object.keys(userPins).forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+            loadCrewFromDB();
             if(currentUser) bukaApp(currentUser);
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
         };
+
+        // --- ADMIN CREW LOGIC (OKTA ONLY) ---
+        function loadCrewFromDB() {
+            db.ref('crew_list').on('value', snap => {
+                const data = snap.val();
+                if (data) userPins = data;
+                updateLoginDropdown();
+                if(currentUser === 'Okta') renderAdminCrewList();
+            });
+        }
+
+        function updateLoginDropdown() {
+            const logSel = document.getElementById('selectUser');
+            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
+            Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+        }
+
+        function openAdminModal() { document.getElementById('adminCrewModal').style.display = 'flex'; renderAdminCrewList(); }
+        function closeAdminModal() { document.getElementById('adminCrewModal').style.display = 'none'; }
+
+        function saveCrew() {
+            const name = document.getElementById('newCrewName').value.trim();
+            const pin = document.getElementById('newCrewPin').value.trim();
+            if (!name || pin.length !== 4) return alert("Lengkapi Nama & PIN 4 Digit!");
+            userPins[name] = pin;
+            db.ref('crew_list').set(userPins).then(() => {
+                alert("Crew berhasil disimpan!");
+                document.getElementById('newCrewName').value = "";
+                document.getElementById('newCrewPin').value = "";
+            });
+        }
+
+        function editCrew(name) {
+            const newPin = prompt(`Masukkan PIN baru untuk ${name} (4 digit):`, userPins[name]);
+            if (newPin && newPin.length === 4) {
+                userPins[name] = newPin;
+                db.ref('crew_list').set(userPins);
+            }
+        }
+
+        function deleteCrew(name) {
+            if (name === "Okta") return alert("Admin tidak bisa dihapus!");
+            if (confirm(`Hapus ${name} dari sistem?`)) {
+                delete userPins[name];
+                db.ref('crew_list').set(userPins);
+            }
+        }
+
+        function renderAdminCrewList() {
+            const list = document.getElementById('crewListAdmin');
+            list.innerHTML = "";
+            Object.keys(userPins).sort().forEach(name => {
+                list.innerHTML += `
+                    <div class="flex items-center justify-between bg-gray-100 p-3 rounded-xl border">
+                        <div>
+                            <p class="font-black text-[10px] text-blue-900 uppercase">${name}</p>
+                            <p class="text-[8px] font-bold text-gray-500">PIN: ${userPins[name]}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editCrew('${name}')" class="bg-blue-500 text-white w-7 h-7 rounded-lg"><i class="fa fa-edit text-[10px]"></i></button>
+                            <button onclick="deleteCrew('${name}')" class="bg-red-500 text-white w-7 h-7 rounded-lg"><i class="fa fa-trash text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
         // --- CAMERA & OCR LOGIC ---
         async function startCamera() {
@@ -302,7 +371,7 @@
             document.getElementById('manualFocusSlider').classList.toggle('hidden', mode !== 'manual');
             try {
                 if (mode === 'continuous') { if (caps.focusMode && caps.focusMode.includes('continuous')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } 
-                else { if (caps.focusMode && caps.focusMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] }); else alert("Fokus manual tidak didukung."); }
+                else { if (caps.focusMode && caps.focusMode.includes('manual')) await videoTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] }); }
             } catch (e) { console.error(e); }
         }
 
@@ -323,20 +392,6 @@
                 videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(l, caps.zoom.max) }] });
                 document.querySelectorAll('.btn-zoom').forEach(b => b.classList.toggle('active', b.id === 'z'+l));
             }
-        }
-
-        function setBWMode(mode) {
-            bwMode = mode;
-            document.querySelectorAll('.btn-mode').forEach(b => b.classList.toggle('active', b.id === 'bw-'+mode));
-            document.getElementById('manualBWControls').classList.toggle('hidden', mode !== 'manual');
-            updateVisualFilters();
-        }
-
-        function updateVisualFilters() {
-            const v = document.getElementById('scannerVideo'); if(!v) return;
-            if(bwMode === 'manual') v.style.filter = `grayscale(100%) brightness(${document.getElementById('brSlider').value}%) contrast(${document.getElementById('ctSlider').value}%)`;
-            else if(bwMode === 'auto') v.style.filter = `grayscale(100%) contrast(150%)`;
-            else v.style.filter = `none`;
         }
 
         async function startAutoScan() {
@@ -366,9 +421,7 @@
             const v = document.getElementById('scannerVideo');
             const c = document.createElement('canvas');
             c.width = v.videoWidth; c.height = v.videoHeight;
-            const ctx = c.getContext('2d'); 
-            ctx.filter = v.style.filter; 
-            ctx.drawImage(v, 0, 0);
+            c.getContext('2d').drawImage(v, 0, 0);
             try {
                 const res = await Tesseract.recognize(c.toDataURL(), 'eng');
                 const matches = res.data.text.match(/(\+?62|08|021|\(\d{3,4}\))[\s-]?\d{3,4}[\s-]?\d{3,5}/g);
@@ -376,32 +429,7 @@
             } catch (e) {} finally { l.classList.add('hidden'); }
         }
 
-        // --- USER & AUTH LOGIC ---
-        function changeProfilePhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    document.getElementById('userAvatar').src = base64;
-                    localStorage.setItem('profile_pic_' + currentUser, base64);
-                    updatePresence();
-                    updateProfileUI(); 
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function updateProfileUI() {
-            document.getElementById('userNameFull').innerText = currentUser;
-            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
-            const navAvatar = document.getElementById('navUserAvatar');
-            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
-            
-            document.getElementById('userAvatar').src = targetSrc;
-            navAvatar.src = targetSrc;
-            navAvatar.classList.remove('hidden');
-        }
-
+        // --- AUTH & LOGIN ---
         function prosesLogin() {
             const u = document.getElementById('selectUser').value;
             const p = document.getElementById('inputPin').value;
@@ -409,31 +437,29 @@
         }
 
         function bukaApp(n) {
-            const isOkta = (n === "Okta");
-            db.ref('presence/' + n).once('value', snapshot => {
-                const existingData = snapshot.val();
-                if (!isOkta && existingData && existingData.session !== sessionID) {
-                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
-                }
-                currentUser = n; localStorage.setItem('jtm_user', n);
-                document.getElementById('userDisplay').innerText = n;
-                document.getElementById('pinOverlay').style.display = "none";
-                document.getElementById('mainContent').style.display = "flex";
-                updatePresence(); updateProfileUI();
-                db.ref('presence/' + n + '/session').on('value', snap => {
-                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
-                });
-                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
-            });
+            currentUser = n; localStorage.setItem('jtm_user', n);
+            document.getElementById('userDisplay').innerText = n;
+            document.getElementById('pinOverlay').style.display = "none";
+            document.getElementById('mainContent').style.display = "flex";
+            
+            // Tampilkan fitur admin hanya jika itu Okta
+            if (n === "Okta") {
+                document.getElementById('adminFeature').classList.remove('hidden');
+            } else {
+                document.getElementById('adminFeature').classList.add('hidden');
+            }
+
+            updatePresence(); updateProfileUI();
+            db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
         }
 
-        function handleLogout(withConfirm = true) { 
-            if(withConfirm && !confirm("Keluar?")) return;
-            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+        function handleLogout() { 
+            if(!confirm("Keluar?")) return;
+            if(currentUser) db.ref('presence/'+currentUser).remove();
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
 
-        // --- CORE FUNCTIONALITY ---
+        // --- CORE FUNCTIONALITY (LIST & DATA) ---
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
         
         function pushDeliveryStatus(nama) { 
@@ -447,8 +473,9 @@
                 bar.innerHTML = ""; const now = Date.now(); let hasData = false;
                 s.forEach(child => {
                     const d = child.val();
-                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
+                    if (now - d.timestamp < 900000) {
+                        hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`;
+                    }
                 });
                 bar.style.display = hasData ? "block" : "none";
             });
@@ -462,19 +489,17 @@
                 const i = allData[id];
                 const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
                 if(i.status !== 'done') activeCount++;
+                
                 let wa = (i.phone || "").replace(/\D/g, '');
                 if(wa.startsWith('0')) wa = '62' + wa.slice(1);
                 
                 let msgWa = "";
                 if (cashiersOnly.includes(currentUser)) {
-                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
+                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama (${i.name})....`;
                 } else {
-                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar, mohon ditunggu ya, Terimakasih 😊.`;
                 }
                 
-                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
-                const isBlockedUser = mgtAndCashiers.includes(currentUser);
-
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
@@ -489,17 +514,17 @@
                             ${i.status !== 'done' ? 
                             `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
-                             <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
+                             <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center"><i class="fa fa-check"></i></button>
+                             <button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
                             : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}
                         </div>
                     </div>
                     <div class="mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
+                        ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
                     <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
-                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
+                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 uppercase">Buka Maps</a>` : ''}
+                        <a href="https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 uppercase">Chat WA</a>
                     </div>
                 </div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
@@ -509,9 +534,59 @@
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
         }
 
+        function saveData() {
+            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
+            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
+            
+            // Pencegahan Data Ganda
+            if (ph) {
+                const cleanInputPhone = ph.replace(/\D/g, '');
+                const isDuplicate = Object.keys(allData).some(id => {
+                    if (id === eid) return false; 
+                    const item = allData[id];
+                    return item.status !== 'done' && (item.phone || "").replace(/\D/g, '') === cleanInputPhone && cleanInputPhone !== "";
+                });
+                if (isDuplicate) return alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!");
+            }
+
+            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
+            ref.then(() => resetForm());
+        }
+
+        function openWaDirect() {
+            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
+            if(!n) return alert("Nomor kosong!");
+            
+            // Fitur Auto Direct: Cek apakah nomor ada di list aktif
+            const activeId = Object.keys(allData).find(id => {
+                const dataN = (allData[id].phone || "").replace(/\D/g, '');
+                return allData[id].status !== 'done' && dataN.includes(n.slice(-8));
+            });
+
+            if (activeId) {
+                document.getElementById('searchInput').value = allData[activeId].phone;
+                render(); showPage('list'); stopCamera();
+            } else {
+                let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
+                openWaLinkCustom(wa, n);
+            }
+        }
+
+        // Helper functions
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
+            if(id !== 'chat') stopCamera();
+        }
         function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
-        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
-        
+        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser] || currentUser === "Okta") db.ref('customers/' + id).remove(); }
+        function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
+        function goOTW(id) { 
+            if(mgtAndCashiers.includes(currentUser)) return alert("Kasir/Management dilarang antar!");
+            db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+            pushDeliveryStatus(currentUser);
+        }
         function processImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -519,66 +594,31 @@
                     const img = new Image();
                     img.onload = () => {
                         const c = document.createElement('canvas'); 
-                        const THUMB_W = 150; 
-                        c.width = THUMB_W; 
-                        c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        c.width = 150; c.height = img.height * (150 / img.width);
+                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
                         photoBase64 = c.toDataURL('image/jpeg', 0.5);
                         document.getElementById('imgPrev').src = photoBase64;
                         document.getElementById('imgPrev').classList.remove('hidden');
                         document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
                     };
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
-
-        function saveData() {
-            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
-            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
-            if (ph) {
-                const cleanInputPhone = ph.replace(/\D/g, '');
-                const isDuplicate = Object.keys(allData).some(id => {
-                    if (id === eid) return false; 
-                    const item = allData[id];
-                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
-                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
-                });
-                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
+        function resetForm() {
+            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
+            removePhoto(); showPage('list');
+        }
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); }
+        function changePinPrompt() {
+            const old = prompt("PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) { userPins[currentUser] = baru; db.ref('crew_list').set(userPins); alert("PIN Diubah!"); }
             }
-            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
-            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
-            ref.then(() => resetForm());
         }
-
-        function editData(id) {
-            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
-            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
-            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); }
-            document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
-        }
-
-        function goOTW(id) { 
-            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
-            if(allData[id].status !== 'otw') { 
-                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
-                pushDeliveryStatus(currentUser); 
-            } 
-        }
-
-        function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
-
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
-            if(id !== 'chat') stopCamera();
-        }
-
         function updateTimers() {
             Object.keys(allData).forEach(id => {
                 if(allData[id].status === 'otw') {
@@ -587,85 +627,52 @@
                     const el = document.getElementById('timer-'+id);
                     if(el) {
                         const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
-                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
-                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
+                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MIN`;
+                        if(rem < 0) el.style.color = 'red';
                     }
                 }
             });
         }
-
         function updatePresence() {
             if(!currentUser) return;
             const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
-            const userStatusRef = db.ref('presence/' + currentUser);
-            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
-            userStatusRef.onDisconnect().remove();
-            
+            db.ref('presence/' + currentUser).set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
             db.ref('presence').on('value', s => {
                 const el = document.getElementById('onlineBar'); el.innerHTML = "";
                 s.forEach(u => {
-                    const data = u.val();
-                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
-                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
+                    const d = u.val();
+                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border">
+                        <img src="${d.photo || 'https://ui-avatars.com/api/?name='+u.key}" class="online-avatar"> ${u.key}
                     </span>`;
                 });
             });
         }
-
-        function resetForm() {
-            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
-            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
-            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            const target = savedPic || `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            document.getElementById('userAvatar').src = target;
+            document.getElementById('navUserAvatar').src = target;
+            document.getElementById('navUserAvatar').classList.remove('hidden');
         }
-
-        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
-        function cancelEdit() { resetForm(); }
-        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
-        function changePinPrompt() {
-            const old = prompt("Masukkan PIN Lama:");
-            if (old === userPins[currentUser]) {
-                const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { userPins[currentUser] = baru; alert("PIN Berhasil diubah!"); }
-                else { alert("PIN harus 4 digit!"); }
-            } else { alert("PIN Salah!"); }
-        }
-
         function renderAddressTable(matches) {
             const b = document.getElementById('addressTableBody'); b.innerHTML = '';
             [...new Set(matches.map(m => m.replace(/\D/g, '')))].forEach(n => {
                 if (n.length < 10) return;
-                let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-                b.innerHTML += `<tr><td class="p-3 text-center text-blue-900 text-sm font-black">${n}</td><td class="p-3 text-center"><button onclick="openWaLinkCustom('${wa}', '${n}')" class="bg-green-500 text-white w-8 h-8 rounded-lg"><i class="fab fa-whatsapp"></i></button></td></tr>`;
+                let wa = n.startsWith('0') ? '62' + n.slice(1) : n;
+                b.innerHTML += `<tr><td class="p-3 text-center text-blue-900 font-black">${n}</td><td class="p-3 text-center"><button onclick="openWaLinkCustom('${wa}', '${n}')" class="bg-green-500 text-white w-8 h-8 rounded-lg"><i class="fab fa-whatsapp"></i></button></td></tr>`;
             });
             document.getElementById('scanResultArea').classList.remove('hidden');
         }
-
         function openWaLinkCustom(n, originalNum = "") {
-            pushDeliveryStatus(currentUser);
-            let msg = "";
-            if (cashiersOnly.includes(currentUser)) {
-                msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${originalNum || n}) saya ingin mengkonfirmasi .....`;
-            } else {
-                msg = `Halo Bapak/Ibu, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
-            }
+            let msg = cashiersOnly.includes(currentUser) ? `Halo, saya ${currentUser} dari kasir Domino's...` : `Halo, saya ${currentUser} dari Domino's, boleh minta sharelokasinya?`;
             window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank');
         }
-
-        function openWaDirect() {
-            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
-            if(!n) return alert("Nomor kosong!");
-            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
-            const activeId = Object.keys(allData).find(id => {
-                const dataN = (allData[id].phone || "").replace(/\D/g, '');
-                return allData[id].status !== 'done' && dataN.includes(searchN);
-            });
-            if (activeId) {
-                document.getElementById('searchInput').value = allData[activeId].phone;
-                render(); showPage('list'); stopCamera();
-            } else { openWaLinkCustom(wa, n); }
+        function editData(id) {
+            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
+            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
+            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); }
+            showPage('add');
         }
     </script>
 </body>
