@@ -84,15 +84,21 @@
             width: 100%; height: 100%; background: var(--wood-light);
             display: flex; justify-content: center; align-items: center; 
             font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out);
+            transition: background-color 0.3s ease;
         }
+        
+        /* Warna spesifik untuk X (Merah) dan O (Kuning) */
+        .block.filled-x { background-color: #d32f2f !important; }
+        .block.filled-o { background-color: #f1c40f !important; }
+
         .tile-dark { background: #4e342e; }
         .tile-light { background: #d7ccc8; color: #3d2b1f; }
         
         .piece { filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.6)); font-size: 1.5rem; }
         .piece-flipped { transform: rotate(180deg); }
 
-        .x-icon { color: #d32f2f; font-weight: bold; font-size: 5vw; text-shadow: 0 0 5px rgba(211,47,47,0.5); }
-        .o-icon { color: var(--brass); font-weight: bold; font-size: 5vw; text-shadow: 0 0 5px rgba(183,149,11,0.5); }
+        .x-icon { color: white; font-weight: bold; font-size: 5vw; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .o-icon { color: #3d2b1f; font-weight: bold; font-size: 5vw; text-shadow: 1px 1px 2px rgba(255,255,255,0.3); }
 
         .win-line { 
             position: absolute; z-index: 100; background: var(--gold-fire); 
@@ -167,7 +173,6 @@
         firebase.initializeApp(firebaseConfig);
         let db = null;
 
-        // --- AUDIO ENGINE ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playPop(freq, type = 'sine', vol = 0.1, duration = 0.1) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -189,7 +194,7 @@
         }
 
         let mIdx = 0;
-        const melody = [261, 329, 392, 523, 392, 329]; // Pop Cat Instrumental
+        const melody = [261, 329, 392, 523, 392, 329]; 
         function loopMusic() {
             playPop(melody[mIdx], 'sine', 0.02, 0.4);
             mIdx = (mIdx + 1) % melody.length;
@@ -198,7 +203,7 @@
 
         let currentGame = ""; let myRole = ""; let myName = ""; let turn = ""; 
         let currentBoardState = {}; let isGameOver = false;
-        let scoredLines = []; // Menyimpan baris yang sudah terhitung agar tidak double skor
+        let scoredLines = [];
 
         function selectGame(game) {
             const n = document.getElementById('inputNama').value;
@@ -238,11 +243,12 @@
             for(let i=0; i<100; i++) {
                 const b = document.createElement('div'); b.className = 'block'; b.id = `b-${i}`;
                 b.onclick = () => {
-                    if(turn === myRole && !currentBoardState[i]) {
+                    if(turn === myRole) {
+                        const val = (myRole === 'X' ? 1 : 2);
                         playPop(myRole === 'X' ? 400 : 300, 'triangle', 0.15, 0.1);
-                        db.child('cells/' + i).set(myRole);
+                        db.child('cells/' + i).set(val);
                         db.child('turn').set(myRole === 'X' ? 'O' : 'X');
-                        checkPointsXOXO(i, myRole);
+                        checkPointsXOXO(i, val);
                     }
                 };
                 board.appendChild(b);
@@ -266,15 +272,12 @@
                     if(!scoredLines.includes(lineKey)) {
                         scoredLines.push(lineKey);
                         db.child('scored_lines').push(lineKey);
-                        db.child('scores/' + p).transaction(s => (s||0) + 1);
+                        const roleP = (p === 1 ? 'X' : 'O');
+                        db.child('scores/' + roleP).transaction(s => (s||0) + 1);
                         db.child('last_win_line').set({line: line, p: p});
                         playWinSound();
                     }
                 }
-            }
-            // Cek jika papan penuh
-            if(Object.keys(currentBoardState).length >= 99) {
-                db.child('winner').set({name: "DRAW (PAPAN PENUH)", player: "None"});
             }
         }
 
@@ -309,7 +312,18 @@
             if(currentGame === 'XOXO') {
                 for(let i=0; i<100; i++) {
                     const el = document.getElementById(`b-${i}`); if(!el) continue;
-                    const v = currentBoardState[i]; el.innerHTML = v ? `<span class="${v==='X'?'x-icon':'o-icon'} ${flip?'piece-flipped':''}">${v}</span>` : "";
+                    const v = currentBoardState[i]; 
+                    // Hapus kelas warna sebelumnya
+                    el.classList.remove('filled-x', 'filled-o');
+                    if(v === 1) {
+                        el.classList.add('filled-x');
+                        el.innerHTML = `<span class="x-icon ${flip?'piece-flipped':''}">X</span>`;
+                    } else if(v === 2) {
+                        el.classList.add('filled-o');
+                        el.innerHTML = `<span class="o-icon ${flip?'piece-flipped':''}">O</span>`;
+                    } else {
+                        el.innerHTML = "";
+                    }
                 }
             } else {
                 for(let i=0; i<64; i++) {
@@ -330,7 +344,7 @@
             const div = document.createElement('div'); div.className = "win-line";
             div.style.width = dist + "px"; div.style.left = x1 + "px"; div.style.top = y1 + "px";
             div.style.transform = `rotate(${angle}deg)`; container.appendChild(div);
-            setTimeout(() => div.remove(), 2000); // Garis api hilang setelah 2 detik
+            setTimeout(() => div.remove(), 2000); 
         }
 
         function requestReset() {
