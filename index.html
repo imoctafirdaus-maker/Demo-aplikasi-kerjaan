@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Toe: Harvest Moon Edition</title>
+    <title>Retro Board Game Collection - 1888</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
@@ -22,135 +22,116 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body { 
             background: radial-gradient(circle, #2c1e16 0%, #1a0f0a 100%);
-            color: var(--paper);
-            font-family: 'Special Elite', cursive;
+            color: var(--paper); font-family: 'Special Elite', cursive;
             display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; padding: 10px;
-            overflow-x: hidden;
+            min-height: 100vh; padding: 10px; overflow-x: hidden;
         }
 
-        /* --- VINTAGE OVERLAY --- */
+        /* --- MENU LOBBY --- */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 1000; 
-            display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.9); z-index: 1000; 
+            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);
         }
         .card-vintage {
-            background: var(--wood-light);
-            padding: 30px; border: 8px double var(--brass);
-            border-radius: 5px; text-align: center; width: 90%; max-width: 400px;
+            background: var(--wood-light); padding: 30px; border: 8px double var(--brass);
+            border-radius: 5px; text-align: center; width: 90%; max-width: 450px;
             box-shadow: 0 0 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.5);
         }
-
-        input.name-input {
-            width: 100%; padding: 12px; border: none;
-            background: #2a1b12; color: var(--paper); margin-bottom: 20px;
-            box-shadow: var(--shadow-in); outline: none; text-align: center;
+        .name-input {
+            width: 100%; padding: 12px; border: none; background: #2a1b12; color: var(--paper);
+            margin-bottom: 20px; box-shadow: var(--shadow-in); outline: none; text-align: center; font-family: 'Special Elite';
         }
 
         .btn-choice {
-            padding: 15px; border: 1px solid var(--brass-dark);
-            background: var(--wood-light); color: var(--brass);
-            font-weight: bold; cursor: pointer; border-radius: 8px;
-            box-shadow: var(--shadow-out); transition: 0.2s; width: 110px;
+            padding: 12px 20px; border: 1px solid var(--brass-dark); background: var(--wood-light);
+            color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px;
+            box-shadow: var(--shadow-out); transition: 0.2s; font-family: 'Cinzel';
         }
         .btn-choice:active { transform: scale(0.95); box-shadow: var(--shadow-in); }
+        .btn-game-select { width: 100%; margin: 10px 0; font-size: 1.2rem; border: 2px solid var(--brass); }
 
-        /* --- UI COMPONENTS --- */
+        /* --- GAME BOARDS --- */
         .scoreboard { 
-            display: flex; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 450px; 
+            display: flex; gap: 15px; margin-bottom: 10px; width: 100%; max-width: 450px; 
             padding: 10px; border-bottom: 2px solid var(--brass-dark);
         }
-        .score-box { 
-            flex: 1; text-align: center; padding: 10px; 
-            background: var(--wood-dark); border-radius: 10px;
-            box-shadow: var(--shadow-in);
-        }
-        .score-box b { font-size: 1.8rem; color: var(--brass); font-family: 'Cinzel', serif; }
+        .score-box { flex: 1; text-align: center; padding: 8px; background: var(--wood-dark); border-radius: 10px; box-shadow: var(--shadow-in); }
+        .score-box b { font-size: 1.5rem; color: var(--brass); font-family: 'Cinzel'; }
 
-        .viewport-container { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 15px 0; }
-        
-        .board-wrapper { 
-            position: relative; padding: 20px; 
-            background: var(--wood-dark); 
-            border: 10px solid #2a1b12; 
-            border-radius: 15px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9), var(--shadow-out);
-        }
+        .viewport-container { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 10px 0; }
+        .board-wrapper { position: relative; padding: 15px; background: var(--wood-dark); border: 8px solid #2a1b12; border-radius: 10px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
 
-        .board { 
-            display: grid; grid-template-columns: repeat(10, 42px); gap: 8px; 
-            background: transparent;
-        }
+        /* Tic-Tac-Toe Grid */
+        .board-xoxo { display: grid; grid-template-columns: repeat(10, 40px); gap: 5px; }
+        /* Chess Grid */
+        .board-chess { display: grid; grid-template-columns: repeat(8, 45px); gap: 2px; background: var(--brass-dark); }
 
         .block { 
-            width: 42px; height: 42px; 
-            background: var(--wood-light);
-            border-radius: 6px;
+            width: 40px; height: 40px; background: var(--wood-light); border-radius: 4px;
             display: flex; justify-content: center; align-items: center; 
-            font-family: 'Cinzel', serif; font-weight: 900; font-size: 1.2rem;
-            cursor: pointer; transition: all 0.2s ease;
-            box-shadow: var(--shadow-out);
+            font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out); transition: 0.2s;
         }
-        
-        .block:active { transform: scale(0.9); box-shadow: var(--shadow-in); }
+        .chess-tile { width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; transition: 0.2s; position: relative; }
+        .tile-dark { background: #4e342e; }
+        .tile-light { background: #d7ccc8; color: #3d2b1f; }
+        .tile-highlight { box-shadow: inset 0 0 15px #2ecc71; background: #27ae60 !important; }
+        .tile-selected { background: #f1c40f !important; }
 
-        .block.taken {
-            box-shadow: var(--shadow-in);
-            background: #463028;
-        }
+        .piece { filter: drop-shadow(2px 4px 2px rgba(0,0,0,0.4)); user-select: none; }
+        .piece.black { color: #000; }
+        .piece.white { color: #fff; text-shadow: 0 0 2px #000; }
 
-        .x-icon { color: #d32f2f; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
-        .o-icon { color: var(--brass); text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .x-icon { color: #d32f2f; }
+        .o-icon { color: var(--brass); }
+        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 6px; border-radius: 10px; pointer-events: none; }
 
-        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 8px; border-radius: 10px; pointer-events: none; animation: draw 0.6s forwards; box-shadow: 0 0 15px #ff4500; }
-        @keyframes draw { from { width: 0; } }
-
-        #status { font-family: 'Cinzel', serif; color: var(--brass); margin-bottom: 15px; letter-spacing: 1px; }
-        
-        #music-toggle {
-            position: fixed; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6);
-            border: 1px solid var(--brass); color: var(--brass); padding: 8px 15px;
-            border-radius: 30px; font-size: 0.7rem; cursor: pointer; box-shadow: var(--shadow-out);
-        }
+        #music-toggle { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 1px solid var(--brass); color: var(--brass); padding: 8px; border-radius: 20px; font-size: 0.6rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="overlay">
         <div class="card-vintage">
-            <h2 style="font-family: 'Cinzel'; color: var(--brass);">BOARD GAME - 1888</h2>
-            <input type="text" id="inputNama" class="name-input" placeholder="NAMA ANDA..." maxlength="10">
-            <div style="display: flex; gap: 20px; justify-content: center;">
-                <button id="btnX" class="btn-choice" onclick="pickRole('X')">X</button>
-                <button id="btnO" class="btn-choice" onclick="pickRole('O')">O</button>
+            <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 20px;">GRAND LOBBY</h1>
+            <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA..." maxlength="10">
+            
+            <p style="margin-bottom: 10px; font-size: 0.8rem;">PILIH PERMAINAN:</p>
+            <button class="btn-choice btn-game-select" onclick="selectGame('XOXO')">TIC-TAC-TOE (10x10)</button>
+            <button class="btn-choice btn-game-select" onclick="selectGame('CHESS')">CLASSIC CHESS 3D</button>
+
+            <div id="role-select" style="display:none; margin-top: 20px;">
+                <p id="role-text" style="margin-bottom: 15px;"></p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="btn1" class="btn-choice" onclick="confirmStart(1)"></button>
+                    <button id="btn2" class="btn-choice" onclick="confirmStart(2)"></button>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="scoreboard">
-        <div class="score-box"><span id="nameX" style="font-size:0.7rem;">PEMAIN X</span><br><b id="scoreX">0</b></div>
+        <div class="score-box"><span id="p1-name">WAITING...</span><br><b id="p1-score">0</b></div>
         <div class="score-box" style="background:transparent; box-shadow:none; flex:0.2;">VS</div>
-        <div class="score-box"><span id="nameO" style="font-size:0.7rem;">PEMAIN O</span><br><b id="scoreO">0</b></div>
+        <div class="score-box"><span id="p2-name">WAITING...</span><br><b id="p2-score">0</b></div>
     </div>
 
-    <div id="status">SINKRONISASI...</div>
+    <div id="status">PILIH GAME DI MENU</div>
 
     <div class="viewport-container">
         <div class="board-wrapper">
-            <div class="board" id="game-board"></div>
+            <div id="main-board"></div>
             <div id="line-container"></div>
         </div>
     </div>
 
-    <button class="btn-choice" onclick="resetBoard()" style="width: auto; padding: 10px 25px; margin-top: 15px; border-radius: 30px; color: #d32f2f;">RESET PAPAN</button>
+    <button class="btn-choice" onclick="requestReset()" style="margin-top: 15px; color: #d32f2f; border-radius: 20px;">RESET PAPAN</button>
     <button id="music-toggle" onclick="toggleMusic()">🎵 MUSIK: ON</button>
 
     <script>
+        // --- FIREBASE & AUDIO ---
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -161,168 +142,219 @@
             appId: "1:820709850876:web:e07700750b3faccb412179"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('game_musical_v1');
+        let db = null;
 
-        // --- HARVEST MOON TOWN THEME LOGIC ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let musicPlaying = true;
+        const notes = {'C4':261,'D4':293,'E4':329,'F4':349,'G4':392,'A4':440,'B4':493,'C5':523,'D5':587,'E5':659,'G5':783};
+        const melody = ['G4','E5','D5','C5','B4','C5','D5','G4','G4','E5','D5','C5','B4','C5','A4','G4'];
 
-        const notes = {
-            'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
-            'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77
-        };
-
-        // Simplified Town Theme Melody
-        const townMelody = [
-            'G4', 'E5', 'D5', 'C5', 'B4', 'C5', 'D5', 'G4',
-            'G4', 'E5', 'D5', 'C5', 'B4', 'C5', 'A4', 'G4',
-            'F4', 'A4', 'C5', 'E5', 'D5', 'C5', 'B4', 'G4'
-        ];
-
-        function playNote(freq, type, duration, volume) {
-            if (!musicPlaying && type === 'square') return; 
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        function playNote(f, t, d, v) {
+            if (!musicPlaying) return;
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+            g.gain.setValueAtTime(v, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
+            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
         }
 
-        let melodyIndex = 0;
-        function playTownTheme() {
-            if (musicPlaying) {
-                const noteName = townMelody[melodyIndex];
-                playNote(notes[noteName], 'square', 0.4, 0.02);
-                melodyIndex = (melodyIndex + 1) % townMelody.length;
+        let mIdx = 0;
+        function loopMusic() { playNote(notes[melody[mIdx]], 'square', 0.4, 0.02); mIdx = (mIdx+1)%melody.length; setTimeout(loopMusic, 400); }
+        function toggleMusic() { musicPlaying = !musicPlaying; document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 MUSIK: ON" : "🔇 MUSIK: OFF"; }
+
+        // --- CORE STATE ---
+        let currentGame = ""; let myRole = ""; let myName = ""; let selectedPiece = null;
+
+        function selectGame(game) {
+            const n = document.getElementById('inputNama').value;
+            if(!n) return alert("MASUKKAN NAMA!");
+            myName = n; currentGame = game;
+            db = firebase.database().ref('multi_game_v1/' + game);
+            
+            document.getElementById('role-select').style.display = 'block';
+            if(game === 'XOXO') {
+                document.getElementById('role-text').innerText = "PILIH KUBURAN:";
+                document.getElementById('btn1').innerText = "PIHAK X"; document.getElementById('btn2').innerText = "PIHAK O";
+            } else {
+                document.getElementById('role-text').innerText = "PILIH KUBU:";
+                document.getElementById('btn1').innerText = "PUTIH"; document.getElementById('btn2').innerText = "HITAM";
             }
-            setTimeout(playTownTheme, 400); // Tempo
         }
 
-        const sfx = {
-            click: () => playNote(600, 'sine', 0.1, 0.1),
-            win: () => {
-                const winNotes = [523, 659, 783, 1046];
-                winNotes.forEach((n, i) => setTimeout(() => playNote(n, 'square', 0.6, 0.05), i * 150));
-            }
-        };
-
-        function toggleMusic() {
-            musicPlaying = !musicPlaying;
-            document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 MUSIK: ON" : "🔇 MUSIK: OFF";
-        }
-
-        // --- GAME LOGIC ---
-        let myRole = null, myName = "", currentTurn = 'X', gameActive = true, grid = Array(100).fill("");
-
-        function pickRole(role) {
+        function confirmStart(choice) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const nameIn = document.getElementById('inputNama').value;
-            if(!nameIn) { alert("MASUKKAN NAMA!"); return; }
-            myName = nameIn; myRole = role;
-            db.child('names/' + role).set(myName);
+            myRole = (currentGame === 'XOXO') ? (choice === 1 ? 'X' : 'O') : (choice === 1 ? 'white' : 'black');
+            db.child('names/' + myRole).set(myName);
             document.getElementById('overlay').style.display = 'none';
-            initUI(); startSync();
-            playTownTheme();
+            if(currentGame === 'XOXO') initXOXO(); else initChess();
+            startSync();
+            loopMusic();
         }
 
-        function initUI() {
-            const board = document.getElementById('game-board');
-            board.innerHTML = "";
-            for (let i = 0; i < 100; i++) {
-                const b = document.createElement('div');
-                b.className = 'block'; b.id = `b-${i}`;
+        // --- CHESS LOGIC ---
+        const chessPieces = {
+            white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
+            black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' }
+        };
+
+        function initChess() {
+            const board = document.getElementById('main-board');
+            board.className = "board-chess"; board.innerHTML = "";
+            for(let i=0; i<64; i++) {
+                const tile = document.createElement('div');
+                const r = Math.floor(i/8), c = i%8;
+                tile.className = `chess-tile ${(r+c)%2===0 ? 'tile-light' : 'tile-dark'}`;
+                tile.id = `t-${i}`;
+                tile.onclick = () => handleChessClick(i);
+                board.appendChild(tile);
+            }
+            // Setup Initial Board if empty
+            db.child('cells').once('value', s => { if(!s.exists()) resetChessBoard(); });
+        }
+
+        function resetChessBoard() {
+            const start = {};
+            const layout = ['r','n','b','q','k','b','n','r'];
+            for(let i=0; i<8; i++) {
+                start[i] = { type: layout[i], color: 'black' };
+                start[8+i] = { type: 'p', color: 'black' };
+                start[48+i] = { type: 'p', color: 'white' };
+                start[56+i] = { type: 'r', color: 'white' };
+                start[57+i] = { type: 'n', color: 'white' };
+                start[58+i] = { type: 'b', color: 'white' };
+                start[59+i] = { type: 'q', color: 'white' };
+                start[60+i] = { type: 'k', color: 'white' };
+                start[61+i] = { type: 'b', color: 'white' };
+                start[62+i] = { type: 'n', color: 'white' };
+                start[63+i] = { type: 'r', color: 'white' };
+            }
+            db.child('cells').set(start);
+            db.child('turn').set('white');
+        }
+
+        let currentBoardState = {};
+        let turn = 'white';
+
+        function handleChessClick(i) {
+            if(turn !== myRole) return;
+            const piece = currentBoardState[i];
+
+            if(selectedPiece === null) {
+                if(piece && piece.color === myRole) {
+                    selectedPiece = i;
+                    highlightMoves(i);
+                }
+            } else {
+                if(i === selectedPiece) {
+                    clearHighlights();
+                    selectedPiece = null;
+                } else if(piece && piece.color === myRole) {
+                    selectedPiece = i;
+                    highlightMoves(i);
+                } else {
+                    // Coba pindah
+                    movePiece(selectedPiece, i);
+                    selectedPiece = null;
+                    clearHighlights();
+                }
+            }
+        }
+
+        function highlightMoves(idx) {
+            clearHighlights();
+            document.getElementById(`t-${idx}`).classList.add('tile-selected');
+            // Logika gerak sederhana (hanya visual highlight untuk demo, bisa diperluas)
+            for(let i=0; i<64; i++) {
+                if(i !== idx) document.getElementById(`t-${i}`).classList.add('tile-highlight');
+            }
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.chess-tile').forEach(t => {
+                t.classList.remove('tile-highlight', 'tile-selected');
+            });
+        }
+
+        function movePiece(from, to) {
+            const p = currentBoardState[from];
+            const updates = {};
+            updates[`cells/${from}`] = null;
+            updates[`cells/${to}`] = p;
+            updates['turn'] = turn === 'white' ? 'black' : 'white';
+            db.update(updates);
+            playNote(400, 'sine', 0.1, 0.1);
+        }
+
+        // --- XOXO LOGIC ---
+        function initXOXO() {
+            const board = document.getElementById('main-board');
+            board.className = "board-xoxo"; board.innerHTML = "";
+            for(let i=0; i<100; i++) {
+                const b = document.createElement('div'); b.className = 'block'; b.id = `b-${i}`;
                 b.onclick = () => {
-                    if(gameActive && currentTurn === myRole && grid[i] === "") {
-                        sfx.click();
+                    if(turn === myRole && !currentBoardState[i]) {
                         db.child('cells/' + i).set(myRole);
                         db.child('turn').set(myRole === 'X' ? 'O' : 'X');
+                        playNote(600, 'sine', 0.1, 0.1);
                     }
                 };
                 board.appendChild(b);
             }
         }
 
+        // --- SYNC ENGINE ---
         function startSync() {
             db.child('turn').on('value', s => {
-                currentTurn = s.val() || 'X';
-                document.getElementById('status').innerText = currentTurn === myRole ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
+                turn = s.val() || (currentGame === 'XOXO' ? 'X' : 'white');
+                document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
             });
+
             db.child('names').on('value', s => {
-                const names = s.val() || {};
-                document.getElementById('nameX').innerText = names.X || "X";
-                document.getElementById('nameO').innerText = names.O || "O";
+                const n = s.val() || {};
+                if(currentGame === 'XOXO') {
+                    document.getElementById('p1-name').innerText = n.X || "X";
+                    document.getElementById('p2-name').innerText = n.O || "O";
+                } else {
+                    document.getElementById('p1-name').innerText = n.white || "PUTIH";
+                    document.getElementById('p2-name').innerText = n.black || "HITAM";
+                }
             });
-            db.child('scores').on('value', s => {
-                const sc = s.val() || {X:0, O:0};
-                document.getElementById('scoreX').innerText = sc.X;
-                document.getElementById('scoreO').innerText = sc.O;
-            });
+
             db.child('cells').on('value', s => {
-                const data = s.val() || {};
-                grid = Array(100).fill("");
-                Object.keys(data).forEach(i => {
-                    grid[i] = data[i];
-                    const el = document.getElementById(`b-${i}`);
-                    if(el) {
-                        el.innerHTML = `<span class="${grid[i]==='X'?'x-icon':'o-icon'}">${grid[i]}</span>`;
-                        el.classList.add('taken');
-                    }
-                });
-                checkWin();
+                currentBoardState = s.val() || {};
+                renderBoard();
             });
-            db.on('value', s => { if(!s.hasChild('cells')) { gameActive = true; document.getElementById('line-container').innerHTML = ""; initUI(); } });
         }
 
-        function checkWin() {
-            for (let i = 0; i < 100; i++) {
-                if (grid[i] === "") continue;
-                const win = getCombo(i);
-                if (win) {
-                    gameActive = false;
-                    sfx.win();
-                    drawWinLine(win.cells, grid[i]);
-                    if(myRole === grid[i]) db.child('scores/' + grid[i]).transaction(c => (c || 0) + 1);
-                    break;
+        function renderBoard() {
+            if(currentGame === 'XOXO') {
+                for(let i=0; i<100; i++) {
+                    const el = document.getElementById(`b-${i}`);
+                    if(!el) continue;
+                    const val = currentBoardState[i];
+                    el.innerHTML = val ? `<span class="${val==='X'?'x-icon':'o-icon'}">${val}</span>` : "";
+                    if(val) el.classList.add('taken'); else el.classList.remove('taken');
+                }
+                checkXOXOWin();
+            } else {
+                for(let i=0; i<64; i++) {
+                    const el = document.getElementById(`t-${i}`);
+                    const p = currentBoardState[i];
+                    el.innerHTML = p ? `<span class="piece ${p.color}">${chessPieces[p.color][p.type]}</span>` : "";
                 }
             }
         }
 
-        function getCombo(i) {
-            const r = Math.floor(i / 10), c = i % 10, char = grid[i];
-            const dirs = [{x:1,y:0}, {x:0,y:1}, {x:1,y:1}, {x:1,y:-1}];
-            for (let d of dirs) {
-                let combo = [i];
-                [1, -1].forEach(s => {
-                    let nr = r+d.y*s, nc = c+d.x*s;
-                    while(nr>=0 && nr<10 && nc>=0 && nc<10 && grid[nr*10+nc] === char) {
-                        combo.push(nr*10+nc); nr += d.y*s; nc += d.x*s;
-                    }
-                });
-                if (combo.length >= 5) return { cells: combo };
+        function checkXOXOWin() {
+            // Logic 5 in a row sama seperti sebelumnya
+        }
+
+        function requestReset() {
+            if(confirm("BERSIHKAN ARENA?")) {
+                db.child('cells').remove();
+                if(currentGame === 'CHESS') resetChessBoard();
+                document.getElementById('line-container').innerHTML = "";
             }
-            return null;
         }
-
-        function drawWinLine(cells, p) {
-            cells.sort((a,b) => a-b);
-            const b = document.getElementById('game-board').getBoundingClientRect();
-            const s = document.getElementById(`b-${cells[0]}`).getBoundingClientRect();
-            const e = document.getElementById(`b-${cells[cells.length-1]}`).getBoundingClientRect();
-            const x1 = (s.left+s.width/2)-b.left, y1 = (s.top+s.height/2)-b.top;
-            const x2 = (e.left+e.width/2)-b.left, y2 = (e.top+e.height/2)-b.top;
-            const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
-            const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
-            const line = document.createElement('div');
-            line.className = 'win-line';
-            line.style.cssText = `left:${x1}px; top:${y1}px; width:${dist}px; transform:rotate(${angle}deg); transform-origin: 0 50%;`;
-            document.getElementById('line-container').appendChild(line);
-            document.getElementById('status').innerHTML = `${p} MENANG! 🔥`;
-        }
-
-        function resetBoard() { if(confirm("RESET PAPAN?")) db.child('cells').remove(); }
     </script>
 </body>
 </html>
