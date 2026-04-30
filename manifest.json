@@ -1,8 +1,16 @@
-"icons": [
+{
+  "name": "Retro Game 1888",
+  "short_name": "Game1888",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#3d2b1f",
+  "theme_color": "#b7950b",
+  "icons": [
     {
-      "src": "1777546745740.png", 
-      "type": "image/png",
+      "src": "1777546745740.png",
       "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
-]
+  ]
+}
