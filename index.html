@@ -39,6 +39,10 @@
         .btn-choice { padding: 12px 15px; border: 1px solid var(--brass); background: var(--wood-light); color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px; font-family: 'Cinzel'; width: 100%; margin-top: 10px; transition: 0.2s; box-shadow: var(--shadow-out); }
         .btn-choice:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; opacity: 0.6; box-shadow: none; }
         
+        /* Layout Tombol X/O agar Sejajar */
+        .role-container { display: flex; gap: 10px; margin-top: 10px; }
+        .role-container button { flex: 1; }
+
         /* Tombol Refresh Melayang */
         #btn-refresh { 
             position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; 
@@ -54,7 +58,7 @@
         .block { width: 100%; height: 100%; background: var(--wood-light); display: flex; justify-content: center; align-items: center; font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out); }
         .x-icon { color: #d32f2f; font-size: 5vw; font-weight: bold; } 
         .o-icon { color: var(--brass); font-size: 5vw; font-weight: bold; }
-        #status { margin: 20px 0 10px 0; font-size: 0.8rem; text-transform: uppercase; color: var(--brass); }
+        #status { margin: 20px 0 10px 0; font-size: 0.8rem; text-transform: uppercase; color: var(--brass); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -69,9 +73,9 @@
             
             <button class="btn-choice" id="main-select-btn" onclick="selectGame('XOXO')">MASUK TIC-TAC-TOE</button>
             
-            <div id="role-select" style="display:none; margin-top: 15px; border-top: 1px solid var(--brass); padding-top: 10px;">
-                <p style="font-size: 0.7rem; margin-bottom: 10px;">PILIH KUBURAN ANDA:</p>
-                <div style="display: flex; gap: 10px;">
+            <div id="role-select" style="display:none; margin-top: 15px; border-top: 2px solid var(--brass); padding-top: 15px;">
+                <p style="font-size: 0.7rem; color: var(--brass); margin-bottom: 5px;">PILIH KUBURAN ANDA:</p>
+                <div class="role-container">
                     <button id="btn1" class="btn-choice" onclick="confirmStart(1)">PIHAK X</button>
                     <button id="btn2" class="btn-choice" onclick="confirmStart(2)">PIHAK O</button>
                 </div>
@@ -86,7 +90,7 @@
     </div>
 
     <script>
-        // PWA & Firebase Setup
+        // PWA Setup
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
 
         const firebaseConfig = {
@@ -118,9 +122,11 @@
             if(!n) return alert("MASUKKAN NAMA!");
             myName = n;
             db = firebase.database().ref('multi_game_v1/' + game);
+            
             document.getElementById('main-select-btn').style.display = 'none';
             document.getElementById('role-select').style.display = 'block';
 
+            // Sinkronisasi tombol peran agar tidak tabrakan
             db.child('names').on('value', s => {
                 const names = s.val() || {};
                 document.getElementById('btn1').disabled = !!names.X;
@@ -172,7 +178,7 @@
         function syncGame() {
             db.child('cells').on('value', s => {
                 const cells = s.val() || {};
-                // Reset visual sebelum update
+                // Reset semua visual sebelum update
                 document.querySelectorAll('.block').forEach(b => b.innerHTML = "");
                 Object.keys(cells).forEach(idx => {
                     const el = document.getElementById(`block-${idx}`);
