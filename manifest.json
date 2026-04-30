@@ -1,0 +1,11 @@
+{
+  "name": "Retro Board Game 1888",
+  "short_name": "Game1888",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1a0f0a",
+  "theme_color": "#b7950b",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
