@@ -1,5 +1,5 @@
 // Naikkan versi CACHE_NAME setiap kali kamu melakukan update pada index.html
-const CACHE_NAME = 'retro-game-v2';
+const CACHE_NAME = 'game-v3';
 
 // Daftarkan semua file yang ingin disimpan secara offline
 const assets = [
