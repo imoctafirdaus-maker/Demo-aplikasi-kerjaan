@@ -61,28 +61,35 @@
         .score-box { flex: 1; text-align: center; padding: 8px; background: var(--wood-dark); border-radius: 10px; box-shadow: var(--shadow-in); }
         .score-box b { font-size: 1.5rem; color: var(--brass); font-family: 'Cinzel'; }
 
-        .viewport-container { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 10px 0; }
-        .board-wrapper { position: relative; padding: 15px; background: var(--wood-dark); border: 8px solid #2a1b12; border-radius: 10px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+        .viewport-container { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 20px 0; perspective: 1000px; }
+        .board-wrapper { 
+            position: relative; padding: 15px; background: var(--wood-dark); 
+            border: 8px solid #2a1b12; border-radius: 10px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            transform: rotateX(15deg); /* Efek 3D Klasik */
+        }
 
         /* Tic-Tac-Toe Grid */
         .board-xoxo { display: grid; grid-template-columns: repeat(10, 40px); gap: 5px; }
         /* Chess Grid */
-        .board-chess { display: grid; grid-template-columns: repeat(8, 45px); gap: 2px; background: var(--brass-dark); }
+        .board-chess { display: grid; grid-template-columns: repeat(8, 45px); gap: 0px; background: #000; border: 2px solid #000; }
 
         .block { 
             width: 40px; height: 40px; background: var(--wood-light); border-radius: 4px;
             display: flex; justify-content: center; align-items: center; 
             font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out); transition: 0.2s;
         }
-        .chess-tile { width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; transition: 0.2s; position: relative; }
+        .chess-tile { width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer; transition: 0.2s; position: relative; }
         .tile-dark { background: #4e342e; }
         .tile-light { background: #d7ccc8; color: #3d2b1f; }
-        .tile-highlight { box-shadow: inset 0 0 15px #2ecc71; background: #27ae60 !important; }
+        .tile-highlight { box-shadow: inset 0 0 15px #2ecc71; }
+        .tile-capture { box-shadow: inset 0 0 15px #e74c3c; }
         .tile-selected { background: #f1c40f !important; }
 
-        .piece { filter: drop-shadow(2px 4px 2px rgba(0,0,0,0.4)); user-select: none; }
+        .piece { filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.5)); user-select: none; transition: transform 0.2s; }
+        .piece:active { transform: scale(1.2) translateY(-5px); }
         .piece.black { color: #000; }
-        .piece.white { color: #fff; text-shadow: 0 0 2px #000; }
+        .piece.white { color: #fff; text-shadow: 1px 1px 2px #000; }
 
         .x-icon { color: #d32f2f; }
         .o-icon { color: var(--brass); }
@@ -207,7 +214,6 @@
                 tile.onclick = () => handleChessClick(i);
                 board.appendChild(tile);
             }
-            // Setup Initial Board if empty
             db.child('cells').once('value', s => { if(!s.exists()) resetChessBoard(); });
         }
 
@@ -218,14 +224,7 @@
                 start[i] = { type: layout[i], color: 'black' };
                 start[8+i] = { type: 'p', color: 'black' };
                 start[48+i] = { type: 'p', color: 'white' };
-                start[56+i] = { type: 'r', color: 'white' };
-                start[57+i] = { type: 'n', color: 'white' };
-                start[58+i] = { type: 'b', color: 'white' };
-                start[59+i] = { type: 'q', color: 'white' };
-                start[60+i] = { type: 'k', color: 'white' };
-                start[61+i] = { type: 'b', color: 'white' };
-                start[62+i] = { type: 'n', color: 'white' };
-                start[63+i] = { type: 'r', color: 'white' };
+                start[56+i] = { type: layout[i], color: 'white' };
             }
             db.child('cells').set(start);
             db.child('turn').set('white');
@@ -250,8 +249,7 @@
                 } else if(piece && piece.color === myRole) {
                     selectedPiece = i;
                     highlightMoves(i);
-                } else {
-                    // Coba pindah
+                } else if(canMove(selectedPiece, i)) {
                     movePiece(selectedPiece, i);
                     selectedPiece = null;
                     clearHighlights();
@@ -259,18 +257,66 @@
             }
         }
 
+        // --- VALIDATION RULES ---
+        function canMove(from, to) {
+            const p = currentBoardState[from];
+            const target = currentBoardState[to];
+            if(target && target.color === p.color) return false;
+
+            const r1 = Math.floor(from / 8), c1 = from % 8;
+            const r2 = Math.floor(to / 8), c2 = to % 8;
+            const dr = r2 - r1, dc = c2 - c1;
+
+            switch(p.type) {
+                case 'p': // Prajurit
+                    const dir = p.color === 'white' ? -1 : 1;
+                    if(dc === 0 && !target) {
+                        if(dr === dir) return true;
+                        if(dr === 2 * dir && (r1 === 1 || r1 === 6) && !currentBoardState[from + 8 * dir]) return true;
+                    }
+                    if(Math.abs(dc) === 1 && dr === dir && target) return true;
+                    return false;
+                case 'r': // Benteng
+                    if(r1 !== r2 && c1 !== c2) return false;
+                    return isPathClear(r1, c1, r2, c2);
+                case 'n': // Kuda
+                    return (Math.abs(dr) === 2 && Math.abs(dc) === 1) || (Math.abs(dr) === 1 && Math.abs(dc) === 2);
+                case 'b': // Peluncur
+                    if(Math.abs(dr) !== Math.abs(dc)) return false;
+                    return isPathClear(r1, c1, r2, c2);
+                case 'q': // Queen
+                    if(r1 !== r2 && c1 !== c2 && Math.abs(dr) !== Math.abs(dc)) return false;
+                    return isPathClear(r1, c1, r2, c2);
+                case 'k': // Raja
+                    return Math.abs(dr) <= 1 && Math.abs(dc) <= 1;
+            }
+            return false;
+        }
+
+        function isPathClear(r1, c1, r2, c2) {
+            const stepR = r2 === r1 ? 0 : (r2 > r1 ? 1 : -1);
+            const stepC = c2 === c1 ? 0 : (c2 > c1 ? 1 : -1);
+            let currR = r1 + stepR, currC = c1 + stepC;
+            while(currR !== r2 || currC !== c2) {
+                if(currentBoardState[currR * 8 + currC]) return false;
+                currR += stepR; currC += stepC;
+            }
+            return true;
+        }
+
         function highlightMoves(idx) {
             clearHighlights();
             document.getElementById(`t-${idx}`).classList.add('tile-selected');
-            // Logika gerak sederhana (hanya visual highlight untuk demo, bisa diperluas)
             for(let i=0; i<64; i++) {
-                if(i !== idx) document.getElementById(`t-${i}`).classList.add('tile-highlight');
+                if(canMove(idx, i)) {
+                    document.getElementById(`t-${i}`).classList.add(currentBoardState[i] ? 'tile-capture' : 'tile-highlight');
+                }
             }
         }
 
         function clearHighlights() {
             document.querySelectorAll('.chess-tile').forEach(t => {
-                t.classList.remove('tile-highlight', 'tile-selected');
+                t.classList.remove('tile-highlight', 'tile-selected', 'tile-capture');
             });
         }
 
@@ -334,7 +380,6 @@
                     el.innerHTML = val ? `<span class="${val==='X'?'x-icon':'o-icon'}">${val}</span>` : "";
                     if(val) el.classList.add('taken'); else el.classList.remove('taken');
                 }
-                checkXOXOWin();
             } else {
                 for(let i=0; i<64; i++) {
                     const el = document.getElementById(`t-${i}`);
@@ -342,10 +387,6 @@
                     el.innerHTML = p ? `<span class="piece ${p.color}">${chessPieces[p.color][p.type]}</span>` : "";
                 }
             }
-        }
-
-        function checkXOXOWin() {
-            // Logic 5 in a row sama seperti sebelumnya
         }
 
         function requestReset() {
