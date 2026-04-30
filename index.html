@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Toe Ultimate 3D Gold Fire</title>
+    <title>Tic-Tac-Toe Pro: Name & Score Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
@@ -17,118 +17,90 @@
             --o-color: #2ed573;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        
-        body { 
-            background-color: var(--bg-color); 
-            display: flex; flex-direction: column; align-items: center; 
-            min-height: 100vh; padding: 20px 10px; overflow-x: hidden;
-            color: #444;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 10px; color: #444; }
 
-        /* --- 3D UI COMPONENTS --- */
+        /* --- MENU AWAL (INPUT NAMA) --- */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 1000; 
-            display: flex; justify-content: center; align-items: center;
+            background: var(--bg-color); z-index: 1000; display: flex; justify-content: center; align-items: center;
         }
-
         .card-3d {
-            background: var(--bg-color);
-            padding: 40px 20px; border-radius: 30px;
+            background: var(--bg-color); padding: 30px; border-radius: 30px;
             box-shadow: 20px 20px 60px var(--shadow-dark), -20px -20px 60px var(--shadow-light);
-            text-align: center; width: 90%; max-width: 400px;
+            text-align: center; width: 90%; max-width: 380px;
+        }
+        input.name-input {
+            width: 100%; padding: 15px; border: none; border-radius: 15px;
+            background: var(--bg-color); margin-bottom: 20px; outline: none;
+            box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+            font-size: 1rem; text-align: center; font-weight: bold;
         }
 
-        .btn-3d {
-            padding: 15px 30px; border: none; border-radius: 15px;
-            background: var(--bg-color); font-weight: 900; font-size: 1.2rem;
-            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
-            cursor: pointer; transition: all 0.2s ease; margin: 10px;
-            color: #555;
+        /* --- SCOREBOARD --- */
+        .scoreboard {
+            display: flex; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 400px;
         }
-        .btn-3d:active {
-            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
-            transform: scale(0.98);
+        .score-box {
+            flex: 1; padding: 10px; border-radius: 20px; text-align: center;
+            background: var(--bg-color); box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
         }
-
-        .status-3d {
-            background: var(--bg-color); padding: 15px 30px; border-radius: 50px;
-            box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
-            margin-bottom: 25px; font-weight: 800; font-size: 1rem; letter-spacing: 1px;
-        }
+        .score-val { font-size: 1.5rem; font-weight: 900; display: block; }
+        .player-name { font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: #777; }
 
         /* --- GAME BOARD --- */
-        .viewport-container {
-            width: 100%; overflow-x: auto; padding: 20px 0;
-            display: flex; justify-content: flex-start;
-            -webkit-overflow-scrolling: touch;
-        }
-        @media (min-width: 650px) { .viewport-container { justify-content: center; } }
-
-        .board-wrapper { 
-            position: relative; padding: 25px; 
-            background: var(--bg-color); border-radius: 35px;
-            box-shadow: 15px 15px 35px var(--shadow-dark), -15px -15px 35px var(--shadow-light);
-            margin: 10px;
-        }
-
-        .board {
-            display: grid; grid-template-columns: repeat(10, 50px);
-            gap: 12px;
-        }
-
+        .viewport-container { width: 100%; overflow-x: auto; padding: 10px 0; display: flex; justify-content: center; }
+        .board-wrapper { position: relative; padding: 20px; background: var(--bg-color); border-radius: 30px; box-shadow: 10px 10px 20px var(--shadow-dark); }
+        .board { display: grid; grid-template-columns: repeat(10, 45px); gap: 8px; }
         .block {
-            width: 50px; height: 50px; background: var(--bg-color); border-radius: 12px;
-            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.6rem; font-weight: 900; cursor: pointer;
-            transition: 0.2s; border: none;
+            width: 45px; height: 45px; background: var(--bg-color); border-radius: 10px;
+            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+            display: flex; justify-content: center; align-items: center; font-size: 1.3rem; font-weight: 900;
         }
+        .block.taken { box-shadow: inset 3px 3px 6px var(--shadow-dark); }
 
-        .block.taken {
-            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
-        }
-
-        /* --- WIN ANIMATION --- */
+        /* --- ANIMASI EMAS API --- */
         .win-line {
-            position: absolute; z-index: 100; background: var(--gold-fire);
-            background-size: 200% auto; height: 14px; border-radius: 20px;
-            transform-origin: 0 50%; pointer-events: none;
-            box-shadow: 0 0 30px #ff4500, 0 0 15px #ffd700;
-            animation: draw 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, shimmer 1.5s infinite linear;
+            position: absolute; z-index: 100; background: var(--gold-fire); background-size: 200% auto;
+            height: 10px; border-radius: 10px; transform-origin: 0 50%; pointer-events: none;
+            box-shadow: 0 0 20px #ff4500; animation: draw 0.6s forwards, shimmer 1.5s infinite linear;
         }
-
-        .winner-cell {
-            background: #fffdf0 !important;
-            animation: pulse-fire 0.6s infinite alternate;
-        }
-
-        @keyframes draw { from { width: 0; opacity: 0; } to { opacity: 1; } }
+        @keyframes draw { from { width: 0; } }
         @keyframes shimmer { to { background-position: 200% center; } }
-        @keyframes pulse-fire {
-            from { transform: scale(1); box-shadow: 0 0 5px #ff4500; }
-            to { transform: scale(1.15); box-shadow: 0 0 20px #ff8c00; }
-        }
 
-        .x-style { color: var(--x-color); text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
-        .o-style { color: var(--o-color); text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+        .btn-action {
+            margin-top: 20px; padding: 12px 25px; border: none; border-radius: 50px;
+            background: var(--bg-color); box-shadow: 5px 5px 10px var(--shadow-dark);
+            font-weight: 800; cursor: pointer; color: #555;
+        }
     </style>
 </head>
 <body>
 
     <div id="overlay">
         <div class="card-3d">
-            <h1 style="margin-bottom: 10px;">ULTIMATE 3D</h1>
-            <p style="color: #777; margin-bottom: 25px;">Pilih peran untuk bertarung secara Online</p>
-            <div style="display: flex; justify-content: center; gap: 15px;">
-                <button class="btn-3d x-style" onclick="pickRole('X')">IKUT X</button>
-                <button class="btn-3d o-style" onclick="pickRole('O')">IKUT O</button>
+            <h2 style="margin-bottom: 20px;">MASUKKAN NAMA</h2>
+            <input type="text" id="inputNama" class="name-input" placeholder="Nama Anda..." maxlength="12">
+            <p style="font-size: 0.8rem; margin-bottom: 15px; color: #888;">Pilih simbol untuk mulai bermain</p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button class="btn-action" style="color: var(--x-color);" onclick="pickRole('X')">PILIH X</button>
+                <button class="btn-action" style="color: var(--o-color);" onclick="pickRole('O')">PILIH O</button>
             </div>
         </div>
     </div>
 
-    <div class="status-3d" id="info">Menghubungkan Database...</div>
+    <div class="scoreboard">
+        <div class="score-box">
+            <span class="player-name" id="nameX">Player X</span>
+            <span class="score-val" id="scoreX" style="color: var(--x-color);">0</span>
+        </div>
+        <div class="score-box">
+            <span class="player-name" id="nameO">Player O</span>
+            <span class="score-val" id="scoreO" style="color: var(--o-color);">0</span>
+        </div>
+    </div>
+
+    <div id="status-info" style="font-weight: 800; margin-bottom: 15px;">Menghubungkan...</div>
 
     <div class="viewport-container">
         <div class="board-wrapper">
@@ -137,12 +109,10 @@
         </div>
     </div>
 
-    <button class="btn-3d" onclick="fullReset()" style="color: #e53e3e; font-size: 0.9rem; padding: 10px 20px;">
-        RESET SELURUH GAME
-    </button>
+    <button class="btn-action" onclick="resetBoard()" style="color: #e53e3e;">RESET PAPAN</button>
 
     <script>
-        // --- FIREBASE CONFIG (SESUAI DATA ANDA) ---
+        // --- CONFIG FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -154,87 +124,90 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('pro_room_1');
+        const db = firebase.database().ref('game_v3');
 
-        let myRole = null, currentTurn = 'X', gameActive = true, grid = Array(100).fill("");
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        function playSfx(f, t, d, v) {
-            try {
-                const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-                o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-                g.gain.setValueAtTime(v, audioCtx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
-                o.connect(g); g.connect(audioCtx.destination);
-                o.start(); o.stop(audioCtx.currentTime + d);
-            } catch(e) {}
-        }
+        let myRole = null, myName = "", currentTurn = 'X', gameActive = true, grid = Array(100).fill("");
 
         function pickRole(role) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const input = document.getElementById('inputNama').value;
+            myName = input || "Anonim";
             myRole = role;
-            playSfx(500, 'sine', 0.2, 0.1);
-            document.getElementById('overlay').style.opacity = '0';
-            setTimeout(() => document.getElementById('overlay').style.display = 'none', 400);
-            createGridUI();
-            startSync();
+
+            // Simpan nama ke Firebase agar lawan tahu siapa kita
+            db.child('names/' + role).set(myName);
+            
+            document.getElementById('overlay').style.display = 'none';
+            initUI();
+            syncData();
         }
 
-        function createGridUI() {
+        function initUI() {
             const board = document.getElementById('game-board');
             board.innerHTML = "";
             for (let i = 0; i < 100; i++) {
                 const b = document.createElement('div');
-                b.className = 'block'; b.id = `block-${i}`;
-                b.onclick = () => sendMove(i);
+                b.className = 'block'; b.id = `b-${i}`;
+                b.onclick = () => {
+                    if(gameActive && currentTurn === myRole && grid[i] === "") {
+                        db.child('cells/' + i).set(myRole);
+                        db.child('turn').set(myRole === 'X' ? 'O' : 'X');
+                    }
+                };
                 board.appendChild(b);
             }
         }
 
-        function sendMove(i) {
-            if (!gameActive || currentTurn !== myRole || grid[i] !== "") return;
-            playSfx(800, 'sine', 0.1, 0.05);
-            db.child('cells/' + i).set(myRole);
-            db.child('turn').set(myRole === 'X' ? 'O' : 'X');
-        }
-
-        function startSync() {
+        function syncData() {
+            // Pantau Giliran
             db.child('turn').on('value', s => {
                 currentTurn = s.val() || 'X';
-                document.getElementById('info').innerHTML = currentTurn === myRole ? 
-                    `GILIRAN ANDA (<span class="${myRole === 'X' ? 'x-style' : 'o-style'}">${myRole}</span>)` : 
-                    `GILIRAN LAWAN (${currentTurn})`;
+                document.getElementById('status-info').innerText = currentTurn === myRole ? "GILIRAN ANDA!" : "Menunggu Lawan...";
             });
 
+            // Pantau Nama Pemain
+            db.child('names').on('value', s => {
+                const names = s.val() || {};
+                document.getElementById('nameX').innerText = names.X || "Player X";
+                document.getElementById('nameO').innerText = names.O || "Player O";
+            });
+
+            // Pantau Skor
+            db.child('scores').on('value', s => {
+                const scores = s.val() || {X: 0, O: 0};
+                document.getElementById('scoreX').innerText = scores.X;
+                document.getElementById('scoreO').innerText = scores.O;
+            });
+
+            // Pantau Papan
             db.child('cells').on('value', s => {
                 const data = s.val() || {};
                 grid = Array(100).fill("");
                 Object.keys(data).forEach(i => {
                     grid[i] = data[i];
-                    const el = document.getElementById(`block-${i}`);
-                    if(el && !el.classList.contains('taken')) {
-                        el.innerHTML = `<span class="${grid[i] === 'X' ? 'x-style' : 'o-style'}">${grid[i]}</span>`;
+                    const el = document.getElementById(`b-${i}`);
+                    if(el) {
+                        el.innerHTML = `<span style="color:${grid[i]==='X'?'var(--x-color)':'var(--o-color)'}">${grid[i]}</span>`;
                         el.classList.add('taken');
                     }
                 });
-                checkWinner();
+                checkWin();
             });
 
-            db.on('value', s => { 
-                if(!s.hasChild('cells')) { 
-                    gameActive = true; grid = Array(100).fill("");
-                    createGridUI(); document.getElementById('line-container').innerHTML = "";
-                }
-            });
+            // Pantau Reset
+            db.on('value', s => { if(!s.hasChild('cells')) { gameActive = true; document.getElementById('line-container').innerHTML = ""; initUI(); } });
         }
 
-        function checkWinner() {
+        function checkWin() {
             for (let i = 0; i < 100; i++) {
                 if (grid[i] === "") continue;
                 const win = getCombo(i);
                 if (win) {
                     gameActive = false;
                     drawWin(win.cells, grid[i]);
+                    // Hanya satu player yang update skor agar tidak dobel
+                    if(myRole === grid[i]) {
+                        db.child('scores/' + grid[i]).transaction(curr => (curr || 0) + 1);
+                    }
                     break;
                 }
             }
@@ -257,15 +230,12 @@
         }
 
         function drawWin(cells, p) {
-            playSfx(300, 'sawtooth', 0.8, 0.1);
-            cells.forEach(i => document.getElementById(`block-${i}`).classList.add('winner-cell'));
             cells.sort((a,b) => a-b);
             const b = document.getElementById('game-board').getBoundingClientRect();
-            const s = document.getElementById(`block-${cells[0]}`).getBoundingClientRect();
-            const e = document.getElementById(`block-${cells[cells.length-1]}`).getBoundingClientRect();
+            const s = document.getElementById(`b-${cells[0]}`).getBoundingClientRect();
+            const e = document.getElementById(`b-${cells[cells.length-1]}`).getBoundingClientRect();
             const x1 = (s.left+s.width/2)-b.left, y1 = (s.top+s.height/2)-b.top;
             const x2 = (e.left+e.width/2)-b.left, y2 = (e.top+e.height/2)-b.top;
-            
             const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
             const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
 
@@ -273,10 +243,10 @@
             line.className = 'win-line';
             line.style.cssText = `left:${x1}px; top:${y1}px; width:${dist}px; transform:rotate(${angle}deg);`;
             document.getElementById('line-container').appendChild(line);
-            document.getElementById('info').innerHTML = `<span style="background:var(--gold-fire); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:1.5rem">${p} MENANG TOTAL! 🔥</span>`;
+            document.getElementById('status-info').innerHTML = `PEMENANG: ${p}! 🔥`;
         }
 
-        function fullReset() { if(confirm("Bersihkan arena?")) db.remove(); }
+        function resetBoard() { if(confirm("Reset Papan?")) db.child('cells').remove(); }
     </script>
 </body>
 </html>
