@@ -33,19 +33,24 @@
 
         /* --- LOBBY --- */
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-        .card-vintage { background: var(--wood-light); padding: 25px; border: 8px double var(--brass); border-radius: 5px; text-align: center; width: 90%; max-width: 400px; }
+        .card-vintage { background: var(--wood-light); padding: 25px; border: 8px double var(--brass); border-radius: 5px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         .app-logo { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--brass); margin-bottom: 10px; object-fit: cover; }
         
-        .name-input { width: 100%; padding: 10px; background: #2a1b12; color: var(--paper); border: none; margin-bottom: 15px; text-align: center; font-family: 'Special Elite'; }
-        .btn-choice { padding: 10px 15px; border: 1px solid var(--brass); background: var(--wood-light); color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px; font-family: 'Cinzel'; width: 100%; margin-top: 10px; }
-        .btn-choice:disabled { opacity: 0.5; cursor: not-allowed; }
+        .name-input { width: 100%; padding: 12px; background: #2a1b12; color: var(--paper); border: none; margin-bottom: 15px; text-align: center; font-family: 'Special Elite'; box-shadow: var(--shadow-in); outline: none; }
+        .btn-choice { padding: 12px 15px; border: 1px solid var(--brass); background: var(--wood-light); color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px; font-family: 'Cinzel'; width: 100%; margin-top: 10px; transition: 0.2s; box-shadow: var(--shadow-out); }
+        .btn-choice:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; opacity: 0.6; box-shadow: none; }
+        .btn-choice:active:not(:disabled) { transform: scale(0.98); box-shadow: var(--shadow-in); }
 
         /* --- GAME BOARD --- */
-        .board-wrapper { transform: rotateX(25deg); perspective: 1200px; background: var(--wood-dark); padding: 10px; border-radius: 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); }
+        .board-wrapper { transform: rotateX(25deg); perspective: 1200px; background: var(--wood-dark); padding: 10px; border-radius: 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); margin-top: 10px; }
         .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 2px; }
-        .block { background: var(--wood-light); display: flex; justify-content: center; align-items: center; font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out); }
-        .x-icon { color: #d32f2f; font-size: 5vw; } .o-icon { color: var(--brass); font-size: 5vw; }
-        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 6px; border-radius: 10px; transform-origin: left center; }
+        .block { width: 100%; height: 100%; background: var(--wood-light); display: flex; justify-content: center; align-items: center; font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out); }
+        .x-icon { color: #d32f2f; font-size: 5vw; font-weight: bold; } 
+        .o-icon { color: var(--brass); font-size: 5vw; font-weight: bold; }
+        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 6px; border-radius: 10px; transform-origin: left center; animation: fire-flicker 0.2s infinite alternate; }
+
+        @keyframes fire-flicker { from { opacity: 0.8; } to { opacity: 1; } }
+        #status { margin: 15px 0; font-size: 0.8rem; text-transform: uppercase; color: var(--brass); }
     </style>
 </head>
 <body>
@@ -53,17 +58,22 @@
     <div id="overlay">
         <div class="card-vintage">
             <img src="1000041752.png" alt="Logo" class="app-logo">
-            <h1 style="color: var(--brass); margin-bottom: 15px;">GRAND LOBBY</h1>
+            <h1 style="color: var(--brass); margin-bottom: 15px; font-family: 'Cinzel';">GRAND LOBBY</h1>
             <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA..." maxlength="10">
-            <button class="btn-choice" onclick="selectGame('XOXO')">TIC-TAC-TOE (10x10)</button>
-            <div id="role-select" style="display:none; margin-top: 15px;">
-                <button id="btn1" class="btn-choice" onclick="confirmStart(1)"></button>
-                <button id="btn2" class="btn-choice" onclick="confirmStart(2)"></button>
+            
+            <button class="btn-choice" id="main-select-btn" onclick="selectGame('XOXO')">MASUK TIC-TAC-TOE</button>
+            
+            <div id="role-select" style="display:none; margin-top: 15px; border-top: 1px solid var(--brass); padding-top: 10px;">
+                <p style="font-size: 0.7rem; margin-bottom: 10px;">PILIH KUBURAN ANDA:</p>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn1" class="btn-choice" onclick="confirmStart(1)">PIHAK X</button>
+                    <button id="btn2" class="btn-choice" onclick="confirmStart(2)">PIHAK O</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="status" style="margin: 20px 0;">PILIH GAME DI MENU</div>
+    <div id="status">PILIH PERAN DI LOBBY</div>
 
     <div class="board-wrapper">
         <div id="main-board" class="board-xoxo"></div>
@@ -71,7 +81,7 @@
     </div>
 
     <script>
-        // Registrasi Service Worker
+        // PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
         }
@@ -84,9 +94,10 @@
         firebase.initializeApp(firebaseConfig);
         let db = null;
 
-        // --- AUDIO SYSTEM ---
+        // --- AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(freq, duration, type = 'sine') {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -103,34 +114,55 @@
         }
 
         // --- GAME LOGIC ---
-        let myRole = "", turn = "", isGameOver = false;
+        let myRole = "", turn = "", myName = "", isGameOver = false;
 
         function selectGame(game) {
             const n = document.getElementById('inputNama').value;
             if(!n) return alert("MASUKKAN NAMA!");
+            myName = n;
             db = firebase.database().ref('multi_game_v1/' + game);
+            
+            // Sembunyikan tombol utama, munculkan pilihan peran
+            document.getElementById('main-select-btn').style.display = 'none';
             document.getElementById('role-select').style.display = 'block';
-            document.getElementById('btn1').innerText = "PIHAK X";
-            document.getElementById('btn2').innerText = "PIHAK O";
+
+            // Sinkronisasi tombol peran (Lock Role jika sudah ada orang)
+            db.child('names').on('value', s => {
+                const names = s.val() || {};
+                const b1 = document.getElementById('btn1'), b2 = document.getElementById('btn2');
+                b1.disabled = !!names.X;
+                b2.disabled = !!names.O;
+            });
         }
 
         function confirmStart(choice) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             myRole = choice === 1 ? 'X' : 'O';
+            
+            // Daftarkan nama ke Firebase untuk mengunci peran
+            db.child('names/' + myRole).set(myName);
+            
             document.getElementById('overlay').style.display = 'none';
             initBoard();
             syncGame();
+            playSound(440, 0.2);
         }
 
         function initBoard() {
             const board = document.getElementById('main-board');
+            board.innerHTML = "";
             for(let i=0; i<100; i++) {
-                const b = document.createElement('div'); b.className = 'block';
+                const b = document.createElement('div'); 
+                b.className = 'block';
+                b.id = `block-${i}`;
                 b.onclick = () => {
                     if(turn === myRole && !isGameOver) {
-                        db.child('cells/' + i).set(myRole);
-                        db.child('turn').set(myRole === 'X' ? 'O' : 'X');
-                        playSound(600, 0.1);
+                        db.child('cells/' + i).once('value', snapshot => {
+                            if(!snapshot.exists()) {
+                                db.child('cells/' + i).set(myRole);
+                                db.child('turn').set(myRole === 'X' ? 'O' : 'X');
+                                playSound(600, 0.1);
+                            }
+                        });
                     }
                 };
                 board.appendChild(b);
@@ -138,19 +170,30 @@
         }
 
         function syncGame() {
+            // Sinkronisasi Sel
             db.child('cells').on('value', s => {
                 const cells = s.val() || {};
                 Object.keys(cells).forEach(idx => {
-                    const el = document.getElementById('main-board').children[idx];
-                    el.innerHTML = `<span class="${cells[idx]==='X'?'x-icon':'o-icon'}">${cells[idx]}</span>`;
+                    const el = document.getElementById(`block-${idx}`);
+                    if(el) {
+                        el.innerHTML = `<span class="${cells[idx]==='X'?'x-icon':'o-icon'}">${cells[idx]}</span>`;
+                    }
                 });
             });
-            db.child('turn').on('value', s => turn = s.val() || 'X');
+
+            // Sinkronisasi Giliran
+            db.child('turn').on('value', s => {
+                turn = s.val() || 'X';
+                document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
+            });
+
+            // Sinkronisasi Pemenang
             db.child('winner').on('value', s => {
                 if(s.exists()) {
                     isGameOver = true;
                     playWinSound();
-                    document.getElementById('status').innerText = s.val().name + " MENANG!";
+                    const win = s.val();
+                    document.getElementById('status').innerHTML = `<b style="color:gold">${win.name.toUpperCase()} MENANG!</b>`;
                 }
             });
         }
