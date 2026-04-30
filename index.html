@@ -22,12 +22,20 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* Optimalisasi Aplikasi Mobile */
         body { 
             background: radial-gradient(circle, #2c1e16 0%, #1a0f0a 100%);
             color: var(--paper); font-family: 'Special Elite', cursive;
             display: flex; flex-direction: column; align-items: center;
             min-height: 100vh; padding: 10px; overflow-x: hidden;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
         }
+
+        input { user-select: auto !important; -webkit-user-select: auto !important; }
 
         /* --- MENU LOBBY --- */
         #overlay {
@@ -98,7 +106,6 @@
         .x-icon { color: #d32f2f; font-weight: bold; font-size: 1.5rem; }
         .o-icon { color: var(--brass); font-weight: bold; font-size: 1.5rem; }
 
-        /* ANIMASI MENANG: Coretan Api Gold */
         .win-line { 
             position: absolute; z-index: 100; 
             background: var(--gold-fire); 
@@ -170,20 +177,18 @@
         firebase.initializeApp(firebaseConfig);
         let db = null;
 
-        // --- AUDIO ENGINE (POPCAT INSTRUMENT) ---
+        // --- AUDIO ENGINE (POPCAT) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let musicPlaying = true;
         const notes = {'C4':261,'D4':293,'E4':329,'F4':349,'G4':392,'A4':440,'B4':493,'C5':523,'D5':587,'E5':659,'G5':783};
         const melody = ['G4','E5','D5','C5','B4','C5','D5','G4','G4','E5','D5','C5','B4','C5','A4','G4'];
 
-        // Fungsi Popcat: Bunyi "Pop" yang tajam dan singkat
         function playPop(f, v = 0.1) {
             if (!musicPlaying) return;
             const o = audioCtx.createOscillator();
             const g = audioCtx.createGain();
             o.type = 'sine';
             o.frequency.setValueAtTime(f, audioCtx.currentTime);
-            // Karakteristik Popcat: Attack instan, Decay sangat cepat
             g.gain.setValueAtTime(v, audioCtx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
             o.connect(g);
@@ -194,15 +199,11 @@
 
         function playWinnerSound() {
             if (!musicPlaying) return;
-            const winNotes = [523, 659, 783, 1046];
-            winNotes.forEach((f, i) => {
-                setTimeout(() => playPop(f, 0.2), i * 150);
-            });
+            [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playPop(f, 0.2), i * 150));
         }
 
         let mIdx = 0;
         function loopMusic() { 
-            // Melodi popcat menggunakan frekuensi dasar yang diloncatkan
             playPop(notes[melody[mIdx]], 0.05); 
             mIdx = (mIdx+1)%melody.length; 
             setTimeout(loopMusic, 350); 
@@ -222,7 +223,6 @@
             if(!n) return alert("MASUKKAN NAMA!");
             myName = n; currentGame = game;
             db = firebase.database().ref('multi_game_v1/' + game);
-            
             document.getElementById('role-select').style.display = 'block';
             if(game === 'XOXO') {
                 document.getElementById('role-text').innerText = "PILIH KUBURAN:";
@@ -236,11 +236,9 @@
         function confirmStart(choice) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             myRole = (currentGame === 'XOXO') ? (choice === 1 ? 'X' : 'O') : (choice === 1 ? 'white' : 'black');
-            
             const wrapper = document.getElementById('board-perspective');
             if(myRole === 'black' || myRole === 'O') wrapper.classList.add('flipped-camera');
             else wrapper.classList.remove('flipped-camera');
-
             db.child('names/' + myRole).set(myName);
             document.getElementById('overlay').style.display = 'none';
             if(currentGame === 'XOXO') initXOXO(); else initChess();
@@ -248,7 +246,6 @@
             loopMusic();
         }
 
-        // --- TIC-TAC-TOE LOGIC (XOXO) ---
         function initXOXO() {
             const board = document.getElementById('main-board');
             board.className = "board-xoxo"; board.innerHTML = "";
@@ -259,6 +256,7 @@
                         db.child('cells/' + i).set(myRole);
                         db.child('turn').set(myRole === 'X' ? 'O' : 'X');
                         checkWinnerXOXO(i, myRole);
+                        playPop(440, 0.1);
                     }
                 };
                 board.appendChild(b);
@@ -269,17 +267,13 @@
             const size = 10;
             const r = Math.floor(idx / size), c = idx % size;
             const dirs = [[0,1],[1,0],[1,1],[1,-1]];
-
             for(let [dr, dc] of dirs) {
                 let count = 1, line = [idx];
                 for(let step of [1, -1]) {
                     let nr = r + dr*step, nc = c + dc*step;
                     while(nr>=0 && nr<size && nc>=0 && nc<size && currentBoardState[nr*size + nc] === p) {
                         count++; line.push(nr*size+nc);
-                        if(count >= 5) {
-                            db.child('winner').set({ player: p, name: myName, line: line });
-                            return;
-                        }
+                        if(count >= 5) { db.child('winner').set({ player: p, name: myName, line: line }); return; }
                         nr += dr*step; nc += dc*step;
                     }
                 }
@@ -289,29 +283,16 @@
         function drawWinLine(line) {
             const container = document.getElementById('line-container');
             container.innerHTML = "";
-            const start = line[0], end = line[line.length-1];
-            const el1 = document.getElementById(`b-${start}`), el2 = document.getElementById(`b-${end}`);
-            
-            const x1 = el1.offsetLeft + 20, y1 = el1.offsetTop + 20;
-            const x2 = el2.offsetLeft + 20, y2 = el2.offsetTop + 20;
-            
-            const dist = Math.hypot(x2-x1, y2-y1);
-            const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
-
+            const el1 = document.getElementById(`b-${line[0]}`), el2 = document.getElementById(`b-${line[line.length-1]}`);
+            const x1 = el1.offsetLeft + 20, y1 = el1.offsetTop + 20, x2 = el2.offsetLeft + 20, y2 = el2.offsetTop + 20;
+            const dist = Math.hypot(x2-x1, y2-y1), angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
             const div = document.createElement('div');
-            div.className = "win-line";
-            div.style.width = dist + "px";
-            div.style.left = x1 + "px";
-            div.style.top = y1 + "px";
-            div.style.transform = `rotate(${angle}deg)`;
+            div.className = "win-line"; div.style.width = dist + "px"; div.style.left = x1 + "px";
+            div.style.top = y1 + "px"; div.style.transform = `rotate(${angle}deg)`;
             container.appendChild(div);
         }
 
-        // --- CHESS LOGIC ---
-        const chessPieces = {
-            white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
-            black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' }
-        };
+        const chessPieces = { white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' }, black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' } };
 
         function initChess() {
             const board = document.getElementById('main-board');
@@ -319,8 +300,7 @@
             for(let i=0; i<64; i++) {
                 const tile = document.createElement('div');
                 tile.className = `chess-tile ${(Math.floor(i/8)+(i%8))%2===0 ? 'tile-light' : 'tile-dark'}`;
-                tile.id = `t-${i}`;
-                tile.onclick = () => handleChessClick(i);
+                tile.id = `t-${i}`; tile.onclick = () => handleChessClick(i);
                 board.appendChild(tile);
             }
             db.child('cells').once('value', s => { if(!s.exists()) resetChessBoard(); });
@@ -329,10 +309,8 @@
         function resetChessBoard() {
             const start = {}; const layout = ['r','n','b','q','k','b','n','r'];
             for(let i=0; i<8; i++) {
-                start[i] = { type: layout[i], color: 'black' };
-                start[8+i] = { type: 'p', color: 'black' };
-                start[48+i] = { type: 'p', color: 'white' };
-                start[56+i] = { type: layout[i], color: 'white' };
+                start[i] = { type: layout[i], color: 'black' }; start[8+i] = { type: 'p', color: 'black' };
+                start[48+i] = { type: 'p', color: 'white' }; start[56+i] = { type: layout[i], color: 'white' };
             }
             db.child('cells').set(start); db.child('turn').set('white');
         }
@@ -340,9 +318,8 @@
         function handleChessClick(i) {
             if(turn !== myRole || isGameOver) return;
             const piece = currentBoardState[i];
-            if(selectedPiece === null) {
-                if(piece && piece.color === myRole) { selectedPiece = i; highlightMoves(i); }
-            } else {
+            if(selectedPiece === null) { if(piece && piece.color === myRole) { selectedPiece = i; highlightMoves(i); } }
+            else {
                 if(i === selectedPiece) { clearHighlights(); selectedPiece = null; }
                 else if(piece && piece.color === myRole) { selectedPiece = i; highlightMoves(i); }
                 else if(canMove(selectedPiece, i)) { movePiece(selectedPiece, i); selectedPiece = null; clearHighlights(); }
@@ -352,8 +329,7 @@
         function canMove(from, to) {
             const p = currentBoardState[from]; const target = currentBoardState[to];
             if(target && target.color === p.color) return false;
-            const r1 = Math.floor(from/8), c1 = from%8, r2 = Math.floor(to/8), c2 = to%8;
-            const dr = r2-r1, dc = c2-c1;
+            const r1 = Math.floor(from/8), c1 = from%8, r2 = Math.floor(to/8), c2 = to%8, dr = r2-r1, dc = c2-c1;
             switch(p.type) {
                 case 'p': 
                     const dir = p.color === 'white' ? -1 : 1;
@@ -387,36 +363,23 @@
         function clearHighlights() { document.querySelectorAll('.chess-tile').forEach(t => t.classList.remove('tile-highlight', 'tile-selected', 'tile-capture')); }
 
         function movePiece(from, to) {
-            const updates = {};
-            updates[`cells/${from}`] = null;
+            const updates = {}; updates[`cells/${from}`] = null;
             updates[`cells/${to}`] = currentBoardState[from];
             updates['turn'] = turn === 'white' ? 'black' : 'white';
-            db.update(updates);
-            playPop(600, 0.1);
+            db.update(updates); playPop(600, 0.1);
         }
 
-        // --- SYNC ENGINE ---
         function startSync() {
-            db.child('turn').on('value', s => {
-                turn = s.val() || (currentGame === 'XOXO' ? 'X' : 'white');
-                if(!isGameOver) document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
-            });
-
+            db.child('turn').on('value', s => { turn = s.val() || 'white'; if(!isGameOver) document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR..."; });
             db.child('names').on('value', s => {
                 const n = s.val() || {};
                 if(currentGame === 'XOXO') { document.getElementById('p1-name').innerText = n.X||"X"; document.getElementById('p2-name').innerText = n.O||"O"; }
                 else { document.getElementById('p1-name').innerText = n.white||"PUTIH"; document.getElementById('p2-name').innerText = n.black||"HITAM"; }
             });
-
-            db.child('cells').on('value', s => {
-                currentBoardState = s.val() || {};
-                renderBoard();
-            });
-
+            db.child('cells').on('value', s => { currentBoardState = s.val() || {}; renderBoard(); });
             db.child('winner').on('value', s => {
                 if(s.exists()) {
-                    const win = s.val();
-                    isGameOver = true;
+                    const win = s.val(); isGameOver = true;
                     document.getElementById('status').innerHTML = `<span style="color:var(--brass); font-size:1.2rem;">CONGRATULATION ${win.name.toUpperCase()}!</span>`;
                     if(win.line) drawWinLine(win.line);
                     playWinnerSound();
@@ -428,15 +391,12 @@
             const flip = (myRole === 'black' || myRole === 'O');
             if(currentGame === 'XOXO') {
                 for(let i=0; i<100; i++) {
-                    const el = document.getElementById(`b-${i}`);
-                    if(!el) continue;
-                    const v = currentBoardState[i];
-                    el.innerHTML = v ? `<span class="${v==='X'?'x-icon':'o-icon'} ${flip?'piece-flipped':''}">${v}</span>` : "";
+                    const el = document.getElementById(`b-${i}`); if(!el) continue;
+                    const v = currentBoardState[i]; el.innerHTML = v ? `<span class="${v==='X'?'x-icon':'o-icon'} ${flip?'piece-flipped':''}">${v}</span>` : "";
                 }
             } else {
                 for(let i=0; i<64; i++) {
-                    const el = document.getElementById(`t-${i}`);
-                    const p = currentBoardState[i];
+                    const el = document.getElementById(`t-${i}`); const p = currentBoardState[i];
                     el.innerHTML = p ? `<span class="piece ${p.color} ${flip?'piece-flipped':''}">${chessPieces[p.color][p.type]}</span>` : "";
                 }
             }
@@ -444,11 +404,9 @@
 
         function requestReset() {
             if(confirm("BERSIHKAN ARENA?")) {
-                db.child('cells').remove();
-                db.child('winner').remove();
+                db.child('cells').remove(); db.child('winner').remove();
                 if(currentGame === 'CHESS') resetChessBoard();
-                document.getElementById('line-container').innerHTML = "";
-                isGameOver = false;
+                document.getElementById('line-container').innerHTML = ""; isGameOver = false;
             }
         }
     </script>
