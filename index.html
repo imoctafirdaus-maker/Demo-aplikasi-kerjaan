@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Toe: Antique 3D Edition</title>
+    <title>Tic-Tac-Toe: Harvest Moon Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
@@ -17,7 +17,6 @@
             --brass-dark: #7d6608;
             --paper: #d7ccc8;
             --gold-fire: linear-gradient(90deg, #ff4500, #ffd700, #ffffff, #ffd700, #ff4500);
-            /* 3D Shadows */
             --shadow-out: 4px 4px 8px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.1);
             --shadow-in: inset 4px 4px 8px rgba(0,0,0,0.5), inset -1px -1px 2px rgba(255,255,255,0.1);
         }
@@ -83,9 +82,8 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.9), var(--shadow-out);
         }
 
-        /* TAMPILAN PAPAN 3D */
         .board { 
-            display: grid; grid-template-columns: repeat(10, 42px); gap: 8px; /* Gap lebih besar untuk efek 3D */
+            display: grid; grid-template-columns: repeat(10, 42px); gap: 8px; 
             background: transparent;
         }
 
@@ -96,16 +94,13 @@
             display: flex; justify-content: center; align-items: center; 
             font-family: 'Cinzel', serif; font-weight: 900; font-size: 1.2rem;
             cursor: pointer; transition: all 0.2s ease;
-            box-shadow: var(--shadow-out); /* Efek tombol menonjol */
+            box-shadow: var(--shadow-out);
         }
         
-        .block:active {
-            transform: scale(0.9);
-            box-shadow: var(--shadow-in); /* Efek tombol tertekan */
-        }
+        .block:active { transform: scale(0.9); box-shadow: var(--shadow-in); }
 
         .block.taken {
-            box-shadow: var(--shadow-in); /* Bidak yang sudah ada terlihat tenggelam */
+            box-shadow: var(--shadow-in);
             background: #463028;
         }
 
@@ -156,7 +151,6 @@
     <button id="music-toggle" onclick="toggleMusic()">🎵 MUSIK: ON</button>
 
     <script>
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -169,12 +163,24 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database().ref('game_musical_v1');
 
-        // --- AUDIO LOGIC ---
+        // --- HARVEST MOON TOWN THEME LOGIC ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let musicPlaying = true;
 
+        const notes = {
+            'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+            'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77
+        };
+
+        // Simplified Town Theme Melody
+        const townMelody = [
+            'G4', 'E5', 'D5', 'C5', 'B4', 'C5', 'D5', 'G4',
+            'G4', 'E5', 'D5', 'C5', 'B4', 'C5', 'A4', 'G4',
+            'F4', 'A4', 'C5', 'E5', 'D5', 'C5', 'B4', 'G4'
+        ];
+
         function playNote(freq, type, duration, volume) {
-            if (!musicPlaying && type === 'triangle') return;
+            if (!musicPlaying && type === 'square') return; 
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -185,23 +191,23 @@
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
 
+        let melodyIndex = 0;
+        function playTownTheme() {
+            if (musicPlaying) {
+                const noteName = townMelody[melodyIndex];
+                playNote(notes[noteName], 'square', 0.4, 0.02);
+                melodyIndex = (melodyIndex + 1) % townMelody.length;
+            }
+            setTimeout(playTownTheme, 400); // Tempo
+        }
+
         const sfx = {
             click: () => playNote(600, 'sine', 0.1, 0.1),
             win: () => {
-                const notes = [523.25, 659.25, 783.99, 1046.50];
-                notes.forEach((n, i) => setTimeout(() => playNote(n, 'square', 0.6, 0.05), i * 150));
+                const winNotes = [523, 659, 783, 1046];
+                winNotes.forEach((n, i) => setTimeout(() => playNote(n, 'square', 0.6, 0.05), i * 150));
             }
         };
-
-        const classicTheme = [261, 329, 392, 523, 392, 329]; 
-        let noteIndex = 0;
-        function playBackgroundMusic() {
-            if (musicPlaying) {
-                playNote(classicTheme[noteIndex], 'triangle', 1.5, 0.03);
-                noteIndex = (noteIndex + 1) % classicTheme.length;
-            }
-            setTimeout(playBackgroundMusic, 1000);
-        }
 
         function toggleMusic() {
             musicPlaying = !musicPlaying;
@@ -219,7 +225,7 @@
             db.child('names/' + role).set(myName);
             document.getElementById('overlay').style.display = 'none';
             initUI(); startSync();
-            playBackgroundMusic();
+            playTownTheme();
         }
 
         function initUI() {
@@ -244,19 +250,16 @@
                 currentTurn = s.val() || 'X';
                 document.getElementById('status').innerText = currentTurn === myRole ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
             });
-
             db.child('names').on('value', s => {
                 const names = s.val() || {};
                 document.getElementById('nameX').innerText = names.X || "X";
                 document.getElementById('nameO').innerText = names.O || "O";
             });
-
             db.child('scores').on('value', s => {
                 const sc = s.val() || {X:0, O:0};
                 document.getElementById('scoreX').innerText = sc.X;
                 document.getElementById('scoreO').innerText = sc.O;
             });
-
             db.child('cells').on('value', s => {
                 const data = s.val() || {};
                 grid = Array(100).fill("");
@@ -270,7 +273,6 @@
                 });
                 checkWin();
             });
-
             db.on('value', s => { if(!s.hasChild('cells')) { gameActive = true; document.getElementById('line-container').innerHTML = ""; initUI(); } });
         }
 
