@@ -62,11 +62,19 @@
         .score-box b { font-size: 1.5rem; color: var(--brass); font-family: 'Cinzel'; }
 
         .viewport-container { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 20px 0; perspective: 1000px; }
+        
+        /* Rotasi Papan Otomatis */
         .board-wrapper { 
             position: relative; padding: 15px; background: var(--wood-dark); 
             border: 8px solid #2a1b12; border-radius: 10px; 
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-            transform: rotateX(15deg); /* Efek 3D Klasik */
+            transform: rotateX(15deg); 
+            transition: transform 0.8s ease-in-out;
+        }
+        
+        /* Jika User memilih HITAM, papan diputar 180 derajat */
+        .flipped-camera {
+            transform: rotateX(15deg) rotateZ(180deg) !important;
         }
 
         /* Tic-Tac-Toe Grid */
@@ -86,10 +94,15 @@
         .tile-capture { box-shadow: inset 0 0 15px #e74c3c; }
         .tile-selected { background: #f1c40f !important; }
 
-        .piece { filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.5)); user-select: none; transition: transform 0.2s; }
+        .piece { filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.5)); user-select: none; transition: transform 0.2s; display: inline-block; }
         .piece:active { transform: scale(1.2) translateY(-5px); }
         .piece.black { color: #000; }
         .piece.white { color: #fff; text-shadow: 1px 1px 2px #000; }
+        
+        /* Putar balik bidak agar tidak terbalik saat kamera flip */
+        .piece-flipped {
+            transform: rotate(180deg);
+        }
 
         .x-icon { color: #d32f2f; }
         .o-icon { color: var(--brass); }
@@ -128,7 +141,7 @@
     <div id="status">PILIH GAME DI MENU</div>
 
     <div class="viewport-container">
-        <div class="board-wrapper">
+        <div id="board-perspective" class="board-wrapper">
             <div id="main-board"></div>
             <div id="line-container"></div>
         </div>
@@ -190,6 +203,15 @@
         function confirmStart(choice) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             myRole = (currentGame === 'XOXO') ? (choice === 1 ? 'X' : 'O') : (choice === 1 ? 'white' : 'black');
+            
+            // Logika Kamera Otomatis berdasarkan warna
+            const wrapper = document.getElementById('board-perspective');
+            if(myRole === 'black' || myRole === 'O') {
+                wrapper.classList.add('flipped-camera');
+            } else {
+                wrapper.classList.remove('flipped-camera');
+            }
+
             db.child('names/' + myRole).set(myName);
             document.getElementById('overlay').style.display = 'none';
             if(currentGame === 'XOXO') initXOXO(); else initChess();
@@ -257,7 +279,6 @@
             }
         }
 
-        // --- VALIDATION RULES ---
         function canMove(from, to) {
             const p = currentBoardState[from];
             const target = currentBoardState[to];
@@ -268,7 +289,7 @@
             const dr = r2 - r1, dc = c2 - c1;
 
             switch(p.type) {
-                case 'p': // Prajurit
+                case 'p':
                     const dir = p.color === 'white' ? -1 : 1;
                     if(dc === 0 && !target) {
                         if(dr === dir) return true;
@@ -276,18 +297,18 @@
                     }
                     if(Math.abs(dc) === 1 && dr === dir && target) return true;
                     return false;
-                case 'r': // Benteng
+                case 'r':
                     if(r1 !== r2 && c1 !== c2) return false;
                     return isPathClear(r1, c1, r2, c2);
-                case 'n': // Kuda
+                case 'n':
                     return (Math.abs(dr) === 2 && Math.abs(dc) === 1) || (Math.abs(dr) === 1 && Math.abs(dc) === 2);
-                case 'b': // Peluncur
+                case 'b':
                     if(Math.abs(dr) !== Math.abs(dc)) return false;
                     return isPathClear(r1, c1, r2, c2);
-                case 'q': // Queen
+                case 'q':
                     if(r1 !== r2 && c1 !== c2 && Math.abs(dr) !== Math.abs(dc)) return false;
                     return isPathClear(r1, c1, r2, c2);
-                case 'k': // Raja
+                case 'k':
                     return Math.abs(dr) <= 1 && Math.abs(dc) <= 1;
             }
             return false;
@@ -330,7 +351,6 @@
             playNote(400, 'sine', 0.1, 0.1);
         }
 
-        // --- XOXO LOGIC ---
         function initXOXO() {
             const board = document.getElementById('main-board');
             board.className = "board-xoxo"; board.innerHTML = "";
@@ -347,7 +367,6 @@
             }
         }
 
-        // --- SYNC ENGINE ---
         function startSync() {
             db.child('turn').on('value', s => {
                 turn = s.val() || (currentGame === 'XOXO' ? 'X' : 'white');
@@ -372,19 +391,20 @@
         }
 
         function renderBoard() {
+            const isFlipped = (myRole === 'black' || myRole === 'O');
             if(currentGame === 'XOXO') {
                 for(let i=0; i<100; i++) {
                     const el = document.getElementById(`b-${i}`);
                     if(!el) continue;
                     const val = currentBoardState[i];
-                    el.innerHTML = val ? `<span class="${val==='X'?'x-icon':'o-icon'}">${val}</span>` : "";
-                    if(val) el.classList.add('taken'); else el.classList.remove('taken');
+                    el.innerHTML = val ? `<span class="${val==='X'?'x-icon':'o-icon'} ${isFlipped?'piece-flipped':''}">${val}</span>` : "";
                 }
             } else {
                 for(let i=0; i<64; i++) {
                     const el = document.getElementById(`t-${i}`);
                     const p = currentBoardState[i];
-                    el.innerHTML = p ? `<span class="piece ${p.color}">${chessPieces[p.color][p.type]}</span>` : "";
+                    // Tambahkan class piece-flipped jika kamera sedang flip
+                    el.innerHTML = p ? `<span class="piece ${p.color} ${isFlipped?'piece-flipped':''}">${chessPieces[p.color][p.type]}</span>` : "";
                 }
             }
         }
