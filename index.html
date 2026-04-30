@@ -154,7 +154,7 @@
     </div>
 
     <button class="btn-choice" onclick="requestReset()" style="margin-top: 15px; color: #d32f2f; border-radius: 20px;">RESET PAPAN</button>
-    <button id="music-toggle" onclick="toggleMusic()">🎵 MUSIK: ON</button>
+    <button id="music-toggle" onclick="toggleMusic()">🎵 POPCAT: ON</button>
 
     <script>
         // --- FIREBASE ---
@@ -170,31 +170,48 @@
         firebase.initializeApp(firebaseConfig);
         let db = null;
 
-        // --- AUDIO ENGINE ---
+        // --- AUDIO ENGINE (POPCAT INSTRUMENT) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let musicPlaying = true;
         const notes = {'C4':261,'D4':293,'E4':329,'F4':349,'G4':392,'A4':440,'B4':493,'C5':523,'D5':587,'E5':659,'G5':783};
         const melody = ['G4','E5','D5','C5','B4','C5','D5','G4','G4','E5','D5','C5','B4','C5','A4','G4'];
 
-        function playNote(f, t, d, v) {
+        // Fungsi Popcat: Bunyi "Pop" yang tajam dan singkat
+        function playPop(f, v = 0.1) {
             if (!musicPlaying) return;
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-            g.gain.setValueAtTime(v, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
-            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(f, audioCtx.currentTime);
+            // Karakteristik Popcat: Attack instan, Decay sangat cepat
+            g.gain.setValueAtTime(v, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.start();
+            o.stop(audioCtx.currentTime + 0.1);
         }
 
         function playWinnerSound() {
             if (!musicPlaying) return;
             const winNotes = [523, 659, 783, 1046];
             winNotes.forEach((f, i) => {
-                setTimeout(() => playNote(f, 'sine', 0.6, 0.1), i * 150);
+                setTimeout(() => playPop(f, 0.2), i * 150);
             });
         }
 
         let mIdx = 0;
-        function loopMusic() { playNote(notes[melody[mIdx]], 'square', 0.4, 0.015); mIdx = (mIdx+1)%melody.length; setTimeout(loopMusic, 400); }
-        function toggleMusic() { musicPlaying = !musicPlaying; document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 MUSIK: ON" : "🔇 MUSIK: OFF"; }
+        function loopMusic() { 
+            // Melodi popcat menggunakan frekuensi dasar yang diloncatkan
+            playPop(notes[melody[mIdx]], 0.05); 
+            mIdx = (mIdx+1)%melody.length; 
+            setTimeout(loopMusic, 350); 
+        }
+        
+        function toggleMusic() { 
+            musicPlaying = !musicPlaying; 
+            document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 POPCAT: ON" : "🔇 POPCAT: OFF"; 
+        }
 
         // --- CORE STATE ---
         let currentGame = ""; let myRole = ""; let myName = ""; let selectedPiece = null;
@@ -272,10 +289,6 @@
         function drawWinLine(line) {
             const container = document.getElementById('line-container');
             container.innerHTML = "";
-            const blocks = line.map(id => document.getElementById(`b-${id}`).getBoundingClientRect());
-            const boardRect = document.getElementById('main-board').getBoundingClientRect();
-
-            // Ambil titik tengah awal dan akhir
             const start = line[0], end = line[line.length-1];
             const el1 = document.getElementById(`b-${start}`), el2 = document.getElementById(`b-${end}`);
             
@@ -379,7 +392,7 @@
             updates[`cells/${to}`] = currentBoardState[from];
             updates['turn'] = turn === 'white' ? 'black' : 'white';
             db.update(updates);
-            playNote(400, 'sine', 0.1, 0.1);
+            playPop(600, 0.1);
         }
 
         // --- SYNC ENGINE ---
