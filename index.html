@@ -3,30 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Gold & Blue Edition</title>
+    <title>Tic-Tac-Toe Luxury 3D</title>
     <style>
         :root {
-            /* Palette: Soft Blue-Grey Neumorphism */
             --bg-color: #e6e9ef;
             --text-color: #4a5568;
             --shadow-dark: #cbd5e0;
             --shadow-light: #ffffff;
-            
-            /* Blue Accent */
             --border-blue: #3182ce;
-            --border-blue-glow: rgba(66, 153, 225, 0.6);
+            --border-blue-glow: rgba(66, 153, 225, 0.4);
             
-            /* Player Gradients */
+            /* Player Colors */
             --x-grad: linear-gradient(135deg, #ff6b6b, #ee5253);
             --o-grad: linear-gradient(135deg, #48bb78, #38a169);
             
-            /* Gold Gradient */
+            /* Luxurious Gold Gradient */
             --gold-grad: linear-gradient(90deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
             
             --grid-size: 10; 
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 
         body {
             background-color: var(--bg-color);
@@ -36,31 +33,24 @@
             align-items: center;
             min-height: 100vh;
             padding: 40px 20px;
+            overflow-x: hidden;
         }
 
-        .header h1 {
-            font-weight: 800;
-            letter-spacing: -1px;
-            color: #2d3748;
-            margin-bottom: 5px;
-            text-align: center;
-        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; color: #2d3748; }
 
-        .header p { opacity: 0.7; margin-bottom: 30px; text-align: center; }
-
-        .status-card {
+        /* Status Display */
+        .status-box {
             background: var(--bg-color);
             padding: 15px 40px;
             border-radius: 50px;
             box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
             margin-bottom: 40px;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
+        /* Board Container */
         .board-wrapper {
             perspective: 2000px;
             position: relative;
@@ -75,12 +65,13 @@
             border-radius: 30px;
             box-shadow: 20px 20px 40px var(--shadow-dark), -20px -20px 40px var(--shadow-light);
             transform: rotateX(10deg);
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: transform 0.6s ease;
+            position: relative;
         }
 
-        .board:hover { transform: rotateX(0deg) scale(1.02); }
+        .board:hover { transform: rotateX(0deg); }
 
-        /* Grid Blocks dengan Border Biru */
+        /* Grid Blocks */
         .block {
             width: 48px;
             height: 48px;
@@ -92,95 +83,82 @@
             align-items: center;
             font-size: 1.4rem;
             font-weight: 900;
-            
-            /* Tambahan Border Biru */
             border: 2px solid var(--border-blue);
-            /* Efek bayangan ganda: Neumorphic + Blue Glow */
-            box-shadow: 
-                4px 4px 8px var(--shadow-dark), 
-                -4px -4px 8px var(--shadow-light),
-                0 0 5px var(--border-blue-glow);
-                
-            transition: all 0.3s ease;
-            position: relative;
+            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 2;
         }
 
-        .block:not(.taken):hover {
-            border-color: #63b3ed; /* Biru lebih terang saat hover */
-            box-shadow: 
-                2px 2px 4px var(--shadow-dark), 
-                -2px -2px 4px var(--shadow-light),
-                0 0 12px var(--border-blue-glow);
-            transform: translateY(-2px);
-        }
-
         .block.taken {
-            border-color: #a0aec0; /* Warna border memudar saat terisi */
             box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
-            cursor: default;
+            border-color: #cbd5e0;
         }
 
         .x-color { background: var(--x-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .o-color { background: var(--o-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
+        /* --- Animasi Garis Kemenangan --- */
         .win-line {
             position: absolute;
             z-index: 10;
             background: var(--gold-grad);
             background-size: 200% auto;
-            height: 10px;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(184, 134, 11, 0.6);
-            transform-origin: left center;
+            height: 8px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(184, 134, 11, 0.7);
+            transform-origin: 0 50%; /* Titik putar di awal garis */
             pointer-events: none;
-            animation: growLine 0.8s ease-out forwards, shimmer 3s infinite linear;
+            /* Animasi Coreti (Width dari 0 ke target) */
+            animation: drawLine 0.7s cubic-bezier(0.645, 0.045, 0.355, 1) forwards, 
+                       shimmer 2s infinite linear;
         }
 
-        @keyframes growLine { from { opacity: 0; width: 0; } to { opacity: 1; } }
-        @keyframes shimmer { to { background-position: 200% center; } }
-
-        .winner-cell {
-            background: #fffdf0 !important;
-            border-color: #ffd700 !important; /* Border jadi emas saat menang */
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5) !important;
+        @keyframes drawLine {
+            from { width: 0; opacity: 0; }
+            to { opacity: 1; }
         }
 
+        @keyframes shimmer {
+            to { background-position: 200% center; }
+        }
+
+        /* Highlight Kotak yang Menang */
+        .block.winner-cell {
+            border-color: #ffd700 !important;
+            background: #fffdf0;
+            animation: pulseWinner 1s infinite alternate;
+        }
+
+        @keyframes pulseWinner {
+            from { transform: scale(1); box-shadow: 0 0 5px #ffd700; }
+            to { transform: scale(1.1); box-shadow: 0 0 20px #ffd700; }
+        }
+
+        /* Button Reset */
         button {
             margin-top: 50px;
-            padding: 16px 40px;
+            padding: 15px 35px;
             border: 2px solid var(--border-blue);
-            border-radius: 50px;
             background: var(--bg-color);
-            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
             color: var(--border-blue);
-            font-weight: 700;
+            border-radius: 50px;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            transition: 0.3s;
         }
 
-        button:hover {
-            background: var(--border-blue);
-            color: white;
-            box-shadow: 0 0 15px var(--border-blue-glow);
-        }
-
-        @media (max-width: 600px) {
-            .block { width: 32px; height: 32px; font-size: 1rem; border-radius: 6px; border-width: 1px; }
-            .board { gap: 5px; padding: 15px; }
-        }
+        button:hover { background: var(--border-blue); color: white; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Tic-Tac-Toe <span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Premium</span></h1>
-        <p>Garis tepi biru untuk tampilan lebih presisi</p>
+        <h1>Tic-Tac-Toe <span class="x-color">Gold</span></h1>
+        <p>Hubungkan 5 kotak untuk mengaktifkan animasi emas!</p>
     </div>
 
-    <div class="status-card" id="status">
+    <div class="status-box" id="status">
         Giliran: <span class="x-color" id="player-label">X</span>
     </div>
 
@@ -189,7 +167,7 @@
         <div id="line-container"></div>
     </div>
 
-    <button onclick="initGame()">Reset Permainan</button>
+    <button onclick="initGame()">Reset Game</button>
 
     <script>
         const GRID_SIZE = 10;
@@ -199,7 +177,8 @@
         let gameActive = true;
 
         const boardElement = document.getElementById('game-board');
-        const statusLabel = document.getElementById('player-label');
+        const statusDisplay = document.getElementById('status');
+        const playerLabel = document.getElementById('player-label');
         const lineContainer = document.getElementById('line-container');
 
         document.documentElement.style.setProperty('--grid-size', GRID_SIZE);
@@ -208,11 +187,10 @@
             gameActive = true;
             currentPlayer = 'X';
             gameState = Array(GRID_SIZE * GRID_SIZE).fill("");
-            statusLabel.textContent = 'X';
-            statusLabel.className = 'x-color';
+            statusDisplay.innerHTML = `Giliran: <span class="x-color" id="player-label">X</span>`;
             lineContainer.innerHTML = "";
-            
             boardElement.innerHTML = "";
+            
             for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
                 const block = document.createElement('div');
                 block.classList.add('block');
@@ -227,31 +205,31 @@
             if (gameState[index] !== "" || !gameActive) return;
 
             gameState[index] = currentPlayer;
-            e.target.textContent = currentPlayer;
-            e.target.classList.add('taken', currentPlayer === 'X' ? 'x-color' : 'o-color');
+            e.target.innerHTML = `<span class="pop-in ${currentPlayer === 'X' ? 'x-color' : 'o-color'}">${currentPlayer}</span>`;
+            e.target.classList.add('taken');
 
             const winData = checkWin(index);
             if (winData) {
-                drawGoldLine(winData.cells);
-                document.getElementById('status').innerHTML = `WINNER: <span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${currentPlayer}</span>`;
+                animateWin(winData.cells);
                 gameActive = false;
                 return;
             }
 
             if (!gameState.includes("")) {
-                document.getElementById('status').textContent = "Hasil: Seri!";
+                statusDisplay.textContent = "Hasil: Seri!";
                 return;
             }
 
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            statusLabel.textContent = currentPlayer;
-            statusLabel.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
+            const label = document.getElementById('player-label');
+            label.textContent = currentPlayer;
+            label.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
         }
 
         function checkWin(index) {
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
-            const directions = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 1, y: -1 }];
+            const directions = [{x:1, y:0}, {x:0, y:1}, {x:1, y:1}, {x:1, y:-1}];
 
             for (let dir of directions) {
                 let winningCells = [index];
@@ -267,27 +245,43 @@
             return null;
         }
 
-        function drawGoldLine(cells) {
+        function animateWin(cells) {
+            // 1. Highlight kotak-kotak pemenang
+            cells.forEach(idx => {
+                document.querySelector(`[data-index="${idx}"]`).classList.add('winner-cell');
+            });
+
+            // 2. Tentukan koordinat awal dan akhir untuk garis
             cells.sort((a, b) => a - b);
             const first = cells[0], last = cells[cells.length - 1];
             const firstEl = document.querySelector(`[data-index="${first}"]`);
             const lastEl = document.querySelector(`[data-index="${last}"]`);
-            
-            cells.forEach(idx => document.querySelector(`[data-index="${idx}"]`).classList.add('winner-cell'));
 
-            const rectStart = firstEl.getBoundingClientRect(), rectEnd = lastEl.getBoundingClientRect(), boardRect = boardElement.getBoundingClientRect();
-            const x1 = rectStart.left + rectStart.width / 2 - boardRect.left, y1 = rectStart.top + rectStart.height / 2 - boardRect.top;
-            const x2 = rectEnd.left + rectEnd.width / 2 - boardRect.left, y2 = rectEnd.top + rectEnd.height / 2 - boardRect.top;
+            const bRect = boardElement.getBoundingClientRect();
+            const startRect = firstEl.getBoundingClientRect();
+            const endRect = lastEl.getBoundingClientRect();
 
-            const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const x1 = (startRect.left + startRect.width / 2) - bRect.left;
+            const y1 = (startRect.top + startRect.height / 2) - bRect.top;
+            const x2 = (endRect.left + endRect.width / 2) - bRect.left;
+            const y2 = (endRect.top + endRect.height / 2) - bRect.top;
+
+            // 3. Hitung panjang dan sudut garis
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
             const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
 
+            // 4. Buat elemen garis emas
             const line = document.createElement('div');
             line.className = 'win-line';
-            line.style.width = `${distance}px`;
-            line.style.left = `${x1}px`; line.style.top = `${y1}px`;
+            line.style.left = `${x1}px`;
+            line.style.top = `${y1}px`;
+            line.style.width = `${length}px`; // Akan dianimasikan oleh CSS @keyframes drawLine
             line.style.transform = `rotate(${angle}deg)`;
+
             lineContainer.appendChild(line);
+
+            // 5. Update Status
+            statusDisplay.innerHTML = `<span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.5rem;">PEMAIN ${currentPlayer} MENANG!</span>`;
         }
 
         initGame();
