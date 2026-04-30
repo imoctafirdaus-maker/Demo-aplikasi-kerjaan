@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Retro Board Game Collection - 1888</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#b7950b">
+    <link rel="apple-touch-icon" href="1777546745740.png">
+
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -161,6 +166,15 @@
     </div>
 
     <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered'))
+                    .catch(err => console.log('Service Worker Failed', err));
+            });
+        }
+
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -313,7 +327,6 @@
                 for(let i=0; i<100; i++) {
                     const el = document.getElementById(`b-${i}`); if(!el) continue;
                     const v = currentBoardState[i]; 
-                    // Hapus kelas warna sebelumnya
                     el.classList.remove('filled-x', 'filled-o');
                     if(v === 1) {
                         el.classList.add('filled-x');
