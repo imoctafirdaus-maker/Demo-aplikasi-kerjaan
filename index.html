@@ -63,23 +63,18 @@
 
         .viewport-container { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 20px 0; perspective: 1000px; }
         
-        /* Rotasi Papan Otomatis */
         .board-wrapper { 
             position: relative; padding: 15px; background: var(--wood-dark); 
             border: 8px solid #2a1b12; border-radius: 10px; 
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
             transform: rotateX(15deg); 
             transition: transform 0.8s ease-in-out;
+            transform-style: preserve-3d;
         }
         
-        /* Jika User memilih HITAM, papan diputar 180 derajat */
-        .flipped-camera {
-            transform: rotateX(15deg) rotateZ(180deg) !important;
-        }
+        .flipped-camera { transform: rotateX(15deg) rotateZ(180deg) !important; }
 
-        /* Tic-Tac-Toe Grid */
-        .board-xoxo { display: grid; grid-template-columns: repeat(10, 40px); gap: 5px; }
-        /* Chess Grid */
+        .board-xoxo { display: grid; grid-template-columns: repeat(10, 40px); gap: 5px; position: relative; }
         .board-chess { display: grid; grid-template-columns: repeat(8, 45px); gap: 0px; background: #000; border: 2px solid #000; }
 
         .block { 
@@ -95,18 +90,29 @@
         .tile-selected { background: #f1c40f !important; }
 
         .piece { filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.5)); user-select: none; transition: transform 0.2s; display: inline-block; }
-        .piece:active { transform: scale(1.2) translateY(-5px); }
         .piece.black { color: #000; }
         .piece.white { color: #fff; text-shadow: 1px 1px 2px #000; }
         
-        /* Putar balik bidak agar tidak terbalik saat kamera flip */
-        .piece-flipped {
-            transform: rotate(180deg);
+        .piece-flipped { transform: rotate(180deg); }
+
+        .x-icon { color: #d32f2f; font-weight: bold; font-size: 1.5rem; }
+        .o-icon { color: var(--brass); font-weight: bold; font-size: 1.5rem; }
+
+        /* ANIMASI MENANG: Coretan Api Gold */
+        .win-line { 
+            position: absolute; z-index: 100; 
+            background: var(--gold-fire); 
+            height: 8px; border-radius: 10px; 
+            pointer-events: none;
+            box-shadow: 0 0 15px #ff4500, 0 0 30px #ffd700;
+            animation: fire-flicker 0.2s infinite alternate;
+            transform-origin: left center;
         }
 
-        .x-icon { color: #d32f2f; }
-        .o-icon { color: var(--brass); }
-        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 6px; border-radius: 10px; pointer-events: none; }
+        @keyframes fire-flicker {
+            from { opacity: 0.8; box-shadow: 0 0 10px #ff4500; }
+            to { opacity: 1; box-shadow: 0 0 25px #ffd700; }
+        }
 
         #music-toggle { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 1px solid var(--brass); color: var(--brass); padding: 8px; border-radius: 20px; font-size: 0.6rem; cursor: pointer; }
     </style>
@@ -143,7 +149,7 @@
     <div class="viewport-container">
         <div id="board-perspective" class="board-wrapper">
             <div id="main-board"></div>
-            <div id="line-container"></div>
+            <div id="line-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
         </div>
     </div>
 
@@ -151,7 +157,7 @@
     <button id="music-toggle" onclick="toggleMusic()">🎵 MUSIK: ON</button>
 
     <script>
-        // --- FIREBASE & AUDIO ---
+        // --- FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -164,6 +170,7 @@
         firebase.initializeApp(firebaseConfig);
         let db = null;
 
+        // --- AUDIO ENGINE ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let musicPlaying = true;
         const notes = {'C4':261,'D4':293,'E4':329,'F4':349,'G4':392,'A4':440,'B4':493,'C5':523,'D5':587,'E5':659,'G5':783};
@@ -177,12 +184,21 @@
             o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
         }
 
+        function playWinnerSound() {
+            if (!musicPlaying) return;
+            const winNotes = [523, 659, 783, 1046];
+            winNotes.forEach((f, i) => {
+                setTimeout(() => playNote(f, 'sine', 0.6, 0.1), i * 150);
+            });
+        }
+
         let mIdx = 0;
-        function loopMusic() { playNote(notes[melody[mIdx]], 'square', 0.4, 0.02); mIdx = (mIdx+1)%melody.length; setTimeout(loopMusic, 400); }
+        function loopMusic() { playNote(notes[melody[mIdx]], 'square', 0.4, 0.015); mIdx = (mIdx+1)%melody.length; setTimeout(loopMusic, 400); }
         function toggleMusic() { musicPlaying = !musicPlaying; document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 MUSIK: ON" : "🔇 MUSIK: OFF"; }
 
         // --- CORE STATE ---
         let currentGame = ""; let myRole = ""; let myName = ""; let selectedPiece = null;
+        let turn = ""; let currentBoardState = {}; let isGameOver = false;
 
         function selectGame(game) {
             const n = document.getElementById('inputNama').value;
@@ -204,19 +220,78 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
             myRole = (currentGame === 'XOXO') ? (choice === 1 ? 'X' : 'O') : (choice === 1 ? 'white' : 'black');
             
-            // Logika Kamera Otomatis berdasarkan warna
             const wrapper = document.getElementById('board-perspective');
-            if(myRole === 'black' || myRole === 'O') {
-                wrapper.classList.add('flipped-camera');
-            } else {
-                wrapper.classList.remove('flipped-camera');
-            }
+            if(myRole === 'black' || myRole === 'O') wrapper.classList.add('flipped-camera');
+            else wrapper.classList.remove('flipped-camera');
 
             db.child('names/' + myRole).set(myName);
             document.getElementById('overlay').style.display = 'none';
             if(currentGame === 'XOXO') initXOXO(); else initChess();
             startSync();
             loopMusic();
+        }
+
+        // --- TIC-TAC-TOE LOGIC (XOXO) ---
+        function initXOXO() {
+            const board = document.getElementById('main-board');
+            board.className = "board-xoxo"; board.innerHTML = "";
+            for(let i=0; i<100; i++) {
+                const b = document.createElement('div'); b.className = 'block'; b.id = `b-${i}`;
+                b.onclick = () => {
+                    if(turn === myRole && !currentBoardState[i] && !isGameOver) {
+                        db.child('cells/' + i).set(myRole);
+                        db.child('turn').set(myRole === 'X' ? 'O' : 'X');
+                        checkWinnerXOXO(i, myRole);
+                    }
+                };
+                board.appendChild(b);
+            }
+        }
+
+        function checkWinnerXOXO(idx, p) {
+            const size = 10;
+            const r = Math.floor(idx / size), c = idx % size;
+            const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+
+            for(let [dr, dc] of dirs) {
+                let count = 1, line = [idx];
+                for(let step of [1, -1]) {
+                    let nr = r + dr*step, nc = c + dc*step;
+                    while(nr>=0 && nr<size && nc>=0 && nc<size && currentBoardState[nr*size + nc] === p) {
+                        count++; line.push(nr*size+nc);
+                        if(count >= 5) {
+                            db.child('winner').set({ player: p, name: myName, line: line });
+                            return;
+                        }
+                        nr += dr*step; nc += dc*step;
+                    }
+                }
+            }
+        }
+
+        function drawWinLine(line) {
+            const container = document.getElementById('line-container');
+            container.innerHTML = "";
+            const blocks = line.map(id => document.getElementById(`b-${id}`).getBoundingClientRect());
+            const boardRect = document.getElementById('main-board').getBoundingClientRect();
+
+            // Ambil titik tengah awal dan akhir
+            const start = line[0], end = line[line.length-1];
+            const el1 = document.getElementById(`b-${start}`), el2 = document.getElementById(`b-${end}`);
+            
+            const x1 = el1.offsetLeft + 20, y1 = el1.offsetTop + 20;
+            const x2 = el2.offsetLeft + 20, y2 = el2.offsetTop + 20;
+            
+            const dist = Math.hypot(x2-x1, y2-y1);
+            const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+
+            const div = document.createElement('div');
+            div.className = "win-line";
+            div.style.width = dist + "px";
+            div.style.left = x1 + "px";
+            div.style.top = y1 + "px";
+            div.style.transform = `rotate(${angle}deg)`;
+            container.appendChild(div);
         }
 
         // --- CHESS LOGIC ---
@@ -230,8 +305,7 @@
             board.className = "board-chess"; board.innerHTML = "";
             for(let i=0; i<64; i++) {
                 const tile = document.createElement('div');
-                const r = Math.floor(i/8), c = i%8;
-                tile.className = `chess-tile ${(r+c)%2===0 ? 'tile-light' : 'tile-dark'}`;
+                tile.className = `chess-tile ${(Math.floor(i/8)+(i%8))%2===0 ? 'tile-light' : 'tile-dark'}`;
                 tile.id = `t-${i}`;
                 tile.onclick = () => handleChessClick(i);
                 board.appendChild(tile);
@@ -240,171 +314,117 @@
         }
 
         function resetChessBoard() {
-            const start = {};
-            const layout = ['r','n','b','q','k','b','n','r'];
+            const start = {}; const layout = ['r','n','b','q','k','b','n','r'];
             for(let i=0; i<8; i++) {
                 start[i] = { type: layout[i], color: 'black' };
                 start[8+i] = { type: 'p', color: 'black' };
                 start[48+i] = { type: 'p', color: 'white' };
                 start[56+i] = { type: layout[i], color: 'white' };
             }
-            db.child('cells').set(start);
-            db.child('turn').set('white');
+            db.child('cells').set(start); db.child('turn').set('white');
         }
 
-        let currentBoardState = {};
-        let turn = 'white';
-
         function handleChessClick(i) {
-            if(turn !== myRole) return;
+            if(turn !== myRole || isGameOver) return;
             const piece = currentBoardState[i];
-
             if(selectedPiece === null) {
-                if(piece && piece.color === myRole) {
-                    selectedPiece = i;
-                    highlightMoves(i);
-                }
+                if(piece && piece.color === myRole) { selectedPiece = i; highlightMoves(i); }
             } else {
-                if(i === selectedPiece) {
-                    clearHighlights();
-                    selectedPiece = null;
-                } else if(piece && piece.color === myRole) {
-                    selectedPiece = i;
-                    highlightMoves(i);
-                } else if(canMove(selectedPiece, i)) {
-                    movePiece(selectedPiece, i);
-                    selectedPiece = null;
-                    clearHighlights();
-                }
+                if(i === selectedPiece) { clearHighlights(); selectedPiece = null; }
+                else if(piece && piece.color === myRole) { selectedPiece = i; highlightMoves(i); }
+                else if(canMove(selectedPiece, i)) { movePiece(selectedPiece, i); selectedPiece = null; clearHighlights(); }
             }
         }
 
         function canMove(from, to) {
-            const p = currentBoardState[from];
-            const target = currentBoardState[to];
+            const p = currentBoardState[from]; const target = currentBoardState[to];
             if(target && target.color === p.color) return false;
-
-            const r1 = Math.floor(from / 8), c1 = from % 8;
-            const r2 = Math.floor(to / 8), c2 = to % 8;
-            const dr = r2 - r1, dc = c2 - c1;
-
+            const r1 = Math.floor(from/8), c1 = from%8, r2 = Math.floor(to/8), c2 = to%8;
+            const dr = r2-r1, dc = c2-c1;
             switch(p.type) {
-                case 'p':
+                case 'p': 
                     const dir = p.color === 'white' ? -1 : 1;
                     if(dc === 0 && !target) {
                         if(dr === dir) return true;
-                        if(dr === 2 * dir && (r1 === 1 || r1 === 6) && !currentBoardState[from + 8 * dir]) return true;
+                        if(dr === 2*dir && (r1===1||r1===6) && !currentBoardState[from+8*dir]) return true;
                     }
-                    if(Math.abs(dc) === 1 && dr === dir && target) return true;
-                    return false;
-                case 'r':
-                    if(r1 !== r2 && c1 !== c2) return false;
-                    return isPathClear(r1, c1, r2, c2);
-                case 'n':
-                    return (Math.abs(dr) === 2 && Math.abs(dc) === 1) || (Math.abs(dr) === 1 && Math.abs(dc) === 2);
-                case 'b':
-                    if(Math.abs(dr) !== Math.abs(dc)) return false;
-                    return isPathClear(r1, c1, r2, c2);
-                case 'q':
-                    if(r1 !== r2 && c1 !== c2 && Math.abs(dr) !== Math.abs(dc)) return false;
-                    return isPathClear(r1, c1, r2, c2);
-                case 'k':
-                    return Math.abs(dr) <= 1 && Math.abs(dc) <= 1;
+                    return Math.abs(dc)===1 && dr===dir && !!target;
+                case 'r': return (r1===r2 || c1===c2) && isPathClear(r1,c1,r2,c2);
+                case 'n': return (Math.abs(dr)===2 && Math.abs(dc)===1) || (Math.abs(dr)===1 && Math.abs(dc)===2);
+                case 'b': return Math.abs(dr)===Math.abs(dc) && isPathClear(r1,c1,r2,c2);
+                case 'q': return (r1===r2 || c1===c2 || Math.abs(dr)===Math.abs(dc)) && isPathClear(r1,c1,r2,c2);
+                case 'k': return Math.abs(dr)<=1 && Math.abs(dc)<=1;
             }
             return false;
         }
 
-        function isPathClear(r1, c1, r2, c2) {
-            const stepR = r2 === r1 ? 0 : (r2 > r1 ? 1 : -1);
-            const stepC = c2 === c1 ? 0 : (c2 > c1 ? 1 : -1);
-            let currR = r1 + stepR, currC = c1 + stepC;
-            while(currR !== r2 || currC !== c2) {
-                if(currentBoardState[currR * 8 + currC]) return false;
-                currR += stepR; currC += stepC;
-            }
+        function isPathClear(r1,c1,r2,c2) {
+            const sR = r2===r1?0:(r2>r1?1:-1), sC = c2===c1?0:(c2>c1?1:-1);
+            let cR = r1+sR, cC = c1+sC;
+            while(cR!==r2 || cC!==c2) { if(currentBoardState[cR*8+cC]) return false; cR+=sR; cC+=sC; }
             return true;
         }
 
         function highlightMoves(idx) {
             clearHighlights();
             document.getElementById(`t-${idx}`).classList.add('tile-selected');
-            for(let i=0; i<64; i++) {
-                if(canMove(idx, i)) {
-                    document.getElementById(`t-${i}`).classList.add(currentBoardState[i] ? 'tile-capture' : 'tile-highlight');
-                }
-            }
+            for(let i=0; i<64; i++) if(canMove(idx, i)) document.getElementById(`t-${i}`).classList.add(currentBoardState[i]?'tile-capture':'tile-highlight');
         }
 
-        function clearHighlights() {
-            document.querySelectorAll('.chess-tile').forEach(t => {
-                t.classList.remove('tile-highlight', 'tile-selected', 'tile-capture');
-            });
-        }
+        function clearHighlights() { document.querySelectorAll('.chess-tile').forEach(t => t.classList.remove('tile-highlight', 'tile-selected', 'tile-capture')); }
 
         function movePiece(from, to) {
-            const p = currentBoardState[from];
             const updates = {};
             updates[`cells/${from}`] = null;
-            updates[`cells/${to}`] = p;
+            updates[`cells/${to}`] = currentBoardState[from];
             updates['turn'] = turn === 'white' ? 'black' : 'white';
             db.update(updates);
             playNote(400, 'sine', 0.1, 0.1);
         }
 
-        function initXOXO() {
-            const board = document.getElementById('main-board');
-            board.className = "board-xoxo"; board.innerHTML = "";
-            for(let i=0; i<100; i++) {
-                const b = document.createElement('div'); b.className = 'block'; b.id = `b-${i}`;
-                b.onclick = () => {
-                    if(turn === myRole && !currentBoardState[i]) {
-                        db.child('cells/' + i).set(myRole);
-                        db.child('turn').set(myRole === 'X' ? 'O' : 'X');
-                        playNote(600, 'sine', 0.1, 0.1);
-                    }
-                };
-                board.appendChild(b);
-            }
-        }
-
+        // --- SYNC ENGINE ---
         function startSync() {
             db.child('turn').on('value', s => {
                 turn = s.val() || (currentGame === 'XOXO' ? 'X' : 'white');
-                document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
+                if(!isGameOver) document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
             });
 
             db.child('names').on('value', s => {
                 const n = s.val() || {};
-                if(currentGame === 'XOXO') {
-                    document.getElementById('p1-name').innerText = n.X || "X";
-                    document.getElementById('p2-name').innerText = n.O || "O";
-                } else {
-                    document.getElementById('p1-name').innerText = n.white || "PUTIH";
-                    document.getElementById('p2-name').innerText = n.black || "HITAM";
-                }
+                if(currentGame === 'XOXO') { document.getElementById('p1-name').innerText = n.X||"X"; document.getElementById('p2-name').innerText = n.O||"O"; }
+                else { document.getElementById('p1-name').innerText = n.white||"PUTIH"; document.getElementById('p2-name').innerText = n.black||"HITAM"; }
             });
 
             db.child('cells').on('value', s => {
                 currentBoardState = s.val() || {};
                 renderBoard();
             });
+
+            db.child('winner').on('value', s => {
+                if(s.exists()) {
+                    const win = s.val();
+                    isGameOver = true;
+                    document.getElementById('status').innerHTML = `<span style="color:var(--brass); font-size:1.2rem;">CONGRATULATION ${win.name.toUpperCase()}!</span>`;
+                    if(win.line) drawWinLine(win.line);
+                    playWinnerSound();
+                }
+            });
         }
 
         function renderBoard() {
-            const isFlipped = (myRole === 'black' || myRole === 'O');
+            const flip = (myRole === 'black' || myRole === 'O');
             if(currentGame === 'XOXO') {
                 for(let i=0; i<100; i++) {
                     const el = document.getElementById(`b-${i}`);
                     if(!el) continue;
-                    const val = currentBoardState[i];
-                    el.innerHTML = val ? `<span class="${val==='X'?'x-icon':'o-icon'} ${isFlipped?'piece-flipped':''}">${val}</span>` : "";
+                    const v = currentBoardState[i];
+                    el.innerHTML = v ? `<span class="${v==='X'?'x-icon':'o-icon'} ${flip?'piece-flipped':''}">${v}</span>` : "";
                 }
             } else {
                 for(let i=0; i<64; i++) {
                     const el = document.getElementById(`t-${i}`);
                     const p = currentBoardState[i];
-                    // Tambahkan class piece-flipped jika kamera sedang flip
-                    el.innerHTML = p ? `<span class="piece ${p.color} ${isFlipped?'piece-flipped':''}">${chessPieces[p.color][p.type]}</span>` : "";
+                    el.innerHTML = p ? `<span class="piece ${p.color} ${flip?'piece-flipped':''}">${chessPieces[p.color][p.type]}</span>` : "";
                 }
             }
         }
@@ -412,8 +432,10 @@
         function requestReset() {
             if(confirm("BERSIHKAN ARENA?")) {
                 db.child('cells').remove();
+                db.child('winner').remove();
                 if(currentGame === 'CHESS') resetChessBoard();
                 document.getElementById('line-container').innerHTML = "";
+                isGameOver = false;
             }
         }
     </script>
