@@ -1,21 +1,8 @@
-{
-  "short_name": "Game1888",
-  "name": "Retro Board Game Collection 1888",
-  "icons": [
-    {
-      "src": "icon.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#1a0f0a",
-  "background_color": "#1a0f0a"
-}
+"icons": [
+  {
+    "src": "1000041752.png", 
+    "type": "image/png",
+    "sizes": "512x512",
+    "purpose": "any maskable"
+  }
+]
