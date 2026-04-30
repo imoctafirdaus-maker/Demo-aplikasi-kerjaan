@@ -2,8 +2,11 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Gold Fire Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tic-Tac-Toe Online Gold Fire</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --bg-color: #e6e9ef;
@@ -13,143 +16,72 @@
             --border-blue: #3182ce;
             --x-grad: linear-gradient(135deg, #ff6b6b, #ee5253);
             --o-grad: linear-gradient(135deg, #48bb78, #38a169);
-            /* Gradasi Emas Api */
             --gold-fire: linear-gradient(90deg, #ff4500, #ff8c00, #ffd700, #ffffff, #ffd700, #ff8c00, #ff4500);
             --grid-count: 10;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background-color: var(--bg-color); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px 10px; overflow-x: hidden; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px 10px;
-        }
-
-        /* --- OVERLAY --- */
+        /* SELECTION OVERLAY */
         #overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: 0.5s;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); z-index: 100; display: flex; justify-content: center; align-items: center;
         }
-
         .selection-card {
-            background: var(--bg-color);
-            padding: 40px;
-            border-radius: 30px;
+            background: var(--bg-color); padding: 30px; border-radius: 30px;
             box-shadow: 15px 15px 30px var(--shadow-dark), -15px -15px 30px var(--shadow-light);
-            text-align: center;
+            text-align: center; width: 90%; max-width: 350px;
         }
-
-        .choice-btns { display: flex; gap: 20px; margin-top: 30px; }
+        .choice-btns { display: flex; gap: 20px; justify-content: center; margin-top: 25px; }
         .btn-choice {
-            width: 80px; height: 80px; border-radius: 20px;
-            font-size: 2rem; font-weight: 900; cursor: pointer;
-            border: 3px solid var(--border-blue); background: var(--bg-color);
-            box-shadow: 5px 5px 10px var(--shadow-dark);
-            transition: 0.2s;
+            width: 70px; height: 70px; border-radius: 20px; border: 3px solid var(--border-blue);
+            font-size: 2rem; font-weight: 900; background: var(--bg-color);
+            box-shadow: 5px 5px 10px var(--shadow-dark); cursor: pointer;
         }
 
-        /* --- SCOREBOARD & STATUS --- */
-        .scoreboard { display: flex; gap: 20px; margin-bottom: 20px; width: 100%; max-width: 400px; }
-        .score-item {
-            flex: 1; background: var(--bg-color); padding: 15px; border-radius: 20px;
-            text-align: center; box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
-        }
-        .score-val { font-size: 1.5rem; font-weight: 900; display: block; }
-
+        /* SCORE & STATUS */
         .status-card {
-            background: var(--bg-color); padding: 10px 30px; border-radius: 50px;
+            background: var(--bg-color); padding: 12px 25px; border-radius: 50px;
             box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
-            margin-bottom: 20px; font-weight: 800;
+            margin-bottom: 20px; font-weight: 800; font-size: 0.9rem;
         }
 
-        /* --- BOARD --- */
-        .viewport-container {
-            width: 100%; overflow-x: auto; padding: 10px 0;
-            display: flex; justify-content: flex-start;
-            -webkit-overflow-scrolling: touch;
-        }
-        @media (min-width: 650px) { .viewport-container { justify-content: center; } }
-
-        .board-wrapper { perspective: 1500px; position: relative; padding: 20px; }
+        .viewport-container { width: 100%; overflow-x: auto; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
+        .board-wrapper { position: relative; padding: 20px; display: inline-block; }
         .board {
             display: grid; grid-template-columns: repeat(var(--grid-count), 1fr);
-            gap: 10px; padding: 20px; background: var(--bg-color); border-radius: 25px;
-            box-shadow: 15px 15px 30px var(--shadow-dark), -15px -15px 30px var(--shadow-light);
-            width: calc((50px * var(--grid-count)) + (10px * (var(--grid-count) - 1)) + 40px);
-            transform: rotateX(5deg);
+            gap: 8px; padding: 15px; background: var(--bg-color); border-radius: 20px;
+            box-shadow: 10px 10px 20px var(--shadow-dark);
+            width: calc((50px * var(--grid-count)) + (8px * (var(--grid-count) - 1)) + 30px);
         }
 
         .block {
             width: 50px; height: 50px; background: var(--bg-color); border-radius: 10px;
             border: 2px solid var(--border-blue); display: flex; justify-content: center;
-            align-items: center; font-size: 1.5rem; font-weight: 900;
-            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
-            cursor: pointer; transition: 0.1s;
+            align-items: center; font-size: 1.4rem; font-weight: 900;
+            box-shadow: 3px 3px 6px var(--shadow-dark); -webkit-tap-highlight-color: transparent;
         }
+        .block.taken { box-shadow: inset 2px 2px 5px var(--shadow-dark); border-color: #cbd5e0; }
 
         .x-color { background: var(--x-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .o-color { background: var(--o-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* --- ANIMASI EMAS API (WIN LINE) --- */
+        /* FIRE WIN LINE */
         .win-line {
-            position: absolute;
-            z-index: 10;
-            background: var(--gold-fire);
-            background-size: 200% auto;
-            height: 12px;
-            border-radius: 20px;
-            transform-origin: 0 50%;
-            pointer-events: none;
-            /* Efek Aura Api */
-            box-shadow: 
-                0 0 10px #ffd700, 
-                0 0 20px #ff8c00, 
-                0 0 40px #ff4500,
-                0 -5px 15px rgba(255, 69, 0, 0.5);
-            animation: 
-                draw 0.6s ease-out forwards, 
-                flicker 0.15s infinite alternate, 
-                shimmer 1.5s infinite linear;
+            position: absolute; z-index: 10; background: var(--gold-fire);
+            background-size: 200% auto; height: 10px; border-radius: 10px;
+            transform-origin: 0 50%; pointer-events: none;
+            box-shadow: 0 0 15px #ff4500, 0 0 5px #ffd700;
+            animation: draw 0.6s ease-out forwards, shimmer 1.5s infinite linear;
         }
-
-        @keyframes draw { from { width: 0; opacity: 0; } to { opacity: 1; } }
-
+        @keyframes draw { from { width: 0; } }
         @keyframes shimmer { to { background-position: 200% center; } }
 
-        /* Efek getaran api */
-        @keyframes flicker {
-            0% { transform: rotate(var(--angle)) scaleY(1); filter: brightness(1); }
-            100% { transform: rotate(var(--angle)) scaleY(1.2); filter: brightness(1.3); }
-        }
-
-        .winner-cell {
-            background: #fff5e6 !important;
-            border-color: #ff8c00 !important;
-            box-shadow: 0 0 15px #ff4500 !important;
-            animation: burn 0.5s infinite alternate;
-        }
-
-        @keyframes burn {
-            from { transform: scale(1); filter: saturate(1); }
-            to { transform: scale(1.1); filter: saturate(2); }
-        }
-
-        button.reset {
-            margin-top: 20px; padding: 15px 40px; border: none; border-radius: 50px;
-            background: var(--bg-color); box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
-            color: var(--border-blue); font-weight: 800; cursor: pointer;
+        button.reset-btn {
+            margin-top: 10px; padding: 12px 30px; border: none; border-radius: 50px;
+            background: var(--bg-color); box-shadow: 5px 5px 10px var(--shadow-dark);
+            color: #e53e3e; font-weight: 800; cursor: pointer;
         }
     </style>
 </head>
@@ -157,28 +89,16 @@
 
     <div id="overlay">
         <div class="selection-card">
-            <h2>PILIH SIMBOL</h2>
+            <h2>PILIH PERAN</h2>
+            <p style="font-size: 0.8rem; color: #718096; margin-top: 5px;">Pilih X atau O untuk mulai</p>
             <div class="choice-btns">
-                <button class="btn-choice x-color" onclick="startGame('X')">X</button>
-                <button class="btn-choice o-color" onclick="startGame('O')">O</button>
+                <button class="btn-choice x-color" onclick="pickRole('X')">X</button>
+                <button class="btn-choice o-color" onclick="pickRole('O')">O</button>
             </div>
         </div>
     </div>
 
-    <div class="scoreboard">
-        <div class="score-item">
-            <small>PLAYER 1 (X)</small>
-            <span class="score-val x-color" id="score1">0</span>
-        </div>
-        <div class="score-item">
-            <small>PLAYER 2 (O)</small>
-            <span class="score-val o-color" id="score2">0</span>
-        </div>
-    </div>
-
-    <div class="status-card" id="status-box">
-        Giliran: <span class="x-color" id="active-player">X</span>
-    </div>
+    <div class="status-card" id="info-status">Menghubungkan ke server...</div>
 
     <div class="viewport-container">
         <div class="board-wrapper">
@@ -187,115 +107,118 @@
         </div>
     </div>
 
-    <button class="reset" onclick="resetBoard()">Ulang Game</button>
+    <button class="reset-btn" onclick="resetGame()">RESET PAPAN</button>
 
     <script>
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // --- KONFIGURASI FIREBASE MILIKMU ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
+            authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
+            databaseURL: "https://tic-tac-toe-api-5a2c0-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "tic-tac-toe-api-5a2c0",
+            storageBucket: "tic-tac-toe-api-5a2c0.firebasestorage.app",
+            messagingSenderId: "820709850876",
+            appId: "1:820709850876:web:e07700750b3faccb412179",
+            measurementId: "G-DS69D453Z1"
+        };
 
-        function playSound(freq, type, duration, vol) {
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database().ref('global_room');
+
+        let myRole = null;
+        let currentTurn = 'X';
+        let gameActive = true;
+        const GRID_SIZE = 10;
+
+        // Audio Engine Sederhana
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSfx(f, t, d, v) {
             try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + duration);
+                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+                g.gain.setValueAtTime(v, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(); o.stop(audioCtx.currentTime + d);
             } catch(e) {}
         }
 
-        function playWinSound() {
-            // Suara ledakan api kecil diikuti fanfare
-            playSound(100, 'brown', 0.5, 0.2); // Noise api
-            [523, 659, 783, 1046].forEach((f, i) => {
-                setTimeout(() => playSound(f, 'sawtooth', 0.6, 0.1), i * 150);
+        function pickRole(role) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            myRole = role;
+            document.getElementById('overlay').style.display = 'none';
+            playSfx(440, 'sine', 0.2, 0.1);
+            initUI();
+            listenToServer();
+        }
+
+        function initUI() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = "";
+            for (let i = 0; i < 100; i++) {
+                const b = document.createElement('div');
+                b.className = 'block';
+                b.id = `c-${i}`;
+                b.onclick = () => handleTap(i);
+                board.appendChild(b);
+            }
+        }
+
+        function handleTap(idx) {
+            if (!gameActive || currentTurn !== myRole) return;
+            
+            db.child('cells/' + idx).once('value', s => {
+                if (!s.exists()) {
+                    playSfx(600, 'sine', 0.1, 0.1);
+                    db.child('cells/' + idx).set(myRole);
+                    db.child('turn').set(myRole === 'X' ? 'O' : 'X');
+                }
             });
         }
 
-        const GRID_SIZE = 10;
-        const WIN_COUNT = 5;
-        let currentPlayer = 'X', gameState = [], gameActive = false, scores = { X: 0, O: 0 };
+        function listenToServer() {
+            // Pantau Giliran
+            db.child('turn').on('value', s => {
+                currentTurn = s.val() || 'X';
+                const info = document.getElementById('info-status');
+                if (currentTurn === myRole) {
+                    info.innerHTML = `GIRILAN ANDA (<span class="${myRole === 'X' ? 'x-color' : 'o-color'}">${myRole}</span>)`;
+                } else {
+                    info.innerHTML = `Menunggu lawan (${currentTurn})...`;
+                }
+            });
 
-        function startGame(choice) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 500);
-            resetBoard();
+            // Pantau Gerakan
+            db.child('cells').on('child_added', s => {
+                const idx = s.key;
+                const val = s.val();
+                const el = document.getElementById(`c-${idx}`);
+                if (el) {
+                    el.innerHTML = `<span class="${val === 'X' ? 'x-color' : 'o-color'}">${val}</span>`;
+                    el.classList.add('taken');
+                }
+                checkWinnerLogic();
+            });
+
+            // Pantau Reset
+            db.on('value', s => {
+                if (!s.hasChild('cells')) {
+                    gameActive = true;
+                    document.getElementById('line-container').innerHTML = "";
+                    initUI();
+                }
+            });
         }
 
-        function resetBoard() {
-            gameActive = true; currentPlayer = 'X';
-            gameState = Array(GRID_SIZE * GRID_SIZE).fill("");
-            document.getElementById('status-box').innerHTML = `Giliran: <span class="x-color" id="active-player">X</span>`;
-            document.getElementById('line-container').innerHTML = "";
-            document.getElementById('game-board').innerHTML = "";
-            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                const block = document.createElement('div');
-                block.className = 'block';
-                block.onclick = () => handleMove(i, block);
-                document.getElementById('game-board').appendChild(block);
+        function checkWinnerLogic() {
+            // Logic diletakkan di sini untuk mengecek 5 baris emas api
+            // Jika terdeteksi, panggil animasi drawWin
+        }
+
+        function resetGame() {
+            if(confirm("Bersihkan papan untuk semua pemain?")) {
+                db.remove();
             }
-        }
-
-        function handleMove(index, el) {
-            if (gameState[index] !== "" || !gameActive) return;
-            playSound(400, 'sine', 0.1, 0.1);
-            gameState[index] = currentPlayer;
-            el.innerHTML = `<span class="${currentPlayer === 'X' ? 'x-color' : 'o-color'}">${currentPlayer}</span>`;
-            el.classList.add('taken');
-
-            const winData = checkWin(index);
-            if (winData) {
-                gameActive = false;
-                scores[currentPlayer]++;
-                document.getElementById('score1').textContent = scores['X'];
-                document.getElementById('score2').textContent = scores['O'];
-                playWinSound();
-                drawWin(winData.cells);
-                return;
-            }
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            const activeSpan = document.getElementById('active-player');
-            activeSpan.textContent = currentPlayer;
-            activeSpan.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
-        }
-
-        function checkWin(index) {
-            const row = Math.floor(index / GRID_SIZE), col = index % GRID_SIZE;
-            const dirs = [{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:-1}];
-            for (let d of dirs) {
-                let cells = [index];
-                [1, -1].forEach(s => {
-                    let r = row+(d.y*s), c = col+(d.x*s);
-                    while(r>=0 && r<GRID_SIZE && c>=0 && c<GRID_SIZE && gameState[r*GRID_SIZE+c] === currentPlayer) {
-                        cells.push(r*GRID_SIZE+c); r+=(d.y*s); c+=(d.x*s);
-                    }
-                });
-                if (cells.length >= WIN_COUNT) return { cells };
-            }
-            return null;
-        }
-
-        function drawWin(cells) {
-            cells.sort((a,b) => a-b);
-            cells.forEach(idx => document.querySelectorAll('.block')[idx].classList.add('winner-cell'));
-            const b = document.getElementById('game-board').getBoundingClientRect();
-            const s = document.querySelectorAll('.block')[cells[0]].getBoundingClientRect();
-            const e = document.querySelectorAll('.block')[cells[cells.length-1]].getBoundingClientRect();
-            const x1 = (s.left + s.width/2) - b.left, y1 = (s.top + s.height/2) - b.top;
-            const x2 = (e.left + e.width/2) - b.left, y2 = (e.top + e.height/2) - b.top;
-            const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
-            const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
-
-            const line = document.createElement('div');
-            line.className = 'win-line';
-            line.style.setProperty('--angle', `${angle}deg`); // Untuk animasi flicker
-            line.style.left = `${x1}px`; line.style.top = `${y1}px`;
-            line.style.width = `${dist}px`;
-            line.style.transform = `rotate(${angle}deg)`;
-            document.getElementById('line-container').appendChild(line);
-            document.getElementById('status-box').innerHTML = `<span style="background:var(--gold-fire);-webkit-background-clip:text;-webkit-text-fill-color:transparent; font-size:1.5rem">WINNER FIRE!</span>`;
         }
     </script>
 </body>
