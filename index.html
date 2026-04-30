@@ -3,20 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Mega 3D - Gold Edition</title>
+    <title>Tic-Tac-Toe Gold Edition</title>
     <style>
         :root {
-            --bg-color: #e0e5ec;
-            --text-color: #444;
-            --shadow-dark: #b8c1cc;
+            /* Palette: Soft Blue-Grey Neumorphism */
+            --bg-color: #e6e9ef;
+            --text-color: #4a5568;
+            --shadow-dark: #cbd5e0;
             --shadow-light: #ffffff;
-            --x-color: #ff4757;
-            --o-color: #2ed573;
-            --gold: linear-gradient(45deg, #ffd700, #fff5b1, #ffae00, #f8e45c);
+            
+            /* Player Colors - Soft Gradients */
+            --x-grad: linear-gradient(135deg, #ff6b6b, #ee5253);
+            --o-grad: linear-gradient(135deg, #48bb78, #38a169);
+            
+            /* Gold Gradient - Realistic Metallic */
+            --gold-grad: linear-gradient(
+                90deg, 
+                #bf953f, 
+                #fcf6ba, 
+                #b38728, 
+                #fbf5b7, 
+                #aa771c
+            );
+            
             --grid-size: 10; 
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
 
         body {
             background-color: var(--bg-color);
@@ -25,133 +38,175 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
-            overflow-x: hidden;
+            padding: 40px 20px;
         }
 
-        .header { text-align: center; margin-bottom: 20px; }
-        
-        .card {
-            background: var(--bg-color);
-            padding: 15px 25px;
-            border-radius: 15px;
-            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+        .header h1 {
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: #2d3748;
+            margin-bottom: 5px;
             text-align: center;
-            margin-bottom: 30px;
         }
 
-        /* Board 3D Wrapper */
+        .header p { opacity: 0.7; margin-bottom: 30px; text-align: center; }
+
+        /* Status Card */
+        .status-card {
+            background: var(--bg-color);
+            padding: 15px 40px;
+            border-radius: 50px;
+            box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+            margin-bottom: 40px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Board Container */
         .board-wrapper {
-            perspective: 1500px;
-            position: relative; /* Penting untuk posisi garis emas */
+            perspective: 2000px;
+            position: relative;
         }
 
         .board {
             display: grid;
             grid-template-columns: repeat(var(--grid-size), 1fr);
-            gap: 8px;
-            padding: 20px;
+            gap: 10px;
+            padding: 25px;
             background: var(--bg-color);
-            border-radius: 20px;
-            box-shadow: inset 8px 8px 15px var(--shadow-dark), inset -8px -8px 15px var(--shadow-light);
-            transform: rotateX(15deg);
-            transition: transform 0.5s ease;
-            position: relative;
+            border-radius: 30px;
+            box-shadow: 20px 20px 40px var(--shadow-dark), -20px -20px 40px var(--shadow-light);
+            transform: rotateX(10deg);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        .board:hover { transform: rotateX(0deg); }
+        .board:hover {
+            transform: rotateX(0deg) scale(1.02);
+        }
 
+        /* Grid Blocks */
         .block {
-            width: 45px;
-            height: 45px;
+            width: 48px;
+            height: 48px;
             background: var(--bg-color);
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: 900;
             box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            position: relative;
             z-index: 2;
         }
 
-        .block.taken { box-shadow: inset 2px 2px 5px var(--shadow-dark); }
-        .x-color { color: var(--x-color); text-shadow: 1px 1px 0px white; }
-        .o-color { color: var(--o-color); text-shadow: 1px 1px 0px white; }
+        .block:not(.taken):hover {
+            box-shadow: 2px 2px 4px var(--shadow-dark), -2px -2px 4px var(--shadow-light);
+            transform: translateY(-2px);
+        }
 
-        /* --- Efek Garis Emas --- */
+        .block.taken {
+            box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+            cursor: default;
+        }
+
+        /* Text Gradients for X and O */
+        .x-color {
+            background: var(--x-grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .o-color {
+            background: var(--o-grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Gold Win Line */
         .win-line {
             position: absolute;
             z-index: 10;
-            background: var(--gold);
-            height: 8px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 5px rgba(255, 255, 255, 1);
-            transform-origin: left center;
-            animation: growGold 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
-                       shimmer 2s infinite linear;
+            background: var(--gold-grad);
             background-size: 200% auto;
+            height: 10px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(184, 134, 11, 0.4);
+            transform-origin: left center;
             pointer-events: none;
+            animation: growLine 0.8s ease-out forwards, shimmer 3s infinite linear;
         }
 
-        @keyframes growGold {
-            from { scale: 0 1; opacity: 0; }
-            to { scale: 1 1; opacity: 1; }
+        @keyframes growLine {
+            from { opacity: 0; width: 0; }
+            to { opacity: 1; }
         }
 
         @keyframes shimmer {
             to { background-position: 200% center; }
         }
 
-        /* Efek Berkilau pada Kotak Pemenang */
-        .block.winner-cell {
-            animation: pulseGold 1.5s infinite;
-            background: #fffbe6;
-            z-index: 11;
+        .winner-cell {
+            background: #fffdf0 !important;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3) !important;
+            transition: background 0.5s ease;
         }
 
-        @keyframes pulseGold {
-            50% { box-shadow: 0 0 20px #ffd700; transform: scale(1.1); }
-        }
-
-        /* Controls */
-        .controls { margin-top: 30px; }
+        /* Reset Button */
         button {
-            padding: 15px 30px;
+            margin-top: 50px;
+            padding: 16px 40px;
             border: none;
-            border-radius: 12px;
+            border-radius: 50px;
             background: var(--bg-color);
-            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
-            cursor: pointer;
-            font-weight: bold;
+            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
             color: var(--text-color);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        button:active { box-shadow: inset 3px 3px 6px var(--shadow-dark); }
+        button:hover {
+            box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+            transform: translateY(-2px);
+            color: #2d3748;
+        }
+
+        button:active {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            .block { width: 32px; height: 32px; font-size: 1rem; border-radius: 6px; }
+            .board { gap: 5px; padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Mega Tic-Tac-Toe <span style="color: #b8860b;">Gold</span></h1>
-        <p>Hubungkan 5 kotak untuk mendapatkan garis emas!</p>
+        <h1>Tic-Tac-Toe <span class="o-color" style="background: var(--gold-grad); -webkit-background-clip: text;">Gold</span></h1>
+        <p>Hubungkan 5 kotak secara horizontal, vertikal, atau diagonal</p>
     </div>
 
-    <div class="card">
-        <h2 id="status">Giliran: <span class="x-color">X</span></h2>
+    <div class="status-card" id="status">
+        Giliran: <span class="x-color" id="player-label">X</span>
     </div>
 
     <div class="board-wrapper">
-        <div class="board" id="game-board">
-            </div>
+        <div class="board" id="game-board"></div>
         <div id="line-container"></div>
     </div>
 
-    <div class="controls">
-        <button onclick="initGame()">Reset Permainan</button>
-    </div>
+    <button onclick="initGame()">Reset Permainan</button>
 
     <script>
         const GRID_SIZE = 10;
@@ -161,7 +216,7 @@
         let gameActive = true;
 
         const boardElement = document.getElementById('game-board');
-        const statusDisplay = document.getElementById('status');
+        const statusLabel = document.getElementById('player-label');
         const lineContainer = document.getElementById('line-container');
 
         document.documentElement.style.setProperty('--grid-size', GRID_SIZE);
@@ -170,7 +225,8 @@
             gameActive = true;
             currentPlayer = 'X';
             gameState = Array(GRID_SIZE * GRID_SIZE).fill("");
-            statusDisplay.innerHTML = `Giliran: <span class="x-color">X</span>`;
+            statusLabel.textContent = 'X';
+            statusLabel.className = 'x-color';
             lineContainer.innerHTML = "";
             
             boardElement.innerHTML = "";
@@ -194,72 +250,52 @@
             const winData = checkWin(index);
             if (winData) {
                 drawGoldLine(winData.cells);
-                statusDisplay.innerHTML = `<span style="color:#b8860b">PEMENANG: ${currentPlayer}!</span>`;
+                document.getElementById('status').innerHTML = `PEMENANG: <span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${currentPlayer}</span>`;
                 gameActive = false;
                 return;
             }
 
             if (!gameState.includes("")) {
-                statusDisplay.textContent = "Hasil: Seri!";
+                document.getElementById('status').textContent = "Hasil: Seri!";
                 return;
             }
 
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            statusDisplay.innerHTML = `Giliran: <span class="${currentPlayer === 'X' ? 'x-color' : 'o-color'}">${currentPlayer}</span>`;
+            statusLabel.textContent = currentPlayer;
+            statusLabel.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
         }
 
         function checkWin(index) {
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
-            const directions = [
-                { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 1, y: -1 }
-            ];
+            const directions = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 1, y: -1 }];
 
             for (let dir of directions) {
                 let winningCells = [index];
-                
-                // Cek maju
-                let r = row + dir.y, c = col + dir.x;
-                while (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && gameState[r * GRID_SIZE + c] === currentPlayer) {
-                    winningCells.push(r * GRID_SIZE + c);
-                    r += dir.y; c += dir.x;
-                }
-                
-                // Cek mundur
-                r = row - dir.y; c = col - dir.x;
-                while (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && gameState[r * GRID_SIZE + c] === currentPlayer) {
-                    winningCells.push(r * GRID_SIZE + c);
-                    r -= dir.y; c -= dir.x;
-                }
+                [1, -1].forEach(sign => {
+                    let r = row + (dir.y * sign), c = col + (dir.x * sign);
+                    while (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && gameState[r * GRID_SIZE + c] === currentPlayer) {
+                        winningCells.push(r * GRID_SIZE + c);
+                        r += (dir.y * sign); c += (dir.x * sign);
+                    }
+                });
 
-                if (winningCells.length >= WIN_COUNT) {
-                    return { cells: winningCells };
-                }
+                if (winningCells.length >= WIN_COUNT) return { cells: winningCells };
             }
             return null;
         }
 
         function drawGoldLine(cells) {
-            // Sort cells untuk menentukan ujung ke ujung
             cells.sort((a, b) => a - b);
-            const first = cells[0];
-            const last = cells[cells.length - 1];
-
+            const first = cells[0], last = cells[cells.length - 1];
             const firstEl = document.querySelector(`[data-index="${first}"]`);
             const lastEl = document.querySelector(`[data-index="${last}"]`);
             
-            // Tambahkan kelas animasi ke kotak pemenang
             cells.forEach(idx => document.querySelector(`[data-index="${idx}"]`).classList.add('winner-cell'));
 
-            // Hitung posisi koordinat
-            const rectStart = firstEl.getBoundingClientRect();
-            const rectEnd = lastEl.getBoundingClientRect();
-            const boardRect = boardElement.getBoundingClientRect();
-
-            const x1 = rectStart.left + rectStart.width / 2 - boardRect.left;
-            const y1 = rectStart.top + rectStart.height / 2 - boardRect.top;
-            const x2 = rectEnd.left + rectEnd.width / 2 - boardRect.left;
-            const y2 = rectEnd.top + rectEnd.height / 2 - boardRect.top;
+            const rectStart = firstEl.getBoundingClientRect(), rectEnd = lastEl.getBoundingClientRect(), boardRect = boardElement.getBoundingClientRect();
+            const x1 = rectStart.left + rectStart.width / 2 - boardRect.left, y1 = rectStart.top + rectStart.height / 2 - boardRect.top;
+            const x2 = rectEnd.left + rectEnd.width / 2 - boardRect.left, y2 = rectEnd.top + rectEnd.height / 2 - boardRect.top;
 
             const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
             const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
@@ -267,10 +303,8 @@
             const line = document.createElement('div');
             line.className = 'win-line';
             line.style.width = `${distance}px`;
-            line.style.left = `${x1}px`;
-            line.style.top = `${y1}px`;
+            line.style.left = `${x1}px`; line.style.top = `${y1}px`;
             line.style.transform = `rotate(${angle}deg)`;
-
             lineContainer.appendChild(line);
         }
 
