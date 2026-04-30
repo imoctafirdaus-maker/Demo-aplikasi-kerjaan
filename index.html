@@ -1,35 +1,286 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Document</title>
+    <title>Tic-Tac-Toe 3D Neumorphic</title>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --bg-color: #e0e5ec;
+            --text-color: #37474f;
+            --shadow-dark: #a3b1c6;
+            --shadow-light: #ffffff;
+            --x-color: #ff4757;
+            --o-color: #2ed573;
+            --win-bg: #dfe6e9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+        }
+
+        /* Info Panel */
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .status-card {
+            background: var(--bg-color);
+            padding: 20px 30px;
+            border-radius: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 9px 9px 16px var(--shadow-dark), 
+                       -9px -9px 16px var(--shadow-light);
+        }
+
+        .status-card h1 { font-size: 1rem; text-transform: uppercase; opacity: 0.6; margin-bottom: 5px; }
+        .status-card h2 { font-size: 1.8rem; font-weight: 800; }
+
+        .x-color { color: var(--x-color); }
+        .o-color { color: var(--o-color); }
+
+        /* Board 3D */
+        .board-container {
+            perspective: 1000px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            background: var(--bg-color);
+            padding: 25px;
+            border-radius: 30px;
+            box-shadow: inset 6px 6px 12px var(--shadow-dark), 
+                       inset -6px -6px 12px var(--shadow-light);
+            transform: rotateX(10deg) rotateY(-5deg);
+            transition: transform 0.5s ease;
+        }
+
+        .board-container:hover .board {
+            transform: rotateX(0deg) rotateY(0deg);
+        }
+
+        /* Blocks */
+        .block {
+            width: 100px;
+            height: 100px;
+            background: var(--bg-color);
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            font-weight: bold;
+            box-shadow: 6px 6px 12px var(--shadow-dark), 
+                       -6px -6px 12px var(--shadow-light);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .block:not(.taken):hover {
+            transform: translateY(-5px);
+            box-shadow: 8px 8px 18px var(--shadow-dark), 
+                       -8px -8px 18px var(--shadow-light);
+        }
+
+        .block:active:not(.taken) {
+            transform: translateY(2px);
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), 
+                       inset -4px -4px 8px var(--shadow-light);
+        }
+
+        .block.taken {
+            cursor: default;
+            box-shadow: inset 3px 3px 6px var(--shadow-dark), 
+                       inset -3px -3px 6px var(--shadow-light);
+        }
+
+        .block.winner-block {
+            background-color: var(--win-bg);
+            animation: pulseWin 1.5s infinite;
+        }
+
+        @keyframes pulseWin {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); color: #000; }
+        }
+
+        /* Button */
+        .3d-button {
+            padding: 15px 35px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            cursor: pointer;
+            box-shadow: 5px 5px 10px var(--shadow-dark), 
+                       -5px -5px 10px var(--shadow-light);
+            transition: all 0.2s ease;
+        }
+
+        .3d-button:hover { color: #000; transform: translateY(-2px); }
+        .3d-button:active {
+            box-shadow: inset 3px 3px 6px var(--shadow-dark), 
+                       inset -3px -3px 6px var(--shadow-light);
+            transform: translateY(2px);
+        }
+
+        .hidden { display: none !important; }
+        .pop-in { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
 </head>
 <body>
-    <div class="grid">
-        <div class="main">
-            <div class="board">
-                <div class="block-1 block" role="button"></div>
-                <div class="block-2 block" role="button"></div>
-                <div class="block-3 block" role="button"></div>
-                <div class="block-4 block" role="button"></div>
-                <div class="block-5 block" role="button"></div>
-                <div class="block-6 block" role="button"></div>
-                <div class="block-7 block" role="button"></div>
-                <div class="block-8 block" role="button"></div>
-                <div class="block-9 block" role="button"></div>
+
+    <div class="main-container">
+        <div class="board-container">
+            <div class="board" id="game-board">
+                <div class="block" role="button" data-index="0"></div>
+                <div class="block" role="button" data-index="1"></div>
+                <div class="block" role="button" data-index="2"></div>
+                <div class="block" role="button" data-index="3"></div>
+                <div class="block" role="button" data-index="4"></div>
+                <div class="block" role="button" data-index="5"></div>
+                <div class="block" role="button" data-index="6"></div>
+                <div class="block" role="button" data-index="7"></div>
+                <div class="block" role="button" data-index="8"></div>
             </div>
-         </div>
-         <div>
-            <h1>Turn:</h1>
-            <h2 id="turn">Player 1: X</h1>
-            <h1>Winner:</h1>
-            <h2 id="winner"></h2>
-            <button id="restart" hidden>Restart</button>
-         </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="status-card">
+                <h1>Giliran</h1>
+                <h2 id="turn">Pemain <span class="x-color">X</span></h2>
+            </div>
+            
+            <div id="winner-card" class="status-card hidden">
+                <h1>Hasil Akhir</h1>
+                <h2 id="winner"></h2>
+            </div>
+
+            <button id="restart" class="3d-button">Ulang Permainan</button>
+        </div>
     </div>
-    <script src="app.js"></script>
+
+    <script>
+        /* --- JAVASCRIPT LOGIC --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            const blocks = document.querySelectorAll('.block');
+            const turnDisplay = document.getElementById('turn');
+            const winnerDisplay = document.getElementById('winner');
+            const winnerCard = document.getElementById('winner-card');
+            const restartBtn = document.getElementById('restart');
+
+            let currentPlayer = 'X';
+            let gameState = ["", "", "", "", "", "", "", "", ""];
+            let gameActive = true;
+
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            function handleBlockClick(e) {
+                const idx = e.target.getAttribute('data-index');
+
+                if (gameState[idx] !== "" || !gameActive) return;
+
+                gameState[idx] = currentPlayer;
+                e.target.textContent = currentPlayer;
+                e.target.classList.add('taken', 'pop-in', currentPlayer === 'X' ? 'x-color' : 'o-color');
+
+                checkResult();
+            }
+
+            function checkResult() {
+                let roundWon = false;
+                let winningLine = [];
+
+                for (let pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+                        roundWon = true;
+                        winningLine = pattern;
+                        break;
+                    }
+                }
+
+                if (roundWon) {
+                    winnerDisplay.innerHTML = `<span class="${currentPlayer === 'X' ? 'x-color' : 'o-color'}">${currentPlayer}</span> Menang!`;
+                    winnerCard.classList.remove('hidden');
+                    winningLine.forEach(i => blocks[i].classList.add('winner-block'));
+                    gameActive = false;
+                    return;
+                }
+
+                if (!gameState.includes("")) {
+                    winnerDisplay.textContent = "Seri!";
+                    winnerCard.classList.remove('hidden');
+                    gameActive = false;
+                    return;
+                }
+
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                turnDisplay.innerHTML = `Pemain <span class="${currentPlayer === 'X' ? 'x-color' : 'o-color'}">${currentPlayer}</span>`;
+            }
+
+            function restartGame() {
+                currentPlayer = 'X';
+                gameState = ["", "", "", "", "", "", "", "", ""];
+                gameActive = true;
+                turnDisplay.innerHTML = `Pemain <span class="x-color">X</span>`;
+                winnerCard.classList.add('hidden');
+                blocks.forEach(b => {
+                    b.textContent = "";
+                    b.className = "block";
+                });
+            }
+
+            blocks.forEach(b => b.addEventListener('click', handleBlockClick));
+            restartBtn.addEventListener('click', restartGame);
+        });
+    </script>
 </body>
 </html>
