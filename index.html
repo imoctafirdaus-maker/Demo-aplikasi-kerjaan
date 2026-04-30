@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Gold Edition</title>
+    <title>Tic-Tac-Toe Gold & Blue Edition</title>
     <style>
         :root {
             /* Palette: Soft Blue-Grey Neumorphism */
@@ -12,19 +12,16 @@
             --shadow-dark: #cbd5e0;
             --shadow-light: #ffffff;
             
-            /* Player Colors - Soft Gradients */
+            /* Blue Accent */
+            --border-blue: #3182ce;
+            --border-blue-glow: rgba(66, 153, 225, 0.6);
+            
+            /* Player Gradients */
             --x-grad: linear-gradient(135deg, #ff6b6b, #ee5253);
             --o-grad: linear-gradient(135deg, #48bb78, #38a169);
             
-            /* Gold Gradient - Realistic Metallic */
-            --gold-grad: linear-gradient(
-                90deg, 
-                #bf953f, 
-                #fcf6ba, 
-                #b38728, 
-                #fbf5b7, 
-                #aa771c
-            );
+            /* Gold Gradient */
+            --gold-grad: linear-gradient(90deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
             
             --grid-size: 10; 
         }
@@ -51,7 +48,6 @@
 
         .header p { opacity: 0.7; margin-bottom: 30px; text-align: center; }
 
-        /* Status Card */
         .status-card {
             background: var(--bg-color);
             padding: 15px 40px;
@@ -65,7 +61,6 @@
             gap: 10px;
         }
 
-        /* Board Container */
         .board-wrapper {
             perspective: 2000px;
             position: relative;
@@ -83,11 +78,9 @@
             transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        .board:hover {
-            transform: rotateX(0deg) scale(1.02);
-        }
+        .board:hover { transform: rotateX(0deg) scale(1.02); }
 
-        /* Grid Blocks */
+        /* Grid Blocks dengan Border Biru */
         .block {
             width: 48px;
             height: 48px;
@@ -99,36 +92,38 @@
             align-items: center;
             font-size: 1.4rem;
             font-weight: 900;
-            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+            
+            /* Tambahan Border Biru */
+            border: 2px solid var(--border-blue);
+            /* Efek bayangan ganda: Neumorphic + Blue Glow */
+            box-shadow: 
+                4px 4px 8px var(--shadow-dark), 
+                -4px -4px 8px var(--shadow-light),
+                0 0 5px var(--border-blue-glow);
+                
             transition: all 0.3s ease;
             position: relative;
             z-index: 2;
         }
 
         .block:not(.taken):hover {
-            box-shadow: 2px 2px 4px var(--shadow-dark), -2px -2px 4px var(--shadow-light);
+            border-color: #63b3ed; /* Biru lebih terang saat hover */
+            box-shadow: 
+                2px 2px 4px var(--shadow-dark), 
+                -2px -2px 4px var(--shadow-light),
+                0 0 12px var(--border-blue-glow);
             transform: translateY(-2px);
         }
 
         .block.taken {
+            border-color: #a0aec0; /* Warna border memudar saat terisi */
             box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
             cursor: default;
         }
 
-        /* Text Gradients for X and O */
-        .x-color {
-            background: var(--x-grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .x-color { background: var(--x-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .o-color { background: var(--o-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .o-color {
-            background: var(--o-grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Gold Win Line */
         .win-line {
             position: absolute;
             z-index: 10;
@@ -136,36 +131,29 @@
             background-size: 200% auto;
             height: 10px;
             border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(184, 134, 11, 0.4);
+            box-shadow: 0 4px 15px rgba(184, 134, 11, 0.6);
             transform-origin: left center;
             pointer-events: none;
             animation: growLine 0.8s ease-out forwards, shimmer 3s infinite linear;
         }
 
-        @keyframes growLine {
-            from { opacity: 0; width: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes shimmer {
-            to { background-position: 200% center; }
-        }
+        @keyframes growLine { from { opacity: 0; width: 0; } to { opacity: 1; } }
+        @keyframes shimmer { to { background-position: 200% center; } }
 
         .winner-cell {
             background: #fffdf0 !important;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3) !important;
-            transition: background 0.5s ease;
+            border-color: #ffd700 !important; /* Border jadi emas saat menang */
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5) !important;
         }
 
-        /* Reset Button */
         button {
             margin-top: 50px;
             padding: 16px 40px;
-            border: none;
+            border: 2px solid var(--border-blue);
             border-radius: 50px;
             background: var(--bg-color);
             box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
-            color: var(--text-color);
+            color: var(--border-blue);
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
@@ -174,18 +162,13 @@
         }
 
         button:hover {
-            box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
-            transform: translateY(-2px);
-            color: #2d3748;
-        }
-
-        button:active {
-            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
-            transform: translateY(0);
+            background: var(--border-blue);
+            color: white;
+            box-shadow: 0 0 15px var(--border-blue-glow);
         }
 
         @media (max-width: 600px) {
-            .block { width: 32px; height: 32px; font-size: 1rem; border-radius: 6px; }
+            .block { width: 32px; height: 32px; font-size: 1rem; border-radius: 6px; border-width: 1px; }
             .board { gap: 5px; padding: 15px; }
         }
     </style>
@@ -193,8 +176,8 @@
 <body>
 
     <div class="header">
-        <h1>Tic-Tac-Toe <span class="o-color" style="background: var(--gold-grad); -webkit-background-clip: text;">Gold</span></h1>
-        <p>Hubungkan 5 kotak secara horizontal, vertikal, atau diagonal</p>
+        <h1>Tic-Tac-Toe <span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Premium</span></h1>
+        <p>Garis tepi biru untuk tampilan lebih presisi</p>
     </div>
 
     <div class="status-card" id="status">
@@ -250,7 +233,7 @@
             const winData = checkWin(index);
             if (winData) {
                 drawGoldLine(winData.cells);
-                document.getElementById('status').innerHTML = `PEMENANG: <span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${currentPlayer}</span>`;
+                document.getElementById('status').innerHTML = `WINNER: <span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${currentPlayer}</span>`;
                 gameActive = false;
                 return;
             }
@@ -279,7 +262,6 @@
                         r += (dir.y * sign); c += (dir.x * sign);
                     }
                 });
-
                 if (winningCells.length >= WIN_COUNT) return { cells: winningCells };
             }
             return null;
