@@ -3,93 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Toe Online Fire</title>
+    <title>Tic-Tac-Toe Ultimate 3D Gold Fire</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
     <style>
         :root {
-            --bg-color: #e6e9ef;
-            --text-color: #2d3748;
-            --shadow-dark: #cbd5e0;
+            --bg-color: #e0e5ec;
+            --shadow-dark: #a3b1c6;
             --shadow-light: #ffffff;
-            --border-blue: #3182ce;
-            --x-grad: linear-gradient(135deg, #ff6b6b, #ee5253);
-            --o-grad: linear-gradient(135deg, #48bb78, #38a169);
             --gold-fire: linear-gradient(90deg, #ff4500, #ff8c00, #ffd700, #ffffff, #ffd700, #ff8c00, #ff4500);
-            --grid-count: 10;
+            --x-color: #ff4757;
+            --o-color: #2ed573;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-        body { background-color: var(--bg-color); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px 10px; overflow-x: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color); 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; padding: 20px 10px; overflow-x: hidden;
+            color: #444;
+        }
 
+        /* --- 3D UI COMPONENTS --- */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 100; display: flex; justify-content: center; align-items: center;
-        }
-        .selection-card {
-            background: var(--bg-color); padding: 30px; border-radius: 30px;
-            box-shadow: 15px 15px 30px var(--shadow-dark), -15px -15px 30px var(--shadow-light);
-            text-align: center; width: 90%; max-width: 350px;
+            background: var(--bg-color); z-index: 1000; 
+            display: flex; justify-content: center; align-items: center;
         }
 
-        .status-card {
-            background: var(--bg-color); padding: 12px 25px; border-radius: 50px;
-            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
-            margin-bottom: 20px; font-weight: 800;
+        .card-3d {
+            background: var(--bg-color);
+            padding: 40px 20px; border-radius: 30px;
+            box-shadow: 20px 20px 60px var(--shadow-dark), -20px -20px 60px var(--shadow-light);
+            text-align: center; width: 90%; max-width: 400px;
         }
 
-        .viewport-container { width: 100%; overflow-x: auto; padding-bottom: 20px; }
-        .board-wrapper { position: relative; padding: 20px; display: inline-block; }
+        .btn-3d {
+            padding: 15px 30px; border: none; border-radius: 15px;
+            background: var(--bg-color); font-weight: 900; font-size: 1.2rem;
+            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+            cursor: pointer; transition: all 0.2s ease; margin: 10px;
+            color: #555;
+        }
+        .btn-3d:active {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            transform: scale(0.98);
+        }
+
+        .status-3d {
+            background: var(--bg-color); padding: 15px 30px; border-radius: 50px;
+            box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+            margin-bottom: 25px; font-weight: 800; font-size: 1rem; letter-spacing: 1px;
+        }
+
+        /* --- GAME BOARD --- */
+        .viewport-container {
+            width: 100%; overflow-x: auto; padding: 20px 0;
+            display: flex; justify-content: flex-start;
+            -webkit-overflow-scrolling: touch;
+        }
+        @media (min-width: 650px) { .viewport-container { justify-content: center; } }
+
+        .board-wrapper { 
+            position: relative; padding: 25px; 
+            background: var(--bg-color); border-radius: 35px;
+            box-shadow: 15px 15px 35px var(--shadow-dark), -15px -15px 35px var(--shadow-light);
+            margin: 10px;
+        }
+
         .board {
-            display: grid; grid-template-columns: repeat(var(--grid-count), 1fr);
-            gap: 8px; padding: 15px; background: var(--bg-color); border-radius: 20px;
-            box-shadow: 10px 10px 20px var(--shadow-dark);
-            width: calc((50px * var(--grid-count)) + (8px * (var(--grid-count) - 1)) + 30px);
+            display: grid; grid-template-columns: repeat(10, 50px);
+            gap: 12px;
         }
 
         .block {
-            width: 50px; height: 50px; background: var(--bg-color); border-radius: 10px;
-            border: 2px solid var(--border-blue); display: flex; justify-content: center;
-            align-items: center; font-size: 1.4rem; font-weight: 900;
-            box-shadow: 3px 3px 6px var(--shadow-dark);
+            width: 50px; height: 50px; background: var(--bg-color); border-radius: 12px;
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.6rem; font-weight: 900; cursor: pointer;
+            transition: 0.2s; border: none;
         }
 
-        .x-color { background: var(--x-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .o-color { background: var(--o-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .block.taken {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+        }
 
-        /* WIN LINE EMAS API */
+        /* --- WIN ANIMATION --- */
         .win-line {
-            position: absolute; z-index: 10; background: var(--gold-fire);
-            background-size: 200% auto; height: 12px; border-radius: 20px;
+            position: absolute; z-index: 100; background: var(--gold-fire);
+            background-size: 200% auto; height: 14px; border-radius: 20px;
             transform-origin: 0 50%; pointer-events: none;
-            box-shadow: 0 0 20px #ff4500, 0 0 10px #ffd700;
-            animation: draw 0.6s ease-out forwards, shimmer 1.5s infinite linear;
+            box-shadow: 0 0 30px #ff4500, 0 0 15px #ffd700;
+            animation: draw 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, shimmer 1.5s infinite linear;
         }
-        @keyframes draw { from { width: 0; opacity: 0; } to { opacity: 1; } }
-        @keyframes shimmer { to { background-position: 200% center; } }
 
         .winner-cell {
-            background: #fff5e6 !important;
-            border-color: #ff8c00 !important;
-            animation: burn 0.5s infinite alternate;
+            background: #fffdf0 !important;
+            animation: pulse-fire 0.6s infinite alternate;
         }
-        @keyframes burn { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+        @keyframes draw { from { width: 0; opacity: 0; } to { opacity: 1; } }
+        @keyframes shimmer { to { background-position: 200% center; } }
+        @keyframes pulse-fire {
+            from { transform: scale(1); box-shadow: 0 0 5px #ff4500; }
+            to { transform: scale(1.15); box-shadow: 0 0 20px #ff8c00; }
+        }
+
+        .x-style { color: var(--x-color); text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+        .o-style { color: var(--o-color); text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <div class="selection-card">
-            <h2>PILIH PERAN</h2>
-            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
-                <button onclick="pickRole('X')" style="padding: 20px;" class="x-color">X</button>
-                <button onclick="pickRole('O')" style="padding: 20px;" class="o-color">O</button>
+        <div class="card-3d">
+            <h1 style="margin-bottom: 10px;">ULTIMATE 3D</h1>
+            <p style="color: #777; margin-bottom: 25px;">Pilih peran untuk bertarung secara Online</p>
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <button class="btn-3d x-style" onclick="pickRole('X')">IKUT X</button>
+                <button class="btn-3d o-style" onclick="pickRole('O')">IKUT O</button>
             </div>
         </div>
     </div>
 
-    <div class="status-card" id="info">Menunggu...</div>
+    <div class="status-3d" id="info">Menghubungkan Database...</div>
 
     <div class="viewport-container">
         <div class="board-wrapper">
@@ -98,10 +137,12 @@
         </div>
     </div>
 
-    <button onclick="resetGame()" style="padding: 10px 20px;">RESET GAME</button>
+    <button class="btn-3d" onclick="fullReset()" style="color: #e53e3e; font-size: 0.9rem; padding: 10px 20px;">
+        RESET SELURUH GAME
+    </button>
 
     <script>
-        // --- CONFIG FIREBASE ---
+        // --- FIREBASE CONFIG (SESUAI DATA ANDA) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -113,70 +154,101 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('game_room_1');
+        const db = firebase.database().ref('pro_room_1');
 
-        let myRole = null, currentTurn = 'X', gameActive = true, grid = [];
-        const GRID_SIZE = 10;
+        let myRole = null, currentTurn = 'X', gameActive = true, grid = Array(100).fill("");
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function pickRole(role) {
-            myRole = role;
-            document.getElementById('overlay').style.display = 'none';
-            initBoard();
-            listenToData();
+        function playSfx(f, t, d, v) {
+            try {
+                const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+                g.gain.setValueAtTime(v, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(); o.stop(audioCtx.currentTime + d);
+            } catch(e) {}
         }
 
-        function initBoard() {
-            grid = Array(100).fill("");
+        function pickRole(role) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            myRole = role;
+            playSfx(500, 'sine', 0.2, 0.1);
+            document.getElementById('overlay').style.opacity = '0';
+            setTimeout(() => document.getElementById('overlay').style.display = 'none', 400);
+            createGridUI();
+            startSync();
+        }
+
+        function createGridUI() {
             const board = document.getElementById('game-board');
             board.innerHTML = "";
             for (let i = 0; i < 100; i++) {
                 const b = document.createElement('div');
-                b.className = 'block'; b.id = `c-${i}`;
-                b.onclick = () => { if(gameActive && currentTurn === myRole) db.child('cells/'+i).set(myRole); };
+                b.className = 'block'; b.id = `block-${i}`;
+                b.onclick = () => sendMove(i);
                 board.appendChild(b);
             }
         }
 
-        function listenToData() {
+        function sendMove(i) {
+            if (!gameActive || currentTurn !== myRole || grid[i] !== "") return;
+            playSfx(800, 'sine', 0.1, 0.05);
+            db.child('cells/' + i).set(myRole);
+            db.child('turn').set(myRole === 'X' ? 'O' : 'X');
+        }
+
+        function startSync() {
             db.child('turn').on('value', s => {
                 currentTurn = s.val() || 'X';
-                document.getElementById('info').innerHTML = currentTurn === myRole ? "GILIRAN ANDA!" : "Giliran Lawan...";
+                document.getElementById('info').innerHTML = currentTurn === myRole ? 
+                    `GILIRAN ANDA (<span class="${myRole === 'X' ? 'x-style' : 'o-style'}">${myRole}</span>)` : 
+                    `GILIRAN LAWAN (${currentTurn})`;
             });
 
             db.child('cells').on('value', s => {
                 const data = s.val() || {};
-                Object.keys(data).forEach(idx => {
-                    grid[idx] = data[idx];
-                    const el = document.getElementById(`c-${idx}`);
-                    if(el) el.innerHTML = `<span class="${grid[idx] === 'X' ? 'x-color' : 'o-color'}">${grid[idx]}</span>`;
+                grid = Array(100).fill("");
+                Object.keys(data).forEach(i => {
+                    grid[i] = data[i];
+                    const el = document.getElementById(`block-${i}`);
+                    if(el && !el.classList.contains('taken')) {
+                        el.innerHTML = `<span class="${grid[i] === 'X' ? 'x-style' : 'o-style'}">${grid[i]}</span>`;
+                        el.classList.add('taken');
+                    }
                 });
-                checkWinnerLocally();
+                checkWinner();
             });
 
-            db.on('value', s => { if(!s.hasChild('cells')) { initBoard(); document.getElementById('line-container').innerHTML = ""; gameActive = true; } });
+            db.on('value', s => { 
+                if(!s.hasChild('cells')) { 
+                    gameActive = true; grid = Array(100).fill("");
+                    createGridUI(); document.getElementById('line-container').innerHTML = "";
+                }
+            });
         }
 
-        function checkWinnerLocally() {
+        function checkWinner() {
             for (let i = 0; i < 100; i++) {
                 if (grid[i] === "") continue;
-                const winData = checkAt(i);
-                if (winData) {
+                const win = getCombo(i);
+                if (win) {
                     gameActive = false;
-                    drawWinEffect(winData.cells, grid[i]);
+                    drawWin(win.cells, grid[i]);
                     break;
                 }
             }
         }
 
-        function checkAt(idx) {
-            const r = Math.floor(idx / 10), c = idx % 10, s = grid[idx];
-            const dirs = [{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:-1}];
+        function getCombo(i) {
+            const r = Math.floor(i / 10), c = i % 10, char = grid[i];
+            const dirs = [{x:1,y:0}, {x:0,y:1}, {x:1,y:1}, {x:1,y:-1}];
             for (let d of dirs) {
-                let combo = [idx];
-                [1, -1].forEach(dir => {
-                    let nr = r + d.y * dir, nc = c + d.x * dir;
-                    while(nr>=0 && nr<10 && nc>=0 && nc<10 && grid[nr*10+nc] === s) {
-                        combo.push(nr*10+nc); nr += d.y * dir; nc += d.x * dir;
+                let combo = [i];
+                [1, -1].forEach(s => {
+                    let nr = r + d.y*s, nc = c + d.x*s;
+                    while(nr>=0 && nr<10 && nc>=0 && nc<10 && grid[nr*10+nc] === char) {
+                        combo.push(nr*10+nc); nr += d.y*s; nc += d.x*s;
                     }
                 });
                 if (combo.length >= 5) return { cells: combo };
@@ -184,27 +256,27 @@
             return null;
         }
 
-        function drawWinEffect(cells, winner) {
-            cells.forEach(idx => document.getElementById(`c-${idx}`).classList.add('winner-cell'));
+        function drawWin(cells, p) {
+            playSfx(300, 'sawtooth', 0.8, 0.1);
+            cells.forEach(i => document.getElementById(`block-${i}`).classList.add('winner-cell'));
             cells.sort((a,b) => a-b);
             const b = document.getElementById('game-board').getBoundingClientRect();
-            const s = document.getElementById(`c-${cells[0]}`).getBoundingClientRect();
-            const e = document.getElementById(`c-${cells[cells.length-1]}`).getBoundingClientRect();
+            const s = document.getElementById(`block-${cells[0]}`).getBoundingClientRect();
+            const e = document.getElementById(`block-${cells[cells.length-1]}`).getBoundingClientRect();
             const x1 = (s.left+s.width/2)-b.left, y1 = (s.top+s.height/2)-b.top;
             const x2 = (e.left+e.width/2)-b.left, y2 = (e.top+e.height/2)-b.top;
+            
             const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
             const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
 
             const line = document.createElement('div');
             line.className = 'win-line';
-            line.style.left = `${x1}px`; line.style.top = `${y1}px`;
-            line.style.width = `${dist}px`; line.style.transform = `rotate(${angle}deg)`;
+            line.style.cssText = `left:${x1}px; top:${y1}px; width:${dist}px; transform:rotate(${angle}deg);`;
             document.getElementById('line-container').appendChild(line);
-            document.getElementById('info').innerHTML = `PEMENANG: ${winner}! 🔥`;
-            db.child('turn').set(winner); // Kunci giliran ke pemenang
+            document.getElementById('info').innerHTML = `<span style="background:var(--gold-fire); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:1.5rem">${p} MENANG TOTAL! 🔥</span>`;
         }
 
-        function resetGame() { if(confirm("Reset Papan?")) db.remove(); }
+        function fullReset() { if(confirm("Bersihkan arena?")) db.remove(); }
     </script>
 </body>
 </html>
