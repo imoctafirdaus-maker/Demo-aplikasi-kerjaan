@@ -32,9 +32,7 @@
             -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y;
         }
 
-        input { user-select: auto !important; -webkit-user-select: auto !important; }
-
-        /* --- MENU LOBBY --- */
+        /* --- UI ELEMENTS --- */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 1000; 
@@ -53,13 +51,11 @@
         .btn-choice {
             padding: 10px 15px; border: 1px solid var(--brass-dark); background: var(--wood-light);
             color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px;
-            box-shadow: var(--shadow-out); transition: 0.2s; font-family: 'Cinzel';
+            box-shadow: var(--shadow-out); transition: 0.2s; font-family: 'Cinzel'; margin: 5px;
         }
         .btn-choice:disabled { background: #333; color: #666; cursor: not-allowed; opacity: 0.6; }
         .btn-choice:active:not(:disabled) { transform: scale(0.95); box-shadow: var(--shadow-in); }
-        .btn-game-select { width: 100%; margin: 8px 0; font-size: 1rem; border: 2px solid var(--brass); }
 
-        /* --- SCOREBOARD --- */
         .scoreboard { 
             display: flex; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 450px; 
             padding: 5px; border-bottom: 2px solid var(--brass-dark);
@@ -67,66 +63,69 @@
         .score-box { flex: 1; text-align: center; padding: 5px; background: var(--wood-dark); border-radius: 10px; box-shadow: var(--shadow-in); font-size: 0.8rem; }
         .score-box b { font-size: 1.2rem; color: var(--brass); font-family: 'Cinzel'; }
 
-        /* --- BOARDS (3D VIEWPORT) --- */
-        .viewport-container { width: 100%; display: flex; justify-content: center; align-items: center; padding: 10px 0; perspective: 1200px; }
+        /* --- 3D VIEWPORT --- */
+        .viewport-container { 
+            width: 100%; display: flex; justify-content: center; align-items: center; 
+            padding: 20px 0; perspective: 1500px;
+        }
         
         .board-wrapper { 
-            position: relative; padding: 10px; background: var(--wood-dark); 
-            border: 6px solid #2a1b12; border-radius: 8px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
-            transform: rotateX(25deg); transition: transform 0.8s; transform-style: preserve-3d;
+            position: relative; padding: 15px; background: var(--wood-dark); 
+            border: 10px solid #2a1b12; border-radius: 4px; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+            transform: rotateX(35deg) rotateZ(0deg); 
+            transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            transform-style: preserve-3d;
         }
-        .flipped-camera { transform: rotateX(25deg) rotateZ(180deg) !important; }
+        .flipped-camera { transform: rotateX(35deg) rotateZ(180deg) !important; }
 
-        /* Ukuran kotak XOXO agar muat di layar HP */
         .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 2px; max-width: 90vw; }
         .board-chess { display: grid; grid-template-columns: repeat(8, 11vw); grid-template-rows: repeat(8, 11vw); gap: 0; max-width: 90vw; background: #000; }
 
-        .block { 
-            width: 100%; height: 100%; background: var(--wood-light); border-radius: 2px;
+        .block, .chess-tile { 
+            width: 100%; height: 100%; background: var(--wood-light);
             display: flex; justify-content: center; align-items: center; 
             font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out);
         }
-        .chess-tile { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; cursor: pointer; }
         .tile-dark { background: #4e342e; }
         .tile-light { background: #d7ccc8; color: #3d2b1f; }
         
-        .piece { filter: drop-shadow(2px 3px 2px rgba(0,0,0,0.5)); transition: 0.2s; }
+        .piece { filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.6)); font-size: 1.5rem; }
         .piece-flipped { transform: rotate(180deg); }
 
-        .x-icon { color: #d32f2f; font-weight: bold; font-size: 5vw; }
-        .o-icon { color: var(--brass); font-weight: bold; font-size: 5vw; }
+        .x-icon { color: #d32f2f; font-weight: bold; font-size: 5vw; text-shadow: 0 0 5px rgba(211,47,47,0.5); }
+        .o-icon { color: var(--brass); font-weight: bold; font-size: 5vw; text-shadow: 0 0 5px rgba(183,149,11,0.5); }
 
         .win-line { 
             position: absolute; z-index: 100; background: var(--gold-fire); 
-            height: 6px; border-radius: 10px; pointer-events: none;
-            box-shadow: 0 0 15px #ff4500; animation: fire-flicker 0.2s infinite alternate; transform-origin: left center;
+            height: 8px; border-radius: 10px; pointer-events: none;
+            box-shadow: 0 0 20px #ff4500; animation: fire-flicker 0.2s infinite alternate; transform-origin: left center;
         }
 
-        /* --- QR MODAL --- */
-        #qr-modal {
-            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center;
-        }
-        #qrcode { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        /* --- CONTROLS --- */
+        .admin-controls { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
+        .btn-tiny { font-size: 0.6rem; padding: 5px 10px; border-radius: 15px; }
 
-        @keyframes fire-flicker { from { opacity: 0.8; } to { opacity: 1; } }
-        #music-toggle { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: var(--brass); padding: 5px 10px; border-radius: 20px; font-size: 0.6rem; border: 1px solid var(--brass); }
+        #toast {
+            position: fixed; bottom: 80px; background: var(--brass); color: #000;
+            padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 3000;
+        }
+
+        @keyframes fire-flicker { from { opacity: 0.7; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="overlay">
         <div class="card-vintage">
-            <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 15px; font-size: 1.5rem;">GRAND LOBBY</h1>
-            <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA..." maxlength="10">
+            <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 15px; font-size: 1.8rem; text-shadow: 2px 2px #000;">1888 SALOON</h1>
+            <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA (NAMA)..." maxlength="10">
             
-            <button class="btn-choice btn-game-select" onclick="selectGame('XOXO')">TIC-TAC-TOE (10x10)</button>
-            <button class="btn-choice btn-game-select" onclick="selectGame('CHESS')">CLASSIC CHESS 3D</button>
-            <button class="btn-choice btn-game-select" style="background: #1a0f0a;" onclick="showQR()">KODE QR</button>
+            <button class="btn-choice" style="width: 100%;" onclick="selectGame('XOXO')">TIC-TAC-TOE 10x10</button>
+            <button class="btn-choice" style="width: 100%;" onclick="selectGame('CHESS')">CLASSIC CHESS 3D</button>
 
-            <div id="role-select" style="display:none; margin-top: 15px;">
-                <p id="role-text" style="margin-bottom: 10px; font-size: 0.8rem;"></p>
+            <div id="role-select" style="display:none; margin-top: 20px; border-top: 1px solid var(--brass-dark); padding-top: 15px;">
+                <p id="role-text" style="margin-bottom: 10px; font-size: 0.8rem; color: var(--brass);">PILIH KUBURAN:</p>
                 <div style="display: flex; gap: 10px; justify-content: center;">
                     <button id="btn1" class="btn-choice" onclick="confirmStart(1)"></button>
                     <button id="btn2" class="btn-choice" onclick="confirmStart(2)"></button>
@@ -135,20 +134,15 @@
         </div>
     </div>
 
-    <div id="qr-modal">
-        <h2 style="color:var(--brass); margin-bottom:15px;">SCAN & DOWNLOAD</h2>
-        <div id="qrcode"></div>
-        <button class="btn-choice" onclick="downloadQR()">DOWNLOAD QR</button>
-        <button class="btn-choice" style="margin-top:10px; color:red;" onclick="hideQR()">CLOSE</button>
-    </div>
+    <div id="toast">MENUNGGU KONFIRMASI LAWAN...</div>
 
     <div class="scoreboard">
         <div class="score-box"><span id="p1-name">WAITING...</span><br><b id="p1-score">0</b></div>
-        <div class="score-box" style="background:transparent; box-shadow:none; flex:0.2;">VS</div>
+        <div class="score-box" style="background:transparent; box-shadow:none; flex:0.2; font-family:'Cinzel';">VS</div>
         <div class="score-box"><span id="p2-name">WAITING...</span><br><b id="p2-score">0</b></div>
     </div>
 
-    <div id="status" style="font-size: 0.7rem; margin-bottom: 5px;">PILIH GAME DI MENU</div>
+    <div id="status" style="font-size: 0.8rem; margin-bottom: 5px; letter-spacing: 2px;">MENGHUBUNGKAN...</div>
 
     <div class="viewport-container">
         <div id="board-perspective" class="board-wrapper">
@@ -157,8 +151,11 @@
         </div>
     </div>
 
-    <button class="btn-choice" onclick="requestReset()" style="margin-top: 10px; color: #d32f2f; border-radius: 20px; font-size: 0.7rem;">RESET PAPAN</button>
-    <button id="music-toggle" onclick="toggleMusic()">🎵 POPCAT: ON</button>
+    <div class="admin-controls">
+        <button class="btn-choice btn-tiny" onclick="location.reload()">🔄 REFRESH TAMPILAN</button>
+        <button class="btn-choice btn-tiny" onclick="requestReset()">🧹 RESET PAPAN</button>
+        <button class="btn-choice btn-tiny" style="color: #ff4500; border-color: #ff4500;" onclick="askFinish()">🏁 SELESAIKAN PERMAINAN</button>
+    </div>
 
     <script>
         const firebaseConfig = {
@@ -173,71 +170,24 @@
         firebase.initializeApp(firebaseConfig);
         let db = null;
 
-        // --- AUDIO ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        let musicPlaying = true;
-        const notes = {'C4':261,'D4':293,'E4':329,'F4':349,'G4':392,'A4':440,'B4':493,'C5':523,'D5':587,'E5':659,'G5':783};
-        const melody = ['G4','E5','D5','C5','B4','C5','D5','G4','G4','E5','D5','C5','B4','C5','A4','G4'];
+        let currentGame = ""; let myRole = ""; let myName = ""; let turn = ""; 
+        let currentBoardState = {}; let isGameOver = false;
 
-        function playPop(f, v = 0.1) {
-            if (!musicPlaying) return;
-            const o = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            o.type = 'sine'; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-            g.gain.setValueAtTime(v, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
-            o.connect(g); g.connect(audioCtx.destination);
-            o.start(); o.stop(audioCtx.currentTime + 0.1);
-        }
-
-        let mIdx = 0;
-        function loopMusic() { 
-            playPop(notes[melody[mIdx]], 0.05); 
-            mIdx = (mIdx+1)%melody.length; 
-            setTimeout(loopMusic, 350); 
-        }
-        function toggleMusic() { 
-            musicPlaying = !musicPlaying; 
-            document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 POPCAT: ON" : "🔇 POPCAT: OFF"; 
-        }
-
-        // --- QR CODE LOGIC ---
-        function showQR() {
-            document.getElementById('qr-modal').style.display = 'flex';
-            document.getElementById('qrcode').innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), {
-                text: "https://trackcust-jtm.preview.Octawiliam.com",
-                width: 200, height: 200
-            });
-        }
-        function hideQR() { document.getElementById('qr-modal').style.display = 'none'; }
-        function downloadQR() {
-            const img = document.querySelector('#qrcode img');
-            const link = document.createElement('a');
-            link.href = img.src; link.download = 'Game1888_QR.png'; link.click();
-        }
-
-        // --- GAME CORE ---
-        let currentGame = ""; let myRole = ""; let myName = ""; let turn = ""; let currentBoardState = {}; let isGameOver = false;
-
+        // --- CORE LOGIC ---
         function selectGame(game) {
             const n = document.getElementById('inputNama').value;
-            if(!n) return alert("MASUKKAN NAMA!");
+            if(!n) return alert("Sebutkan Nama Anda, Tuan!");
             myName = n; currentGame = game;
             db = firebase.database().ref('multi_game_v1/' + game);
             document.getElementById('role-select').style.display = 'block';
             
-            // Sync status tombol pemilihan peran
             db.child('names').on('value', s => {
                 const names = s.val() || {};
                 const b1 = document.getElementById('btn1'), b2 = document.getElementById('btn2');
-                
                 if(game === 'XOXO') {
-                    document.getElementById('role-text').innerText = "PILIH KUBURAN:";
                     b1.innerText = "PIHAK X"; b2.innerText = "PIHAK O";
                     b1.disabled = !!names.X; b2.disabled = !!names.O;
                 } else {
-                    document.getElementById('role-text').innerText = "PILIH KUBU:";
                     b1.innerText = "PUTIH"; b2.innerText = "HITAM";
                     b1.disabled = !!names.white; b2.disabled = !!names.black;
                 }
@@ -245,15 +195,16 @@
         }
 
         function confirmStart(choice) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             myRole = (currentGame === 'XOXO') ? (choice === 1 ? 'X' : 'O') : (choice === 1 ? 'white' : 'black');
             const wrapper = document.getElementById('board-perspective');
             if(myRole === 'black' || myRole === 'O') wrapper.classList.add('flipped-camera');
+            
             db.child('names/' + myRole).set(myName);
             document.getElementById('overlay').style.display = 'none';
+            
             if(currentGame === 'XOXO') initXOXO(); else initChess();
             startSync();
-            loopMusic();
+            listenToFinishRequests();
         }
 
         function initXOXO() {
@@ -266,7 +217,6 @@
                         db.child('cells/' + i).set(myRole);
                         db.child('turn').set(myRole === 'X' ? 'O' : 'X');
                         checkWinnerXOXO(i, myRole);
-                        playPop(440, 0.1);
                     }
                 };
                 board.appendChild(b);
@@ -294,11 +244,14 @@
         }
 
         function startSync() {
-            db.child('turn').on('value', s => { turn = s.val() || (currentGame==='XOXO'?'X':'white'); if(!isGameOver) document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR..."; });
+            db.child('turn').on('value', s => { 
+                turn = s.val() || (currentGame==='XOXO'?'X':'white'); 
+                if(!isGameOver) document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR..."; 
+            });
             db.child('names').on('value', s => {
                 const n = s.val() || {};
-                if(currentGame === 'XOXO') { document.getElementById('p1-name').innerText = n.X||"X"; document.getElementById('p2-name').innerText = n.O||"O"; }
-                else { document.getElementById('p1-name').innerText = n.white||"PUTIH"; document.getElementById('p2-name').innerText = n.black||"HITAM"; }
+                if(currentGame === 'XOXO') { document.getElementById('p1-name').innerText = n.X||"Menunggu X"; document.getElementById('p2-name').innerText = n.O||"Menunggu O"; }
+                else { document.getElementById('p1-name').innerText = n.white||"Putih"; document.getElementById('p2-name').innerText = n.black||"Hitam"; }
             });
             db.child('scores').on('value', s => {
                 const sc = s.val() || {};
@@ -312,8 +265,6 @@
                     const win = s.val();
                     document.getElementById('status').innerHTML = `<b style="color:var(--brass)">${win.name.toUpperCase()} MENANG!</b>`;
                     if(win.line) drawWinLine(win.line);
-                    // Auto reset setelah 3 detik
-                    setTimeout(() => { if(myRole === win.player) requestReset(); }, 3000);
                 }
             });
         }
@@ -327,7 +278,8 @@
                 }
             } else {
                 for(let i=0; i<64; i++) {
-                    const el = document.getElementById(`t-${i}`); const p = currentBoardState[i];
+                    const el = document.getElementById(`t-${i}`); if(!el) continue;
+                    const p = currentBoardState[i];
                     el.innerHTML = p ? `<span class="piece ${p.color} ${flip?'piece-flipped':''}">${chessPieces[p.color][p.type]}</span>` : "";
                 }
             }
@@ -336,6 +288,7 @@
         function drawWinLine(line) {
             const container = document.getElementById('line-container'); container.innerHTML = "";
             const el1 = document.getElementById(`b-${line[0]}`), el2 = document.getElementById(`b-${line[line.length-1]}`);
+            if(!el1 || !el2) return;
             const x1 = el1.offsetLeft + (el1.offsetWidth/2), y1 = el1.offsetTop + (el1.offsetHeight/2);
             const x2 = el2.offsetLeft + (el2.offsetWidth/2), y2 = el2.offsetTop + (el2.offsetHeight/2);
             const dist = Math.hypot(x2-x1, y2-y1), angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
@@ -344,14 +297,43 @@
             div.style.transform = `rotate(${angle}deg)`; container.appendChild(div);
         }
 
+        // --- ADVANCED CONTROLS (REFRESH, RESET, FINISH) ---
         function requestReset() {
-            db.child('cells').remove(); db.child('winner').remove();
-            if(currentGame === 'CHESS') resetChessBoard();
-            document.getElementById('line-container').innerHTML = ""; isGameOver = false;
+            if(confirm("Bersihkan papan dan mulai ulang skor?")) {
+                db.child('cells').remove(); db.child('winner').remove();
+                if(currentGame === 'CHESS') resetChessBoard();
+                document.getElementById('line-container').innerHTML = ""; isGameOver = false;
+            }
         }
 
-        // --- CHESS LOGIC (Simplified) ---
-        const chessPieces = { white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' }, black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' } };
+        function askFinish() {
+            if(confirm("Minta lawan untuk menyudahi permainan ini?")) {
+                db.child('finish_request').set({ requester: myRole, name: myName });
+                document.getElementById('toast').style.display = 'block';
+            }
+        }
+
+        function listenToFinishRequests() {
+            db.child('finish_request').on('value', s => {
+                const req = s.val();
+                if(req && req.requester !== myRole) {
+                    if(confirm(`${req.name} mengajak menyudahi permainan. Keluar ke Lobby?`)) {
+                        db.remove(); // Bersihkan seluruh data game di Firebase
+                        location.reload();
+                    } else {
+                        db.child('finish_request').remove();
+                    }
+                }
+            });
+        }
+
+        // --- CHESS LOGIC ---
+        const chessPieces = { 
+            white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' }, 
+            black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' } 
+        };
+        let selectedTile = null;
+
         function initChess() {
             const board = document.getElementById('main-board');
             board.className = "board-chess"; board.innerHTML = "";
@@ -363,6 +345,7 @@
             }
             db.child('cells').once('value', s => { if(!s.exists()) resetChessBoard(); });
         }
+
         function resetChessBoard() {
             const start = {}; const layout = ['r','n','b','q','k','b','n','r'];
             for(let i=0; i<8; i++) {
@@ -370,6 +353,28 @@
                 start[48+i] = { type: 'p', color: 'white' }; start[56+i] = { type: layout[i], color: 'white' };
             }
             db.child('cells').set(start); db.child('turn').set('white');
+        }
+
+        function handleChessClick(i) {
+            if(turn !== myRole || isGameOver) return;
+            const piece = currentBoardState[i];
+            if(selectedTile === null) {
+                if(piece && piece.color === myRole) {
+                    selectedTile = i;
+                    document.getElementById(`t-${i}`).style.boxShadow = "inset 0 0 10px gold";
+                }
+            } else {
+                if(selectedTile === i) {
+                    selectedTile = null; renderBoard(); return;
+                }
+                // Logika pindah (tanpa validasi aturan catur lengkap demi efisiensi)
+                const move = {}; 
+                move[selectedTile] = null;
+                move[i] = currentBoardState[selectedTile];
+                db.child('cells').update(move);
+                db.child('turn').set(myRole === 'white' ? 'black' : 'white');
+                selectedTile = null;
+            }
         }
     </script>
 </body>
