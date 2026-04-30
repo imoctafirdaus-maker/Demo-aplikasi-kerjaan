@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Toe Mobile Gold</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Mega 3D Mobile Optimized</title>
     <style>
         :root {
             --bg-color: #e6e9ef;
@@ -17,13 +17,7 @@
             --grid-count: 10;
         }
 
-        /* Prevent overscroll on mobile */
-        html, body {
-            overflow: hidden;
-            height: 100%;
-            position: fixed;
-            width: 100%;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 
         body {
             background-color: var(--bg-color);
@@ -31,152 +25,157 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 10px;
+            min-height: 100vh;
+            padding: 20px 10px;
         }
 
-        /* Top Status Panel */
+        /* Header Tetap Statis */
         .header {
-            width: 100%;
-            max-width: 400px;
             text-align: center;
-            margin-top: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            width: 100%;
         }
 
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
+        .status-card {
+            display: inline-block;
             background: var(--bg-color);
-            padding: 10px 25px;
-            border-radius: 30px;
+            padding: 12px 30px;
+            border-radius: 50px;
             box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
             font-weight: 800;
-            font-size: 1rem;
         }
 
-        /* Board Area - Mobile Precision */
-        .game-area {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Container Scrollable untuk Mobile */
+        .viewport-container {
             width: 100%;
-            perspective: 1000px;
+            max-width: 100vw;
+            overflow-x: auto; /* Mengaktifkan scroll horizontal di HP */
+            padding: 20px 0;
+            display: flex;
+            justify-content: flex-start; /* Default mulai dari kiri */
+            -webkit-overflow-scrolling: touch; /* Scroll halus di iOS */
+        }
+
+        /* Agar board berada di tengah jika layar lebar */
+        @media (min-width: 600px) {
+            .viewport-container { justify-content: center; }
+        }
+
+        .board-wrapper {
+            perspective: 1500px;
+            position: relative;
+            padding: 20px; /* Ruang untuk bayangan */
         }
 
         .board {
             display: grid;
             grid-template-columns: repeat(var(--grid-count), 1fr);
-            gap: 4px; /* Gap kecil untuk layar HP */
-            padding: 12px;
+            gap: 10px;
+            padding: 20px;
             background: var(--bg-color);
-            border-radius: 15px;
+            border-radius: 25px;
             box-shadow: 15px 15px 30px var(--shadow-dark), -15px -15px 30px var(--shadow-light);
-            /* Responsive Width: 95% dari lebar layar atau max 400px */
-            width: 95vw;
-            max-width: 420px;
-            /* Memastikan aspek rasio kotak tetap square */
-            aspect-ratio: 1 / 1;
+            /* Ukuran kotak tetap besar (50px) */
+            width: calc((50px * var(--grid-count)) + (10px * (var(--grid-count) - 1)) + 40px);
             transform: rotateX(5deg);
-            position: relative;
+            transition: transform 0.4s;
         }
 
+        .board:active { transform: rotateX(0deg); }
+
         .block {
+            width: 50px;
+            height: 50px;
             background: var(--bg-color);
-            border-radius: 6px;
-            border: 1.5px solid var(--border-blue);
+            border-radius: 10px;
+            border: 2px solid var(--border-blue);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 4.5vw; /* Font size dinamis sesuai layar */
+            font-size: 1.5rem;
             font-weight: 900;
-            box-shadow: 2px 2px 4px var(--shadow-dark), -2px -2px 4px var(--shadow-light);
-            transition: all 0.2s;
-            -webkit-tap-highlight-color: transparent; /* Hilangkan highlight biru di Android/iOS */
-        }
-
-        @media (min-width: 420px) {
-            .block { font-size: 1.2rem; }
+            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+            cursor: pointer;
+            transition: 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .block.taken {
-            box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+            box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
             border-color: #cbd5e0;
         }
 
-        /* Text Styles */
         .x-color { background: var(--x-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .o-color { background: var(--o-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* Win Line Mobile */
+        /* Garis Kemenangan */
         .win-line {
             position: absolute;
             z-index: 10;
             background: var(--gold-grad);
-            height: 6px; /* Sedikit lebih tipis di HP */
+            height: 10px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(184, 134, 11, 0.6);
+            box-shadow: 0 0 15px rgba(184, 134, 11, 0.6);
             transform-origin: 0 50%;
             pointer-events: none;
-            animation: drawLine 0.6s ease-out forwards;
+            animation: draw 0.8s ease-out forwards, shimmer 2s infinite linear;
+            background-size: 200% auto;
         }
 
-        @keyframes drawLine { from { width: 0; } }
+        @keyframes draw { from { width: 0; } }
+        @keyframes shimmer { to { background-position: 200% center; } }
 
         .winner-cell {
             background: #fffdf0 !important;
             border-color: #ffd700 !important;
-            animation: pulse 1s infinite alternate;
+            transform: scale(1.05);
         }
 
-        @keyframes pulse { from { scale: 1; } to { scale: 1.05; } }
-
-        /* Footer Controls */
+        /* Footer */
         .footer {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            padding-bottom: env(safe-area-inset-bottom, 20px); /* Dukungan notch iPhone */
-            margin-top: 10px;
+            margin-top: 30px;
+            padding-bottom: 30px;
         }
 
         button {
-            padding: 14px 40px;
+            padding: 15px 40px;
             border: none;
-            border-radius: 25px;
+            border-radius: 50px;
             background: var(--bg-color);
-            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
             color: var(--border-blue);
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1px;
             cursor: pointer;
-            active: scale(0.95);
         }
 
         button:active {
-            box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            transform: scale(0.98);
         }
+
+        /* Scrollbar Styling */
+        .viewport-container::-webkit-scrollbar { height: 6px; }
+        .viewport-container::-webkit-scrollbar-thumb { background: var(--shadow-dark); border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="status-pill" id="status-card">
+        <div class="status-card" id="status-display">
             Giliran: <span class="x-color" id="player-label">X</span>
         </div>
     </div>
 
-    <div class="game-area">
-        <div class="board" id="game-board">
-            </div>
-        <div id="line-container"></div>
+    <div class="viewport-container">
+        <div class="board-wrapper">
+            <div class="board" id="game-board"></div>
+            <div id="line-container"></div>
+        </div>
     </div>
 
     <div class="footer">
-        <button onclick="initGame()">Ulang Game</button>
+        <button onclick="initGame()">Restart Game</button>
     </div>
 
     <script>
@@ -187,17 +186,17 @@
         let gameActive = true;
 
         const boardElement = document.getElementById('game-board');
-        const statusLabel = document.getElementById('player-label');
+        const statusDisplay = document.getElementById('status-display');
+        const playerLabel = document.getElementById('player-label');
         const lineContainer = document.getElementById('line-container');
+
+        document.documentElement.style.setProperty('--grid-count', GRID_SIZE);
 
         function initGame() {
             gameActive = true;
             currentPlayer = 'X';
             gameState = Array(GRID_SIZE * GRID_SIZE).fill("");
-            statusLabel.textContent = 'X';
-            statusLabel.className = 'x-color';
-            document.getElementById('status-card').style.color = "var(--text-color)";
-            
+            statusDisplay.innerHTML = `Giliran: <span class="x-color" id="player-label">X</span>`;
             lineContainer.innerHTML = "";
             boardElement.innerHTML = "";
             
@@ -205,18 +204,12 @@
                 const block = document.createElement('div');
                 block.classList.add('block');
                 block.setAttribute('data-index', i);
-                block.addEventListener('touchstart', function(e) { 
-                    // Support touch for mobile
-                    handleCellClick(i, e.target);
-                }, {passive: true});
-                block.addEventListener('click', function(e) {
-                    handleCellClick(i, e.target);
-                });
+                block.addEventListener('click', () => handleMove(i, block));
                 boardElement.appendChild(block);
             }
         }
 
-        function handleCellClick(index, element) {
+        function handleMove(index, element) {
             if (gameState[index] !== "" || !gameActive) return;
 
             gameState[index] = currentPlayer;
@@ -225,27 +218,29 @@
 
             const winData = checkWin(index);
             if (winData) {
+                gameActive = false;
                 drawWin(winData.cells);
                 return;
             }
 
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            statusLabel.textContent = currentPlayer;
-            statusLabel.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
+            const label = document.getElementById('player-label');
+            label.textContent = currentPlayer;
+            label.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
         }
 
         function checkWin(index) {
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
-            const directions = [{x:1, y:0}, {x:0, y:1}, {x:1, y:1}, {x:1, y:-1}];
+            const dirs = [{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:-1}];
 
-            for (let dir of directions) {
+            for (let d of dirs) {
                 let cells = [index];
                 [1, -1].forEach(s => {
-                    let r = row + (dir.y*s), c = col + (dir.x*s);
+                    let r = row+(d.y*s), c = col+(d.x*s);
                     while(r>=0 && r<GRID_SIZE && c>=0 && c<GRID_SIZE && gameState[r*GRID_SIZE+c] === currentPlayer) {
                         cells.push(r*GRID_SIZE+c);
-                        r+=(dir.y*s); c+=(dir.x*s);
+                        r+=(d.y*s); c+=(d.x*s);
                     }
                 });
                 if (cells.length >= WIN_COUNT) return { cells };
@@ -254,20 +249,17 @@
         }
 
         function drawWin(cells) {
-            gameActive = false;
             cells.sort((a,b) => a-b);
-            const first = cells[0], last = cells[cells.length-1];
-            
             cells.forEach(idx => document.querySelector(`[data-index="${idx}"]`).classList.add('winner-cell'));
 
             const bRect = boardElement.getBoundingClientRect();
-            const startEl = document.querySelector(`[data-index="${first}"]`).getBoundingClientRect();
-            const endEl = document.querySelector(`[data-index="${last}"]`).getBoundingClientRect();
+            const start = document.querySelector(`[data-index="${cells[0]}"]`).getBoundingClientRect();
+            const end = document.querySelector(`[data-index="${cells[cells.length-1]}"]`).getBoundingClientRect();
 
-            const x1 = (startEl.left + startEl.width/2) - bRect.left;
-            const y1 = (startEl.top + startEl.height/2) - bRect.top;
-            const x2 = (endEl.left + endEl.width/2) - bRect.left;
-            const y2 = (endEl.top + endEl.height/2) - bRect.top;
+            const x1 = (start.left + start.width/2) - bRect.left;
+            const y1 = (start.top + start.height/2) - bRect.top;
+            const x2 = (end.left + end.width/2) - bRect.left;
+            const y2 = (end.top + end.height/2) - bRect.top;
 
             const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
             const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
@@ -280,7 +272,7 @@
             line.style.transform = `rotate(${angle}deg)`;
             lineContainer.appendChild(line);
 
-            document.getElementById('status-card').innerHTML = `<span style="background:var(--gold-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${currentPlayer} MENANG!</span>`;
+            statusDisplay.innerHTML = `<span style="background:var(--gold-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${currentPlayer} MENANG!</span>`;
         }
 
         initGame();
