@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Toe: Antique Musical Edition</title>
+    <title>Tic-Tac-Toe: Antique 3D Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
@@ -17,6 +17,9 @@
             --brass-dark: #7d6608;
             --paper: #d7ccc8;
             --gold-fire: linear-gradient(90deg, #ff4500, #ffd700, #ffffff, #ffd700, #ff4500);
+            /* 3D Shadows */
+            --shadow-out: 4px 4px 8px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.1);
+            --shadow-in: inset 4px 4px 8px rgba(0,0,0,0.5), inset -1px -1px 2px rgba(255,255,255,0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -43,50 +46,81 @@
             border-radius: 5px; text-align: center; width: 90%; max-width: 400px;
             box-shadow: 0 0 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.5);
         }
-        .card-vintage h2 { font-family: 'Cinzel', serif; color: var(--brass); margin-bottom: 20px; }
 
         input.name-input {
-            width: 100%; padding: 12px; border: 2px solid var(--brass-dark);
+            width: 100%; padding: 12px; border: none;
             background: #2a1b12; color: var(--paper); margin-bottom: 20px;
-            outline: none; font-family: 'Special Elite'; text-align: center;
+            box-shadow: var(--shadow-in); outline: none; text-align: center;
         }
 
         .btn-choice {
-            padding: 15px; border: 2px solid var(--brass);
-            background: linear-gradient(145deg, #7d6608, #b7950b);
-            color: #2c1e16; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px #4d3d04; transition: 0.2s; width: 110px;
+            padding: 15px; border: 1px solid var(--brass-dark);
+            background: var(--wood-light); color: var(--brass);
+            font-weight: bold; cursor: pointer; border-radius: 8px;
+            box-shadow: var(--shadow-out); transition: 0.2s; width: 110px;
         }
-        .btn-choice:active:not(.disabled) { transform: translateY(4px); box-shadow: none; }
-        .btn-choice.disabled { background: #333; color: #666; border-color: #444; cursor: not-allowed; box-shadow: none; }
+        .btn-choice:active { transform: scale(0.95); box-shadow: var(--shadow-in); }
 
         /* --- UI COMPONENTS --- */
         .scoreboard { 
             display: flex; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 450px; 
             padding: 10px; border-bottom: 2px solid var(--brass-dark);
         }
-        .score-box { flex: 1; text-align: center; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--brass-dark); }
+        .score-box { 
+            flex: 1; text-align: center; padding: 10px; 
+            background: var(--wood-dark); border-radius: 10px;
+            box-shadow: var(--shadow-in);
+        }
         .score-box b { font-size: 1.8rem; color: var(--brass); font-family: 'Cinzel', serif; }
 
         .viewport-container { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 15px 0; }
-        .board-wrapper { position: relative; padding: 15px; background: var(--wood-dark); border: 12px solid #2a1b12; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
-        .board { display: grid; grid-template-columns: repeat(10, 42px); gap: 2px; background: var(--brass-dark); border: 2px solid var(--brass-dark); }
-        .block { width: 42px; height: 42px; background: var(--wood-light); display: flex; justify-content: center; align-items: center; font-family: 'Cinzel', serif; cursor: pointer; }
-        .block.taken { background: #4e342e; }
+        
+        .board-wrapper { 
+            position: relative; padding: 20px; 
+            background: var(--wood-dark); 
+            border: 10px solid #2a1b12; 
+            border-radius: 15px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9), var(--shadow-out);
+        }
 
-        .x-icon { color: #d32f2f; }
-        .o-icon { color: var(--brass); }
+        /* TAMPILAN PAPAN 3D */
+        .board { 
+            display: grid; grid-template-columns: repeat(10, 42px); gap: 8px; /* Gap lebih besar untuk efek 3D */
+            background: transparent;
+        }
 
-        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 10px; border-radius: 5px; transform-origin: 0 50%; pointer-events: none; animation: draw 0.6s forwards; }
+        .block { 
+            width: 42px; height: 42px; 
+            background: var(--wood-light);
+            border-radius: 6px;
+            display: flex; justify-content: center; align-items: center; 
+            font-family: 'Cinzel', serif; font-weight: 900; font-size: 1.2rem;
+            cursor: pointer; transition: all 0.2s ease;
+            box-shadow: var(--shadow-out); /* Efek tombol menonjol */
+        }
+        
+        .block:active {
+            transform: scale(0.9);
+            box-shadow: var(--shadow-in); /* Efek tombol tertekan */
+        }
+
+        .block.taken {
+            box-shadow: var(--shadow-in); /* Bidak yang sudah ada terlihat tenggelam */
+            background: #463028;
+        }
+
+        .x-icon { color: #d32f2f; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .o-icon { color: var(--brass); text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+
+        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 8px; border-radius: 10px; pointer-events: none; animation: draw 0.6s forwards; box-shadow: 0 0 15px #ff4500; }
         @keyframes draw { from { width: 0; } }
 
-        #status { font-family: 'Cinzel', serif; color: var(--brass); margin-bottom: 10px; }
+        #status { font-family: 'Cinzel', serif; color: var(--brass); margin-bottom: 15px; letter-spacing: 1px; }
         
-        /* Musik Control */
         #music-toggle {
-            position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5);
-            border: 1px solid var(--brass); color: var(--brass); padding: 5px 10px;
-            border-radius: 20px; font-size: 0.7rem; cursor: pointer;
+            position: fixed; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6);
+            border: 1px solid var(--brass); color: var(--brass); padding: 8px 15px;
+            border-radius: 30px; font-size: 0.7rem; cursor: pointer; box-shadow: var(--shadow-out);
         }
     </style>
 </head>
@@ -94,20 +128,19 @@
 
     <div id="overlay">
         <div class="card-vintage">
-            <h2>BOARD GAME - 1888</h2>
+            <h2 style="font-family: 'Cinzel'; color: var(--brass);">BOARD GAME - 1888</h2>
             <input type="text" id="inputNama" class="name-input" placeholder="NAMA ANDA..." maxlength="10">
             <div style="display: flex; gap: 20px; justify-content: center;">
-                <div><button id="btnX" class="btn-choice" onclick="pickRole('X')">PILIH X</button></div>
-                <div><button id="btnO" class="btn-choice" onclick="pickRole('O')">PILIH O</button></div>
+                <button id="btnX" class="btn-choice" onclick="pickRole('X')">X</button>
+                <button id="btnO" class="btn-choice" onclick="pickRole('O')">O</button>
             </div>
-            <p style="margin-top:15px; font-size:0.7rem; opacity:0.6;">Klik untuk mengaktifkan musik klasik</p>
         </div>
     </div>
 
     <div class="scoreboard">
-        <div class="score-box"><span id="nameX">PEMAIN X</span><br><b id="scoreX">0</b></div>
-        <div class="score-box" style="border:none; opacity:0.5;">VS</div>
-        <div class="score-box"><span id="nameO">PEMAIN O</span><br><b id="scoreO">0</b></div>
+        <div class="score-box"><span id="nameX" style="font-size:0.7rem;">PEMAIN X</span><br><b id="scoreX">0</b></div>
+        <div class="score-box" style="background:transparent; box-shadow:none; flex:0.2;">VS</div>
+        <div class="score-box"><span id="nameO" style="font-size:0.7rem;">PEMAIN O</span><br><b id="scoreO">0</b></div>
     </div>
 
     <div id="status">SINKRONISASI...</div>
@@ -119,8 +152,8 @@
         </div>
     </div>
 
-    <button class="btn-choice" onclick="resetBoard()" style="width: auto; padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; margin-top: 10px;">RESET PAPAN</button>
-    <button id="music-toggle" onclick="toggleMusic()">MUSIK: ON</button>
+    <button class="btn-choice" onclick="resetBoard()" style="width: auto; padding: 10px 25px; margin-top: 15px; border-radius: 30px; color: #d32f2f;">RESET PAPAN</button>
+    <button id="music-toggle" onclick="toggleMusic()">🎵 MUSIK: ON</button>
 
     <script>
         // --- FIREBASE CONFIG ---
@@ -136,12 +169,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database().ref('game_musical_v1');
 
-        // --- AUDIO LOGIC (WEB AUDIO API) ---
+        // --- AUDIO LOGIC ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let musicPlaying = true;
 
         function playNote(freq, type, duration, volume) {
-            if (!musicPlaying && type === 'triangle') return; // Jangan mainkan musik jika OFF
+            if (!musicPlaying && type === 'triangle') return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -152,7 +185,6 @@
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
 
-        // Suara Klik & Menang
         const sfx = {
             click: () => playNote(600, 'sine', 0.1, 0.1),
             win: () => {
@@ -161,20 +193,19 @@
             }
         };
 
-        // Instrumen Klasik (Latar Belakang)
-        const classicTheme = [261, 329, 392, 523, 392, 329]; // C Major Arpeggio
+        const classicTheme = [261, 329, 392, 523, 392, 329]; 
         let noteIndex = 0;
         function playBackgroundMusic() {
             if (musicPlaying) {
                 playNote(classicTheme[noteIndex], 'triangle', 1.5, 0.03);
                 noteIndex = (noteIndex + 1) % classicTheme.length;
             }
-            setTimeout(playBackgroundMusic, 800);
+            setTimeout(playBackgroundMusic, 1000);
         }
 
         function toggleMusic() {
             musicPlaying = !musicPlaying;
-            document.getElementById('music-toggle').innerText = musicPlaying ? "MUSIK: ON" : "MUSIK: OFF";
+            document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 MUSIK: ON" : "🔇 MUSIK: OFF";
         }
 
         // --- GAME LOGIC ---
@@ -183,12 +214,12 @@
         function pickRole(role) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const nameIn = document.getElementById('inputNama').value;
-            if(!nameIn) { alert("NAMA!"); return; }
+            if(!nameIn) { alert("MASUKKAN NAMA!"); return; }
             myName = nameIn; myRole = role;
             db.child('names/' + role).set(myName);
             document.getElementById('overlay').style.display = 'none';
             initUI(); startSync();
-            playBackgroundMusic(); // Mulai musik saat game dimulai
+            playBackgroundMusic();
         }
 
         function initUI() {
@@ -216,8 +247,8 @@
 
             db.child('names').on('value', s => {
                 const names = s.val() || {};
-                document.getElementById('nameX').innerText = names.X || "PEMAIN X";
-                document.getElementById('nameO').innerText = names.O || "PEMAIN O";
+                document.getElementById('nameX').innerText = names.X || "X";
+                document.getElementById('nameO').innerText = names.O || "O";
             });
 
             db.child('scores').on('value', s => {
@@ -232,7 +263,10 @@
                 Object.keys(data).forEach(i => {
                     grid[i] = data[i];
                     const el = document.getElementById(`b-${i}`);
-                    if(el) el.innerHTML = `<span class="${grid[i]==='X'?'x-icon':'o-icon'}">${grid[i]}</span>`;
+                    if(el) {
+                        el.innerHTML = `<span class="${grid[i]==='X'?'x-icon':'o-icon'}">${grid[i]}</span>`;
+                        el.classList.add('taken');
+                    }
                 });
                 checkWin();
             });
@@ -281,12 +315,12 @@
             const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
             const line = document.createElement('div');
             line.className = 'win-line';
-            line.style.cssText = `left:${x1}px; top:${y1}px; width:${dist}px; transform:rotate(${angle}deg);`;
+            line.style.cssText = `left:${x1}px; top:${y1}px; width:${dist}px; transform:rotate(${angle}deg); transform-origin: 0 50%;`;
             document.getElementById('line-container').appendChild(line);
-            document.getElementById('status').innerHTML = `${p} BERJAYA! 🔥`;
+            document.getElementById('status').innerHTML = `${p} MENANG! 🔥`;
         }
 
-        function resetBoard() { if(confirm("MEMBERSIHKAN MEJA?")) db.child('cells').remove(); }
+        function resetBoard() { if(confirm("RESET PAPAN?")) db.child('cells').remove(); }
     </script>
 </body>
 </html>
