@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Gold Edition - Scored</title>
+    <title>Tic-Tac-Toe Gold Edition - Audio</title>
     <style>
         :root {
             --bg-color: #e6e9ef;
@@ -29,7 +29,7 @@
             padding: 20px 10px;
         }
 
-        /* --- LAYAR PILIHAN AWAL --- */
+        /* --- OVERLAY PEMILIHAN --- */
         #overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -58,25 +58,22 @@
             box-shadow: 5px 5px 10px var(--shadow-dark);
             transition: 0.2s;
         }
-        .btn-choice:active { transform: scale(0.9); }
 
         /* --- SCOREBOARD --- */
-        .scoreboard {
-            display: flex; gap: 20px; margin-bottom: 20px; width: 100%; max-width: 400px;
-        }
+        .scoreboard { display: flex; gap: 20px; margin-bottom: 20px; width: 100%; max-width: 400px; }
         .score-item {
             flex: 1; background: var(--bg-color); padding: 15px; border-radius: 20px;
             text-align: center; box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
         }
         .score-val { font-size: 1.5rem; font-weight: 900; display: block; }
 
-        /* --- GAME LAYOUT --- */
         .status-card {
             background: var(--bg-color); padding: 10px 30px; border-radius: 50px;
             box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
             margin-bottom: 20px; font-weight: 800;
         }
 
+        /* --- BOARD --- */
         .viewport-container {
             width: 100%; overflow-x: auto; padding: 10px 0;
             display: flex; justify-content: flex-start;
@@ -98,14 +95,15 @@
             border: 2px solid var(--border-blue); display: flex; justify-content: center;
             align-items: center; font-size: 1.5rem; font-weight: 900;
             box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
-            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            cursor: pointer; transition: 0.1s; -webkit-tap-highlight-color: transparent;
         }
+        .block:active { transform: scale(0.9); }
         .block.taken { box-shadow: inset 3px 3px 6px var(--shadow-dark); border-color: #cbd5e0; }
 
         .x-color { background: var(--x-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .o-color { background: var(--o-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* WIN LINE ANIMATION */
+        /* WIN LINE */
         .win-line {
             position: absolute; z-index: 10; background: var(--gold-grad);
             height: 10px; border-radius: 10px; box-shadow: 0 0 15px rgba(184, 134, 11, 0.6);
@@ -128,8 +126,7 @@
 
     <div id="overlay">
         <div class="selection-card">
-            <h2>PILIH SIMBOL ANDA</h2>
-            <p>Player 1 memilih dahulu</p>
+            <h2>PILIH SIMBOL</h2>
             <div class="choice-btns">
                 <button class="btn-choice x-color" onclick="startGame('X')">X</button>
                 <button class="btn-choice o-color" onclick="startGame('O')">O</button>
@@ -162,9 +159,36 @@
     <button class="reset" onclick="resetBoard()">Ulang Game</button>
 
     <script>
+        // --- AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(freq, type, duration, vol) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playClickSound() {
+            playSound(400, 'sine', 0.1, 0.1);
+        }
+
+        function playWinSound() {
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, i) => {
+                setTimeout(() => playSound(freq, 'triangle', 0.5, 0.1), i * 150);
+            });
+        }
+
+        // --- GAME LOGIC ---
         const GRID_SIZE = 10;
         const WIN_COUNT = 5;
-        let p1Symbol = 'X';
         let currentPlayer = 'X';
         let gameState = [];
         let gameActive = false;
@@ -174,12 +198,13 @@
         const lineContainer = document.getElementById('line-container');
         const overlay = document.getElementById('overlay');
 
+        document.documentElement.style.setProperty('--grid-count', GRID_SIZE);
+
         function startGame(choice) {
-            p1Symbol = choice;
-            currentPlayer = 'X'; // X selalu jalan duluan sesuai standar
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            playClickSound();
             overlay.style.opacity = '0';
             setTimeout(() => overlay.style.display = 'none', 500);
-            gameActive = true;
             resetBoard();
         }
 
@@ -187,10 +212,10 @@
             gameActive = true;
             currentPlayer = 'X';
             gameState = Array(GRID_SIZE * GRID_SIZE).fill("");
+            document.getElementById('status-box').innerHTML = `Giliran: <span class="x-color" id="active-player">X</span>`;
             updateStatus();
             lineContainer.innerHTML = "";
             boardElement.innerHTML = "";
-            
             for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
                 const block = document.createElement('div');
                 block.classList.add('block');
@@ -203,6 +228,7 @@
         function handleMove(index, el) {
             if (gameState[index] !== "" || !gameActive) return;
 
+            playClickSound();
             gameState[index] = currentPlayer;
             el.innerHTML = `<span class="${currentPlayer === 'X' ? 'x-color' : 'o-color'}">${currentPlayer}</span>`;
             el.classList.add('taken');
@@ -212,6 +238,7 @@
                 gameActive = false;
                 scores[currentPlayer]++;
                 updateScoreDisplay();
+                playWinSound();
                 drawWin(winData.cells);
                 return;
             }
@@ -222,8 +249,10 @@
 
         function updateStatus() {
             const activeSpan = document.getElementById('active-player');
-            activeSpan.textContent = currentPlayer;
-            activeSpan.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
+            if(activeSpan) {
+                activeSpan.textContent = currentPlayer;
+                activeSpan.className = currentPlayer === 'X' ? 'x-color' : 'o-color';
+            }
         }
 
         function updateScoreDisplay() {
@@ -235,7 +264,6 @@
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             const dirs = [{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:-1}];
-
             for (let d of dirs) {
                 let cells = [index];
                 [1, -1].forEach(s => {
@@ -253,32 +281,22 @@
         function drawWin(cells) {
             cells.sort((a,b) => a-b);
             cells.forEach(idx => document.querySelector(`[data-index="${idx}"]`).classList.add('winner-cell'));
-
             const bRect = boardElement.getBoundingClientRect();
             const start = document.querySelector(`[data-index="${cells[0]}"]`).getBoundingClientRect();
             const end = document.querySelector(`[data-index="${cells[cells.length-1]}"]`).getBoundingClientRect();
-
             const x1 = (start.left + start.width/2) - bRect.left;
             const y1 = (start.top + start.height/2) - bRect.top;
             const x2 = (end.left + end.width/2) - bRect.left;
             const y2 = (end.top + end.height/2) - bRect.top;
-
             const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
             const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
-
             const line = document.createElement('div');
             line.className = 'win-line';
-            line.style.left = `${x1}px`;
-            line.style.top = `${y1}px`;
-            line.style.width = `${dist}px`;
-            line.style.transform = `rotate(${angle}deg)`;
+            line.style.left = `${x1}px`; line.style.top = `${y1}px`;
+            line.style.width = `${dist}px`; line.style.transform = `rotate(${angle}deg)`;
             lineContainer.appendChild(line);
-
             document.getElementById('status-box').innerHTML = `<span style="background:var(--gold-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${currentPlayer} MENANG!</span>`;
         }
-
-        // Jalankan board kosong di awal sebagai latar belakang
-        document.documentElement.style.setProperty('--grid-count', GRID_SIZE);
     </script>
 </body>
 </html>
