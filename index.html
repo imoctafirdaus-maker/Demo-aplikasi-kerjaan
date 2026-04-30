@@ -4,13 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Retro Board Game Collection - 1888</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <link rel="icon" type="image/png" href="1777546745740.png">
-    <link rel="apple-touch-icon" href="1777546745740.png">
-
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -52,10 +45,6 @@
             border-radius: 5px; text-align: center; width: 95%; max-width: 400px;
             box-shadow: 0 0 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.5);
         }
-        .app-logo {
-            width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--brass);
-            margin-bottom: 10px; object-fit: cover; box-shadow: var(--shadow-out);
-        }
         .name-input {
             width: 100%; padding: 10px; border: none; background: #2a1b12; color: var(--paper);
             margin-bottom: 15px; box-shadow: var(--shadow-in); outline: none; text-align: center; font-family: 'Special Elite';
@@ -66,7 +55,7 @@
             color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px;
             box-shadow: var(--shadow-out); transition: 0.2s; font-family: 'Cinzel';
         }
-        .btn-choice:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; opacity: 0.6; }
+        .btn-choice:disabled { background: #333; color: #666; cursor: not-allowed; opacity: 0.6; }
         .btn-choice:active:not(:disabled) { transform: scale(0.95); box-shadow: var(--shadow-in); }
         .btn-game-select { width: 100%; margin: 8px 0; font-size: 1rem; border: 2px solid var(--brass); }
 
@@ -89,6 +78,7 @@
         }
         .flipped-camera { transform: rotateX(25deg) rotateZ(180deg) !important; }
 
+        /* Ukuran kotak XOXO agar muat di layar HP */
         .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 2px; max-width: 90vw; }
         .board-chess { display: grid; grid-template-columns: repeat(8, 11vw); grid-template-rows: repeat(8, 11vw); gap: 0; max-width: 90vw; background: #000; }
 
@@ -113,6 +103,7 @@
             box-shadow: 0 0 15px #ff4500; animation: fire-flicker 0.2s infinite alternate; transform-origin: left center;
         }
 
+        /* --- QR MODAL --- */
         #qr-modal {
             display: none; position: fixed; top:0; left:0; width:100%; height:100%;
             background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center;
@@ -127,7 +118,6 @@
 
     <div id="overlay">
         <div class="card-vintage">
-            <img src="1000041752.png" alt="Logo" class="app-logo">
             <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 15px; font-size: 1.5rem;">GRAND LOBBY</h1>
             <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA..." maxlength="10">
             
@@ -171,11 +161,6 @@
     <button id="music-toggle" onclick="toggleMusic()">🎵 POPCAT: ON</button>
 
     <script>
-        // PWA Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
-        }
-
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -188,6 +173,7 @@
         firebase.initializeApp(firebaseConfig);
         let db = null;
 
+        // --- AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let musicPlaying = true;
         const notes = {'C4':261,'D4':293,'E4':329,'F4':349,'G4':392,'A4':440,'B4':493,'C5':523,'D5':587,'E5':659,'G5':783};
@@ -215,6 +201,7 @@
             document.getElementById('music-toggle').innerText = musicPlaying ? "🎵 POPCAT: ON" : "🔇 POPCAT: OFF"; 
         }
 
+        // --- QR CODE LOGIC ---
         function showQR() {
             document.getElementById('qr-modal').style.display = 'flex';
             document.getElementById('qrcode').innerHTML = "";
@@ -230,6 +217,7 @@
             link.href = img.src; link.download = 'Game1888_QR.png'; link.click();
         }
 
+        // --- GAME CORE ---
         let currentGame = ""; let myRole = ""; let myName = ""; let turn = ""; let currentBoardState = {}; let isGameOver = false;
 
         function selectGame(game) {
@@ -239,9 +227,11 @@
             db = firebase.database().ref('multi_game_v1/' + game);
             document.getElementById('role-select').style.display = 'block';
             
+            // Sync status tombol pemilihan peran
             db.child('names').on('value', s => {
                 const names = s.val() || {};
                 const b1 = document.getElementById('btn1'), b2 = document.getElementById('btn2');
+                
                 if(game === 'XOXO') {
                     document.getElementById('role-text').innerText = "PILIH KUBURAN:";
                     b1.innerText = "PIHAK X"; b2.innerText = "PIHAK O";
@@ -322,6 +312,7 @@
                     const win = s.val();
                     document.getElementById('status').innerHTML = `<b style="color:var(--brass)">${win.name.toUpperCase()} MENANG!</b>`;
                     if(win.line) drawWinLine(win.line);
+                    // Auto reset setelah 3 detik
                     setTimeout(() => { if(myRole === win.player) requestReset(); }, 3000);
                 }
             });
@@ -359,6 +350,7 @@
             document.getElementById('line-container').innerHTML = ""; isGameOver = false;
         }
 
+        // --- CHESS LOGIC (Simplified) ---
         const chessPieces = { white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' }, black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' } };
         function initChess() {
             const board = document.getElementById('main-board');
