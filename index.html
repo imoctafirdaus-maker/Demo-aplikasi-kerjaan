@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Toe Online Gold Fire</title>
+    <title>Tic-Tac-Toe Online Fire</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
@@ -20,10 +20,9 @@
             --grid-count: 10;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
         body { background-color: var(--bg-color); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px 10px; overflow-x: hidden; }
 
-        /* SELECTION OVERLAY */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color); z-index: 100; display: flex; justify-content: center; align-items: center;
@@ -33,21 +32,14 @@
             box-shadow: 15px 15px 30px var(--shadow-dark), -15px -15px 30px var(--shadow-light);
             text-align: center; width: 90%; max-width: 350px;
         }
-        .choice-btns { display: flex; gap: 20px; justify-content: center; margin-top: 25px; }
-        .btn-choice {
-            width: 70px; height: 70px; border-radius: 20px; border: 3px solid var(--border-blue);
-            font-size: 2rem; font-weight: 900; background: var(--bg-color);
-            box-shadow: 5px 5px 10px var(--shadow-dark); cursor: pointer;
-        }
 
-        /* SCORE & STATUS */
         .status-card {
             background: var(--bg-color); padding: 12px 25px; border-radius: 50px;
             box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
-            margin-bottom: 20px; font-weight: 800; font-size: 0.9rem;
+            margin-bottom: 20px; font-weight: 800;
         }
 
-        .viewport-container { width: 100%; overflow-x: auto; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
+        .viewport-container { width: 100%; overflow-x: auto; padding-bottom: 20px; }
         .board-wrapper { position: relative; padding: 20px; display: inline-block; }
         .board {
             display: grid; grid-template-columns: repeat(var(--grid-count), 1fr);
@@ -60,29 +52,29 @@
             width: 50px; height: 50px; background: var(--bg-color); border-radius: 10px;
             border: 2px solid var(--border-blue); display: flex; justify-content: center;
             align-items: center; font-size: 1.4rem; font-weight: 900;
-            box-shadow: 3px 3px 6px var(--shadow-dark); -webkit-tap-highlight-color: transparent;
+            box-shadow: 3px 3px 6px var(--shadow-dark);
         }
-        .block.taken { box-shadow: inset 2px 2px 5px var(--shadow-dark); border-color: #cbd5e0; }
 
         .x-color { background: var(--x-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .o-color { background: var(--o-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* FIRE WIN LINE */
+        /* WIN LINE EMAS API */
         .win-line {
             position: absolute; z-index: 10; background: var(--gold-fire);
-            background-size: 200% auto; height: 10px; border-radius: 10px;
+            background-size: 200% auto; height: 12px; border-radius: 20px;
             transform-origin: 0 50%; pointer-events: none;
-            box-shadow: 0 0 15px #ff4500, 0 0 5px #ffd700;
+            box-shadow: 0 0 20px #ff4500, 0 0 10px #ffd700;
             animation: draw 0.6s ease-out forwards, shimmer 1.5s infinite linear;
         }
-        @keyframes draw { from { width: 0; } }
+        @keyframes draw { from { width: 0; opacity: 0; } to { opacity: 1; } }
         @keyframes shimmer { to { background-position: 200% center; } }
 
-        button.reset-btn {
-            margin-top: 10px; padding: 12px 30px; border: none; border-radius: 50px;
-            background: var(--bg-color); box-shadow: 5px 5px 10px var(--shadow-dark);
-            color: #e53e3e; font-weight: 800; cursor: pointer;
+        .winner-cell {
+            background: #fff5e6 !important;
+            border-color: #ff8c00 !important;
+            animation: burn 0.5s infinite alternate;
         }
+        @keyframes burn { from { transform: scale(1); } to { transform: scale(1.1); } }
     </style>
 </head>
 <body>
@@ -90,15 +82,14 @@
     <div id="overlay">
         <div class="selection-card">
             <h2>PILIH PERAN</h2>
-            <p style="font-size: 0.8rem; color: #718096; margin-top: 5px;">Pilih X atau O untuk mulai</p>
-            <div class="choice-btns">
-                <button class="btn-choice x-color" onclick="pickRole('X')">X</button>
-                <button class="btn-choice o-color" onclick="pickRole('O')">O</button>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+                <button onclick="pickRole('X')" style="padding: 20px;" class="x-color">X</button>
+                <button onclick="pickRole('O')" style="padding: 20px;" class="o-color">O</button>
             </div>
         </div>
     </div>
 
-    <div class="status-card" id="info-status">Menghubungkan ke server...</div>
+    <div class="status-card" id="info">Menunggu...</div>
 
     <div class="viewport-container">
         <div class="board-wrapper">
@@ -107,10 +98,10 @@
         </div>
     </div>
 
-    <button class="reset-btn" onclick="resetGame()">RESET PAPAN</button>
+    <button onclick="resetGame()" style="padding: 10px 20px;">RESET GAME</button>
 
     <script>
-        // --- KONFIGURASI FIREBASE MILIKMU ---
+        // --- CONFIG FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -118,108 +109,102 @@
             projectId: "tic-tac-toe-api-5a2c0",
             storageBucket: "tic-tac-toe-api-5a2c0.firebasestorage.app",
             messagingSenderId: "820709850876",
-            appId: "1:820709850876:web:e07700750b3faccb412179",
-            measurementId: "G-DS69D453Z1"
+            appId: "1:820709850876:web:e07700750b3faccb412179"
         };
 
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('global_room');
+        const db = firebase.database().ref('game_room_1');
 
-        let myRole = null;
-        let currentTurn = 'X';
-        let gameActive = true;
+        let myRole = null, currentTurn = 'X', gameActive = true, grid = [];
         const GRID_SIZE = 10;
 
-        // Audio Engine Sederhana
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSfx(f, t, d, v) {
-            try {
-                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-                g.gain.setValueAtTime(v, audioCtx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
-                o.connect(g); g.connect(audioCtx.destination);
-                o.start(); o.stop(audioCtx.currentTime + d);
-            } catch(e) {}
-        }
-
         function pickRole(role) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             myRole = role;
             document.getElementById('overlay').style.display = 'none';
-            playSfx(440, 'sine', 0.2, 0.1);
-            initUI();
-            listenToServer();
+            initBoard();
+            listenToData();
         }
 
-        function initUI() {
+        function initBoard() {
+            grid = Array(100).fill("");
             const board = document.getElementById('game-board');
             board.innerHTML = "";
             for (let i = 0; i < 100; i++) {
                 const b = document.createElement('div');
-                b.className = 'block';
-                b.id = `c-${i}`;
-                b.onclick = () => handleTap(i);
+                b.className = 'block'; b.id = `c-${i}`;
+                b.onclick = () => { if(gameActive && currentTurn === myRole) db.child('cells/'+i).set(myRole); };
                 board.appendChild(b);
             }
         }
 
-        function handleTap(idx) {
-            if (!gameActive || currentTurn !== myRole) return;
-            
-            db.child('cells/' + idx).once('value', s => {
-                if (!s.exists()) {
-                    playSfx(600, 'sine', 0.1, 0.1);
-                    db.child('cells/' + idx).set(myRole);
-                    db.child('turn').set(myRole === 'X' ? 'O' : 'X');
-                }
-            });
-        }
-
-        function listenToServer() {
-            // Pantau Giliran
+        function listenToData() {
             db.child('turn').on('value', s => {
                 currentTurn = s.val() || 'X';
-                const info = document.getElementById('info-status');
-                if (currentTurn === myRole) {
-                    info.innerHTML = `GIRILAN ANDA (<span class="${myRole === 'X' ? 'x-color' : 'o-color'}">${myRole}</span>)`;
-                } else {
-                    info.innerHTML = `Menunggu lawan (${currentTurn})...`;
-                }
+                document.getElementById('info').innerHTML = currentTurn === myRole ? "GILIRAN ANDA!" : "Giliran Lawan...";
             });
 
-            // Pantau Gerakan
-            db.child('cells').on('child_added', s => {
-                const idx = s.key;
-                const val = s.val();
-                const el = document.getElementById(`c-${idx}`);
-                if (el) {
-                    el.innerHTML = `<span class="${val === 'X' ? 'x-color' : 'o-color'}">${val}</span>`;
-                    el.classList.add('taken');
-                }
-                checkWinnerLogic();
+            db.child('cells').on('value', s => {
+                const data = s.val() || {};
+                Object.keys(data).forEach(idx => {
+                    grid[idx] = data[idx];
+                    const el = document.getElementById(`c-${idx}`);
+                    if(el) el.innerHTML = `<span class="${grid[idx] === 'X' ? 'x-color' : 'o-color'}">${grid[idx]}</span>`;
+                });
+                checkWinnerLocally();
             });
 
-            // Pantau Reset
-            db.on('value', s => {
-                if (!s.hasChild('cells')) {
-                    gameActive = true;
-                    document.getElementById('line-container').innerHTML = "";
-                    initUI();
-                }
-            });
+            db.on('value', s => { if(!s.hasChild('cells')) { initBoard(); document.getElementById('line-container').innerHTML = ""; gameActive = true; } });
         }
 
-        function checkWinnerLogic() {
-            // Logic diletakkan di sini untuk mengecek 5 baris emas api
-            // Jika terdeteksi, panggil animasi drawWin
-        }
-
-        function resetGame() {
-            if(confirm("Bersihkan papan untuk semua pemain?")) {
-                db.remove();
+        function checkWinnerLocally() {
+            for (let i = 0; i < 100; i++) {
+                if (grid[i] === "") continue;
+                const winData = checkAt(i);
+                if (winData) {
+                    gameActive = false;
+                    drawWinEffect(winData.cells, grid[i]);
+                    break;
+                }
             }
         }
+
+        function checkAt(idx) {
+            const r = Math.floor(idx / 10), c = idx % 10, s = grid[idx];
+            const dirs = [{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:-1}];
+            for (let d of dirs) {
+                let combo = [idx];
+                [1, -1].forEach(dir => {
+                    let nr = r + d.y * dir, nc = c + d.x * dir;
+                    while(nr>=0 && nr<10 && nc>=0 && nc<10 && grid[nr*10+nc] === s) {
+                        combo.push(nr*10+nc); nr += d.y * dir; nc += d.x * dir;
+                    }
+                });
+                if (combo.length >= 5) return { cells: combo };
+            }
+            return null;
+        }
+
+        function drawWinEffect(cells, winner) {
+            cells.forEach(idx => document.getElementById(`c-${idx}`).classList.add('winner-cell'));
+            cells.sort((a,b) => a-b);
+            const b = document.getElementById('game-board').getBoundingClientRect();
+            const s = document.getElementById(`c-${cells[0]}`).getBoundingClientRect();
+            const e = document.getElementById(`c-${cells[cells.length-1]}`).getBoundingClientRect();
+            const x1 = (s.left+s.width/2)-b.left, y1 = (s.top+s.height/2)-b.top;
+            const x2 = (e.left+e.width/2)-b.left, y2 = (e.top+e.height/2)-b.top;
+            const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
+            const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+
+            const line = document.createElement('div');
+            line.className = 'win-line';
+            line.style.left = `${x1}px`; line.style.top = `${y1}px`;
+            line.style.width = `${dist}px`; line.style.transform = `rotate(${angle}deg)`;
+            document.getElementById('line-container').appendChild(line);
+            document.getElementById('info').innerHTML = `PEMENANG: ${winner}! 🔥`;
+            db.child('turn').set(winner); // Kunci giliran ke pemenang
+        }
+
+        function resetGame() { if(confirm("Reset Papan?")) db.remove(); }
     </script>
 </body>
 </html>
