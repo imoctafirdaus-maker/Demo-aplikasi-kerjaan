@@ -13,7 +13,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Special+Elite&display=swap');
@@ -31,7 +30,7 @@
             display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden;
         }
 
-        /* --- LOBBY --- */
+        /* --- UI ELEMENTS --- */
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .card-vintage { background: var(--wood-light); padding: 25px; border: 8px double var(--brass); border-radius: 5px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         .app-logo { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--brass); margin-bottom: 10px; object-fit: cover; }
@@ -39,21 +38,28 @@
         .name-input { width: 100%; padding: 12px; background: #2a1b12; color: var(--paper); border: none; margin-bottom: 15px; text-align: center; font-family: 'Special Elite'; box-shadow: var(--shadow-in); outline: none; }
         .btn-choice { padding: 12px 15px; border: 1px solid var(--brass); background: var(--wood-light); color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px; font-family: 'Cinzel'; width: 100%; margin-top: 10px; transition: 0.2s; box-shadow: var(--shadow-out); }
         .btn-choice:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; opacity: 0.6; box-shadow: none; }
-        .btn-choice:active:not(:disabled) { transform: scale(0.98); box-shadow: var(--shadow-in); }
+        
+        /* Tombol Refresh Melayang */
+        #btn-refresh { 
+            position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; 
+            background: var(--wood-light); border: 2px solid var(--brass); color: var(--brass);
+            border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;
+            box-shadow: var(--shadow-out); z-index: 100; font-size: 20px;
+        }
+        #btn-refresh:active { transform: rotate(90deg); transition: 0.2s; }
 
-        /* --- GAME BOARD --- */
-        .board-wrapper { transform: rotateX(25deg); perspective: 1200px; background: var(--wood-dark); padding: 10px; border-radius: 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); margin-top: 10px; }
+        /* --- BOARD --- */
+        .board-wrapper { transform: rotateX(20deg); perspective: 1200px; background: var(--wood-dark); padding: 10px; border-radius: 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); margin-top: 5px; }
         .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 2px; }
         .block { width: 100%; height: 100%; background: var(--wood-light); display: flex; justify-content: center; align-items: center; font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out); }
         .x-icon { color: #d32f2f; font-size: 5vw; font-weight: bold; } 
         .o-icon { color: var(--brass); font-size: 5vw; font-weight: bold; }
-        .win-line { position: absolute; z-index: 100; background: var(--gold-fire); height: 6px; border-radius: 10px; transform-origin: left center; animation: fire-flicker 0.2s infinite alternate; }
-
-        @keyframes fire-flicker { from { opacity: 0.8; } to { opacity: 1; } }
-        #status { margin: 15px 0; font-size: 0.8rem; text-transform: uppercase; color: var(--brass); }
+        #status { margin: 20px 0 10px 0; font-size: 0.8rem; text-transform: uppercase; color: var(--brass); }
     </style>
 </head>
 <body>
+
+    <button id="btn-refresh" onclick="resetGame()" title="Reset Papan">↻</button>
 
     <div id="overlay">
         <div class="card-vintage">
@@ -77,14 +83,11 @@
 
     <div class="board-wrapper">
         <div id="main-board" class="board-xoxo"></div>
-        <div id="line-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
     </div>
 
     <script>
-        // PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
-        }
+        // PWA & Firebase Setup
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
 
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
@@ -107,12 +110,6 @@
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
 
-        function playWinSound() {
-            [440, 554, 659, 880].forEach((f, i) => {
-                setTimeout(() => playSound(f, 0.4, 'square'), i * 150);
-            });
-        }
-
         // --- GAME LOGIC ---
         let myRole = "", turn = "", myName = "", isGameOver = false;
 
@@ -121,26 +118,19 @@
             if(!n) return alert("MASUKKAN NAMA!");
             myName = n;
             db = firebase.database().ref('multi_game_v1/' + game);
-            
-            // Sembunyikan tombol utama, munculkan pilihan peran
             document.getElementById('main-select-btn').style.display = 'none';
             document.getElementById('role-select').style.display = 'block';
 
-            // Sinkronisasi tombol peran (Lock Role jika sudah ada orang)
             db.child('names').on('value', s => {
                 const names = s.val() || {};
-                const b1 = document.getElementById('btn1'), b2 = document.getElementById('btn2');
-                b1.disabled = !!names.X;
-                b2.disabled = !!names.O;
+                document.getElementById('btn1').disabled = !!names.X;
+                document.getElementById('btn2').disabled = !!names.O;
             });
         }
 
         function confirmStart(choice) {
             myRole = choice === 1 ? 'X' : 'O';
-            
-            // Daftarkan nama ke Firebase untuk mengunci peran
             db.child('names/' + myRole).set(myName);
-            
             document.getElementById('overlay').style.display = 'none';
             initBoard();
             syncGame();
@@ -152,8 +142,7 @@
             board.innerHTML = "";
             for(let i=0; i<100; i++) {
                 const b = document.createElement('div'); 
-                b.className = 'block';
-                b.id = `block-${i}`;
+                b.className = 'block'; b.id = `block-${i}`;
                 b.onclick = () => {
                     if(turn === myRole && !isGameOver) {
                         db.child('cells/' + i).once('value', snapshot => {
@@ -169,31 +158,37 @@
             }
         }
 
+        function resetGame() {
+            if(!db) return;
+            if(confirm("BERSIHKAN PAPAN PERMAINAN?")) {
+                db.child('cells').remove();
+                db.child('winner').remove();
+                db.child('turn').set('X');
+                isGameOver = false;
+                playSound(300, 0.3);
+            }
+        }
+
         function syncGame() {
-            // Sinkronisasi Sel
             db.child('cells').on('value', s => {
                 const cells = s.val() || {};
+                // Reset visual sebelum update
+                document.querySelectorAll('.block').forEach(b => b.innerHTML = "");
                 Object.keys(cells).forEach(idx => {
                     const el = document.getElementById(`block-${idx}`);
-                    if(el) {
-                        el.innerHTML = `<span class="${cells[idx]==='X'?'x-icon':'o-icon'}">${cells[idx]}</span>`;
-                    }
+                    if(el) el.innerHTML = `<span class="${cells[idx]==='X'?'x-icon':'o-icon'}">${cells[idx]}</span>`;
                 });
             });
 
-            // Sinkronisasi Giliran
             db.child('turn').on('value', s => {
                 turn = s.val() || 'X';
                 document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
             });
 
-            // Sinkronisasi Pemenang
             db.child('winner').on('value', s => {
                 if(s.exists()) {
                     isGameOver = true;
-                    playWinSound();
-                    const win = s.val();
-                    document.getElementById('status').innerHTML = `<b style="color:gold">${win.name.toUpperCase()} MENANG!</b>`;
+                    document.getElementById('status').innerHTML = `<b style="color:gold">${s.val().name.toUpperCase()} MENANG!</b>`;
                 }
             });
         }
