@@ -14,13 +14,15 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Special+Elite&display=swap');
 
         :root {
-            --wood-dark: #3d2b1f; --wood-light: #5d4037; --brass: #b7950b;
-            --paper: #d7ccc8; --shadow-out: 4px 4px 8px rgba(0,0,0,0.4); --shadow-in: inset 4px 4px 8px rgba(0,0,0,0.5);
+            --wood-dark: #3d2b1f; --wood-light: #5d4037; --brass: #b7950b; --brass-dark: #7d6608;
+            --paper: #d7ccc8; --gold-fire: linear-gradient(90deg, #ff4500, #ffd700, #ffffff, #ffd700, #ff4500);
+            --shadow-out: 4px 4px 8px rgba(0,0,0,0.4); --shadow-in: inset 4px 4px 8px rgba(0,0,0,0.5);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
@@ -28,29 +30,82 @@
             background: radial-gradient(circle, #2c1e16 0%, #1a0f0a 100%);
             color: var(--paper); font-family: 'Special Elite', cursive;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden;
+            user-select: none;
         }
 
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-        .card-vintage { background: var(--wood-light); padding: 25px; border: 8px double var(--brass); border-radius: 5px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
-        
-        /* Logo Fix */
-        .app-logo { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--brass); margin-bottom: 10px; object-fit: cover; }
-        
-        .name-input { width: 100%; padding: 12px; background: #2a1b12; color: var(--paper); border: none; margin-bottom: 15px; text-align: center; font-family: 'Special Elite'; box-shadow: var(--shadow-in); outline: none; border-bottom: 2px solid var(--brass); }
-        .btn-choice { padding: 12px; border: 1px solid var(--brass); background: var(--wood-light); color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 5px; font-family: 'Cinzel'; width: 100%; margin-top: 10px; box-shadow: var(--shadow-out); }
-        .btn-choice:disabled { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-        
-        .role-container { display: flex; gap: 10px; margin-top: 10px; }
-        .role-container button { flex: 1; font-size: 0.7rem; }
+        /* --- MENU LOBBY (Retro Tampilan Lama) --- */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000; 
+            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);
+        }
+        .card-vintage {
+            background: var(--wood-light); padding: 25px; border: 8px double var(--brass);
+            border-radius: 5px; text-align: center; width: 95%; max-width: 400px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        /* Ikon Logo Fix */
+        .app-logo {
+            width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--brass);
+            margin-bottom: 10px; object-fit: cover; box-shadow: var(--shadow-out);
+        }
+        .name-input {
+            width: 100%; padding: 10px; border: none; background: #2a1b12; color: var(--paper);
+            margin-bottom: 15px; box-shadow: var(--shadow-in); outline: none; text-align: center; font-family: 'Special Elite';
+        }
 
+        .btn-choice {
+            padding: 10px 15px; border: 1px solid var(--brass-dark); background: var(--wood-light);
+            color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px;
+            box-shadow: var(--shadow-out); transition: 0.2s; font-family: 'Cinzel';
+        }
+        .btn-choice:disabled { background: #333; color: #666; cursor: not-allowed; opacity: 0.6; }
+        .btn-game-select { width: 100%; margin: 8px 0; font-size: 1rem; border: 2px solid var(--brass); }
+
+        /* --- SCOREBOARD --- */
+        .scoreboard { 
+            display: flex; gap: 10px; margin: 10px 0; width: 100%; max-width: 450px; 
+            padding: 5px; border-bottom: 2px solid var(--brass-dark);
+        }
+        .score-box { flex: 1; text-align: center; padding: 5px; background: var(--wood-dark); border-radius: 10px; box-shadow: var(--shadow-in); font-size: 0.8rem; }
+        .score-box b { font-size: 1.2rem; color: var(--brass); font-family: 'Cinzel'; }
+
+        /* --- BOARDS (3D Viewport Kembali) --- */
+        .viewport-container { width: 100%; display: flex; justify-content: center; align-items: center; perspective: 1200px; }
+        
+        .board-wrapper { 
+            position: relative; padding: 10px; background: var(--wood-dark); 
+            border: 6px solid #2a1b12; border-radius: 8px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            transform: rotateX(25deg); transition: transform 0.8s; transform-style: preserve-3d;
+        }
+
+        /* Ukuran papan 3D di HP */
+        .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 2px; max-width: 90vw; }
+        .block { 
+            width: 100%; height: 100%; background: var(--wood-light); border-radius: 2px;
+            display: flex; justify-content: center; align-items: center; 
+            font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out);
+        }
+
+        .x-icon { color: #ff4444; font-weight: bold; font-size: 5vw; text-shadow: 1px 1px 2px black; }
+        .o-icon { color: var(--brass); font-weight: bold; font-size: 5vw; text-shadow: 1px 1px 2px black; }
+
+        .win-line { 
+            position: absolute; z-index: 100; background: var(--gold-fire); 
+            height: 6px; border-radius: 10px; pointer-events: none;
+            box-shadow: 0 0 15px #ff4500; animation: fire-flicker 0.2s infinite alternate; transform-origin: left center;
+        }
+
+        #qr-modal {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center;
+        }
+        #qrcode { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+
+        @keyframes fire-flicker { from { opacity: 0.8; } to { opacity: 1; } }
+        #status { font-size: 0.7rem; margin-bottom: 5px; color: var(--paper); text-transform: uppercase; }
         #btn-refresh { position: fixed; top: 15px; right: 15px; width: 40px; height: 40px; background: var(--wood-light); border: 2px solid var(--brass); color: var(--brass); border-radius: 50%; z-index: 100; font-size: 20px; cursor: pointer; }
-
-        #status { margin: 60px 0 10px 0; font-size: 0.75rem; color: var(--brass); letter-spacing: 1px; font-weight: bold; text-transform: uppercase; }
-        .board-wrapper { transform: rotateX(15deg); perspective: 1000px; background: var(--wood-dark); padding: 8px; border-radius: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
-        .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.8vw); grid-template-rows: repeat(10, 8.8vw); gap: 1px; background: var(--brass); border: 1px solid var(--brass); }
-        .block { background: var(--wood-light); display: flex; justify-content: center; align-items: center; cursor: pointer; }
-        .x-icon { color: #ff4444; font-size: 5vw; font-weight: bold; } 
-        .o-icon { color: var(--brass); font-size: 5vw; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -60,12 +115,15 @@
     <div id="overlay">
         <div class="card-vintage">
             <img src="1777546745740.png" alt="Logo" class="app-logo">
-            <h1 style="color: var(--brass); font-size: 1.2rem; margin-bottom: 15px; font-family: 'Cinzel';">GRAND LOBBY</h1>
-            <input type="text" id="inputNama" class="name-input" placeholder="Gelar Anda..." maxlength="10">
-            <button class="btn-choice" id="main-select-btn" onclick="selectGame('XOXO')">MASUK PERMAINAN</button>
+            <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 15px; font-size: 1.5rem;">GRAND LOBBY</h1>
+            <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA..." maxlength="10">
+            
+            <button class="btn-choice btn-game-select" onclick="selectGame('XOXO')">MASUK TIC-TAC-TOE (10x10)</button>
+            <button class="btn-choice btn-game-select" style="background: #1a0f0a;" onclick="showQR()">KODE QR</button>
+
             <div id="role-select" style="display:none; margin-top: 15px; border-top: 1px solid var(--brass); padding-top: 10px;">
-                <p style="font-size: 0.6rem; color: var(--brass);">PILIH PIHAK:</p>
-                <div class="role-container">
+                <p style="font-size: 0.7rem; color: var(--brass); margin-bottom: 5px;">PILIH KUBURAN:</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
                     <button id="btn1" class="btn-choice" onclick="confirmStart(1)">PIHAK X</button>
                     <button id="btn2" class="btn-choice" onclick="confirmStart(2)">PIHAK O</button>
                 </div>
@@ -73,13 +131,30 @@
         </div>
     </div>
 
-    <div id="status">PILIH PERAN DI LOBBY</div>
-    <div class="board-wrapper"><div id="main-board" class="board-xoxo"></div></div>
+    <div id="qr-modal">
+        <h2 style="color:var(--brass); margin-bottom:15px;">SCAN & PLAY</h2>
+        <div id="qrcode"></div>
+        <button class="btn-choice" style="color:red;" onclick="hideQR()">CLOSE</button>
+    </div>
+
+    <div class="scoreboard">
+        <div class="score-box"><span id="p1-name">Waiting...</span><br><b id="p1-score">0</b></div>
+        <div class="score-box" style="background:transparent; box-shadow:none; flex:0.1; color: var(--brass);">VS</div>
+        <div class="score-box"><span id="p2-name">Waiting...</span><br><b id="p2-score">0</b></div>
+    </div>
+
+    <div id="status">PILIH GAME DI LOBBY</div>
+
+    <div class="viewport-container">
+        <div id="main-board-perspective" class="board-wrapper">
+            <div id="main-board" class="board-xoxo"></div>
+            <div id="line-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+        </div>
+    </div>
 
     <script>
-        if ('serviceWorker' in navigator) { 
-            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); 
-        }
+        // PWA Registration
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
 
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
@@ -88,11 +163,34 @@
         };
         firebase.initializeApp(firebaseConfig);
         let db = null;
+
+        // --- AUDIO SYSTEM (Sintetis) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playPopSound(freq = 440, type = 'sine') {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // --- QR LOGIC ---
+        function showQR() {
+            document.getElementById('qr-modal').style.display = 'flex';
+            document.getElementById('qrcode').innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), { text: location.href, width: 200, height: 200 });
+        }
+        function hideQR() { document.getElementById('qr-modal').style.display = 'none'; }
+
+        // --- GAME LOGIC ---
         let myRole = "", turn = "", myName = "", isGameOver = false;
 
         function selectGame(game) {
             const n = document.getElementById('inputNama').value;
-            if(!n) return alert("Masukan Nama!");
+            if(!n) return alert("MASUKKAN NAMA!");
             myName = n;
             db = firebase.database().ref('multi_game_v1/' + game);
             document.getElementById('main-select-btn').style.display = 'none';
@@ -102,6 +200,7 @@
                 document.getElementById('btn1').disabled = !!names.X;
                 document.getElementById('btn2').disabled = !!names.O;
             });
+            playPopSound(300);
         }
 
         function confirmStart(choice) {
@@ -110,6 +209,7 @@
             document.getElementById('overlay').style.display = 'none';
             initBoard();
             syncGame();
+            playPopSound(440);
         }
 
         function initBoard() {
@@ -120,8 +220,9 @@
                 b.className = 'block'; b.id = `block-${i}`;
                 b.onclick = () => {
                     if(turn === myRole && !isGameOver) {
-                        db.child('cells/' + i).transaction(c => c === null ? myRole : undefined);
+                        db.child('cells/' + i).transaction(curr => curr === null ? myRole : undefined);
                         db.child('turn').set(myRole === 'X' ? 'O' : 'X');
+                        playPopSound(600);
                     }
                 };
                 board.appendChild(b);
@@ -132,12 +233,15 @@
             if(db && confirm("Reset Papan?")) {
                 db.child('cells').remove();
                 db.child('winner').remove();
+                db.child('scores').remove(); // Reset Skor
                 db.child('turn').set('X');
                 isGameOver = false;
+                playPopSound(200, 'square');
             }
         }
 
         function syncGame() {
+            // Sinkronisasi Sel
             db.child('cells').on('value', s => {
                 const cells = s.val() || {};
                 document.querySelectorAll('.block').forEach(b => b.innerHTML = "");
@@ -146,9 +250,35 @@
                     if(el) el.innerHTML = `<span class="${cells[idx]==='X'?'x-icon':'o-icon'}">${cells[idx]}</span>`;
                 });
             });
+
+            // Sinkronisasi Skor & Nama
+            db.child('names').on('value', s => {
+                const names = s.val() || {};
+                document.getElementById('p1-name').innerText = names.X || "Waiting...";
+                document.getElementById('p2-name').innerText = names.O || "Waiting...";
+            });
+            db.child('scores').on('value', s => {
+                const sc = s.val() || {};
+                document.getElementById('p1-score').innerText = sc.X || 0;
+                document.getElementById('p2-score').innerText = sc.O || 0;
+            });
+
+            // Sinkronisasi Giliran
             db.child('turn').on('value', s => {
                 turn = s.val() || 'X';
                 document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR...";
+            });
+
+            // Sinkronisasi Pemenang
+            db.child('winner').on('value', s => {
+                if(s.exists()) {
+                    isGameOver = true;
+                    document.getElementById('status').innerHTML = `<b style="color:var(--gold-fire)">${s.val().name.toUpperCase()} MENANG!</b>`;
+                    if(myRole === s.val().player) {
+                        db.child('scores/' + myRole).transaction(v => (v || 0) + 1);
+                        setTimeout(resetGame, 5000); // Auto reset setelah 5 detik
+                    }
+                }
             });
         }
     </script>
