@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>1888 Grand Chess - Fixed</title>
+    <title>1888 Grand Chess - Move Fixed</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
@@ -14,47 +14,56 @@
         body { 
             background: #1a0f0a; color: #d7ccc8; font-family: 'Special Elite', cursive;
             margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Overlay */
         #overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; 
             display: flex; justify-content: center; align-items: center;
         }
         .card {
             background: #5d4037; padding: 30px; border: 5px double #b7950b;
-            text-align: center; width: 300px;
+            text-align: center; width: 300px; box-shadow: 0 0 50px #000;
         }
 
-        /* Board 3D */
-        .scene { perspective: 1200px; margin: 40px 0; }
+        .scene { perspective: 1200px; margin: 20px 0; padding: 20px; }
         .board-wrapper { 
             transform-style: preserve-3d; transition: transform 1s;
-            border: 10px solid #3d2b1f; background: #000;
+            border: 12px solid #3d2b1f; background: #000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
         .angle-white { transform: rotateX(45deg) rotateZ(0deg); }
         .angle-black { transform: rotateX(45deg) rotateZ(180deg); }
 
-        .board { display: grid; grid-template-columns: repeat(8, 11vw); grid-template-rows: repeat(8, 11vw); }
-        @media (min-width: 600px) { .board { grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); } }
+        .board { display: grid; grid-template-columns: repeat(8, 11.5vw); grid-template-rows: repeat(8, 11.5vw); }
+        @media (min-width: 600px) { .board { grid-template-columns: repeat(8, 65px); grid-template-rows: repeat(8, 65px); } }
 
         .tile { 
-            display: flex; justify-content: center; align-items: center; font-size: 2.5rem; 
-            cursor: pointer; position: relative;
+            display: flex; justify-content: center; align-items: center; font-size: 2.8rem; 
+            cursor: pointer; position: relative; transition: 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
         .tile-light { background: #ecd9b9; }
         .tile-dark { background: #7d5a44; }
-        .tile-selected { background: #f1c40f !important; }
+        
+        /* Highlight seleksi */
+        .tile-selected { background: #f1c40f !important; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
+        .tile:active { opacity: 0.8; }
 
         .piece { 
             user-select: none; pointer-events: none; 
             filter: drop-shadow(0 3px 2px rgba(0,0,0,0.5));
+            z-index: 5;
         }
         .piece.white { color: #fff; text-shadow: 1px 1px 3px #000; }
         .piece.black { color: #000; }
         .flipped { transform: rotate(180deg); }
 
-        .status { color: #b7950b; font-weight: bold; margin: 10px; height: 20px; }
+        .status-bar { 
+            background: #3d2b1f; width: 100%; text-align: center; 
+            padding: 10px 0; border-bottom: 2px solid #b7950b;
+            color: #b7950b; font-family: 'Cinzel'; letter-spacing: 2px;
+        }
         .btn { 
             background: #3d2b1f; color: #b7950b; border: 1px solid #b7950b;
             padding: 10px; cursor: pointer; font-family: 'Cinzel'; width: 100%; margin: 5px 0;
@@ -65,14 +74,14 @@
 
     <div id="overlay">
         <div class="card">
-            <h2 style="font-family: 'Cinzel'; margin-top:0;">CHESS 1888</h2>
-            <input type="text" id="playerName" placeholder="Nama..." style="width:90%; padding:8px; margin-bottom:10px;">
-            <button class="btn" onclick="join('white')">MAIN PUTIH</button>
-            <button class="btn" onclick="join('black')">MAIN HITAM</button>
+            <h2 style="font-family: 'Cinzel'; margin-top:0; color:#b7950b;">GRAND CHESS 1888</h2>
+            <input type="text" id="playerName" placeholder="Gelar Anda..." style="width:90%; padding:8px; margin-bottom:15px; background:#1a0f0a; border:1px solid #b7950b; color:#fff; text-align:center;">
+            <button class="btn" onclick="join('white')">PIHAK PUTIH</button>
+            <button class="btn" onclick="join('black')">PIHAK HITAM</button>
         </div>
     </div>
 
-    <div class="status" id="status">MENGHUBUNGKAN...</div>
+    <div class="status-bar" id="status">MENGHUBUNGKAN...</div>
     
     <div class="scene">
         <div id="board-rotator" class="board-wrapper">
@@ -80,10 +89,12 @@
         </div>
     </div>
 
-    <button onclick="hardReset()" style="font-size: 10px; opacity: 0.5;">RESET PAKSA PAPAN</button>
+    <div style="margin-top: 10px; display: flex; gap: 10px;">
+        <button class="btn" style="width: auto; font-size: 12px;" onclick="hardReset()">RESET PAPAN</button>
+        <button class="btn" style="width: auto; font-size: 12px;" onclick="location.reload()">REFRESH</button>
+    </div>
 
     <script>
-        // Firebase Init
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -94,20 +105,18 @@
             appId: "1:820709850876:web:e07700750b3faccb412179"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('game_v3_fixed');
+        const db = firebase.database().ref('game_v4_stable');
 
-        let myRole = ""; let turn = "white"; let boardData = {}; let selected = null;
+        let myRole = ""; let turn = "white"; let boardData = {}; let selectedIndex = null;
         const pieces = {
             white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
             black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' }
         };
 
         function join(role) {
-            const name = document.getElementById('playerName').value || "Guest";
             myRole = role;
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('board-rotator').className = 'board-wrapper angle-' + role;
-            
             initGrid();
             listen();
         }
@@ -120,7 +129,7 @@
                 const isDark = (Math.floor(i/8) + (i%8)) % 2 !== 0;
                 t.className = `tile ${isDark ? 'tile-dark' : 'tile-light'}`;
                 t.id = `t-${i}`;
-                t.onclick = () => clickTile(i);
+                t.addEventListener('click', () => handleInteraction(i));
                 grid.appendChild(t);
             }
         }
@@ -128,13 +137,19 @@
         function listen() {
             db.child('cells').on('value', s => {
                 boardData = s.val() || {};
-                // JIKA DATA KOSONG, ISI OTOMATIS
                 if (Object.keys(boardData).length === 0) hardReset();
                 draw();
             });
             db.child('turn').on('value', s => {
                 turn = s.val() || 'white';
-                document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "TUNGGU LAWAN...";
+                const statusEl = document.getElementById('status');
+                if(turn === myRole) {
+                    statusEl.innerText = "GILIRAN ANDA";
+                    statusEl.style.background = "#5d4037";
+                } else {
+                    statusEl.innerText = "MENUNGGU LAWAN...";
+                    statusEl.style.background = "#1a0f0a";
+                }
             });
         }
 
@@ -142,52 +157,83 @@
             for(let i=0; i<64; i++) {
                 const t = document.getElementById(`t-${i}`);
                 const p = boardData[i];
+                t.innerHTML = "";
                 if(p) {
                     const flip = (myRole === 'black') ? 'flipped' : '';
-                    t.innerHTML = `<span class="piece ${p.color} ${flip}">${pieces[p.color][p.type]}</span>`;
-                } else {
-                    t.innerHTML = "";
+                    const span = document.createElement('span');
+                    span.className = `piece ${p.color} ${flip}`;
+                    span.innerText = pieces[p.color][p.type];
+                    t.appendChild(span);
                 }
             }
         }
 
-        function clickTile(i) {
+        function handleInteraction(i) {
             if(turn !== myRole) return;
-            const p = boardData[i];
 
-            if(selected === null) {
-                if(p && p.color === myRole) {
-                    selected = i;
+            const clickedPiece = boardData[i];
+
+            // 1. Jika belum ada yang dipilih
+            if (selectedIndex === null) {
+                if (clickedPiece && clickedPiece.color === myRole) {
+                    selectedIndex = i;
+                    clearHighlights();
                     document.getElementById(`t-${i}`).classList.add('tile-selected');
                 }
-            } else {
-                if(i !== selected) move(selected, i);
-                document.getElementById(`t-${selected}`).classList.remove('tile-selected');
-                selected = null;
+            } 
+            // 2. Jika klik petak yang sama (Batal pilih)
+            else if (selectedIndex === i) {
+                selectedIndex = null;
+                clearHighlights();
+            }
+            // 3. Jika sudah ada yang dipilih dan klik petak tujuan
+            else {
+                // Jika klik bidak sendiri lagi, ganti pilihan
+                if (clickedPiece && clickedPiece.color === myRole) {
+                    selectedIndex = i;
+                    clearHighlights();
+                    document.getElementById(`t-${i}`).classList.add('tile-selected');
+                } else {
+                    executeMove(selectedIndex, i);
+                    selectedIndex = null;
+                    clearHighlights();
+                }
             }
         }
 
-        function move(from, to) {
-            // Logika Gerak Sederhana (Bisa ditambah validasi per bidak di sini)
+        function executeMove(from, to) {
             const p = boardData[from];
+            
+            // Validasi Gerak Dasar: Jangan makan teman sendiri
+            if (boardData[to] && boardData[to].color === myRole) return;
+
             const updates = {};
             updates[`cells/${from}`] = null;
             updates[`cells/${to}`] = p;
             updates[`turn`] = (myRole === 'white' ? 'black' : 'white');
-            db.update(updates);
+            
+            db.update(updates).catch(err => alert("Koneksi gagal!"));
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.tile').forEach(t => t.classList.remove('tile-selected'));
         }
 
         function hardReset() {
-            const start = {};
-            const layout = ['r','n','b','q','k','b','n','r'];
-            for(let i=0; i<8; i++) {
-                start[i] = { type: layout[i], color: 'black' };
-                start[8+i] = { type: 'p', color: 'black' };
-                start[48+i] = { type: 'p', color: 'white' };
-                start[56+i] = { type: layout[i], color: 'white' };
+            if(confirm("Atur ulang semua bidak?")) {
+                const start = {};
+                const layout = ['r','n','b','q','k','b','n','r'];
+                for(let i=0; i<8; i++) {
+                    start[i] = { type: layout[i], color: 'black' };
+                    start[8+i] = { type: 'p', color: 'black' };
+                    start[48+i] = { type: 'p', color: 'white' };
+                    start[56+i] = { type: layout[i], color: 'white' };
+                }
+                db.set({
+                    cells: start,
+                    turn: 'white'
+                });
             }
-            db.child('cells').set(start);
-            db.child('turn').set('white');
         }
     </script>
 </body>
