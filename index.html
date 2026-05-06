@@ -13,100 +13,98 @@
 
         :root {
             --wood-dark: #3d2b1f; --wood-light: #5d4037; --brass: #b7950b;
-            --paper: #d7ccc8; --shadow-out: 4px 4px 15px rgba(0,0,0,0.6);
+            --paper: #d7ccc8;
         }
 
         body { 
             background: radial-gradient(circle, #2c1e16 0%, #000 100%);
             color: var(--paper); font-family: 'Special Elite', cursive;
             display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; margin: 0; overflow: hidden;
+            min-height: 100vh; margin: 0; overflow-x: hidden;
         }
 
         /* Overlay & UI */
         #overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; 
             display: flex; justify-content: center; align-items: center; backdrop-filter: blur(10px);
         }
         .card-vintage {
             background: var(--wood-light); padding: 30px; border: 8px double var(--brass);
             border-radius: 5px; text-align: center; width: 90%; max-width: 400px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
         .btn-choice {
             padding: 12px; border: 1px solid var(--brass); background: var(--wood-dark);
             color: var(--brass); font-family: 'Cinzel'; cursor: pointer; margin: 5px; width: 100%;
-            transition: 0.3s;
+            transition: 0.3s; font-weight: bold;
         }
-        .btn-choice:hover:not(:disabled) { background: var(--brass); color: #000; }
+        .btn-choice:hover { background: var(--brass); color: #000; }
 
-        /* Score & Status */
-        .scoreboard { display: flex; gap: 20px; padding: 15px; width: 100%; max-width: 500px; z-index: 10; }
-        .score-box { flex: 1; text-align: center; background: rgba(0,0,0,0.5); padding: 10px; border: 1px solid var(--brass); border-radius: 5px; }
-        #status { color: var(--brass); margin: 10px; font-weight: bold; text-shadow: 0 0 10px gold; }
+        /* Scoreboard */
+        .scoreboard { display: flex; gap: 15px; padding: 15px; width: 100%; max-width: 500px; z-index: 10; }
+        .score-box { flex: 1; text-align: center; background: rgba(0,0,0,0.6); padding: 8px; border: 1px solid var(--brass); border-radius: 5px; }
+        #status { color: var(--brass); margin: 10px; font-weight: bold; text-shadow: 0 0 8px gold; height: 20px; }
 
-        /* 3D Board Styling */
+        /* 3D Board */
         .viewport-container { 
-            perspective: 1200px; padding: 40px 0; 
-            width: 100vw; height: 60vh; display: flex; justify-content: center; align-items: center;
+            perspective: 1500px; padding: 50px 0; 
+            width: 100%; display: flex; justify-content: center; align-items: center;
         }
         .board-wrapper { 
-            position: relative; 
-            transform-style: preserve-3d;
+            position: relative; transform-style: preserve-3d;
             transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-            background: #2a1b12; border: 15px solid #1a0f0a;
+            background: #2a1b12; border: 12px solid #1a0f0a;
             box-shadow: 0 50px 100px rgba(0,0,0,0.9);
         }
         
-        /* Camera Angles */
-        .angle-white { transform: rotateX(45deg) rotateZ(0deg); }
-        .angle-black { transform: rotateX(45deg) rotateZ(180deg); }
+        .angle-white { transform: rotateX(40deg) rotateZ(0deg); }
+        .angle-black { transform: rotateX(40deg) rotateZ(180deg); }
 
         .board-chess { 
             display: grid; grid-template-columns: repeat(8, 11vw); grid-template-rows: repeat(8, 11vw); 
-            max-width: 88vw; background: #000; border: 2px solid #000;
+            background: #000;
         }
         @media (min-width: 600px) { .board-chess { grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); } }
 
         .chess-tile { 
             width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; 
-            position: relative; transition: 0.2s; cursor: pointer;
+            font-size: 2.2rem; cursor: pointer; transition: 0.2s;
         }
-        .tile-light { background: #ecd9b9; color: #3d2b1f; }
-        .tile-dark { background: #7d5a44; color: #ecd9b9; }
-        .tile-highlight { box-shadow: inset 0 0 15px #ffeb3b !important; background: #c0ca33 !important; }
-        .tile-last-move { background: #9e9d24 !important; }
+        .tile-light { background: #ecd9b9; }
+        .tile-dark { background: #7d5a44; }
+        .tile-selected { background: #f1c40f !important; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
+        .tile-hint { position: relative; }
+        .tile-hint::after { content: ''; width: 15px; height: 15px; background: rgba(0,255,0,0.3); border-radius: 50%; position: absolute; }
 
         .piece { 
-            font-size: 2.5rem; cursor: grab; user-select: none;
-            filter: drop-shadow(0 5px 2px rgba(0,0,0,0.5));
-            transition: transform 0.3s; z-index: 5;
+            user-select: none; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.4));
+            transition: transform 0.3s; pointer-events: none;
         }
+        .piece.black { color: #000; }
+        .piece.white { color: #fff; text-shadow: 1px 1px 2px #000; }
         .piece-flipped { transform: rotate(180deg); }
         
-        /* Admin Controls */
-        .admin-controls { position: fixed; bottom: 20px; display: flex; gap: 10px; }
-        .btn-tiny { font-size: 0.7rem; padding: 5px 10px; width: auto; }
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
+        .btn-tiny { font-size: 0.65rem; width: auto; padding: 5px 15px; }
     </style>
 </head>
 <body>
 
     <div id="overlay">
         <div class="card-vintage">
-            <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 20px;">1888 CHESS 3D</h1>
-            <input type="text" id="inputNama" style="width:100%; padding:10px; margin-bottom:15px; background:#1a0f0a; border:1px solid var(--brass); color:white; text-align:center;" placeholder="Gelar Anda (Nama)...">
-            <div id="room-selection">
-                <button class="btn-choice" onclick="selectRole('white')">GABUNG SEBAGAI PUTIH</button>
-                <button class="btn-choice" onclick="selectRole('black')">GABUNG SEBAGAI HITAM</button>
-            </div>
+            <h2 style="font-family: 'Cinzel'; color: var(--brass);">1888 CHESS SALOON</h2>
+            <input type="text" id="inputNama" style="width:100%; padding:10px; margin:15px 0; background:#1a0f0a; border:1px solid var(--brass); color:white; text-align:center;" placeholder="NAMA ANDA...">
+            <button class="btn-choice" onclick="startAs('white')">PIHAK PUTIH</button>
+            <button class="btn-choice" onclick="startAs('black')">PIHAK HITAM</button>
         </div>
     </div>
 
     <div class="scoreboard">
-        <div class="score-box"><div id="p1-name">WAITING...</div><small>PUTIH</small></div>
-        <div class="score-box"><div id="p2-name">WAITING...</div><small>HITAM</small></div>
+        <div class="score-box"><small>PUTIH</small><br><b id="p1-name">-</b></div>
+        <div class="score-box"><small>HITAM</small><br><b id="p2-name">-</b></div>
     </div>
 
-    <div id="status">MENGHUBUNGKAN KE SERVER...</div>
+    <div id="status">MENGHUBUNGKAN...</div>
 
     <div class="viewport-container">
         <div id="board-perspective" class="board-wrapper">
@@ -114,12 +112,13 @@
         </div>
     </div>
 
-    <div class="admin-controls">
+    <div class="controls">
         <button class="btn-choice btn-tiny" onclick="requestReset()">🧹 RESET PAPAN</button>
         <button class="btn-choice btn-tiny" onclick="location.reload()">🔄 REFRESH</button>
     </div>
 
     <script>
+        // CONFIGURASI FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
             authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
@@ -130,91 +129,107 @@
             appId: "1:820709850876:web:e07700750b3faccb412179"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('chess_3d_v2');
+        const db = firebase.database().ref('chess_multiplayer_1888');
 
-        let myRole = ""; let myName = ""; let turn = "white";
-        let currentBoard = {}; let selectedTile = null;
+        let myRole = ""; 
+        let myName = ""; 
+        let turn = "white";
+        let currentBoard = {}; 
+        let selectedTile = null;
 
         const piecesChar = {
             white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
             black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' }
         };
 
-        function selectRole(role) {
+        function startAs(role) {
             const n = document.getElementById('inputNama').value;
-            if(!n) return alert("Masukkan nama!");
+            if(!n) return alert("Sebutkan Nama Anda!");
             myName = n; myRole = role;
             
             db.child('names/' + role).set(myName);
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('board-perspective').className = `board-wrapper angle-${role}`;
             
-            initBoard();
-            syncData();
+            initBoardUI();
+            listenFirebase();
         }
 
-        function initBoard() {
+        function initBoardUI() {
             const boardDiv = document.getElementById('main-board');
             boardDiv.innerHTML = "";
             for(let i=0; i<64; i++) {
                 const tile = document.createElement('div');
-                tile.className = `chess-tile ${(Math.floor(i/8)+(i%8))%2===0 ? 'tile-light' : 'tile-dark'}`;
+                const isDark = (Math.floor(i/8) + (i%8)) % 2 !== 0;
+                tile.className = `chess-tile ${isDark ? 'tile-dark' : 'tile-light'}`;
                 tile.id = `t-${i}`;
-                tile.onclick = () => handleMove(i);
+                tile.onclick = () => handleTileClick(i);
                 boardDiv.appendChild(tile);
             }
         }
 
-        function syncData() {
-            db.child('cells').on('value', s => { currentBoard = s.val() || {}; render(); });
+        function listenFirebase() {
+            db.child('cells').on('value', s => { 
+                currentBoard = s.val() || {}; 
+                if(Object.keys(currentBoard).length === 0) requestReset(); 
+                renderPieces(); 
+            });
             db.child('turn').on('value', s => { 
                 turn = s.val() || 'white';
-                document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA!" : "MENUNGGU LAWAN...";
+                updateStatus();
             });
             db.child('names').on('value', s => {
                 const n = s.val() || {};
-                document.getElementById('p1-name').innerText = n.white || "WAITING...";
-                document.getElementById('p2-name').innerText = n.black || "WAITING...";
+                document.getElementById('p1-name').innerText = n.white || "Menunggu...";
+                document.getElementById('p2-name').innerText = n.black || "Menunggu...";
             });
         }
 
-        function render() {
+        function updateStatus() {
+            const statEl = document.getElementById('status');
+            if(turn === myRole) {
+                statEl.innerText = "GILIRAN ANDA";
+                statEl.style.color = "#2ecc71";
+            } else {
+                statEl.innerText = "GILIRAN LAWAN (" + turn.toUpperCase() + ")";
+                statEl.style.color = "var(--brass)";
+            }
+        }
+
+        function renderPieces() {
             for(let i=0; i<64; i++) {
                 const tile = document.getElementById(`t-${i}`);
+                if(!tile) continue;
                 const p = currentBoard[i];
-                tile.innerHTML = p ? `<span class="piece ${p.color}">${piecesChar[p.color][p.type]}</span>` : "";
-                if(myRole === 'black') {
-                    const span = tile.querySelector('.piece');
-                    if(span) span.classList.add('piece-flipped');
+                if(p) {
+                    const flipClass = (myRole === 'black') ? 'piece-flipped' : '';
+                    tile.innerHTML = `<span class="piece ${p.color} ${flipClass}">${piecesChar[p.color][p.type]}</span>`;
+                } else {
+                    tile.innerHTML = "";
                 }
             }
         }
 
-        function handleMove(i) {
+        function handleTileClick(i) {
             if(turn !== myRole) return;
 
             const piece = currentBoard[i];
 
             if(selectedTile === null) {
+                // Pilih bidak
                 if(piece && piece.color === myRole) {
                     selectedTile = i;
-                    highlightTiles(i);
+                    document.getElementById(`t-${i}`).classList.add('tile-selected');
                 }
             } else {
+                // Gerakkan bidak
                 if(validateMove(selectedTile, i)) {
-                    const moveUpdates = {};
-                    moveUpdates[selectedTile] = null;
-                    moveUpdates[i] = currentBoard[selectedTile];
-                    
-                    db.child('cells').update(moveUpdates);
-                    db.child('turn').set(myRole === 'white' ? 'black' : 'white');
-                    clearHighlights();
-                    selectedTile = null;
-                } else {
-                    clearHighlights();
-                    selectedTile = null;
-                    if(piece && piece.color === myRole) handleMove(i); // Re-select
+                    executeMove(selectedTile, i);
                 }
+                
+                // Reset seleksi
+                document.getElementById(`t-${selectedTile}`).classList.remove('tile-selected');
+                selectedTile = null;
             }
         }
 
@@ -229,32 +244,26 @@
             const dc = Math.abs(c2 - c1);
 
             switch(p.type) {
-                case 'p': // Pawn
+                case 'p': // Pion
                     const dir = p.color === 'white' ? -1 : 1;
-                    const startRow = p.color === 'white' ? 6 : 1;
                     if(c1 === c2 && !target) {
                         if(r2 - r1 === dir) return true;
-                        if(r1 === startRow && r2 - r1 === 2 * dir && !currentBoard[from + 8*dir]) return true;
+                        if((r1 === 6 || r1 === 1) && r2 - r1 === 2 * dir && !currentBoard[from + 8*dir]) return true;
                     }
                     if(dc === 1 && r2 - r1 === dir && target) return true;
                     return false;
-
-                case 'r': // Rook
+                case 'r': // Benteng
                     if(r1 !== r2 && c1 !== c2) return false;
                     return isPathClear(from, to);
-
-                case 'n': // Knight (L-Shape)
+                case 'n': // Kuda
                     return (dr === 2 && dc === 1) || (dr === 1 && dc === 2);
-
-                case 'b': // Bishop
+                case 'b': // Gajah
                     if(dr !== dc) return false;
                     return isPathClear(from, to);
-
-                case 'q': // Queen
+                case 'q': // Ratu
                     if(dr !== dc && r1 !== r2 && c1 !== c2) return false;
                     return isPathClear(from, to);
-
-                case 'k': // King
+                case 'k': // Raja
                     return dr <= 1 && dc <= 1;
             }
             return false;
@@ -265,7 +274,6 @@
             const r2 = Math.floor(to/8),   c2 = to % 8;
             const stepR = r2 > r1 ? 1 : (r2 < r1 ? -1 : 0);
             const stepC = c2 > c1 ? 1 : (c2 < c1 ? -1 : 0);
-            
             let currR = r1 + stepR;
             let currC = c1 + stepC;
             while(currR !== r2 || currC !== c2) {
@@ -275,26 +283,25 @@
             return true;
         }
 
-        function highlightTiles(idx) {
-            clearHighlights();
-            document.getElementById(`t-${idx}`).classList.add('tile-highlight');
-        }
-
-        function clearHighlights() {
-            document.querySelectorAll('.chess-tile').forEach(t => t.classList.remove('tile-highlight'));
+        function executeMove(from, to) {
+            const p = currentBoard[from];
+            const updates = {};
+            updates[`cells/${from}`] = null;
+            updates[`cells/${to}`] = p;
+            updates[`turn`] = (myRole === 'white' ? 'black' : 'white');
+            db.update(updates);
         }
 
         function requestReset() {
-            if(!confirm("Reset papan catur?")) return;
-            const start = {};
+            const initial = {};
             const layout = ['r','n','b','q','k','b','n','r'];
             for(let i=0; i<8; i++) {
-                start[i] = { type: layout[i], color: 'black' };
-                start[8+i] = { type: 'p', color: 'black' };
-                start[48+i] = { type: 'p', color: 'white' };
-                start[56+i] = { type: layout[i], color: 'white' };
+                initial[i] = { type: layout[i], color: 'black' };
+                initial[8+i] = { type: 'p', color: 'black' };
+                initial[48+i] = { type: 'p', color: 'white' };
+                initial[56+i] = { type: layout[i], color: 'white' };
             }
-            db.child('cells').set(start);
+            db.child('cells').set(initial);
             db.child('turn').set('white');
         }
     </script>
