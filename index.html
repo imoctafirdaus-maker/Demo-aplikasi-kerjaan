@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Board Game Collection - 1888</title>
+    <title>Retro XOXO 3D - 1888</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#b7950b">
@@ -11,7 +11,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Special+Elite&display=swap');
@@ -33,7 +32,7 @@
             background: radial-gradient(circle, #2c1e16 0%, #1a0f0a 100%);
             color: var(--paper); font-family: 'Special Elite', cursive;
             display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; padding: 10px; overflow: hidden;
+            min-height: 100vh; padding: 10px; overflow-x: hidden;
             -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y;
         }
 
@@ -53,7 +52,7 @@
         }
 
         .btn-choice {
-            padding: 10px 15px; border: 1px solid var(--brass-dark); background: var(--wood-light);
+            padding: 12px 15px; border: 1px solid var(--brass-dark); background: var(--wood-light);
             color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px;
             box-shadow: var(--shadow-out); transition: 0.2s; font-family: 'Cinzel'; margin: 5px;
         }
@@ -69,46 +68,50 @@
 
         .viewport-container { 
             width: 100%; display: flex; justify-content: center; align-items: center; 
-            padding: 20px 0; perspective: 1500px;
+            padding: 40px 0; perspective: 1000px;
         }
         
+        /* Kamera 3D Perspektif */
         .board-wrapper { 
             position: relative; padding: 15px; background: var(--wood-dark); 
             border: 10px solid #2a1b12; border-radius: 4px; 
             box-shadow: 0 30px 60px rgba(0,0,0,0.9);
-            transform: rotateX(35deg) rotateZ(0deg); 
+            transform: rotateX(40deg) rotateZ(0deg); 
             transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             transform-style: preserve-3d;
         }
-        .flipped-camera { transform: rotateX(35deg) rotateZ(180deg) !important; }
+        /* Sudut Pandang Player O (Dibalik 180 derajat) */
+        .flipped-camera { transform: rotateX(40deg) rotateZ(180deg) !important; }
 
-        .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 2px; max-width: 90vw; }
-        .board-chess { display: grid; grid-template-columns: repeat(8, 11vw); grid-template-rows: repeat(8, 11vw); gap: 0; max-width: 90vw; background: #000; }
+        .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 4px; max-width: 450px; max-height: 450px; }
+        
+        @media (min-width: 500px) {
+            .board-xoxo { grid-template-columns: repeat(10, 42px); grid-template-rows: repeat(10, 42px); }
+        }
 
-        .block, .chess-tile { 
+        .block { 
             width: 100%; height: 100%; background: var(--wood-light);
             display: flex; justify-content: center; align-items: center; 
             font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out);
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s;
+            border-radius: 4px;
         }
         
-        /* Warna spesifik untuk X (Merah) dan O (Kuning) */
-        .block.filled-x { background-color: #d32f2f !important; }
-        .block.filled-o { background-color: #f1c40f !important; }
+        .block.filled-x { background-color: #2e4053  !important; }
+        .block.filled-o { background-color: #78281f !important; }
 
-        .tile-dark { background: #4e342e; }
-        .tile-light { background: #d7ccc8; color: #3d2b1f; }
-        
-        .piece { filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.6)); font-size: 1.5rem; }
         .piece-flipped { transform: rotate(180deg); }
 
-        .x-icon { color: white; font-weight: bold; font-size: 5vw; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .o-icon { color: #3d2b1f; font-weight: bold; font-size: 5vw; text-shadow: 1px 1px 2px rgba(255,255,255,0.3); }
+        .x-icon { color: #f4d03f; font-weight: bold; font-size: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .o-icon { color: #e74c3c; font-weight: bold; font-size: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
 
+        /* Efek Fire Gold Super Terang */
         .win-line { 
-            position: absolute; z-index: 100; background: var(--gold-fire); 
-            height: 8px; border-radius: 10px; pointer-events: none;
-            box-shadow: 0 0 20px #ff4500; animation: fire-flicker 0.2s infinite alternate; transform-origin: left center;
+            position: absolute; z-index: 1000; background: var(--gold-fire); 
+            height: 12px; border-radius: 10px; pointer-events: none;
+            box-shadow: 0 0 25px #ff4500, 0 0 45px #ffd700, 0 0 70px #ffffff; 
+            animation: fire-flicker 0.15s infinite alternate; 
+            transform-origin: left center;
         }
 
         .admin-controls { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
@@ -119,7 +122,10 @@
             padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 3000;
         }
 
-        @keyframes fire-flicker { from { opacity: 0.7; } to { opacity: 1; } }
+        @keyframes fire-flicker { 
+            from { opacity: 0.8; transform: scaleY(0.9); filter: brightness(1.2); } 
+            to { opacity: 1; transform: scaleY(1.2); filter: brightness(1.5); } 
+        }
     </style>
 </head>
 <body>
@@ -127,16 +133,14 @@
     <div id="overlay">
         <div class="card-vintage">
             <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 15px; font-size: 1.8rem; text-shadow: 2px 2px #000;">1888 SALOON</h1>
+            <p style="font-size: 0.8rem; margin-bottom: 15px; color: var(--paper);">TIC-TAC-TOE 3D 10x10</p>
             <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA (NAMA)..." maxlength="10">
             
-            <button class="btn-choice" style="width: 100%;" onclick="selectGame('XOXO')">TIC-TAC-TOE 10x10</button>
-            <button class="btn-choice" style="width: 100%;" onclick="selectGame('CHESS')">CLASSIC CHESS 3D</button>
-
-            <div id="role-select" style="display:none; margin-top: 20px; border-top: 1px solid var(--brass-dark); padding-top: 15px;">
-                <p id="role-text" style="margin-bottom: 10px; font-size: 0.8rem; color: var(--brass);">PILIH KUBURAN:</p>
+            <div id="role-select">
+                <p style="margin-bottom: 10px; font-size: 0.8rem; color: var(--brass);">PILIH PIHAK ANDA:</p>
                 <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button id="btn1" class="btn-choice" onclick="confirmStart(1)"></button>
-                    <button id="btn2" class="btn-choice" onclick="confirmStart(2)"></button>
+                    <button id="btnX" class="btn-choice" style="flex:1;" onclick="confirmStart('X')">PIHAK X</button>
+                    <button id="btnO" class="btn-choice" style="flex:1;" onclick="confirmStart('O')">PIHAK O</button>
                 </div>
             </div>
         </div>
@@ -146,7 +150,7 @@
 
     <div class="scoreboard">
         <div class="score-box"><span id="p1-name">WAITING...</span><br><b id="p1-score">0</b></div>
-        <div class="score-box" style="background:transparent; box-shadow:none; flex:0.2; font-family:'Cinzel';">VS</div>
+        <div class="score-box" style="background:transparent; box-shadow:none; flex:0.2; font-family:'Cinzel'; vertical-align: middle; line-height: 2.5rem;">VS</div>
         <div class="score-box"><span id="p2-name">WAITING...</span><br><b id="p2-score">0</b></div>
     </div>
 
@@ -154,8 +158,8 @@
 
     <div class="viewport-container">
         <div id="board-perspective" class="board-wrapper">
-            <div id="main-board"></div>
-            <div id="line-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+            <div id="main-board" class="board-xoxo"></div>
+            <div id="line-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; transform-style: preserve-3d;"></div>
         </div>
     </div>
 
@@ -166,12 +170,9 @@
     </div>
 
     <script>
-        // Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Registered'))
-                    .catch(err => console.log('Service Worker Failed', err));
+                navigator.serviceWorker.register('./sw.js').catch(err => {});
             });
         }
 
@@ -185,7 +186,7 @@
             appId: "1:820709850876:web:e07700750b3faccb412179"
         };
         firebase.initializeApp(firebaseConfig);
-        let db = null;
+        const db = firebase.database().ref('multi_game_v1/XOXO');
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playPop(freq, type = 'sine', vol = 0.1, duration = 0.1) {
@@ -210,54 +211,50 @@
         let mIdx = 0;
         const melody = [261, 329, 392, 523, 392, 329]; 
         function loopMusic() {
-            playPop(melody[mIdx], 'sine', 0.02, 0.4);
+            playPop(melody[mIdx], 'sine', 0.01, 0.4);
             mIdx = (mIdx + 1) % melody.length;
-            setTimeout(loopMusic, 500);
+            setTimeout(loopMusic, 600);
         }
 
-        let currentGame = ""; let myRole = ""; let myName = ""; let turn = ""; 
+        let myRole = ""; let myName = ""; let turn = ""; 
         let currentBoardState = {}; let isGameOver = false;
         let scoredLines = [];
 
-        function selectGame(game) {
+        // Cek ketersediaan slot secara realtime di menu utama
+        db.child('names').on('value', s => {
+            const names = s.val() || {};
+            document.getElementById('btnX').disabled = !!names.X;
+            document.getElementById('btnO').disabled = !!names.O;
+        });
+
+        function confirmStart(role) {
             const n = document.getElementById('inputNama').value;
             if(!n) return alert("Sebutkan Nama Anda, Tuan!");
-            myName = n; currentGame = game;
-            db = firebase.database().ref('multi_game_v1/' + game);
-            document.getElementById('role-select').style.display = 'block';
             
-            db.child('names').on('value', s => {
-                const names = s.val() || {};
-                const b1 = document.getElementById('btn1'), b2 = document.getElementById('btn2');
-                if(game === 'XOXO') {
-                    b1.innerText = "PIHAK X"; b2.innerText = "PIHAK O";
-                    b1.disabled = !!names.X; b2.disabled = !!names.O;
-                } else {
-                    b1.innerText = "PUTIH"; b2.innerText = "HITAM";
-                    b1.disabled = !!names.white; b2.disabled = !!names.black;
-                }
-            });
-        }
+            myName = n;
+            myRole = role;
 
-        function confirmStart(choice) {
-            myRole = (currentGame === 'XOXO') ? (choice === 1 ? 'X' : 'O') : (choice === 1 ? 'white' : 'black');
             const wrapper = document.getElementById('board-perspective');
-            if(myRole === 'black' || myRole === 'O') wrapper.classList.add('flipped-camera');
+            if(myRole === 'O') {
+                wrapper.classList.add('flipped-camera');
+            }
+
             db.child('names/' + myRole).set(myName);
             document.getElementById('overlay').style.display = 'none';
-            if(currentGame === 'XOXO') initXOXO(); else initChess();
+            
+            initBoard();
             startSync();
             listenToFinishRequests();
             loopMusic();
         }
 
-        function initXOXO() {
+        function initBoard() {
             const board = document.getElementById('main-board');
-            board.className = "board-xoxo"; board.innerHTML = "";
+            board.innerHTML = "";
             for(let i=0; i<100; i++) {
                 const b = document.createElement('div'); b.className = 'block'; b.id = `b-${i}`;
                 b.onclick = () => {
-                    if(turn === myRole) {
+                    if(turn === myRole && !isGameOver && !currentBoardState[i]) {
                         const val = (myRole === 'X' ? 1 : 2);
                         playPop(myRole === 'X' ? 400 : 300, 'triangle', 0.15, 0.1);
                         db.child('cells/' + i).set(val);
@@ -297,52 +294,38 @@
 
         function startSync() {
             db.child('turn').on('value', s => { 
-                turn = s.val() || (currentGame==='XOXO'?'X':'white'); 
+                turn = s.val() || 'X'; 
                 document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR..."; 
             });
             db.child('names').on('value', s => {
                 const n = s.val() || {};
-                if(currentGame === 'XOXO') { document.getElementById('p1-name').innerText = n.X||"Menunggu X"; document.getElementById('p2-name').innerText = n.O||"Menunggu O"; }
-                else { document.getElementById('p1-name').innerText = n.white||"Putih"; document.getElementById('p2-name').innerText = n.black||"Hitam"; }
+                document.getElementById('p1-name').innerText = n.X || "Menunggu X"; 
+                document.getElementById('p2-name').innerText = n.O || "Menunggu O";
             });
             db.child('scores').on('value', s => {
                 const sc = s.val() || {};
-                if(currentGame === 'XOXO') { document.getElementById('p1-score').innerText = sc.X||0; document.getElementById('p2-score').innerText = sc.O||0; }
-                else { document.getElementById('p1-score').innerText = sc.white||0; document.getElementById('p2-score').innerText = sc.black||0; }
+                document.getElementById('p1-score').innerText = sc.X || 0; 
+                document.getElementById('p2-score').innerText = sc.O || 0;
             });
             db.child('cells').on('value', s => { currentBoardState = s.val() || {}; renderBoard(); });
             db.child('scored_lines').on('value', s => { scoredLines = Object.values(s.val() || {}); });
             db.child('last_win_line').on('value', s => { if(s.exists()) drawWinLine(s.val().line); });
-            db.child('winner').on('value', s => {
-                if(s.exists()) {
-                    isGameOver = true;
-                    document.getElementById('status').innerHTML = `<b style="color:var(--brass)">${s.val().name.toUpperCase()}</b>`;
-                }
-            });
         }
 
         function renderBoard() {
-            const flip = (myRole === 'black' || myRole === 'O');
-            if(currentGame === 'XOXO') {
-                for(let i=0; i<100; i++) {
-                    const el = document.getElementById(`b-${i}`); if(!el) continue;
-                    const v = currentBoardState[i]; 
-                    el.classList.remove('filled-x', 'filled-o');
-                    if(v === 1) {
-                        el.classList.add('filled-x');
-                        el.innerHTML = `<span class="x-icon ${flip?'piece-flipped':''}">X</span>`;
-                    } else if(v === 2) {
-                        el.classList.add('filled-o');
-                        el.innerHTML = `<span class="o-icon ${flip?'piece-flipped':''}">O</span>`;
-                    } else {
-                        el.innerHTML = "";
-                    }
-                }
-            } else {
-                for(let i=0; i<64; i++) {
-                    const el = document.getElementById(`t-${i}`); if(!el) continue;
-                    const p = currentBoardState[i];
-                    el.innerHTML = p ? `<span class="piece ${p.color} ${flip?'piece-flipped':''}">${chessPieces[p.color][p.type]}</span>` : "";
+            const flip = (myRole === 'O');
+            for(let i=0; i<100; i++) {
+                const el = document.getElementById(`b-${i}`); if(!el) continue;
+                const v = currentBoardState[i]; 
+                el.classList.remove('filled-x', 'filled-o');
+                if(v === 1) {
+                    el.classList.add('filled-x');
+                    el.innerHTML = `<span class="x-icon ${flip?'piece-flipped':''}">X</span>`;
+                } else if(v === 2) {
+                    el.classList.add('filled-o');
+                    el.innerHTML = `<span class="o-icon ${flip?'piece-flipped':''}">O</span>`;
+                } else {
+                    el.innerHTML = "";
                 }
             }
         }
@@ -351,22 +334,30 @@
             const container = document.getElementById('line-container'); 
             const el1 = document.getElementById(`b-${line[0]}`), el2 = document.getElementById(`b-${line[line.length-1]}`);
             if(!el1 || !el2) return;
+
             const x1 = el1.offsetLeft + (el1.offsetWidth/2), y1 = el1.offsetTop + (el1.offsetHeight/2);
             const x2 = el2.offsetLeft + (el2.offsetWidth/2), y2 = el2.offsetTop + (el2.offsetHeight/2);
             const dist = Math.hypot(x2-x1, y2-y1), angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
-            const div = document.createElement('div'); div.className = "win-line";
-            div.style.width = dist + "px"; div.style.left = x1 + "px"; div.style.top = y1 + "px";
-            div.style.transform = `rotate(${angle}deg)`; container.appendChild(div);
-            setTimeout(() => div.remove(), 2000); 
+            
+            const div = document.createElement('div'); 
+            div.className = "win-line";
+            div.style.width = dist + "px"; 
+            div.style.left = x1 + "px"; 
+            div.style.top = y1 + "px";
+            div.style.transform = `rotate(${angle}deg)`; 
+            
+            container.appendChild(div);
+            setTimeout(() => div.remove(), 4000); 
         }
 
         function requestReset() {
             if(confirm("Bersihkan papan dan mulai ulang skor?")) {
-                db.child('cells').remove(); db.child('winner').remove();
-                db.child('scored_lines').remove(); db.child('scores').remove();
+                db.child('cells').remove(); 
+                db.child('scored_lines').remove(); 
+                db.child('scores').remove();
                 db.child('last_win_line').remove();
-                if(currentGame === 'CHESS') resetChessBoard();
-                document.getElementById('line-container').innerHTML = ""; isGameOver = false;
+                document.getElementById('line-container').innerHTML = ""; 
+                isGameOver = false;
             }
         }
 
@@ -386,58 +377,10 @@
                         location.reload();
                     } else {
                         db.child('finish_request').remove();
+                        document.getElementById('toast').style.display = 'none';
                     }
                 }
             });
-        }
-
-        const chessPieces = { 
-            white: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' }, 
-            black: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' } 
-        };
-        let selectedTile = null;
-
-        function initChess() {
-            const board = document.getElementById('main-board');
-            board.className = "board-chess"; board.innerHTML = "";
-            for(let i=0; i<64; i++) {
-                const tile = document.createElement('div');
-                tile.className = `chess-tile ${(Math.floor(i/8)+(i%8))%2===0 ? 'tile-light' : 'tile-dark'}`;
-                tile.id = `t-${i}`; tile.onclick = () => handleChessClick(i);
-                board.appendChild(tile);
-            }
-            db.child('cells').once('value', s => { if(!s.exists()) resetChessBoard(); });
-        }
-
-        function resetChessBoard() {
-            const start = {}; const layout = ['r','n','b','q','k','b','n','r'];
-            for(let i=0; i<8; i++) {
-                start[i] = { type: layout[i], color: 'black' }; start[8+i] = { type: 'p', color: 'black' };
-                start[48+i] = { type: 'p', color: 'white' }; start[56+i] = { type: layout[i], color: 'white' };
-            }
-            db.child('cells').set(start); db.child('turn').set('white');
-        }
-
-        function handleChessClick(i) {
-            if(turn !== myRole || isGameOver) return;
-            const piece = currentBoardState[i];
-            if(selectedTile === null) {
-                if(piece && piece.color === myRole) {
-                    selectedTile = i;
-                    document.getElementById(`t-${i}`).style.boxShadow = "inset 0 0 10px gold";
-                }
-            } else {
-                if(selectedTile === i) {
-                    selectedTile = null; renderBoard(); return;
-                }
-                const move = {}; 
-                move[selectedTile] = null;
-                move[i] = currentBoardState[selectedTile];
-                db.child('cells').update(move);
-                db.child('turn').set(myRole === 'white' ? 'black' : 'white');
-                selectedTile = null;
-                playPop(500, 'sine', 0.1, 0.05);
-            }
         }
     </script>
 </body>
