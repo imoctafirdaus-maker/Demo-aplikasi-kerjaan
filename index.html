@@ -1,387 +1,333 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro XOXO 3D - 1888</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#b7950b">
-    <link rel="apple-touch-icon" href="1777546745740.png">
-
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Special+Elite&display=swap');
-
-        :root {
-            --wood-dark: #3d2b1f;
-            --wood-light: #5d4037;
-            --brass: #b7950b;
-            --brass-dark: #7d6608;
-            --paper: #d7ccc8;
-            --gold-fire: linear-gradient(90deg, #ff4500, #ffd700, #ffffff, #ffd700, #ff4500);
-            --shadow-out: 4px 4px 8px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.1);
-            --shadow-in: inset 4px 4px 8px rgba(0,0,0,0.5), inset -1px -1px 2px rgba(255,255,255,0.1);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            background: radial-gradient(circle, #2c1e16 0%, #1a0f0a 100%);
-            color: var(--paper); font-family: 'Special Elite', cursive;
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; padding: 10px; overflow-x: hidden;
-            -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y;
-        }
-
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000; 
-            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);
-        }
-        .card-vintage {
-            background: var(--wood-light); padding: 25px; border: 8px double var(--brass);
-            border-radius: 5px; text-align: center; width: 95%; max-width: 400px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.5);
-        }
-        .name-input {
-            width: 100%; padding: 10px; border: none; background: #2a1b12; color: var(--paper);
-            margin-bottom: 15px; box-shadow: var(--shadow-in); outline: none; text-align: center; font-family: 'Special Elite';
-        }
-
-        .btn-choice {
-            padding: 12px 15px; border: 1px solid var(--brass-dark); background: var(--wood-light);
-            color: var(--brass); font-weight: bold; cursor: pointer; border-radius: 8px;
-            box-shadow: var(--shadow-out); transition: 0.2s; font-family: 'Cinzel'; margin: 5px;
-        }
-        .btn-choice:disabled { background: #333; color: #666; cursor: not-allowed; opacity: 0.6; }
-        .btn-choice:active:not(:disabled) { transform: scale(0.95); box-shadow: var(--shadow-in); }
-
-        .scoreboard { 
-            display: flex; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 450px; 
-            padding: 5px; border-bottom: 2px solid var(--brass-dark);
-        }
-        .score-box { flex: 1; text-align: center; padding: 5px; background: var(--wood-dark); border-radius: 10px; box-shadow: var(--shadow-in); font-size: 0.8rem; }
-        .score-box b { font-size: 1.2rem; color: var(--brass); font-family: 'Cinzel'; }
-
-        .viewport-container { 
-            width: 100%; display: flex; justify-content: center; align-items: center; 
-            padding: 40px 0; perspective: 1000px;
-        }
-        
-        /* Kamera 3D Perspektif */
-        .board-wrapper { 
-            position: relative; padding: 15px; background: var(--wood-dark); 
-            border: 10px solid #2a1b12; border-radius: 4px; 
-            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
-            transform: rotateX(40deg) rotateZ(0deg); 
-            transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            transform-style: preserve-3d;
-        }
-        /* Sudut Pandang Player O (Dibalik 180 derajat) */
-        .flipped-camera { transform: rotateX(40deg) rotateZ(180deg) !important; }
-
-        .board-xoxo { display: grid; grid-template-columns: repeat(10, 8.5vw); grid-template-rows: repeat(10, 8.5vw); gap: 4px; max-width: 450px; max-height: 450px; }
-        
-        @media (min-width: 500px) {
-            .board-xoxo { grid-template-columns: repeat(10, 42px); grid-template-rows: repeat(10, 42px); }
-        }
-
-        .block { 
-            width: 100%; height: 100%; background: var(--wood-light);
-            display: flex; justify-content: center; align-items: center; 
-            font-family: 'Cinzel'; cursor: pointer; box-shadow: var(--shadow-out);
-            transition: background-color 0.3s ease, transform 0.2s;
-            border-radius: 4px;
-        }
-        
-        .block.filled-x { background-color: #2e4053  !important; }
-        .block.filled-o { background-color: #78281f !important; }
-
-        .piece-flipped { transform: rotate(180deg); }
-
-        .x-icon { color: #f4d03f; font-weight: bold; font-size: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-        .o-icon { color: #e74c3c; font-weight: bold; font-size: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-
-        /* Efek Fire Gold Super Terang */
-        .win-line { 
-            position: absolute; z-index: 1000; background: var(--gold-fire); 
-            height: 12px; border-radius: 10px; pointer-events: none;
-            box-shadow: 0 0 25px #ff4500, 0 0 45px #ffd700, 0 0 70px #ffffff; 
-            animation: fire-flicker 0.15s infinite alternate; 
-            transform-origin: left center;
-        }
-
-        .admin-controls { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
-        .btn-tiny { font-size: 0.6rem; padding: 5px 10px; border-radius: 15px; }
-
-        #toast {
-            position: fixed; bottom: 80px; background: var(--brass); color: #000;
-            padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 3000;
-        }
-
-        @keyframes fire-flicker { 
-            from { opacity: 0.8; transform: scaleY(0.9); filter: brightness(1.2); } 
-            to { opacity: 1; transform: scaleY(1.2); filter: brightness(1.5); } 
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIROFISH MISPRICING SCANNER</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Pixel font via Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      background: #0f0f1a;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .pixel-font {
+      font-family: 'Press Start 2P', monospace;
+    }
+    .neon-border {
+      box-shadow: 0 0 0 1px rgba(255, 70, 70, 0.25), 0 0 12px rgba(255, 70, 70, 0.08);
+    }
+    .glass-panel {
+      background: rgba(18, 18, 30, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .candle-red { background: #ef4444; }
+    .candle-green { background: #22c55e; }
+    .glow-green { box-shadow: 0 0 18px rgba(34, 197, 94, 0.2); }
+    .glow-red { box-shadow: 0 0 18px rgba(239, 68, 68, 0.25); }
+    .pixel-text-shadow {
+      text-shadow: 0 0 6px rgba(239, 68, 68, 0.6), 0 0 14px rgba(220, 38, 38, 0.3);
+    }
+  </style>
 </head>
-<body>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div id="root" class="w-full max-w-7xl"></div>
 
-    <div id="overlay">
-        <div class="card-vintage">
-            <h1 style="font-family: 'Cinzel'; color: var(--brass); margin-bottom: 15px; font-size: 1.8rem; text-shadow: 2px 2px #000;">1888 SALOON</h1>
-            <p style="font-size: 0.8rem; margin-bottom: 15px; color: var(--paper);">TIC-TAC-TOE 3D 10x10</p>
-            <input type="text" id="inputNama" class="name-input" placeholder="GELAR ANDA (NAMA)..." maxlength="10">
-            
-            <div id="role-select">
-                <p style="margin-bottom: 10px; font-size: 0.8rem; color: var(--brass);">PILIH PIHAK ANDA:</p>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button id="btnX" class="btn-choice" style="flex:1;" onclick="confirmStart('X')">PIHAK X</button>
-                    <button id="btnO" class="btn-choice" style="flex:1;" onclick="confirmStart('O')">PIHAK O</button>
-                </div>
-            </div>
-        </div>
-    </div>
+  <script>
+    // ---- React 18 + ReactDOM via CDN ----
+    const { createRoot, useState, useEffect, useRef } = React;
 
-    <div id="toast">MENUNGGU KONFIRMASI LAWAN...</div>
+    // ---- Candlestick generator ----
+    function generateCandles(count = 28) {
+      let price = 78500;
+      const candles = [];
+      for (let i = 0; i < count; i++) {
+        const change = (Math.random() - 0.58) * 280;
+        const open = price;
+        const close = open + change;
+        const high = Math.max(open, close) + Math.random() * 120;
+        const low = Math.min(open, close) - Math.random() * 120;
+        candles.push({ open, high, low, close, up: close >= open });
+        price = close;
+      }
+      return candles;
+    }
 
-    <div class="scoreboard">
-        <div class="score-box"><span id="p1-name">WAITING...</span><br><b id="p1-score">0</b></div>
-        <div class="score-box" style="background:transparent; box-shadow:none; flex:0.2; font-family:'Cinzel'; vertical-align: middle; line-height: 2.5rem;">VS</div>
-        <div class="score-box"><span id="p2-name">WAITING...</span><br><b id="p2-score">0</b></div>
-    </div>
+    // ---- Relationship node positions (pre-calc) ----
+    const nodes = [
+      { x: 30, y: 70 }, { x: 28, y: 45 }, { x: 55, y: 30 },
+      { x: 70, y: 55 }, { x: 58, y: 72 }, { x: 78, y: 80 },
+      { x: 20, y: 22 }, { x: 88, y: 42 }, { x: 92, y: 70 },
+    ];
+    const edges = [
+      [0,1],[1,2],[2,3],[3,4],[0,4],[0,5],[1,6],[2,7],[3,8],[4,8],[5,7],[6,2],[7,8]
+    ];
 
-    <div id="status" style="font-size: 0.8rem; margin-bottom: 5px; letter-spacing: 2px;">MENGHUBUNGKAN...</div>
+    // ---- Main App ----
+    function App() {
+      const [candles] = useState(() => generateCandles(28));
+      const [time, setTime] = useState(new Date());
+      const canvasRef = useRef(null);
 
-    <div class="viewport-container">
-        <div id="board-perspective" class="board-wrapper">
-            <div id="main-board" class="board-xoxo"></div>
-            <div id="line-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; transform-style: preserve-3d;"></div>
-        </div>
-    </div>
+      // Digital clock
+      useEffect(() => {
+        const id = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(id);
+      }, []);
 
-    <div class="admin-controls">
-        <button class="btn-choice btn-tiny" onclick="location.reload()">🔄 REFRESH TAMPILAN</button>
-        <button class="btn-choice btn-tiny" onclick="requestReset()">🧹 RESET PAPAN</button>
-        <button class="btn-choice btn-tiny" style="color: #ff4500; border-color: #ff4500;" onclick="askFinish()">🏁 SELESAIKAN PERMAINAN</button>
-    </div>
+      // Draw relationship graph on canvas
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        const w = rect.width;
+        const h = rect.height;
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => {});
-            });
-        }
+        ctx.clearRect(0,0,w,h);
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBlL2HCkJYw_wNTMvJpDUpmJzw1-plQTm0",
-            authDomain: "tic-tac-toe-api-5a2c0.firebaseapp.com",
-            databaseURL: "https://tic-tac-toe-api-5a2c0-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "tic-tac-toe-api-5a2c0",
-            storageBucket: "tic-tac-toe-api-5a2c0.firebasestorage.app",
-            messagingSenderId: "820709850876",
-            appId: "1:820709850876:web:e07700750b3faccb412179"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('multi_game_v1/XOXO');
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playPop(freq, type = 'sine', vol = 0.1, duration = 0.1) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + duration);
-        }
-
-        function playWinSound() {
-            [440, 554, 659, 880].forEach((f, i) => {
-                setTimeout(() => playPop(f, 'square', 0.05, 0.3), i * 100);
-            });
-        }
-
-        let mIdx = 0;
-        const melody = [261, 329, 392, 523, 392, 329]; 
-        function loopMusic() {
-            playPop(melody[mIdx], 'sine', 0.01, 0.4);
-            mIdx = (mIdx + 1) % melody.length;
-            setTimeout(loopMusic, 600);
-        }
-
-        let myRole = ""; let myName = ""; let turn = ""; 
-        let currentBoardState = {}; let isGameOver = false;
-        let scoredLines = [];
-
-        // Cek ketersediaan slot secara realtime di menu utama
-        db.child('names').on('value', s => {
-            const names = s.val() || {};
-            document.getElementById('btnX').disabled = !!names.X;
-            document.getElementById('btnO').disabled = !!names.O;
+        // Edges — curved lines
+        ctx.lineWidth = 1.2;
+        edges.forEach(([i,j]) => {
+          const a = nodes[i], b = nodes[j];
+          const ax = a.x/100*w, ay = a.y/100*h;
+          const bx = b.x/100*w, by = b.y/100*h;
+          const cpx = (ax+bx)/2 + (by-ay)*0.2;
+          const cpy = (ay+by)/2 - (bx-ax)*0.15;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.quadraticCurveTo(cpx, cpy, bx, by);
+          ctx.strokeStyle = 'rgba(250,200,50,0.3)';
+          ctx.stroke();
         });
 
-        function confirmStart(role) {
-            const n = document.getElementById('inputNama').value;
-            if(!n) return alert("Sebutkan Nama Anda, Tuan!");
-            
-            myName = n;
-            myRole = role;
+        // Nodes
+        nodes.forEach((n,i) => {
+          const x = n.x/100*w, y = n.y/100*h;
+          const grad = ctx.createRadialGradient(x-3,y-3,2,x,y,12);
+          grad.addColorStop(0, '#fbbf24');
+          grad.addColorStop(0.4, '#ef4444');
+          grad.addColorStop(1, 'rgba(239,68,68,0.1)');
+          ctx.beginPath();
+          ctx.arc(x, y, 9, 0, Math.PI*2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+          ctx.shadowColor = 'rgba(239,68,68,0.5)';
+          ctx.shadowBlur = 14;
+          ctx.beginPath();
+          ctx.arc(x, y, 10, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(255,200,50,0.06)';
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        });
 
-            const wrapper = document.getElementById('board-perspective');
-            if(myRole === 'O') {
-                wrapper.classList.add('flipped-camera');
-            }
+        // Downward trend line
+        ctx.beginPath();
+        ctx.moveTo(15/100*w, 25/100*h);
+        ctx.quadraticCurveTo(45/100*w, 50/100*h, 92/100*w, 82/100*h);
+        ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6,6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }, []);
 
-            db.child('names/' + myRole).set(myName);
-            document.getElementById('overlay').style.display = 'none';
-            
-            initBoard();
-            startSync();
-            listenToFinishRequests();
-            loopMusic();
-        }
+      // Last price from candles
+      const lastPrice = candles.length ? candles[candles.length-1].close : 76558;
+      const currentPrice = lastPrice.toFixed(0);
 
-        function initBoard() {
-            const board = document.getElementById('main-board');
-            board.innerHTML = "";
-            for(let i=0; i<100; i++) {
-                const b = document.createElement('div'); b.className = 'block'; b.id = `b-${i}`;
-                b.onclick = () => {
-                    if(turn === myRole && !isGameOver && !currentBoardState[i]) {
-                        const val = (myRole === 'X' ? 1 : 2);
-                        playPop(myRole === 'X' ? 400 : 300, 'triangle', 0.15, 0.1);
-                        db.child('cells/' + i).set(val);
-                        db.child('turn').set(myRole === 'X' ? 'O' : 'X');
-                        checkPointsXOXO(i, val);
-                    }
-                };
-                board.appendChild(b);
-            }
-        }
+      // PnL Curve area data (simulated)
+      const pnlPoints = [0.12,0.18,0.24,0.21,0.30,0.26,0.35,0.32,0.40,0.38,0.48,0.45,0.55,0.52,0.65,0.62,0.72,0.78,0.82,0.88,0.92,0.98];
 
-        function checkPointsXOXO(idx, p) {
-            const size = 10; const r = Math.floor(idx / size), c = idx % size;
-            const dirs = [[0,1],[1,0],[1,1],[1,-1]];
-            for(let [dr, dc] of dirs) {
-                let count = 1, line = [idx];
-                for(let step of [1, -1]) {
-                    let nr = r + dr*step, nc = c + dc*step;
-                    while(nr>=0 && nr<size && nc>=0 && nc<size && currentBoardState[nr*size + nc] === p) {
-                        count++; line.push(nr*size+nc);
-                        nr += dr*step; nc += dc*step;
-                    }
-                }
-                if(count >= 5) {
-                    const lineKey = line.sort((a,b)=>a-b).join(',');
-                    if(!scoredLines.includes(lineKey)) {
-                        scoredLines.push(lineKey);
-                        db.child('scored_lines').push(lineKey);
-                        const roleP = (p === 1 ? 'X' : 'O');
-                        db.child('scores/' + roleP).transaction(s => (s||0) + 1);
-                        db.child('last_win_line').set({line: line, p: p});
-                        playWinSound();
-                    }
-                }
-            }
-        }
+      return (
+        <div className="space-y-4">
+          {/* ========== HEADER ========== */}
+          <div className="glass-panel rounded-2xl p-5 neon-border">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+              {/* Left */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-gray-400 text-sm font-medium">@gobblewobble</span>
+                  <span className="text-white/20 hidden sm:inline">|</span>
+                  <h1 className="text-white/90 font-bold text-lg tracking-wide">MIROFISH MISPRICING SCANNER</h1>
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                    <span>{time.toISOString().slice(11,19)} UTC</span>
+                  </span>
+                  <span className="flex items-center gap-1 font-mono text-xs text-gray-500">
+                    <i data-lucide="wallet" class="w-3.5 h-3.5 text-yellow-500"></i>
+                    0x0fe9...d3a1b7
+                  </span>
+                </div>
+              </div>
+              {/* Right — PnL */}
+              <div className="text-right shrink-0">
+                <div className="text-gray-500 text-xs uppercase tracking-wider">Unrealized PnL</div>
+                <div className="pixel-font text-3xl sm:text-4xl text-red-500 pixel-text-shadow mt-1 leading-tight">
+                  $390,607
+                </div>
+              </div>
+            </div>
+          </div>
 
-        function startSync() {
-            db.child('turn').on('value', s => { 
-                turn = s.val() || 'X'; 
-                document.getElementById('status').innerText = (turn === myRole) ? "GILIRAN ANDA" : "LAWAN BERPIKIR..."; 
-            });
-            db.child('names').on('value', s => {
-                const n = s.val() || {};
-                document.getElementById('p1-name').innerText = n.X || "Menunggu X"; 
-                document.getElementById('p2-name').innerText = n.O || "Menunggu O";
-            });
-            db.child('scores').on('value', s => {
-                const sc = s.val() || {};
-                document.getElementById('p1-score').innerText = sc.X || 0; 
-                document.getElementById('p2-score').innerText = sc.O || 0;
-            });
-            db.child('cells').on('value', s => { currentBoardState = s.val() || {}; renderBoard(); });
-            db.child('scored_lines').on('value', s => { scoredLines = Object.values(s.val() || {}); });
-            db.child('last_win_line').on('value', s => { if(s.exists()) drawWinLine(s.val().line); });
-        }
+          {/* ========== MIDDLE ROW ========== */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Relationship Graph — spans 2 cols */}
+            <div className="lg:col-span-2 glass-panel rounded-2xl p-4 neon-border">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-gray-300 font-semibold text-sm tracking-wide">Relationship Graph Simulation</h2>
+                <span className="text-xs text-gray-600 flex items-center gap-1">
+                  <i data-lucide="activity" class="w-3.5 h-3.5"></i> live
+                </span>
+              </div>
+              <div className="relative w-full" style={{ height: 200 }}>
+                <canvas ref={canvasRef} class="absolute inset-0 w-full h-full"></canvas>
+              </div>
+            </div>
 
-        function renderBoard() {
-            const flip = (myRole === 'O');
-            for(let i=0; i<100; i++) {
-                const el = document.getElementById(`b-${i}`); if(!el) continue;
-                const v = currentBoardState[i]; 
-                el.classList.remove('filled-x', 'filled-o');
-                if(v === 1) {
-                    el.classList.add('filled-x');
-                    el.innerHTML = `<span class="x-icon ${flip?'piece-flipped':''}">X</span>`;
-                } else if(v === 2) {
-                    el.classList.add('filled-o');
-                    el.innerHTML = `<span class="o-icon ${flip?'piece-flipped':''}">O</span>`;
-                } else {
-                    el.innerHTML = "";
-                }
-            }
-        }
+            {/* Order Panel */}
+            <div className="glass-panel rounded-2xl p-5 neon-border flex flex-col justify-center items-center gap-4">
+              <div className="text-center">
+                <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Pair</div>
+                <div className="text-white text-lg font-semibold">ETH / USD</div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span className="flex items-center gap-1">
+                  <i data-lucide="trending-down" class="w-4 h-4 text-red-400"></i> -2.4%
+                </span>
+                <span className="text-white/20">|</span>
+                <span className="text-gray-500">R:R 1:2.8</span>
+              </div>
+              <button className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold py-3 rounded-xl tracking-wider transition-all duration-150 shadow-lg shadow-red-900/40">
+                SHORT ETH 2.0 R:R
+              </button>
+              <div className="text-[10px] text-gray-600 font-mono">Entry: $3,210 / SL: $3,380</div>
+            </div>
+          </div>
 
-        function drawWinLine(line) {
-            const container = document.getElementById('line-container'); 
-            const el1 = document.getElementById(`b-${line[0]}`), el2 = document.getElementById(`b-${line[line.length-1]}`);
-            if(!el1 || !el2) return;
+          {/* ========== LIVE SPOT FEED ========== */}
+          <div className="glass-panel rounded-2xl p-5 neon-border">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-gray-300 font-semibold text-sm tracking-wide">Live Spot Feed</h2>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span className="px-2 py-0.5 rounded bg-white/5">1H</span>
+                <span>BTC/USD</span>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              {/* Candles */}
+              <div className="flex-1 flex items-end gap-[3px] h-28">
+                {candles.slice(-30).map((c, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                    <div
+                      className={`w-full rounded-sm ${c.up ? 'candle-green glow-green' : 'candle-red glow-red'}`}
+                      style={{
+                        height: `${Math.max(6, Math.abs(c.close - c.open) / 8)}px`,
+                        opacity: 0.85
+                      }}
+                    ></div>
+                    <div
+                      className="w-[2px] bg-white/10 rounded-full mt-0.5"
+                      style={{ height: `${Math.max(4, (c.high - c.low) / 18)}px` }}
+                    ></div>
+                  </div>
+                ))}
+              </div>
+              {/* Price */}
+              <div className="text-right shrink-0">
+                <div className="text-gray-500 text-xs">Last Price</div>
+                <div className="text-3xl font-bold text-white">${Number(currentPrice).toLocaleString()}</div>
+                <div className="text-xs text-red-400 flex items-center justify-end gap-1 mt-0.5">
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i> -1.83%
+                </div>
+              </div>
+            </div>
+          </div>
 
-            const x1 = el1.offsetLeft + (el1.offsetWidth/2), y1 = el1.offsetTop + (el1.offsetHeight/2);
-            const x2 = el2.offsetLeft + (el2.offsetWidth/2), y2 = el2.offsetTop + (el2.offsetHeight/2);
-            const dist = Math.hypot(x2-x1, y2-y1), angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
-            
-            const div = document.createElement('div'); 
-            div.className = "win-line";
-            div.style.width = dist + "px"; 
-            div.style.left = x1 + "px"; 
-            div.style.top = y1 + "px";
-            div.style.transform = `rotate(${angle}deg)`; 
-            
-            container.appendChild(div);
-            setTimeout(() => div.remove(), 4000); 
-        }
+          {/* ========== BOTTOM METRICS ========== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Stats */}
+            <div className="glass-panel rounded-2xl p-5 neon-border">
+              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Trading Stats</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-2xl font-bold text-white">1,259</div>
+                  <div className="text-xs text-gray-500">Total Trades</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-400">78%</div>
+                  <div className="text-xs text-gray-500">Win Rate</div>
+                </div>
+              </div>
+            </div>
 
-        function requestReset() {
-            if(confirm("Bersihkan papan dan mulai ulang skor?")) {
-                db.child('cells').remove(); 
-                db.child('scored_lines').remove(); 
-                db.child('scores').remove();
-                db.child('last_win_line').remove();
-                document.getElementById('line-container').innerHTML = ""; 
-                isGameOver = false;
-            }
-        }
+            {/* Win Stack */}
+            <div className="glass-panel rounded-2xl p-5 neon-border">
+              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Win Stack</div>
+              <div className="flex h-8 rounded-full overflow-hidden border border-white/5">
+                <div className="bg-green-500/70" style={{ width: '78%' }}></div>
+                <div className="bg-red-500/60" style={{ width: '22%' }}></div>
+              </div>
+              <div className="flex justify-between text-xs mt-2 text-gray-500">
+                <span>Wins 78%</span>
+                <span>Loss 22%</span>
+              </div>
+            </div>
 
-        function askFinish() {
-            if(confirm("Minta lawan untuk menyudahi permainan ini?")) {
-                db.child('finish_request').set({ requester: myRole, name: myName });
-                document.getElementById('toast').style.display = 'block';
-            }
-        }
+            {/* PnL Curve */}
+            <div className="glass-panel rounded-2xl p-5 neon-border">
+              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">PnL Curve</div>
+              <div className="relative h-16 w-full">
+                <svg viewBox="0 0 100 24" class="w-full h-full" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#22c55e" stop-opacity="0.45"/>
+                      <stop offset="100%" stop-color="#22c55e" stop-opacity="0.02"/>
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d={pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')}
+                    fill="none" stroke="#22c55e" stroke-width="1.5" class="drop-shadow-lg"
+                  />
+                  <path
+                    d={`${pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')} L 100 24 L 0 24 Z`}
+                    fill="url(#pnlGrad)"
+                  />
+                </svg>
+              </div>
+              <div className="flex justify-between text-xs text-gray-600 mt-1">
+                <span>Jan</span>
+                <span className="text-green-400 font-semibold">+$390.6K</span>
+                <span>Jun</span>
+              </div>
+            </div>
+          </div>
 
-        function listenToFinishRequests() {
-            db.child('finish_request').on('value', s => {
-                const req = s.val();
-                if(req && req.requester !== myRole) {
-                    if(confirm(`${req.name} mengajak menyudahi permainan. Keluar ke Lobby?`)) {
-                        db.remove();
-                        location.reload();
-                    } else {
-                        db.child('finish_request').remove();
-                        document.getElementById('toast').style.display = 'none';
-                    }
-                }
-            });
-        }
-    </script>
+          {/* Footer credit */}
+          <div className="text-center text-[10px] text-gray-700 tracking-widest pt-2">
+            MIROFISH · MISPRICING SCANNER v2.4.1
+          </div>
+        </div>
+      );
+    }
+
+    // ---- Mount ----
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+
+    // ---- Init Lucide icons after mount ----
+    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 100);
+  </script>
 </body>
 </html>
