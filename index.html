@@ -4,12 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MIROFISH MISPRICING SCANNER</title>
-  <!-- Tailwind CDN -->
+  
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Pixel font via Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  
   <style>
     body {
       background: #0f0f1a;
@@ -38,7 +41,7 @@
 <body class="min-h-screen flex items-center justify-center p-4">
   <div id="root" class="w-full max-w-7xl"></div>
 
-  <script>
+  <script type="text/babel">
     // ---- React 18 + ReactDOM via CDN ----
     const { createRoot, useState, useEffect, useRef } = React;
 
@@ -79,6 +82,13 @@
         const id = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(id);
       }, []);
+
+      // Trigger Lucide Icons re-render on state changes
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
 
       // Draw relationship graph on canvas
       useEffect(() => {
@@ -149,7 +159,7 @@
       const pnlPoints = [0.12,0.18,0.24,0.21,0.30,0.26,0.35,0.32,0.40,0.38,0.48,0.45,0.55,0.52,0.65,0.62,0.72,0.78,0.82,0.88,0.92,0.98];
 
       return (
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {/* ========== HEADER ========== */}
           <div className="glass-panel rounded-2xl p-5 neon-border">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -162,17 +172,17 @@
                 </div>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
-                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                    <i data-lucide="clock" className="w-3.5 h-3.5"></i>
                     <span>{time.toISOString().slice(11,19)} UTC</span>
                   </span>
                   <span className="flex items-center gap-1 font-mono text-xs text-gray-500">
-                    <i data-lucide="wallet" class="w-3.5 h-3.5 text-yellow-500"></i>
+                    <i data-lucide="wallet" className="w-3.5 h-3.5 text-yellow-500"></i>
                     0x0fe9...d3a1b7
                   </span>
                 </div>
               </div>
               {/* Right — PnL */}
-              <div className="text-right shrink-0">
+              <div className="text-left lg:text-right shrink-0">
                 <div className="text-gray-500 text-xs uppercase tracking-wider">Unrealized PnL</div>
                 <div className="pixel-font text-3xl sm:text-4xl text-red-500 pixel-text-shadow mt-1 leading-tight">
                   $390,607
@@ -188,11 +198,11 @@
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-gray-300 font-semibold text-sm tracking-wide">Relationship Graph Simulation</h2>
                 <span className="text-xs text-gray-600 flex items-center gap-1">
-                  <i data-lucide="activity" class="w-3.5 h-3.5"></i> live
+                  <i data-lucide="activity" className="w-3.5 h-3.5"></i> live
                 </span>
               </div>
               <div className="relative w-full" style={{ height: 200 }}>
-                <canvas ref={canvasRef} class="absolute inset-0 w-full h-full"></canvas>
+                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
               </div>
             </div>
 
@@ -204,7 +214,7 @@
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <span className="flex items-center gap-1">
-                  <i data-lucide="trending-down" class="w-4 h-4 text-red-400"></i> -2.4%
+                  <i data-lucide="trending-down" className="w-4 h-4 text-red-400"></i> -2.4%
                 </span>
                 <span className="text-white/20">|</span>
                 <span className="text-gray-500">R:R 1:2.8</span>
@@ -249,7 +259,7 @@
                 <div className="text-gray-500 text-xs">Last Price</div>
                 <div className="text-3xl font-bold text-white">${Number(currentPrice).toLocaleString()}</div>
                 <div className="text-xs text-red-400 flex items-center justify-end gap-1 mt-0.5">
-                  <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i> -1.83%
+                  <i data-lucide="chevron-down" className="w-3.5 h-3.5"></i> -1.83%
                 </div>
               </div>
             </div>
@@ -289,16 +299,16 @@
             <div className="glass-panel rounded-2xl p-5 neon-border">
               <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">PnL Curve</div>
               <div className="relative h-16 w-full">
-                <svg viewBox="0 0 100 24" class="w-full h-full" preserveAspectRatio="none">
+                <svg viewBox="0 0 100 24" className="w-full h-full" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#22c55e" stop-opacity="0.45"/>
-                      <stop offset="100%" stop-color="#22c55e" stop-opacity="0.02"/>
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.45"/>
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity="0.02"/>
                     </linearGradient>
                   </defs>
                   <path
                     d={pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')}
-                    fill="none" stroke="#22c55e" stroke-width="1.5" class="drop-shadow-lg"
+                    fill="none" stroke="#22c55e" strokeWidth="1.5" className="drop-shadow-lg"
                   />
                   <path
                     d={`${pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')} L 100 24 L 0 24 Z`}
@@ -325,9 +335,6 @@
     // ---- Mount ----
     const root = createRoot(document.getElementById('root'));
     root.render(<App />);
-
-    // ---- Init Lucide icons after mount ----
-    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 100);
   </script>
 </body>
 </html>
