@@ -1,340 +1,620 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MIROFISH MISPRICING SCANNER</title>
-  
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TrackCust JTM - Official</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <style>
+        .dominos-blue { background-color: #006491; }
+        .dominos-red { background-color: #e31837; }
+        ::-webkit-scrollbar { width: 0; background: transparent; }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; transition: all 0.2s; }
+        .nav-item.active { color: #006491; }
+        .nav-add { background: #006491 !important; color: white !important; width: 55px !important; height: 55px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
+        
+        .page { display: none; height: 100%; flex-direction: column; }
+        .page.active { display: flex; }
+        
+        .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
+        .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
+        
+        .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
+        .animate-blink { animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-  
-  <style>
-    body {
-      background: #0f0f1a;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-    .pixel-font {
-      font-family: 'Press Start 2P', monospace;
-    }
-    .neon-border {
-      box-shadow: 0 0 0 1px rgba(255, 70, 70, 0.25), 0 0 12px rgba(255, 70, 70, 0.08);
-    }
-    .glass-panel {
-      background: rgba(18, 18, 30, 0.85);
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .candle-red { background: #ef4444; }
-    .candle-green { background: #22c55e; }
-    .glow-green { box-shadow: 0 0 18px rgba(34, 197, 94, 0.2); }
-    .glow-red { box-shadow: 0 0 18px rgba(239, 68, 68, 0.25); }
-    .pixel-text-shadow {
-      text-shadow: 0 0 6px rgba(239, 68, 68, 0.6), 0 0 14px rgba(220, 38, 38, 0.3);
-    }
-  </style>
+        .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
+        .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
+        .profile-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+        .header-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; object-fit: cover; cursor: pointer; }
+        .online-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
+        .antaran-photo { cursor: pointer; transition: transform 0.2s; }
+        .antaran-photo:active { transform: scale(0.92); }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-  <div id="root" class="w-full max-w-7xl"></div>
+<body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
 
-  <script type="text/babel">
-    // ---- React 18 + ReactDOM via CDN ----
-    const { createRoot, useState, useEffect, useRef } = React;
-
-    // ---- Candlestick generator ----
-    function generateCandles(count = 28) {
-      let price = 78500;
-      const candles = [];
-      for (let i = 0; i < count; i++) {
-        const change = (Math.random() - 0.58) * 280;
-        const open = price;
-        const close = open + change;
-        const high = Math.max(open, close) + Math.random() * 120;
-        const low = Math.min(open, close) - Math.random() * 120;
-        candles.push({ open, high, low, close, up: close >= open });
-        price = close;
-      }
-      return candles;
-    }
-
-    // ---- Relationship node positions (pre-calc) ----
-    const nodes = [
-      { x: 30, y: 70 }, { x: 28, y: 45 }, { x: 55, y: 30 },
-      { x: 70, y: 55 }, { x: 58, y: 72 }, { x: 78, y: 80 },
-      { x: 20, y: 22 }, { x: 88, y: 42 }, { x: 92, y: 70 },
-    ];
-    const edges = [
-      [0,1],[1,2],[2,3],[3,4],[0,4],[0,5],[1,6],[2,7],[3,8],[4,8],[5,7],[6,2],[7,8]
-    ];
-
-    // ---- Main App ----
-    function App() {
-      const [candles] = useState(() => generateCandles(28));
-      const [time, setTime] = useState(new Date());
-      const canvasRef = useRef(null);
-
-      // Digital clock
-      useEffect(() => {
-        const id = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(id);
-      }, []);
-
-      // Trigger Lucide Icons re-render on state changes
-      useEffect(() => {
-        if (window.lucide) {
-          window.lucide.createIcons();
-        }
-      });
-
-      // Draw relationship graph on canvas
-      useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
-        const w = rect.width;
-        const h = rect.height;
-
-        ctx.clearRect(0,0,w,h);
-
-        // Edges — curved lines
-        ctx.lineWidth = 1.2;
-        edges.forEach(([i,j]) => {
-          const a = nodes[i], b = nodes[j];
-          const ax = a.x/100*w, ay = a.y/100*h;
-          const bx = b.x/100*w, by = b.y/100*h;
-          const cpx = (ax+bx)/2 + (by-ay)*0.2;
-          const cpy = (ay+by)/2 - (bx-ax)*0.15;
-          ctx.beginPath();
-          ctx.moveTo(ax, ay);
-          ctx.quadraticCurveTo(cpx, cpy, bx, by);
-          ctx.strokeStyle = 'rgba(250,200,50,0.3)';
-          ctx.stroke();
-        });
-
-        // Nodes
-        nodes.forEach((n,i) => {
-          const x = n.x/100*w, y = n.y/100*h;
-          const grad = ctx.createRadialGradient(x-3,y-3,2,x,y,12);
-          grad.addColorStop(0, '#fbbf24');
-          grad.addColorStop(0.4, '#ef4444');
-          grad.addColorStop(1, 'rgba(239,68,68,0.1)');
-          ctx.beginPath();
-          ctx.arc(x, y, 9, 0, Math.PI*2);
-          ctx.fillStyle = grad;
-          ctx.fill();
-          ctx.shadowColor = 'rgba(239,68,68,0.5)';
-          ctx.shadowBlur = 14;
-          ctx.beginPath();
-          ctx.arc(x, y, 10, 0, Math.PI*2);
-          ctx.fillStyle = 'rgba(255,200,50,0.06)';
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        });
-
-        // Downward trend line
-        ctx.beginPath();
-        ctx.moveTo(15/100*w, 25/100*h);
-        ctx.quadraticCurveTo(45/100*w, 50/100*h, 92/100*w, 82/100*h);
-        ctx.strokeStyle = 'rgba(239,68,68,0.5)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6,6]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }, []);
-
-      // Last price from candles
-      const lastPrice = candles.length ? candles[candles.length-1].close : 76558;
-      const currentPrice = lastPrice.toFixed(0);
-
-      // PnL Curve area data (simulated)
-      const pnlPoints = [0.12,0.18,0.24,0.21,0.30,0.26,0.35,0.32,0.40,0.38,0.48,0.45,0.55,0.52,0.65,0.62,0.72,0.78,0.82,0.88,0.92,0.98];
-
-      return (
-        <div className="space-y-4 w-full">
-          {/* ========== HEADER ========== */}
-          <div className="glass-panel rounded-2xl p-5 neon-border">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-              {/* Left */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-gray-400 text-sm font-medium">@gobblewobble</span>
-                  <span className="text-white/20 hidden sm:inline">|</span>
-                  <h1 className="text-white/90 font-bold text-lg tracking-wide">MIROFISH MISPRICING SCANNER</h1>
-                </div>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <i data-lucide="clock" className="w-3.5 h-3.5"></i>
-                    <span>{time.toISOString().slice(11,19)} UTC</span>
-                  </span>
-                  <span className="flex items-center gap-1 font-mono text-xs text-gray-500">
-                    <i data-lucide="wallet" className="w-3.5 h-3.5 text-yellow-500"></i>
-                    0x0fe9...d3a1b7
-                  </span>
-                </div>
-              </div>
-              {/* Right — PnL */}
-              <div className="text-left lg:text-right shrink-0">
-                <div className="text-gray-500 text-xs uppercase tracking-wider">Unrealized PnL</div>
-                <div className="pixel-font text-3xl sm:text-4xl text-red-500 pixel-text-shadow mt-1 leading-tight">
-                  $390,607
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ========== MIDDLE ROW ========== */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Relationship Graph — spans 2 cols */}
-            <div className="lg:col-span-2 glass-panel rounded-2xl p-4 neon-border">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-gray-300 font-semibold text-sm tracking-wide">Relationship Graph Simulation</h2>
-                <span className="text-xs text-gray-600 flex items-center gap-1">
-                  <i data-lucide="activity" className="w-3.5 h-3.5"></i> live
-                </span>
-              </div>
-              <div className="relative w-full" style={{ height: 200 }}>
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
-              </div>
-            </div>
-
-            {/* Order Panel */}
-            <div className="glass-panel rounded-2xl p-5 neon-border flex flex-col justify-center items-center gap-4">
-              <div className="text-center">
-                <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Pair</div>
-                <div className="text-white text-lg font-semibold">ETH / USD</div>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <span className="flex items-center gap-1">
-                  <i data-lucide="trending-down" className="w-4 h-4 text-red-400"></i> -2.4%
-                </span>
-                <span className="text-white/20">|</span>
-                <span className="text-gray-500">R:R 1:2.8</span>
-              </div>
-              <button className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold py-3 rounded-xl tracking-wider transition-all duration-150 shadow-lg shadow-red-900/40">
-                SHORT ETH 2.0 R:R
-              </button>
-              <div className="text-[10px] text-gray-600 font-mono">Entry: $3,210 / SL: $3,380</div>
-            </div>
-          </div>
-
-          {/* ========== LIVE SPOT FEED ========== */}
-          <div className="glass-panel rounded-2xl p-5 neon-border">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-gray-300 font-semibold text-sm tracking-wide">Live Spot Feed</h2>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className="px-2 py-0.5 rounded bg-white/5">1H</span>
-                <span>BTC/USD</span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-              {/* Candles */}
-              <div className="flex-1 flex items-end gap-[3px] h-28">
-                {candles.slice(-30).map((c, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                    <div
-                      className={`w-full rounded-sm ${c.up ? 'candle-green glow-green' : 'candle-red glow-red'}`}
-                      style={{
-                        height: `${Math.max(6, Math.abs(c.close - c.open) / 8)}px`,
-                        opacity: 0.85
-                      }}
-                    ></div>
-                    <div
-                      className="w-[2px] bg-white/10 rounded-full mt-0.5"
-                      style={{ height: `${Math.max(4, (c.high - c.low) / 18)}px` }}
-                    ></div>
-                  </div>
-                ))}
-              </div>
-              {/* Price */}
-              <div className="text-right shrink-0">
-                <div className="text-gray-500 text-xs">Last Price</div>
-                <div className="text-3xl font-bold text-white">${Number(currentPrice).toLocaleString()}</div>
-                <div className="text-xs text-red-400 flex items-center justify-end gap-1 mt-0.5">
-                  <i data-lucide="chevron-down" className="w-3.5 h-3.5"></i> -1.83%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ========== BOTTOM METRICS ========== */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Stats */}
-            <div className="glass-panel rounded-2xl p-5 neon-border">
-              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Trading Stats</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-2xl font-bold text-white">1,259</div>
-                  <div className="text-xs text-gray-500">Total Trades</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-400">78%</div>
-                  <div className="text-xs text-gray-500">Win Rate</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Win Stack */}
-            <div className="glass-panel rounded-2xl p-5 neon-border">
-              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Win Stack</div>
-              <div className="flex h-8 rounded-full overflow-hidden border border-white/5">
-                <div className="bg-green-500/70" style={{ width: '78%' }}></div>
-                <div className="bg-red-500/60" style={{ width: '22%' }}></div>
-              </div>
-              <div className="flex justify-between text-xs mt-2 text-gray-500">
-                <span>Wins 78%</span>
-                <span>Loss 22%</span>
-              </div>
-            </div>
-
-            {/* PnL Curve */}
-            <div className="glass-panel rounded-2xl p-5 neon-border">
-              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">PnL Curve</div>
-              <div className="relative h-16 w-full">
-                <svg viewBox="0 0 100 24" className="w-full h-full" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.45"/>
-                      <stop offset="100%" stopColor="#22c55e" stopOpacity="0.02"/>
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d={pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')}
-                    fill="none" stroke="#22c55e" strokeWidth="1.5" className="drop-shadow-lg"
-                  />
-                  <path
-                    d={`${pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')} L 100 24 L 0 24 Z`}
-                    fill="url(#pnlGrad)"
-                  />
-                </svg>
-              </div>
-              <div className="flex justify-between text-xs text-gray-600 mt-1">
-                <span>Jan</span>
-                <span className="text-green-400 font-semibold">+$390.6K</span>
-                <span>Jun</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer credit */}
-          <div className="text-center text-[10px] text-gray-700 tracking-widest pt-2">
-            MIROFISH · MISPRICING SCANNER v2.4.1
-          </div>
+    <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4" onclick="this.style.display='none'">
+        <button class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center"><i class="fa fa-times text-2xl"></i></button>
+        <div id="modalContent" class="flex flex-col items-center">
+             <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
+             <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
         </div>
-      );
-    }
+    </div>
 
-    // ---- Mount ----
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+    <div id="pinOverlay" class="fixed inset-0 dominos-blue z-[10000] flex flex-col items-center justify-center p-6">
+        <div class="text-center mb-8 text-white">
+            <h1 class="font-black italic text-4xl uppercase">Domino's</h1>
+            <p class="text-red-400 font-bold uppercase tracking-widest text-sm">JTM Track System</p>
+        </div>
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm text-center">
+            <select id="selectUser" class="w-full p-4 bg-gray-100 rounded-2xl mb-4 font-bold text-blue-900 outline-none uppercase text-xs"></select>
+            <input type="password" id="inputPin" maxlength="4" placeholder="PIN 4 DIGIT" inputmode="numeric" class="w-full text-center text-2xl font-black p-4 bg-gray-100 rounded-2xl mb-6 outline-none">
+            <button onclick="prosesLogin()" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase shadow-lg">Masuk</button>
+        </div>
+    </div>
+
+    <div id="mainContent" style="display:none;" class="flex flex-col h-full">
+        <nav class="dominos-blue p-4 text-white shadow-md flex justify-between items-center">
+            <h1 class="font-black italic uppercase text-lg">Domino's <span class="text-red-400">JTM</span></h1>
+            <div class="flex items-center gap-2">
+                <img id="navUserAvatar" src="" class="header-avatar hidden" onclick="openFullImg(this.src, currentUser)">
+                <span id="userDisplay" class="bg-white text-blue-900 px-3 py-1 rounded-full text-[10px] font-black uppercase">User</span>
+                <button onclick="location.reload()" class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center shadow-inner active:scale-90"><i class="fa fa-sync-alt text-[10px]"></i></button>
+            </div>
+        </nav>
+        
+        <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic" style="max-height: 60px; overflow-y: auto; border-bottom: 1px solid #e2e8f0;"></div>
+        <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
+
+        <main class="flex-1 overflow-hidden relative">
+            
+            <div id="page-home" class="page p-6 overflow-y-auto bg-gray-50">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="relative group">
+                        <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff" 
+                             class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover cursor-pointer"
+                             onclick="openFullImg(this.src, currentUser)">
+                        <label class="absolute bottom-0 right-0 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-white cursor-pointer shadow-lg">
+                            <i class="fa fa-camera text-[10px]"></i>
+                            <input type="file" accept="image/*" class="hidden" onchange="changeProfilePhoto(this)">
+                        </label>
+                    </div>
+                    <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
+                </div>
+                <div class="space-y-3" id="profileOptions">
+                    <div onclick="changePinPrompt()" class="profile-bubble">
+                        <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
+                        <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
+                        <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
+                    </div>
+
+                    <div id="adminPanel" class="hidden space-y-3">
+                        <div class="border-t-2 border-dashed border-gray-200 my-4 pt-4">
+                            <h4 class="text-[9px] font-black text-gray-400 uppercase mb-3 px-2">Admin Management</h4>
+                            <div onclick="showCrewManager()" class="profile-bubble border-blue-200 bg-blue-50/30">
+                                <div class="profile-icon bg-blue-600 text-white"><i class="fa fa-users-cog"></i></div>
+                                <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Management Crew</span>
+                                <i class="fa fa-chevron-right text-blue-300 text-[10px]"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div onclick="handleLogout()" class="profile-bubble">
+                        <div class="profile-icon bg-red-50 text-red-600"><i class="fa fa-sign-out-alt"></i></div>
+                        <span class="font-black text-red-600 uppercase italic text-[11px] flex-1">Keluar Sistem</span>
+                        <i class="fa fa-chevron-right text-red-200 text-[10px]"></i>
+                    </div>
+                </div>
+
+                <div id="crewManagerView" class="hidden mt-4 bg-white rounded-3xl p-5 shadow-inner border border-blue-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-black text-blue-900 uppercase italic text-xs">Daftar Crew Database</h3>
+                        <button onclick="closeCrewManager()" class="text-gray-400"><i class="fa fa-times"></i></button>
+                    </div>
+                    <div class="space-y-2 mb-6 max-h-64 overflow-y-auto" id="crewListAdmin"></div>
+                    <div class="bg-gray-50 p-4 rounded-2xl space-y-2">
+                        <p class="text-[9px] font-black text-blue-900 uppercase italic mb-1">Tambah/Edit Crew</p>
+                        <input type="text" id="newCrewName" placeholder="NAMA LENGKAP" class="w-full p-3 rounded-xl text-[10px] font-bold outline-none border">
+                        <input type="password" id="newCrewPin" maxlength="4" placeholder="PIN 4 DIGIT" class="w-full p-3 rounded-xl text-[10px] font-bold outline-none border">
+                        <div class="flex gap-2">
+                           <button onclick="saveCrew()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[9px]">Simpan Crew</button>
+                           <button onclick="cancelCrewEdit()" id="btnCancelCrew" class="hidden flex-1 bg-gray-400 text-white py-3 rounded-xl font-black uppercase text-[9px]">Batal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-list" class="page active p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-3">
+                    <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Driver/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
+                    <div id="countActive" class="bg-red-500 text-white px-3 py-2 rounded-xl text-[10px] font-black italic">0 AKTIF</div>
+                </div>
+                <div id="activeList" class="space-y-4 pb-32"></div>
+            </div>
+
+            <div id="page-history" class="page p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4 bg-gray-100 p-3 rounded-2xl border-b-2 border-gray-200">
+                    <h3 class="font-black text-blue-900 uppercase italic text-[11px]">Daftar Selesai</h3>
+                    <button onclick="clearAllHistory()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-md"><i class="fa fa-trash-alt mr-1"></i> Kosongkan</button>
+                </div>
+                <div id="historyList" class="space-y-4 pb-32"></div>
+            </div>
+
+            <div id="page-add" class="page p-4 overflow-y-auto">
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900 space-y-3">
+                    <h2 id="formTitle" class="font-black text-blue-900 text-center uppercase text-xs">Tambah Antaran</h2>
+                    <input type="hidden" id="editId">
+                    <input type="text" id="custArea" placeholder="KODE AREA (A-1)" class="w-full bg-yellow-50 p-4 rounded-xl text-sm font-bold uppercase outline-none">
+                    <input type="text" id="custName" placeholder="Nama Pelanggan" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="tel" id="custPhone" placeholder="Nomor HP" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="text" id="custMaps" placeholder="Link Google Maps" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none">
+                    <div class="bg-blue-50 p-4 rounded-xl border-2 border-dashed border-blue-200 text-center relative">
+                        <label class="cursor-pointer">
+                            <i class="fa fa-camera text-blue-400 text-xl"></i>
+                            <p class="text-[9px] font-black text-blue-900 uppercase mt-1" id="photoStatus">Foto Rumah</p>
+                            <input type="file" id="housePhoto" accept="image/*" class="hidden" onchange="processImage(this)">
+                        </label>
+                        <button onclick="removePhoto()" id="btnRemovePhoto" class="hidden absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-times text-[10px]"></i></button>
+                        <img id="imgPrev" class="hidden w-full h-32 object-cover rounded-lg mt-2 border-2 border-white">
+                    </div>
+                    <button onclick="saveData()" id="saveBtn" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
+                    <button onclick="cancelEdit()" id="cancelBtn" class="hidden w-full bg-gray-400 text-white py-3 rounded-xl font-bold uppercase text-[10px]">Batal</button>
+                </div>
+            </div>
+
+            <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
+                <div class="wa-card mb-20 mx-auto">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                    <h2 class="font-black text-blue-900 uppercase italic text-[12px] mb-3">Manual Input Chat</h2>
+                    
+                    <div class="space-y-3 mb-4">
+                        <input type="text" id="waDirectCustName" placeholder="Nama Customer (Wajib)" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-bold text-center text-blue-900 text-sm">
+                        <input type="tel" id="waDirectNumber" placeholder="Input Nomor HP Manual" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
+                    </div>
+                    
+                    <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
+                </div>
+            </div>
+        </main>
+
+        <div class="bottom-nav">
+            <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
+            <div onclick="showPage('history')" class="nav-item" id="nav-history"><i class="fa fa-history mb-1 text-xl"></i><span>History</span></div>
+            <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
+            <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
+            <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration & Database Users
+        let userPins = { 
+            "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
+            "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
+            "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
+            "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
+        };
+        const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
+        const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
+            databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "trackcust-jtm" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        let currentUser = localStorage.getItem('jtm_user') || "";
+        let sessionID = Math.random().toString(36).substring(2, 15);
+        let allData = {}; let photoBase64 = "";
+        let renderTimer;
+        let editCrewId = null;
+
+        window.onload = () => {
+            // Load user data from firebase to ensure real-time management works
+            db.ref('crew_settings').on('value', snap => {
+                if(snap.exists()) {
+                    userPins = snap.val();
+                } else {
+                    // Initialize firebase with current local object if empty
+                    db.ref('crew_settings').set(userPins);
+                }
+                refreshUserDropdown();
+                if(currentUser === "Okta") renderCrewAdminList();
+            });
+
+            if(currentUser) bukaApp(currentUser);
+            setInterval(updateTimers, 1000);
+            startDeliveryStatusListener();
+        };
+
+        function refreshUserDropdown() {
+            const logSel = document.getElementById('selectUser');
+            if(!logSel) return;
+            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
+            Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+        }
+
+        // --- CREW MANAGEMENT LOGIC (ADMIN ONLY) ---
+        function showCrewManager() {
+            document.getElementById('profileOptions').classList.add('hidden');
+            document.getElementById('crewManagerView').classList.remove('hidden');
+            renderCrewAdminList();
+        }
+
+        function closeCrewManager() {
+            document.getElementById('profileOptions').classList.remove('hidden');
+            document.getElementById('crewManagerView').classList.add('hidden');
+            cancelCrewEdit();
+        }
+
+        function renderCrewAdminList() {
+            const list = document.getElementById('crewListAdmin');
+            list.innerHTML = "";
+            Object.keys(userPins).forEach(n => {
+                const isProtected = (n === "Okta");
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-2 px-3 rounded-xl border border-gray-100">
+                        <div class="flex flex-col">
+                            <span class="font-black text-blue-900 text-[10px] uppercase italic">${n}</span>
+                            <span class="text-[8px] text-gray-400 font-bold">PIN: ****</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editCrew('${n}')" class="text-blue-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-edit"></i></button>
+                            ${!isProtected ? `<button onclick="deleteCrew('${n}')" class="text-red-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveCrew() {
+            const name = document.getElementById('newCrewName').value.trim();
+            const pin = document.getElementById('newCrewPin').value.trim();
+            if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
+            
+            if(editCrewId && editCrewId !== name) {
+                delete userPins[editCrewId]; // Remove old if name changed
+            }
+            userPins[name] = pin;
+            db.ref('crew_settings').set(userPins).then(() => {
+                alert("Data Crew Terupdate!");
+                cancelCrewEdit();
+            });
+        }
+
+        function editCrew(n) {
+            editCrewId = n;
+            document.getElementById('newCrewName').value = n;
+            document.getElementById('newCrewPin').value = userPins[n];
+            document.getElementById('btnCancelCrew').classList.remove('hidden');
+        }
+
+        function deleteCrew(n) {
+            if(confirm(`Hapus crew ${n} dari database?`)) {
+                delete userPins[n];
+                db.ref('crew_settings').set(userPins);
+            }
+        }
+
+        function cancelCrewEdit() {
+            editCrewId = null;
+            document.getElementById('newCrewName').value = "";
+            document.getElementById('newCrewPin').value = "";
+            document.getElementById('btnCancelCrew').classList.add('hidden');
+        }
+
+        // --- USER & AUTH LOGIC ---
+        function changeProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('userAvatar').src = base64;
+                    localStorage.setItem('profile_pic_' + currentUser, base64);
+                    updateProfileUI(); 
+                    updatePresence();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            const navAvatar = document.getElementById('navUserAvatar');
+            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            
+            document.getElementById('userAvatar').src = targetSrc;
+            navAvatar.src = targetSrc;
+            navAvatar.classList.remove('hidden');
+
+            // Toggle Admin Panel Visibility
+            if(currentUser === "Okta") {
+                document.getElementById('adminPanel').classList.remove('hidden');
+            } else {
+                document.getElementById('adminPanel').classList.add('hidden');
+                closeCrewManager();
+            }
+        }
+
+        function prosesLogin() {
+            const u = document.getElementById('selectUser').value;
+            const p = document.getElementById('inputPin').value;
+            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
+        }
+
+        function bukaApp(n) {
+            const isOkta = (n === "Okta");
+            db.ref('presence/' + n).once('value', snapshot => {
+                const existingData = snapshot.val();
+                if (!isOkta && existingData && existingData.session !== sessionID) {
+                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
+                }
+                currentUser = n; localStorage.setItem('jtm_user', n);
+                document.getElementById('userDisplay').innerText = n;
+                document.getElementById('pinOverlay').style.display = "none";
+                document.getElementById('mainContent').style.display = "flex";
+                updatePresence(); updateProfileUI();
+                db.ref('presence/' + n + '/session').on('value', snap => {
+                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
+                });
+                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+            });
+        }
+
+        function handleLogout(withConfirm = true) { 
+            if(withConfirm && !confirm("Keluar?")) return;
+            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+            localStorage.removeItem('jtm_user'); location.reload(); 
+        }
+
+        // --- CORE FUNCTIONALITY ---
+        function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
+        
+        function pushDeliveryStatus(nama) { 
+            if(mgtAndCashiers.includes(nama)) return; 
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
+        }
+
+        function startDeliveryStatusListener() {
+            db.ref('delivery_activity').on('value', s => {
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                s.forEach(child => {
+                    const d = child.val();
+                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
+                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
+                });
+                bar.style.display = hasData ? "block" : "none";
+            });
+        }
+
+        function render() {
+            const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            let activeCount = 0; let listHTML = ""; let histHTML = "";
+            Object.keys(allData).reverse().forEach(id => {
+                const i = allData[id];
+                const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
+                if(i.status !== 'done') activeCount++;
+                let wa = (i.phone || "").replace(/\D/g, '');
+                if(wa.startsWith('0')) wa = '62' + wa.slice(1);
+                
+                let msgWa = "";
+                if (cashiersOnly.includes(currentUser)) {
+                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
+                } else {
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                }
+                
+                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
+                const isBlockedUser = mgtAndCashiers.includes(currentUser);
+
+                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
+                            <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>
+                                ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            ${i.status !== 'done' ? 
+                            `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
+                             <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
+                             <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
+                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
+                            : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}
+                        </div>
+                    </div>
+                    <div class="mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
+                    </div>
+                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
+                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
+                    </div>
+                </div>`;
+                if(i.status === 'done') histHTML += cardHtml; 
+                else if(searchStr.includes(filter)) listHTML += cardHtml;
+            });
+            list.innerHTML = listHTML; hist.innerHTML = histHTML;
+            document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
+        }
+
+        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
+        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
+        
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas'); 
+                        const THUMB_W = 150; 
+                        c.width = THUMB_W; 
+                        c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
+                        document.getElementById('imgPrev').src = photoBase64;
+                        document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveData() {
+            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
+            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
+            if (ph) {
+                const cleanInputPhone = ph.replace(/\D/g, '');
+                const isDuplicate = Object.keys(allData).some(id => {
+                    if (id === eid) return false; 
+                    const item = allData[id];
+                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
+                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
+                });
+                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
+            }
+            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
+            ref.then(() => resetForm());
+        }
+
+        function editData(id) {
+            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
+            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
+            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); }
+            document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
+        }
+
+        function goOTW(id) { 
+            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
+            if(allData[id].status !== 'otw') { 
+                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+                pushDeliveryStatus(currentUser); 
+            } 
+        }
+
+        function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
+
+        // Updated showPage wrapper to bypass camera controls completely
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
+            if(id === 'home') closeCrewManager();
+        }
+
+        function updateTimers() {
+            Object.keys(allData).forEach(id => {
+                if(allData[id].status === 'otw') {
+                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
+                    const rem = (20 * 60) - elapsed;
+                    const el = document.getElementById('timer-'+id);
+                    if(el) {
+                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
+                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
+                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
+                    }
+                }
+            });
+        }
+
+        function updatePresence() {
+            if(!currentUser) return;
+            const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
+            const userStatusRef = db.ref('presence/' + currentUser);
+            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
+            userStatusRef.onDisconnect().remove();
+            
+            db.ref('presence').on('value', s => {
+                const el = document.getElementById('onlineBar'); el.innerHTML = "";
+                s.forEach(u => {
+                    const data = u.val();
+                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
+                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
+                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
+                    </span>`;
+                });
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
+            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
+            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+        }
+
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
+        function cancelEdit() { resetForm(); }
+        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+        
+        function changePinPrompt() {
+            const old = prompt("Masukkan PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("Masukkan PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) { 
+                    userPins[currentUser] = baru; 
+                    db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!"));
+                } else { alert("PIN harus 4 digit!"); }
+            } else { alert("PIN Salah!"); }
+        }
+
+        // --- UPDATED WA DIRECT LOGIC (MANUAL ONLY WITH MANDATORY NAME) ---
+        function openWaDirect() {
+            let custName = document.getElementById('waDirectCustName').value.trim();
+            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
+            
+            if(!custName) return alert("Nama Customer wajib diisi!");
+            if(!n) return alert("Nomor HP kosong atau tidak valid!");
+            
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
+            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
+            
+            // Check for duplicate in active delivery list
+            const activeId = Object.keys(allData).find(id => {
+                const dataN = (allData[id].phone || "").replace(/\D/g, '');
+                return allData[id].status !== 'done' && dataN.includes(searchN);
+            });
+            
+            if (activeId) {
+                document.getElementById('searchInput').value = allData[activeId].phone;
+                render(); 
+                showPage('list');
+            } else { 
+                pushDeliveryStatus(currentUser);
+                let msg = "";
+                if (cashiersOnly.includes(currentUser)) {
+                    msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
+                } else {
+                    msg = `Halo Bapak/Ibu ${custName}, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
+                }
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+            }
+        }
+    </script>
 </body>
 </html>
