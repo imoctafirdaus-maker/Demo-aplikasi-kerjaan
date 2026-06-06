@@ -185,7 +185,7 @@
                         </div>
                         
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white">
-                            <span class="text-green-500 font-black uppercase text-[8px] tracking-tight leading-none mb-1.5">Payment Cash</span>
+                            <span class="text-green-500 font-black uppercase text-[8px] tracking-tight stroke-none mb-1.5">Payment Cash</span>
                             <input type="checkbox" id="waDirectCashPayment" class="checkbox-custom">
                         </div>
                     </div>
@@ -472,6 +472,19 @@
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
                 const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
 
+                // Extract or retain original ID format specifically for the history display header
+                let displayAreaHeader = i.area;
+                if (i.status === 'done') {
+                    if (i.area.includes('(')) {
+                        // If it's structured like "KECAMATAN (KELURAHAN, JALAN)", extract or restore ID indicator
+                        displayAreaHeader = i.area.split(' (')[0]; 
+                    }
+                    // Fallback to force custom 3-digit numerical ID visibility if initiated via WA direct
+                    if (!displayAreaHeader.startsWith("ID ") && i.phone && i.phone.length >= 3 && !isNaN(i.area)) {
+                        displayAreaHeader = "ID " + i.area;
+                    }
+                }
+
                 // Generate conditional buttons for history view based on coordinate availability
                 let historyGpsControlsHtml = "";
                 if (i.maps) {
@@ -492,7 +505,7 @@
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
+                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.status==='done' ? displayAreaHeader : i.area}</p>
                             <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
                             <div class="flex items-center gap-2 mt-1">
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
