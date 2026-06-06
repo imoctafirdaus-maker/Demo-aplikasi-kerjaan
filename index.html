@@ -429,13 +429,32 @@
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
                 const isBlockedUser = mgtAndCashiers.includes(currentUser);
 
+                // Pesan teks WhatsApp khusus kartu ucapan minta maaf telat antaran
+                const msgLate = `Halo bapak/ibu ${i.name}, mohon maaf yang sebesar-besarnya atas keterlambatan pengantaran pesanannya. Saat ini antrean pengiriman sedang sangat padat, namun tidak perlu khawatir karena pizza Bapak/ibu ${i.name},sedang dalam perjalanan dan akan tetap diantarkan. Mohon bersedia menunggu sebentar ya, Pak/Bu. Terima kasih banyak atas pengertiannya ☺️🙏`;
+                const waLateLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgLate)}`;
+
+                // Format info waktu selesai untuk menu History
+                let infoSelesai = 'SELESAI';
+                if (i.status === 'done' && i.doneTime) {
+                    const tgl = new Date(i.doneTime);
+                    const jam = String(tgl.getHours()).padStart(2, '0');
+                    const min = String(tgl.getMinutes()).padStart(2, '0');
+                    const hariArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    const hari = hariArr[tgl.getDay()];
+                    const tglNum = tgl.getDate();
+                    const blnNum = tgl.getMonth() + 1;
+                    const thnNum = String(tgl.getFullYear()).slice(-2);
+                    const driver = i.doneBy || i.driverBy || currentUser;
+                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}`;
+                }
+
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
                             <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
                             <div class="flex items-center gap-2 mt-1">
-                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>
+                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
                                 ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
                             </div>
                             ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
@@ -446,7 +465,10 @@
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
                              <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
-                            : `<button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo"></i></button>`}
+                            : `<div class="flex gap-1 items-center">
+                                 <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
+                                 <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
+                               </div>`}
                         </div>
                     </div>
                     <div class="mt-3 ${i.status==='done'?'hidden':''}">
@@ -526,7 +548,13 @@
             } 
         }
 
-        function setStatus(id, stat) { db.ref('customers/'+id).update({ status: stat }); }
+        function setStatus(id, stat) { 
+            if (stat === 'done') {
+                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+            } else {
+                db.ref('customers/'+id).update({ status: stat });
+            }
+        }
 
         // Updated showPage wrapper to bypass camera controls completely
         function showPage(id) {
@@ -543,7 +571,7 @@
                     
                     // Otomatis pindah ke history/done setelah 20 menit (1200 detik)
                     if(elapsed >= 1200) {
-                        db.ref('customers/' + id).update({ status: 'done' });
+                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
                         return;
                     }
 
