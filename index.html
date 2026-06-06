@@ -471,49 +471,15 @@
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
                 
-                // Variasi tombol berdasarkan ketersediaan koordinat maps
-                let sideMapsBtn = "";
-                let bottomActionRow = "";
-
-                if (i.status !== 'done') {
-                    if (i.maps) {
-                        sideMapsBtn = `
-                            <button disabled class="text-gray-400 bg-gray-100 w-9 h-9 rounded-xl flex items-center justify-center cursor-not-allowed">
-                                <i class="fa fa-motorcycle"></i>
-                            </button>
-                            <a href="${i.maps}" target="_blank" class="bg-blue-50 text-blue-500 w-9 h-9 rounded-xl flex items-center justify-center shadow-sm">
-                                <i class="fa fa-map-marker-alt"></i>
-                            </a>
-                        `;
-                        bottomActionRow = `
-                            <div class="flex gap-2 mt-3">
-                                <a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm flex items-center justify-center gap-1"><i class="fa fa-map-marker-alt"></i> Buka Maps</a>
-                                <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm flex items-center justify-center gap-1"><i class="fab fa-whatsapp"></i> Chat WA</a>
-                            </div>
-                        `;
-                    } else {
-                        sideMapsBtn = `
-                            <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
-                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-9 h-9 rounded-xl flex items-center justify-center animate-pulse" title="Set GPS">
-                                <i class="fa fa-map-marker-alt"></i>
-                            </button>
-                        `;
-                        bottomActionRow = `
-                            <div class="flex gap-2 mt-3">
-                                <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-3 rounded-xl text-center font-bold text-[10px] flex-1 italic uppercase shadow-sm flex items-center justify-center gap-1"><i class="fab fa-whatsapp"></i> Chat WA</a>
-                            </div>
-                        `;
-                    }
+                let coordBtnHtml = "";
+                if (i.maps) {
+                    coordBtnHtml = `<button disabled class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center cursor-not-allowed" title="Alamat Koordinat Sudah Terisi">
+                        <i class="fa fa-map-marker-alt text-[11px]"></i>
+                    </button>`;
                 } else {
-                    sideMapsBtn = `
-                         <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
-                         <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
-                    `;
-                    bottomActionRow = i.maps ? `
-                        <div class="flex gap-2 mt-3">
-                            <a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm flex items-center justify-center gap-1"><i class="fa fa-map-marker-alt"></i> Buka Maps</a>
-                        </div>
-                    ` : '';
+                    coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center animate-pulse" title="Ambil GPS Rumah & Ganti Area (Belum Ada Alamat)">
+                        <i class="fa fa-map-marker-alt text-[11px]"></i>
+                    </button>`;
                 }
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
@@ -527,19 +493,39 @@
                             </div>
                             ${i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
                         </div>
-                        <div class="flex gap-2 items-center">
-                            ${i.status !== 'done' ? `
-                                <button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
-                                <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
-                                <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                            ` : ''}
-                            ${sideMapsBtn}
+                        <div class="flex gap-2">
+                            ${i.status !== 'done' ? 
+                            `<div class="flex gap-2">
+                                <div class="flex flex-col gap-2">
+                                    <button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
+                                    <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
+                                    <div class="flex flex-col items-center gap-1.5">
+                                        <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
+                                        ${!i.maps ? `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center shadow-sm" title="Ambil GPS Koordinat"><i class="fa fa-map-marker-alt text-[10px]"></i></button>` : ''}
+                                    </div>
+                                </div>
+                             </div>` 
+                            : `<div class="flex gap-1 items-center">
+                                 ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
+                                 <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
+                                 ${coordBtnHtml}
+                                 <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
+                               </div>`}
                         </div>
                     </div>
                     <div class="mt-3 ${i.status==='done'?'hidden':''}">
                         ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
-                    ${bottomActionRow}
+                    <div class="flex gap-2 mt-3">
+                        ${i.maps ? 
+                        `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : 
+                        (i.status !== 'done' ? `<span class="bg-gray-100 text-gray-400 py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase border border-dashed block">Lokasi Belum Ditambahkan</span>` : '')}
+                        
+                        ${i.status !== 'done' ? `<a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>` : ''}
+                    </div>
                 </div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
                 else if(searchStr.includes(filter)) listHTML += cardHtml;
