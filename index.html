@@ -185,7 +185,7 @@
                         </div>
                         
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white">
-                            <span class="text-green-500 font-black uppercase text-[8px] tracking-tight stroke-none mb-1.5">Payment Cash</span>
+                            <span class="text-green-500 font-black uppercase text-[8px] tracking-tight leading-none mb-1.5">Payment Cash</span>
                             <input type="checkbox" id="waDirectCashPayment" class="checkbox-custom">
                         </div>
                     </div>
@@ -435,8 +435,21 @@
             const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
             const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
+            const now = Date.now();
+
             Object.keys(allData).reverse().forEach(id => {
                 const i = allData[id];
+                
+                // --- LOGIKA EMAS 1x24 JAM AUTO CLEAN ID ---
+                if (i.originalId && i.idCreatedAt && (now - i.idCreatedAt > 24 * 60 * 60 * 1000)) {
+                    db.ref('customers/' + id).update({ originalId: null, idCreatedAt: null });
+                    if (i.area && i.area.includes("ID ")) {
+                        const cleanedArea = i.area.replace(/ID\s?\d{3}\s?-\s?/i, "");
+                        db.ref('customers/' + id).update({ area: cleanedArea === "" ? "JATIMAKMUR" : cleanedArea });
+                    }
+                    return; 
+                }
+
                 const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
                 if(i.status !== 'done') activeCount++;
                 let wa = (i.phone || "").replace(/\D/g, '');
@@ -470,34 +483,36 @@
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
-                const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
-
-                // Extract or retain original ID format specifically for the history display header
-                let displayAreaHeader = i.area;
-                if (i.status === 'done') {
-                    if (i.area.includes('(')) {
-                        // If it's structured like "KECAMATAN (KELURAHAN, JALAN)", extract or restore ID indicator
-                        displayAreaHeader = i.area.split(' (')[0]; 
-                    }
-                    // Fallback to force custom 3-digit numerical ID visibility if initiated via WA direct
-                    if (!displayAreaHeader.startsWith("ID ") && i.phone && i.phone.length >= 3 && !isNaN(i.area)) {
-                        displayAreaHeader = "ID " + i.area;
-                    }
-                }
-
-                // Generate conditional buttons for history view based on coordinate availability
-                let historyGpsControlsHtml = "";
+                
+                // 1. Kondisi tombol koordinat khusus untuk Antaran Aktif (Tanpa tombol navigasi bawah)
+                let coordSectionActiveHtml = "";
                 if (i.maps) {
-                    historyGpsControlsHtml = `
+                    coordSectionActiveHtml = `
                         <div class="flex flex-col items-center gap-1">
-                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
-                            <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Navigasi Google Maps"><i class="fa fa-compass text-[11px]"></i></a>
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Koordinat Sudah Ada (Klik untuk perbarui GPS)"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
                         </div>
                     `;
                 } else {
-                    historyGpsControlsHtml = `
+                    coordSectionActiveHtml = `
                         <div class="flex flex-col items-center gap-1">
                             <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                        </div>
+                    `;
+                }
+
+                // 2. Kondisi tombol koordinat khusus untuk History Selesai (Ada tombol navigasi di bawahnya jika sudah bermaps)
+                let coordSectionHistoryHtml = "";
+                if (i.maps) {
+                    coordSectionHistoryHtml = `
+                        <div class="flex flex-col items-center gap-1">
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center" title="Koordinat Sudah Ada (Klik untuk perbarui GPS)"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                            <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Buka Navigasi"><i class="fa fa-location-arrow text-[11px]"></i></a>
+                        </div>
+                    `;
+                } else {
+                    coordSectionHistoryHtml = `
+                        <div class="flex flex-col items-center gap-1">
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
                         </div>
                     `;
                 }
@@ -505,7 +520,7 @@
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.status==='done' ? displayAreaHeader : i.area}</p>
+                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
                             <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
                             <div class="flex items-center gap-2 mt-1">
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
@@ -520,13 +535,13 @@
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
                              <div class="flex flex-col items-center">
                                  <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
-                                 ${!i.maps ? coordBtnHtml : ''}
+                                 ${coordSectionActiveHtml}
                              </div>` 
                             : `<div class="flex gap-1 items-center">
                                  ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
                                  <div class="flex flex-col items-center gap-1">
                                      <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
-                                     ${historyGpsControlsHtml}
+                                     ${coordSectionHistoryHtml}
                                  </div>
                                  <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
                                </div>`}
@@ -585,45 +600,57 @@
 
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
-                        headers: { 'Accept-Language': 'id' }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        const addr = data.address || {};
-                        const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || "";
-                        const jalan = addr.road || "";
+                    db.ref('customers/' + id).once('value').then(snapshot => {
+                        const dataLama = snapshot.val() || {};
+                        const areaLama = dataLama.area || "";
                         
-                        let areaFormatBaru = kecamatanOtomatis;
-                        
-                        if (kelurahan || jalan) {
-                            const detailArray = [];
-                            if (kelurahan) detailArray.push(kelurahan.toUpperCase());
-                            if (jalan) detailArray.push(jalan.toUpperCase());
-                            
-                            areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
+                        // Kunci ID: Cek apakah area lama atau cadangan originalId menyimpan format ID pelacak
+                        let prefixID = "";
+                        const matchID = areaLama.match(/ID\s?\d{3}/i) || (dataLama.originalId ? dataLama.originalId.match(/ID\s?\d{3}/i) : null);
+                        if (matchID) {
+                            prefixID = matchID[0].toUpperCase() + " - ";
                         }
 
-                        return db.ref('customers/' + id).update({ 
-                            maps: generatedMapsUrl,
-                            area: areaFormatBaru
-                        }).then(() => areaFormatBaru);
-                    })
-                    .then((areaFinal) => {
-                        alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi:\n" + areaFinal);
-                    })
-                    .catch((err) => {
-                        // Fallback aman jika koneksi API luar bermasalah
-                        db.ref('customers/' + id).update({ 
-                            maps: generatedMapsUrl,
-                            area: kecamatanOtomatis
+                        // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                            headers: { 'Accept-Language': 'id' }
                         })
-                        .then(() => {
-                            alert("Berhasil dengan batasan!\nKoordinat disimpan namun gagal memuat nama jalan. Area diatur ke kecamatan: " + kecamatanOtomatis);
+                        .then(response => response.json())
+                        .then(data => {
+                            const addr = data.address || {};
+                            const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || "";
+                            const jalan = addr.road || "";
+                            
+                            let areaFormatBaru = kecamatanOtomatis;
+                            
+                            if (kelurahan || jalan) {
+                                const detailArray = [];
+                                if (kelurahan) detailArray.push(kelurahan.toUpperCase());
+                                if (jalan) detailArray.push(jalan.toUpperCase());
+                                
+                                areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
+                            }
+
+                            // Gabungkan Prefix ID pelengkap agar di menu history tidak tertimpa total
+                            const areaFinal = prefixID + areaFormatBaru;
+
+                            return db.ref('customers/' + id).update({ 
+                                maps: generatedMapsUrl,
+                                area: areaFinal
+                            }).then(() => areaFinal);
                         })
-                        .catch((dbErr) => {
-                            alert("Gagal menyimpan ke database: " + dbErr.message);
+                        .then((areaFinal) => {
+                            alert("Berhasil!\nKoordinat disimpan dan kode area otomatis diperbarui menjadi:\n" + areaFinal);
+                        })
+                        .catch((err) => {
+                            const areaFallback = prefixID + kecamatanOtomatis;
+                            db.ref('customers/' + id).update({ 
+                                maps: generatedMapsUrl,
+                                area: areaFallback
+                            })
+                            .then(() => {
+                                alert("Berhasil dengan batasan!\nKoordinat disimpan. Area diatur ke: " + areaFallback);
+                            });
                         });
                     });
                 },
@@ -698,9 +725,40 @@
 
         function setStatus(id, stat) { 
             if (stat === 'done') {
-                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+                // LOGIKA SELESAI: Kembalikan ID otomatis ke depan jika memiliki riwayat cadangan originalId
+                db.ref('customers/' + id).once('value').then(snapshot => {
+                    const data = snapshot.val() || {};
+                    let areaSekarang = data.area || "";
+                    
+                    if (data.originalId && !areaSekarang.includes("ID ")) {
+                        areaSekarang = data.originalId + " - " + areaSekarang;
+                    }
+
+                    db.ref('customers/'+id).update({ 
+                        status: stat, 
+                        area: areaSekarang,
+                        doneTime: Date.now(), 
+                        doneBy: currentUser 
+                    });
+                });
             } else {
-                db.ref('customers/'+id).update({ status: stat });
+                // LOGIKA UNDO: Sembunyikan & bersihkan ID saat berpindah ke kartu antaran aktif
+                db.ref('customers/' + id).once('value').then(snapshot => {
+                    const data = snapshot.val() || {};
+                    let areaSekarang = data.area || "";
+                    
+                    if (areaSekarang.includes("ID ")) {
+                        areaSekarang = areaSekarang.replace(/ID\s?\d{3}\s?-\s?/i, "");
+                        if(areaSekarang.trim() === "" || areaSekarang.startsWith("ID")) {
+                            areaSekarang = "JATIMAKMUR";
+                        }
+                    }
+                    
+                    db.ref('customers/'+id).update({ 
+                        status: stat,
+                        area: areaSekarang
+                    });
+                });
             }
         }
 
@@ -772,6 +830,7 @@
             } else { alert("PIN Salah!"); }
         }
 
+        // --- MANAJEMEN WA DIRECT DENGAN BACKUP CADANGAN ID ---
         function openWaDirect() {
             let custName = document.getElementById('waDirectCustName').value.trim();
             let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, '');
@@ -797,8 +856,11 @@
             } else { 
                 pushDeliveryStatus(currentUser, custId);
                 
+                // Tambahkan field 'originalId' dan 'idCreatedAt' untuk pelacakan masa aktif 24 jam
                 const autoData = {
                     area: "ID " + custId,
+                    originalId: "ID " + custId,
+                    idCreatedAt: Date.now(),
                     name: custName,
                     phone: n,
                     maps: "",
