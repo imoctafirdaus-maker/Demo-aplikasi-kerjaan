@@ -517,7 +517,6 @@
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
         }
 
-        // Kunci perbaikan: Perhitungan Haversine murni string literal JavaScript tanpa error kurung kurawal
         function dapatkanKecamatanTerdekat(lat, lng) {
             let kecamatanTerpilih = "JATIMAKMUR";
             let jarakTerkecil = Infinity;
@@ -556,15 +555,46 @@
 
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    db.ref('customers/' + id).update({ 
-                        maps: generatedMapsUrl,
-                        area: kecamatanOtomatis
+                    // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                        headers: { 'Accept-Language': 'id' }
                     })
-                    .then(() => {
-                        alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi: " + kecamatanOtomatis);
+                    .then(response => response.json())
+                    .then(data => {
+                        const addr = data.address || {};
+                        const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || "";
+                        const jalan = addr.road || "";
+                        
+                        let areaFormatBaru = kecamatanOtomatis;
+                        
+                        if (kelurahan || jalan) {
+                            const detailArray = [];
+                            if (kelurahan) detailArray.push(kelurahan.toUpperCase());
+                            if (jalan) detailArray.push(jalan.toUpperCase());
+                            
+                            areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
+                        }
+
+                        return db.ref('customers/' + id).update({ 
+                            maps: generatedMapsUrl,
+                            area: areaFormatBaru
+                        }).then(() => areaFormatBaru);
+                    })
+                    .then((areaFinal) => {
+                        alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi:\n" + areaFinal);
                     })
                     .catch((err) => {
-                        alert("Gagal menyimpan ke database: " + err.message);
+                        // Fallback aman jika koneksi API luar bermasalah
+                        db.ref('customers/' + id).update({ 
+                            maps: generatedMapsUrl,
+                            area: kecamatanOtomatis
+                        })
+                        .then(() => {
+                            alert("Berhasil dengan batasan!\nKoordinat disimpan namun gagal memuat nama jalan. Area diatur ke kecamatan: " + kecamatanOtomatis);
+                        })
+                        .catch((dbErr) => {
+                            alert("Gagal menyimpan ke database: " + dbErr.message);
+                        });
                     });
                 },
                 (error) => {
