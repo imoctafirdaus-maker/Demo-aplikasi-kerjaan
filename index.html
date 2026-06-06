@@ -471,18 +471,16 @@
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
                 
-                // Logika Tombol GPS Penanda Khusus Menu History
+                // Logika Tombol GPS Penanda Khusus (Bisa untuk Menu History maupun Antaran Aktif Belum Ada Maps)
                 let coordBtnHtml = "";
-                if (i.status === 'done') {
-                    if (i.maps) {
-                        coordBtnHtml = `<button disabled class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center cursor-not-allowed" title="Alamat Koordinat Sudah Terisi">
-                            <i class="fa fa-map-marker-alt text-[11px]"></i>
-                        </button>`;
-                    } else {
-                        coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center animate-pulse" title="Ambil GPS Rumah & Ganti Area (Belum Ada Alamat)">
-                            <i class="fa fa-map-marker-alt text-[11px]"></i>
-                        </button>`;
-                    }
+                if (i.maps) {
+                    coordBtnHtml = `<button disabled class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center cursor-not-allowed" title="Alamat Koordinat Sudah Terisi">
+                        <i class="fa fa-map-marker-alt text-[11px]"></i>
+                    </button>`;
+                } else {
+                    coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center animate-pulse" title="Ambil GPS Rumah & Ganti Area (Belum Ada Alamat)">
+                        <i class="fa fa-map-marker-alt text-[11px]"></i>
+                    </button>`;
                 }
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
@@ -494,7 +492,7 @@
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
                                 ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
                             </div>
-                            ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
+                            ${i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
                         </div>
                         <div class="flex gap-2">
                             ${i.status !== 'done' ? 
@@ -514,7 +512,13 @@
                         ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
                     <div class="flex gap-2 mt-3">
-                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : (i.status === 'done' ? `<span class="bg-gray-100 text-gray-400 py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase border border-dashed text-center block">Lokasi Belum Ditambahkan</span>` : '')}
+                        ${i.maps ? 
+                        `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : 
+                        `<div class="w-full flex gap-2">
+                            <span class="bg-gray-100 text-gray-400 py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase border border-dashed text-center block">Lokasi Belum Ditambahkan</span>
+                            ${i.status !== 'done' ? `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="bg-blue-500 text-white px-3 py-2 rounded-lg text-center font-black text-[10px] uppercase shadow-sm"><i class="fa fa-map-marker-alt"></i> SET GPS</button>` : ''}
+                         </div>`}
+                        
                         ${i.status !== 'done' ? `<a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>` : ''}
                     </div>
                 </div>`;
