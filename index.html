@@ -470,7 +470,15 @@
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
-                const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
+                
+                // Logika Penentu Teks Keterangan Di Bawah Ikon Titik Lokasi
+                const labelMaps = i.maps ? "buka maps" : "lokasi belum di tambahkan";
+                const coordBtnHtml = `<div class="flex flex-col items-center">
+                    <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area">
+                        <i class="fa fa-map-marker-alt text-[11px]"></i>
+                    </button>
+                    <span class="text-[7px] font-black uppercase text-gray-400 mt-0.5 tracking-tighter text-center max-w-[55px] leading-none">${labelMaps}</span>
+                </div>`;
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
@@ -488,9 +496,9 @@
                             `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                             <div class="flex flex-col items-center">
+                             <div class="flex flex-col items-center gap-1">
                                  <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
-                                 ${!i.maps ? coordBtnHtml : ''}
+                                 ${coordBtnHtml}
                              </div>` 
                             : `<div class="flex gap-1 items-center">
                                  ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
@@ -555,7 +563,6 @@
 
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
                         headers: { 'Accept-Language': 'id' }
                     })
@@ -584,7 +591,6 @@
                         alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi:\n" + areaFinal);
                     })
                     .catch((err) => {
-                        // Fallback aman jika koneksi API luar bermasalah
                         db.ref('customers/' + id).update({ 
                             maps: generatedMapsUrl,
                             area: kecamatanOtomatis
