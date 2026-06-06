@@ -470,18 +470,19 @@
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
-                
-                // Pembentukan komponen tombol koordinat & navigasi berdasarkan kondisi i.maps
-                let coordSectionHtml = "";
+                const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
+
+                // Generate conditional buttons for history view based on coordinate availability
+                let historyGpsControlsHtml = "";
                 if (i.maps) {
-                    coordSectionHtml = `
+                    historyGpsControlsHtml = `
                         <div class="flex flex-col items-center gap-1">
-                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Koordinat Sudah Ada (Klik untuk perbarui GPS)"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
-                            <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Buka Navigasi"><i class="fa fa-location-arrow text-[11px]"></i></a>
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                            <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Navigasi Google Maps"><i class="fa fa-compass text-[11px]"></i></a>
                         </div>
                     `;
                 } else {
-                    coordSectionHtml = `
+                    historyGpsControlsHtml = `
                         <div class="flex flex-col items-center gap-1">
                             <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
                         </div>
@@ -506,13 +507,13 @@
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
                              <div class="flex flex-col items-center">
                                  <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
-                                 ${coordSectionHtml}
+                                 ${!i.maps ? coordBtnHtml : ''}
                              </div>` 
                             : `<div class="flex gap-1 items-center">
                                  ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
                                  <div class="flex flex-col items-center gap-1">
                                      <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
-                                     ${coordSectionHtml}
+                                     ${historyGpsControlsHtml}
                                  </div>
                                  <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
                                </div>`}
