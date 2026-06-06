@@ -179,7 +179,10 @@
                     
                     <div class="space-y-3 mb-4">
                         <input type="text" id="waDirectCustName" placeholder="Nama Customer (Wajib)" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-bold text-center text-blue-900 text-sm">
-                        <input type="tel" id="waDirectNumber" placeholder="Input Nomor HP Manual" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
+                        <div class="flex gap-2">
+                            <input type="text" id="waDirectCustId" maxlength="3" placeholder="ID (3 No)" inputmode="numeric" class="w-1/3 p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
+                            <input type="tel" id="waDirectNumber" placeholder="Input Nomor HP Manual" class="w-2/3 p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
+                        </div>
                     </div>
                     
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
@@ -383,9 +386,9 @@
         // --- CORE FUNCTIONALITY ---
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
         
-        function pushDeliveryStatus(nama) { 
+        function pushDeliveryStatus(nama, idCust = "") { 
             if(mgtAndCashiers.includes(nama)) return; 
-            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now() }); 
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust }); 
         }
 
         function startDeliveryStatusListener() {
@@ -395,7 +398,11 @@
                 s.forEach(child => {
                     const d = child.val();
                     if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
+                    else { 
+                        hasData = true; 
+                        const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
+                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${textStatus})</span></div>`; 
+                    }
                 });
                 bar.style.display = hasData ? "block" : "none";
             });
@@ -431,6 +438,7 @@
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p>
                                 ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
                             </div>
+                            ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
                         </div>
                         <div class="flex gap-2">
                             ${i.status !== 'done' ? 
@@ -532,6 +540,13 @@
                 if(allData[id].status === 'otw') {
                     const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
                     const rem = (20 * 60) - elapsed;
+                    
+                    // Otomatis pindah ke history/done setelah 20 menit (1200 detik)
+                    if(elapsed >= 1200) {
+                        db.ref('customers/' + id).update({ status: 'done' });
+                        return;
+                    }
+
                     const el = document.getElementById('timer-'+id);
                     if(el) {
                         const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
@@ -583,12 +598,14 @@
             } else { alert("PIN Salah!"); }
         }
 
-        // --- UPDATED WA DIRECT LOGIC (MANUAL ONLY WITH MANDATORY NAME) ---
+        // --- UPDATED WA DIRECT LOGIC (MANUAL ONLY WITH MANDATORY NAME & ID) ---
         function openWaDirect() {
             let custName = document.getElementById('waDirectCustName').value.trim();
+            let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, '');
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
             
             if(!custName) return alert("Nama Customer wajib diisi!");
+            if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!");
             if(!n) return alert("Nomor HP kosong atau tidak valid!");
             
             let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
@@ -605,7 +622,22 @@
                 render(); 
                 showPage('list');
             } else { 
-                pushDeliveryStatus(currentUser);
+                pushDeliveryStatus(currentUser, custId);
+                
+                // Masukkan data ke antaran aktif dengan status 'otw' secara otomatis agar setelah 20 menit masuk kolom history
+                const autoData = {
+                    area: "ID " + custId,
+                    name: custName,
+                    phone: n,
+                    maps: "",
+                    photo: "",
+                    status: 'otw',
+                    startTime: Date.now(),
+                    timestamp: Date.now(),
+                    driverBy: currentUser
+                };
+                db.ref('customers').push(autoData);
+
                 let msg = "";
                 if (cashiersOnly.includes(currentUser)) {
                     msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
@@ -613,6 +645,11 @@
                     msg = `Halo Bapak/Ibu ${custName}, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
                 }
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+                
+                // Clear input form WA direct setelah kirim
+                document.getElementById('waDirectCustName').value = "";
+                document.getElementById('waDirectCustId').value = "";
+                document.getElementById('waDirectNumber').value = "";
             }
         }
     </script>
