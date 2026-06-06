@@ -38,6 +38,9 @@
         .online-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
         .antaran-photo { cursor: pointer; transition: transform 0.2s; }
         .antaran-photo:active { transform: scale(0.92); }
+
+        .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -173,8 +176,20 @@
             </div>
 
             <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
-                <div class="wa-card mb-20 mx-auto">
-                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                <div class="wa-card mb-20 mx-auto relative">
+                    <div class="flex justify-between items-start mb-4 px-2">
+                        <div class="w-16"></div>
+                        
+                        <div class="flex flex-col items-center">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                        </div>
+                        
+                        <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white">
+                            <span class="text-green-500 font-black uppercase text-[8px] tracking-tight leading-none mb-1.5">Payment Cash</span>
+                            <input type="checkbox" id="waDirectCashPayment" class="checkbox-custom">
+                        </div>
+                    </div>
+
                     <h2 class="font-black text-blue-900 uppercase italic text-[12px] mb-3">Manual Input Chat</h2>
                     
                     <div class="space-y-3 mb-4">
@@ -224,13 +239,22 @@
         let renderTimer;
         let editCrewId = null;
 
+        // DATA DICTIONARY KOORDINAT KECAMATAN SEKITAR JATIMAKMUR
+        const KECAMATAN_POLYGONS = [
+            { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
+            { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
+            { name: "PONDOK MELATI", lat: -6.3117, lng: 106.9267 },
+            { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 },
+            { name: "DUREN SAWIT", lat: -6.2343, lng: 106.9194 },
+            { name: "MAKASAR", lat: -6.2735, lng: 106.8841 },
+            { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
+        ];
+
         window.onload = () => {
-            // Load user data from firebase to ensure real-time management works
             db.ref('crew_settings').on('value', snap => {
                 if(snap.exists()) {
                     userPins = snap.val();
                 } else {
-                    // Initialize firebase with current local object if empty
                     db.ref('crew_settings').set(userPins);
                 }
                 refreshUserDropdown();
@@ -288,7 +312,7 @@
             if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
             
             if(editCrewId && editCrewId !== name) {
-                delete userPins[editCrewId]; // Remove old if name changed
+                delete userPins[editCrewId];
             }
             userPins[name] = pin;
             db.ref('crew_settings').set(userPins).then(() => {
@@ -343,7 +367,6 @@
             navAvatar.src = targetSrc;
             navAvatar.classList.remove('hidden');
 
-            // Toggle Admin Panel Visibility
             if(currentUser === "Okta") {
                 document.getElementById('adminPanel').classList.remove('hidden');
             } else {
@@ -429,11 +452,9 @@
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
                 const isBlockedUser = mgtAndCashiers.includes(currentUser);
 
-                // Pesan teks WhatsApp khusus kartu ucapan minta maaf telat antaran
                 const msgLate = `Halo bapak/ibu ${i.name}, mohon maaf yang sebesar-besarnya atas keterlambatan pengantaran pesanannya. Saat ini antrean pengiriman sedang sangat padat, namun tidak perlu khawatir karena pizza Bapak/ibu ${i.name},sedang dalam perjalanan dan akan tetap diantarkan. Mohon bersedia menunggu sebentar ya, Pak/Bu. Terima kasih banyak atas pengertiannya ☺️🙏`;
                 const waLateLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgLate)}`;
 
-                // Format info waktu selesai untuk menu History
                 let infoSelesai = 'SELESAI';
                 if (i.status === 'done' && i.doneTime) {
                     const tgl = new Date(i.doneTime);
@@ -447,6 +468,9 @@
                     const driver = i.doneBy || i.driverBy || currentUser;
                     infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}`;
                 }
+
+                const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
+                const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}')" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
@@ -464,9 +488,16 @@
                             `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
+                             <div class="flex flex-col items-center">
+                                 <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
+                                 ${!i.maps ? coordBtnHtml : ''}
+                             </div>` 
                             : `<div class="flex gap-1 items-center">
-                                 <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
+                                 ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
+                                 <div class="flex flex-col items-center gap-1">
+                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
+                                     ${coordBtnHtml}
+                                 </div>
                                  <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
                                </div>`}
                         </div>
@@ -484,6 +515,63 @@
             });
             list.innerHTML = listHTML; hist.innerHTML = histHTML;
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
+        }
+
+        // Kunci perbaikan: Perhitungan Haversine murni string literal JavaScript tanpa error kurung kurawal
+        function dapatkanKecamatanTerdekat(lat, lng) {
+            let kecamatanTerpilih = "JATIMAKMUR";
+            let jarakTerkecil = Infinity;
+
+            KECAMATAN_POLYGONS.forEach(kec => {
+                const R = 6371; 
+                const dLat = (kec.lat - lat) * Math.PI / 180;
+                const dLng = (kec.lng - lng) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const jarak = R * c;
+
+                if (jarak < jarakTerkecil) {
+                    jarakTerkecil = jarak;
+                    kecamatanTerpilih = kec.name;
+                }
+            });
+            return kecamatanTerpilih;
+        }
+
+        function ambilDanSimpanKoordinatStatus(id, name) {
+            const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat untuk ${name}?`);
+            if (!yakin) return;
+
+            if (!navigator.geolocation) {
+                alert("Gagal: HP tidak mendukung fitur GPS.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
+
+                    const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
+
+                    db.ref('customers/' + id).update({ 
+                        maps: generatedMapsUrl,
+                        area: kecamatanOtomatis
+                    })
+                    .then(() => {
+                        alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi: " + kecamatanOtomatis);
+                    })
+                    .catch((err) => {
+                        alert("Gagal menyimpan ke database: " + err.message);
+                    });
+                },
+                (error) => {
+                    alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif.");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
         }
 
         function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
@@ -556,7 +644,6 @@
             }
         }
 
-        // Updated showPage wrapper to bypass camera controls completely
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
@@ -569,7 +656,6 @@
                     const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
                     const rem = (20 * 60) - elapsed;
                     
-                    // Otomatis pindah ke history/done setelah 20 menit (1200 detik)
                     if(elapsed >= 1200) {
                         db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
                         return;
@@ -626,11 +712,11 @@
             } else { alert("PIN Salah!"); }
         }
 
-        // --- UPDATED WA DIRECT LOGIC (MANUAL ONLY WITH MANDATORY NAME & ID) ---
         function openWaDirect() {
             let custName = document.getElementById('waDirectCustName').value.trim();
             let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, '');
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
+            let isCash = document.getElementById('waDirectCashPayment').checked;
             
             if(!custName) return alert("Nama Customer wajib diisi!");
             if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!");
@@ -639,7 +725,6 @@
             let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
             const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
             
-            // Check for duplicate in active delivery list
             const activeId = Object.keys(allData).find(id => {
                 const dataN = (allData[id].phone || "").replace(/\D/g, '');
                 return allData[id].status !== 'done' && dataN.includes(searchN);
@@ -652,7 +737,6 @@
             } else { 
                 pushDeliveryStatus(currentUser, custId);
                 
-                // Masukkan data ke antaran aktif dengan status 'otw' secara otomatis agar setelah 20 menit masuk kolom history
                 const autoData = {
                     area: "ID " + custId,
                     name: custName,
@@ -662,7 +746,8 @@
                     status: 'otw',
                     startTime: Date.now(),
                     timestamp: Date.now(),
-                    driverBy: currentUser
+                    driverBy: currentUser,
+                    paymentMode: isCash ? 'cash' : 'other'
                 };
                 db.ref('customers').push(autoData);
 
@@ -670,14 +755,14 @@
                 if (cashiersOnly.includes(currentUser)) {
                     msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
                 } else {
-                    msg = `Halo Bapak/Ibu ${custName}, saya ${currentUser} dari Domino's pizza jatimakmur, ingin mengantarkan pesanan, boleh minta share lokasinya Pak/Bu?,agar pengantaran menjadi lebih cepat,Terimakasih 😊`;
+                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`;
                 }
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
                 
-                // Clear input form WA direct setelah kirim
                 document.getElementById('waDirectCustName').value = "";
                 document.getElementById('waDirectCustId').value = "";
                 document.getElementById('waDirectNumber').value = "";
+                document.getElementById('waDirectCashPayment').checked = false;
             }
         }
     </script>
