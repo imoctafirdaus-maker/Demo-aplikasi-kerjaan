@@ -467,7 +467,6 @@
                     const thnNum = String(tgl.getFullYear()).slice(-2);
                     const driver = i.doneBy || i.driverBy || currentUser;
                     
-                    // Modifikasi format teks infoSelesai untuk menaruh ID pesanan di ujung kalimat keterangan waktu
                     const idSuffix = i.historyDisplayId ? ` (ID ${i.historyDisplayId})` : "";
                     infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}${idSuffix}`;
                 }
@@ -475,7 +474,6 @@
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
                 const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
 
-                // Generate conditional buttons for history view based on coordinate availability
                 let historyGpsControlsHtml = "";
                 if (i.maps) {
                     historyGpsControlsHtml = `
@@ -492,10 +490,10 @@
                     `;
                 }
 
-                // Tampilan kode area di bagian atas card (Selalu berisi kode area murni)
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
+                const cardBgClass = i.status === 'done' ? 'bg-yellow-50 border-yellow-400' : 'border-red-500 bg-white';
 
-                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
+                const cardHtml = `<div class="rounded-2xl p-4 shadow-sm border-l-8 ${cardBgClass}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             ${areaDisplayHtml}
@@ -518,7 +516,7 @@
                             : `<div class="flex gap-1 items-center">
                                  ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
                                  <div class="flex flex-col items-center gap-1">
-                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
+                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center" title="Batal Selesai (Undo)"><i class="fa fa-undo text-[10px]"></i></button>
                                      ${historyGpsControlsHtml}
                                  </div>
                                  <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
@@ -533,8 +531,13 @@
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                 </div>`;
-                if(i.status === 'done') histHTML += cardHtml; 
-                else if(searchStr.includes(filter)) listHTML += cardHtml;
+                
+                if(i.status === 'done') {
+                    histHTML += cardHtml; 
+                    if(searchStr.includes(filter)) listHTML += cardHtml; 
+                } else if(searchStr.includes(filter)) {
+                    listHTML += cardHtml;
+                }
             });
             list.innerHTML = listHTML; hist.innerHTML = histHTML;
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
@@ -578,7 +581,6 @@
 
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
                         headers: { 'Accept-Language': 'id' }
                     })
@@ -603,7 +605,6 @@
                             area: areaFormatBaru
                         };
 
-                        // Ekstraksi ID dari kode area terdaftar ("ID XXX") jika dipicu di menu history
                         if (isHistory && allData[id]) {
                             let currentArea = allData[id].area || "";
                             let extractedId = "";
@@ -621,7 +622,6 @@
                         alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi:\n" + areaFinal);
                     })
                     .catch((err) => {
-                        // Fallback aman jika koneksi API luar bermasalah
                         let fallbackData = { 
                             maps: generatedMapsUrl,
                             area: kecamatanOtomatis
@@ -716,12 +716,21 @@
             } 
         }
 
-        // Modifikasi setStatus untuk memastikan properti display ID dibersihkan saat di-undo ke antaran aktif
         function setStatus(id, stat) { 
             if (stat === 'done') {
-                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+                let currentArea = allData[id] ? (allData[id].area || "") : "";
+                let extractedId = "";
+                if (currentArea.startsWith("ID ")) {
+                    extractedId = currentArea.split(" ")[1] || "";
+                }
+
+                let updatePayload = { status: stat, doneTime: Date.now(), doneBy: currentUser };
+                if (extractedId) {
+                    updatePayload.historyDisplayId = extractedId;
+                }
+
+                db.ref('customers/'+id).update(updatePayload);
             } else {
-                // Saat status diubah menjadi active kembali (Undo), historyDisplayId dibuang dari data
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
         }
@@ -739,7 +748,23 @@
                     const rem = (20 * 60) - elapsed;
                     
                     if(elapsed >= 1200) {
-                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
+                        let currentArea = allData[id].area || "";
+                        let extractedId = "";
+                        if (currentArea.startsWith("ID ")) {
+                            extractedId = currentArea.split(" ")[1] || "";
+                        }
+
+                        let autoPayload = { 
+                            status: 'done', 
+                            doneTime: Date.now(), 
+                            doneBy: allData[id].driverBy || "System" 
+                        };
+                        
+                        if (extractedId) {
+                            autoPayload.historyDisplayId = extractedId;
+                        }
+
+                        db.ref('customers/' + id).update(autoPayload);
                         return;
                     }
 
