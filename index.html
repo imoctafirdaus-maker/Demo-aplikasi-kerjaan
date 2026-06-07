@@ -264,6 +264,7 @@
             if(currentUser) bukaApp(currentUser);
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
+            checkAndResetIdsAtMidnight();
         };
 
         function refreshUserDropdown() {
@@ -466,14 +467,13 @@
                     const blnNum = tgl.getMonth() + 1;
                     const thnNum = String(tgl.getFullYear()).slice(-2);
                     const driver = i.doneBy || i.driverBy || currentUser;
-                    
-                    const idSuffix = i.historyDisplayId ? ` (ID ${i.historyDisplayId})` : "";
-                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}${idSuffix}`;
+                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}`;
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
                 const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
 
+                // Generate conditional buttons for history view based on coordinate availability
                 let historyGpsControlsHtml = "";
                 if (i.maps) {
                     historyGpsControlsHtml = `
@@ -490,10 +490,16 @@
                     `;
                 }
 
+                // Pengkondisian penampilan kode area beserta ID khusus untuk menu history jika ada
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
-                const cardBgClass = i.status === 'done' ? 'bg-yellow-50 border-yellow-400' : 'border-red-500 bg-white';
+                if (i.status === 'done' && i.historyDisplayId) {
+                    areaDisplayHtml = `
+                        <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
+                        <p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>
+                    `;
+                }
 
-                const cardHtml = `<div class="rounded-2xl p-4 shadow-sm border-l-8 ${cardBgClass}">
+                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             ${areaDisplayHtml}
@@ -516,7 +522,7 @@
                             : `<div class="flex gap-1 items-center">
                                  ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
                                  <div class="flex flex-col items-center gap-1">
-                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center" title="Batal Selesai (Undo)"><i class="fa fa-undo text-[10px]"></i></button>
+                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
                                      ${historyGpsControlsHtml}
                                  </div>
                                  <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
@@ -531,13 +537,8 @@
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                 </div>`;
-                
-                if(i.status === 'done') {
-                    histHTML += cardHtml; 
-                    if(searchStr.includes(filter)) listHTML += cardHtml; 
-                } else if(searchStr.includes(filter)) {
-                    listHTML += cardHtml;
-                }
+                if(i.status === 'done') histHTML += cardHtml; 
+                else if(searchStr.includes(filter)) listHTML += cardHtml;
             });
             list.innerHTML = listHTML; hist.innerHTML = histHTML;
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
@@ -581,6 +582,7 @@
 
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
+                    // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
                         headers: { 'Accept-Language': 'id' }
                     })
@@ -605,20 +607,19 @@
                             area: areaFormatBaru
                         };
 
-                        // PENGAMANAN ID: Mendeteksi & menjaga ID pesanan murni saat tombol GPS diklik baik di antaran aktif maupun history
+                        // Pertahankan atau perbarui ID agar tidak pernah hilang saat icon GPS diklik di history
                         if (allData[id]) {
-                            let currentArea = allData[id].area || "";
-                            let currentHistoryId = allData[id].historyDisplayId || "";
-                            let extractedId = "";
-                            
-                            if (currentArea.startsWith("ID ")) {
-                                extractedId = currentArea.split(" ")[1] || "";
-                            } else if (currentHistoryId) {
-                                extractedId = currentHistoryId;
-                            }
-                            
-                            if (extractedId) {
-                                updateData.historyDisplayId = extractedId;
+                            if (allData[id].historyDisplayId) {
+                                updateData.historyDisplayId = allData[id].historyDisplayId;
+                            } else {
+                                let currentArea = allData[id].area || "";
+                                let extractedId = "";
+                                if (currentArea.startsWith("ID ")) {
+                                    extractedId = currentArea.split(" ")[1] || "";
+                                }
+                                if (extractedId) {
+                                    updateData.historyDisplayId = extractedId;
+                                }
                             }
                         }
 
@@ -628,24 +629,24 @@
                         alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi:\n" + areaFinal);
                     })
                     .catch((err) => {
+                        // Fallback aman jika koneksi API luar bermasalah
                         let fallbackData = { 
                             maps: generatedMapsUrl,
                             area: kecamatanOtomatis
                         };
 
                         if (allData[id]) {
-                            let currentArea = allData[id].area || "";
-                            let currentHistoryId = allData[id].historyDisplayId || "";
-                            let extractedId = "";
-                            
-                            if (currentArea.startsWith("ID ")) {
-                                extractedId = currentArea.split(" ")[1] || "";
-                            } else if (currentHistoryId) {
-                                extractedId = currentHistoryId;
-                            }
-                            
-                            if (extractedId) {
-                                fallbackData.historyDisplayId = extractedId;
+                            if (allData[id].historyDisplayId) {
+                                fallbackData.historyDisplayId = allData[id].historyDisplayId;
+                            } else {
+                                let currentArea = allData[id].area || "";
+                                let extractedId = "";
+                                if (currentArea.startsWith("ID ")) {
+                                    extractedId = currentArea.split(" ")[1] || "";
+                                }
+                                if (extractedId) {
+                                    fallbackData.historyDisplayId = extractedId;
+                                }
                             }
                         }
 
@@ -727,21 +728,12 @@
             } 
         }
 
+        // Modifikasi setStatus untuk memastikan properti display ID dibersihkan saat di-undo ke antaran aktif
         function setStatus(id, stat) { 
             if (stat === 'done') {
-                let currentArea = allData[id] ? (allData[id].area || "") : "";
-                let extractedId = "";
-                if (currentArea.startsWith("ID ")) {
-                    extractedId = currentArea.split(" ")[1] || "";
-                }
-
-                let updatePayload = { status: stat, doneTime: Date.now(), doneBy: currentUser };
-                if (extractedId) {
-                    updatePayload.historyDisplayId = extractedId;
-                }
-
-                db.ref('customers/'+id).update(updatePayload);
+                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
             } else {
+                // Saat status diubah menjadi active kembali (Undo), historyDisplayId dibuang dari data
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
         }
@@ -759,23 +751,7 @@
                     const rem = (20 * 60) - elapsed;
                     
                     if(elapsed >= 1200) {
-                        let currentArea = allData[id].area || "";
-                        let extractedId = "";
-                        if (currentArea.startsWith("ID ")) {
-                            extractedId = currentArea.split(" ")[1] || "";
-                        }
-
-                        let autoPayload = { 
-                            status: 'done', 
-                            doneTime: Date.now(), 
-                            doneBy: allData[id].driverBy || "System" 
-                        };
-                        
-                        if (extractedId) {
-                            autoPayload.historyDisplayId = extractedId;
-                        }
-
-                        db.ref('customers/' + id).update(autoPayload);
+                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
                         return;
                     }
 
@@ -882,6 +858,28 @@
                 document.getElementById('waDirectNumber').value = "";
                 document.getElementById('waDirectCashPayment').checked = false;
             }
+        }
+
+        // Fungsi Penghapusan Otomatis 3 Digit ID tepat Pukul 00:00 WIB tanpa menghapus data riwayat
+        function checkAndResetIdsAtMidnight() {
+            setInterval(() => {
+                const now = new Date();
+                const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                const currentTimeWIB = new Intl.DateTimeFormat('id-ID', options).format(now);
+
+                if (currentTimeWIB === "00:00:00") {
+                    db.ref('customers').once('value', snapshot => {
+                        if (snapshot.exists()) {
+                            snapshot.forEach(childSnapshot => {
+                                const item = childSnapshot.val();
+                                if (item.status === 'done' && item.historyDisplayId) {
+                                    db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null });
+                                }
+                            });
+                        }
+                    });
+                }
+            }, 1000);
         }
     </script>
 </body>
