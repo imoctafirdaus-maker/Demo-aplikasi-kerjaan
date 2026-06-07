@@ -466,7 +466,10 @@
                     const blnNum = tgl.getMonth() + 1;
                     const thnNum = String(tgl.getFullYear()).slice(-2);
                     const driver = i.doneBy || i.driverBy || currentUser;
-                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}`;
+                    
+                    // Modifikasi format teks infoSelesai untuk menaruh ID pesanan di ujung kalimat keterangan waktu
+                    const idSuffix = i.historyDisplayId ? ` (ID ${i.historyDisplayId})` : "";
+                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}${idSuffix}`;
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
@@ -489,14 +492,8 @@
                     `;
                 }
 
-                // Pengkondisian penampilan kode area beserta ID khusus untuk menu history jika ada
+                // Tampilan kode area di bagian atas card (Selalu berisi kode area murni)
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
-                if (i.status === 'done' && i.historyDisplayId) {
-                    areaDisplayHtml = `
-                        <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
-                        <p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>
-                    `;
-                }
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
