@@ -605,12 +605,18 @@
                             area: areaFormatBaru
                         };
 
-                        if (isHistory && allData[id]) {
+                        // PENGAMANAN ID: Mendeteksi & menjaga ID pesanan murni saat tombol GPS diklik baik di antaran aktif maupun history
+                        if (allData[id]) {
                             let currentArea = allData[id].area || "";
+                            let currentHistoryId = allData[id].historyDisplayId || "";
                             let extractedId = "";
+                            
                             if (currentArea.startsWith("ID ")) {
                                 extractedId = currentArea.split(" ")[1] || "";
+                            } else if (currentHistoryId) {
+                                extractedId = currentHistoryId;
                             }
+                            
                             if (extractedId) {
                                 updateData.historyDisplayId = extractedId;
                             }
@@ -627,12 +633,17 @@
                             area: kecamatanOtomatis
                         };
 
-                        if (isHistory && allData[id]) {
+                        if (allData[id]) {
                             let currentArea = allData[id].area || "";
+                            let currentHistoryId = allData[id].historyDisplayId || "";
                             let extractedId = "";
+                            
                             if (currentArea.startsWith("ID ")) {
                                 extractedId = currentArea.split(" ")[1] || "";
+                            } else if (currentHistoryId) {
+                                extractedId = currentHistoryId;
                             }
+                            
                             if (extractedId) {
                                 fallbackData.historyDisplayId = extractedId;
                             }
