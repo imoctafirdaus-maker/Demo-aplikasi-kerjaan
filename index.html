@@ -26,9 +26,9 @@
         .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
         .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
         
-        .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
+        .status-item { padding: 4px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
         .animate-blink { animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
         .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
         .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
@@ -75,7 +75,7 @@
             </div>
         </nav>
         
-        <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic" style="max-height: 60px; overflow-y: auto; border-bottom: 1px solid #e2e8f0;"></div>
+        <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic" style="max-height: 80px; overflow-y: auto; border-bottom: 1px solid #e2e8f0;"></div>
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
@@ -238,6 +238,12 @@
         let allData = {}; let photoBase64 = "";
         let renderTimer;
         let editCrewId = null;
+
+        // --- GLOBAL VARIABLES FOR LIVE GPS TRACKING ---
+        let gpsWatchId = null;
+        let lastSentTimestamp = 0;
+        const TRACKING_INTERVAL_MS = 3000; // Pembatasan interval maksimal 3 detik
+        let offlineLocationBuffer = null;
 
         // DATA DICTIONARY KOORDINAT KECAMATAN SEKITAR JATIMAKMUR
         const KECAMATAN_POLYGONS = [
@@ -403,6 +409,7 @@
 
         function handleLogout(withConfirm = true) { 
             if(withConfirm && !confirm("Keluar?")) return;
+            stopDriverGpsTracking(); // Matikan sensor GPS saat logout
             if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
@@ -415,17 +422,102 @@
             db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust }); 
         }
 
+        // --- LIVE GPS DRIVER TRACKING ENGINE ---
+        function startDriverGpsTracking(driverId) {
+            if (!navigator.geolocation) {
+                console.error("Fitur GPS tidak didukung perangkat.");
+                return;
+            }
+            if (gpsWatchId !== null) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+            }
+
+            const geoOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+
+            gpsWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const now = Date.now();
+                    if (now - lastSentTimestamp >= TRACKING_INTERVAL_MS) {
+                        const locationData = {
+                            driverId: driverId,
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy || 0,
+                            speed: position.coords.speed !== null ? position.coords.speed : 0,
+                            heading: position.coords.heading !== null ? position.coords.heading : 0,
+                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                        };
+                        sendLocationToFirebase(driverId, locationData);
+                        lastSentTimestamp = now;
+                    }
+                },
+                (error) => { console.error("GPS Error: ", error.message); },
+                geoOptions
+            );
+        }
+
+        function stopDriverGpsTracking() {
+            if (gpsWatchId !== null) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+                console.log("Sensor pelacakan GPS dihentikan.");
+            }
+        }
+
+        function sendLocationToFirebase(driverId, data) {
+            const cleanId = driverId.replace(/[\.\#\$\[\]\/]/g, "_");
+            const dbRef = db.ref('drivers/' + cleanId + '/currentLocation');
+
+            if (navigator.onLine) {
+                dbRef.set(data).then(() => { offlineLocationBuffer = null; }).catch(e => console.error(e));
+            } else {
+                offlineLocationBuffer = { driverId: cleanId, data: data };
+            }
+        }
+
+        window.addEventListener('online', () => {
+            if (offlineLocationBuffer !== null) {
+                offlineLocationBuffer.data.timestamp = firebase.database.ServerValue.TIMESTAMP;
+                sendLocationToFirebase(offlineLocationBuffer.driverId, offlineLocationBuffer.data);
+            }
+        });
+
+        function openLiveDriverMap(driverName) {
+            const cleanId = driverName.replace(/[\.\#\$\[\]\/]/g, "_");
+            db.ref('drivers/' + cleanId + '/currentLocation').once('value', snap => {
+                if(snap.exists()) {
+                    const loc = snap.val();
+                    const url = `https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}`;
+                    window.open(url, '_blank');
+                } else {
+                    alert(`Lokasi real-time ${driverName} belum terdeteksi. Pastikan GPS di HP driver aktif.`);
+                }
+            });
+        }
+
         function startDeliveryStatusListener() {
             db.ref('delivery_activity').on('value', s => {
                 const bar = document.getElementById('deliveryStatusBar');
                 bar.innerHTML = ""; const now = Date.now(); let hasData = false;
                 s.forEach(child => {
                     const d = child.val();
-                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { 
+                    if (now - d.timestamp > 900000) {
+                        db.ref('delivery_activity/' + child.key).remove();
+                    } else { 
                         hasData = true; 
                         const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
-                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${textStatus})</span></div>`; 
+                        const cleanDriverName = d.name.replace(/['"\\]/g, '\\$&');
+                        
+                        bar.innerHTML += `
+                            <div class="status-item flex justify-between items-center px-1">
+                                <div class="flex items-center animate-blink">
+                                    <i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i>
+                                    <span>(${textStatus})</span>
+                                </div>
+                                <button onclick="openLiveDriverMap('${cleanDriverName}')" class="ml-2 bg-blue-500 text-white w-6 h-6 rounded-md flex items-center justify-center text-[10px] shadow-sm active:scale-95" title="Lihat Posisi Kurir Real-Time">
+                                    <i class="fa fa-user-motorcycle text-[9px]"></i>
+                                </button>
+                            </div>`; 
                     }
                 });
                 bar.style.display = hasData ? "block" : "none";
@@ -582,7 +674,6 @@
 
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
                         headers: { 'Accept-Language': 'id' }
                     })
@@ -607,7 +698,6 @@
                             area: areaFormatBaru
                         };
 
-                        // Pertahankan atau perbarui ID agar tidak pernah hilang saat icon GPS diklik di history
                         if (allData[id]) {
                             if (allData[id].historyDisplayId) {
                                 updateData.historyDisplayId = allData[id].historyDisplayId;
@@ -629,7 +719,6 @@
                         alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi:\n" + areaFinal);
                     })
                     .catch((err) => {
-                        // Fallback aman jika koneksi API luar bermasalah
                         let fallbackData = { 
                             maps: generatedMapsUrl,
                             area: kecamatanOtomatis
@@ -725,15 +814,15 @@
             if(allData[id].status !== 'otw') { 
                 db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
                 pushDeliveryStatus(currentUser); 
+                startDriverGpsTracking(currentUser); // Mengaktifkan pelacakan GPS real-time Driver
             } 
         }
 
-        // Modifikasi setStatus untuk memastikan properti display ID dibersihkan saat di-undo ke antaran aktif
         function setStatus(id, stat) { 
             if (stat === 'done') {
                 db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+                stopDriverGpsTracking(); // Matikan sensor pelacakan setelah tugas selesai diantar
             } else {
-                // Saat status diubah menjadi active kembali (Undo), historyDisplayId dibuang dari data
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
         }
@@ -752,6 +841,7 @@
                     
                     if(elapsed >= 1200) {
                         db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
+                        stopDriverGpsTracking(); // Lindungi baterai jika auto-done dipicu sistem
                         return;
                     }
 
@@ -830,6 +920,7 @@
                 showPage('list');
             } else { 
                 pushDeliveryStatus(currentUser, custId);
+                startDriverGpsTracking(currentUser); // Mengaktifkan pelacakan GPS real-time Driver via WA Direct
                 
                 const autoData = {
                     area: "ID " + custId,
@@ -860,7 +951,6 @@
             }
         }
 
-        // Fungsi Penghapusan Otomatis 3 Digit ID tepat Pukul 00:00 WIB tanpa menghapus data riwayat
         function checkAndResetIdsAtMidnight() {
             setInterval(() => {
                 const now = new Date();
