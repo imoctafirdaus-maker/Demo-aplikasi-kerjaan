@@ -30,6 +30,36 @@
         .animate-blink { animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
+        /* Style Kustom Ikon Motor Biru + Sinyal untuk Status Mengantar */
+        .delivery-icon-wrapper {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            position: relative;
+            vertical-align: middle;
+        }
+        .delivery-signal-icon {
+            font-size: 7px;
+            color: #006491;
+            line-height: 1;
+            margin-bottom: -1px;
+            animation: pulse-signal 1.2s infinite ease-in-out;
+        }
+        .delivery-bike-icon {
+            color: #006491;
+            font-size: 11px;
+            line-height: 1;
+        }
+        @keyframes pulse-signal {
+            0% { opacity: 0.3; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.3; transform: scale(0.9); }
+        }
+
         .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
         .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
         .profile-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
@@ -511,11 +541,14 @@
                         bar.innerHTML += `
                             <div class="status-item flex justify-between items-center px-1">
                                 <div class="flex items-center animate-blink">
-                                    <i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i>
+                                    <div class="delivery-icon-wrapper">
+                                        <div class="delivery-signal-icon"><i class="fa fa-wifi"></i></div>
+                                        <div class="delivery-bike-icon"><i class="fa fa-motorcycle"></i></div>
+                                    </div>
                                     <span>(${textStatus})</span>
                                 </div>
                                 <button onclick="openLiveDriverMap('${cleanDriverName}')" class="ml-2 bg-blue-500 text-white w-6 h-6 rounded-md flex items-center justify-center text-[10px] shadow-sm active:scale-95" title="Lihat Posisi Kurir Real-Time">
-                                    <i class="fa fa-user-motorcycle text-[9px]"></i>
+                                    <i class="fa fa-crosshairs text-[9px]"></i>
                                 </button>
                             </div>`; 
                     }
