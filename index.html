@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <!-- Library Hammer.js untuk menangani gestur pinch zoom 2 jari -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
     <style>
@@ -20,7 +19,7 @@
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; transition: all 0.2s; }
         .nav-item.active { color: #006491; }
-        .nav-add { background: #006491 !important; color: white !important; width: 55px !important; height: 55px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
+        .nav-item.add { background: #006491 !important; color: white !important; width: 55px !important; height: 55px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
         
         .page { display: none; height: 100%; flex-direction: column; }
         .page.active { display: flex; }
@@ -47,6 +46,18 @@
 
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
+
+        /* CSS Animasi Ticker Teks Berkedip */
+        @keyframes ticker-marquee {
+            0% { transform: translate3d(100%, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+        .animate-ticker-blink {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: ticker-marquee 10s linear infinite, blink 1s infinite;
+        }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -505,30 +516,28 @@
                     `;
                 }
 
-                // Kondisi teks berjalan (ticker) jika item sedang diantar (otw) oleh user yang bersangkutan
-                let tickerHtml = "";
-                if (i.status === 'otw' && i.driverBy === currentUser) {
-                    tickerHtml = `
-                        <div class="flex-1 bg-yellow-400 rounded-lg px-2 py-2 flex items-center overflow-hidden">
-                            <marquee class="text-black font-black uppercase text-[9px] tracking-wide" scrollamount="3">
-                                ⚠️ Tekan icon maps ketika sampai dirumah customer
-                            </marquee>
+                // Logika Penambahan Pesan Peringatan Kuning Ticker Berkedip di samping Icon Maps
+                let mapsNoteTickerHtml = "";
+                if (i.status !== 'done' && i.maps) {
+                    mapsNoteTickerHtml = `
+                        <div class="flex-1 overflow-hidden bg-amber-100 text-amber-700 text-[8px] font-black uppercase rounded p-1 h-5 flex items-center" style="max-width: calc(100% - 10px);">
+                            <span class="animate-ticker-blink">Tekan icon maps ketika sampai dirumah customer</span>
                         </div>
                     `;
                 }
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
-                        <div class="flex-1">
+                        <div class="flex-1 min-w-0 mr-2">
                             ${areaDisplayHtml}
                             <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
-                            <div class="flex items-center gap-2 mt-1">
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
-                                ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
+                                ${i.driverBy ? `<span class="driver-badge shrink-0">${i.driverBy}</span>` : ''}
                             </div>
                             ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 shrink-0">
                             ${i.status !== 'done' ? 
                             `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
@@ -550,10 +559,10 @@
                     <div class="mt-3 ${i.status==='done'?'hidden':''}">
                         ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
-                    <div class="flex gap-2 mt-3 items-center ${i.status==='done'?'hidden':''}">
-                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 px-4 rounded-lg text-center font-bold text-[9px] flex-initial italic uppercase h-[34px] flex items-center justify-center shrink-0"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
-                        ${tickerHtml}
-                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 px-4 rounded-lg text-center font-bold text-[9px] flex-initial italic uppercase h-[34px] flex items-center justify-center shrink-0"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
+                    <div class="flex gap-2 items-center mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 px-3 rounded-lg text-center font-bold text-[9px] italic uppercase shrink-0"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
+                        ${mapsNoteTickerHtml}
+                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shrink-0"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                 </div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
@@ -687,11 +696,6 @@
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
-
-        // Inisialisasi Logika Pinch Zoom dengan HammerJS
-        let hammerInstance = null;
-        let scale = 1;
-        let lastScale = 1;
 
         function openFullImg(url, caption = "") { 
             document.getElementById('fullImg').src = url; 
@@ -898,6 +902,11 @@
                 document.getElementById('waDirectCashPayment').checked = false;
             }
         }
+
+        // Inisialisasi Logika Pinch Zoom dengan HammerJS
+        let hammerInstance = null;
+        let scale = 1;
+        let lastScale = 1;
 
         function initPinchZoom() {
             const el = document.getElementById('fullImg');
