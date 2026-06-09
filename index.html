@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <!-- Library Hammer.js untuk menangani gestur pinch zoom 2 jari -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
     <style>
@@ -687,6 +688,11 @@
             );
         }
 
+        // Inisialisasi Logika Pinch Zoom dengan HammerJS
+        let hammerInstance = null;
+        let scale = 1;
+        let lastScale = 1;
+
         function openFullImg(url, caption = "") { 
             document.getElementById('fullImg').src = url; 
             document.getElementById('modalCaption').innerText = caption; 
@@ -892,11 +898,6 @@
                 document.getElementById('waDirectCashPayment').checked = false;
             }
         }
-
-        // Inisialisasi Logika Pinch Zoom dengan HammerJS
-        let hammerInstance = null;
-        let scale = 1;
-        let lastScale = 1;
 
         function initPinchZoom() {
             const el = document.getElementById('fullImg');
