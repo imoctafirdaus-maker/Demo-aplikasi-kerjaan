@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-color=1.0, user-scalable=no">
     <title>TrackCust JTM - Official</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,7 +40,6 @@
         .antaran-photo { cursor: pointer; transition: transform 0.2s; }
         .antaran-photo:active { transform: scale(0.92); }
 
-        /* Pengaturan luapan transform zoom modal gambar */
         #modalContent { overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
         #fullImg { transition: transform 0.05s ease-out; touch-action: none; pointer-events: auto; }
 
@@ -117,6 +116,15 @@
                                 <i class="fa fa-chevron-right text-blue-300 text-[10px]"></i>
                             </div>
                         </div>
+                    </div>
+
+                    <div onclick="aksesPortalFEM()" class="profile-bubble border-green-200 bg-green-50/20">
+                        <div class="profile-icon bg-emerald-600 text-white"><i class="fa fa-layer-group"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-emerald-800 uppercase italic text-[11px]">Login Portal FEM (DPI)</span>
+                            <span class="text-[8px] font-bold text-gray-400 uppercase">Auto-Copy Username & Sandi</span>
+                        </div>
+                        <i class="fa fa-external-link-alt text-emerald-500 text-[10px]"></i>
                     </div>
 
                     <div onclick="handleLogout()" class="profile-bubble">
@@ -222,7 +230,6 @@
     </div>
 
     <script>
-        // Configuration & Database Users
         let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -246,7 +253,6 @@
         let renderTimer;
         let editCrewId = null;
 
-        // DATA DICTIONARY KOORDINAT KECAMATAN SEKITAR JATIMAKMUR
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -274,6 +280,24 @@
             checkAndResetIdsAtMidnight();
         };
 
+        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
+        function aksesPortalFEM() {
+            // Menyalin Username terlebih dahulu
+            navigator.clipboard.writeText("pdc9_pic").then(() => {
+                alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
+                
+                // Menyalin Sandi setelah user menekan OK
+                navigator.clipboard.writeText("pdc9_pic@123").then(() => {
+                    // Langsung mengalihkan browser HP ke halaman tujuan utama
+                    window.open('https://www.femdpi.com/dashboard/', '_blank');
+                });
+            }).catch(err => {
+                // Fallback jika fitur salin otomatis HP terblokir
+                alert("Kredensial Login:\nUsername: pdc9_pic\nSandi: pdc9_pic@123");
+                window.open('https://www.femdpi.com/dashboard/', '_blank');
+            });
+        }
+
         function refreshUserDropdown() {
             const logSel = document.getElementById('selectUser');
             if(!logSel) return;
@@ -281,7 +305,6 @@
             Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
         }
 
-        // --- CREW MANAGEMENT LOGIC (ADMIN ONLY) ---
         function showCrewManager() {
             document.getElementById('profileOptions').classList.add('hidden');
             document.getElementById('crewManagerView').classList.remove('hidden');
@@ -350,7 +373,6 @@
             document.getElementById('btnCancelCrew').classList.add('hidden');
         }
 
-        // --- USER & AUTH LOGIC ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -414,7 +436,6 @@
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
 
-        // --- CORE FUNCTIONALITY ---
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
         
         function pushDeliveryStatus(nama, idCust = "") { 
@@ -479,7 +500,6 @@
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
 
-                // Generate conditional buttons for history view based on coordinate availability
                 let historyGpsControlsHtml = "";
                 if (i.maps) {
                     historyGpsControlsHtml = `
@@ -496,7 +516,6 @@
                     `;
                 }
 
-                // Pengkondisian penampilan kode area beserta ID khusus untuk menu history jika ada
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
                 if (i.status === 'done' && i.historyDisplayId) {
                     areaDisplayHtml = `
@@ -576,7 +595,6 @@
             return kecamatanTerpilih;
         }
 
-        // --- UPDATE LOGIKA SATU KLIK: GPS + AUTO OPEN CAMERA + AUTO COMPRESS 400PX ---
         function ambilDanSimpanKoordinatStatus(id, name, isHistory = false) {
             const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat & ambil foto rumah untuk ${name}?`);
             if (!yakin) return;
@@ -586,7 +604,6 @@
                 return;
             }
 
-            // Langkah 1: Kunci lokasi GPS saat ini terlebih dahulu
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const lat = position.coords.latitude;
@@ -594,9 +611,8 @@
                     const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    // Langkah 2: Picu Kamera HP secara otomatis melalui input file hidden
                     const camInput = document.getElementById('cameraCaptureHidden');
-                    camInput.value = ""; // Reset value pemicu awal
+                    camInput.value = ""; 
 
                     camInput.onchange = (event) => {
                         if (event.target.files && event.target.files[0]) {
@@ -604,7 +620,6 @@
                             reader.onload = (e) => {
                                 const img = new Image();
                                 img.onload = () => {
-                                    // Langkah 3: Kompres otomatis gambar hasil jepretan kamera ke lebar 400px
                                     const canvas = document.createElement('canvas');
                                     const TARGET_WIDTH = 400; 
                                     canvas.width = TARGET_WIDTH;
@@ -615,10 +630,8 @@
                                     ctx.imageSmoothingQuality = 'high';
                                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                                     
-                                    // Konversi hasil kompresi gambar menjadi string Base64 berkualitas menengah (0.7)
                                     const compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
 
-                                    // Langkah 4: Hitung Reverse Geocoding alamat lalu simpan semua data sekaligus ke DB
                                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
                                         headers: { 'Accept-Language': 'id' }
                                     })
@@ -639,7 +652,7 @@
                                         let updateData = { 
                                             maps: generatedMapsUrl,
                                             area: areaFormatBaru,
-                                            photo: compressedPhotoBase64, // Menyimpan foto terkompresi hasil kamera
+                                            photo: compressedPhotoBase64, 
                                             status: isHistory ? 'done' : (allData[id].status || 'active')
                                         };
 
@@ -660,7 +673,6 @@
                                         alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal);
                                     })
                                     .catch((err) => {
-                                        // Fallback jika API Nominatim offline/gagal memuat data jalan
                                         let fallbackData = { 
                                             maps: generatedMapsUrl,
                                             area: kecamatanOtomatis,
@@ -691,7 +703,6 @@
                         }
                     };
 
-                    // Klik input secara programmatic untuk membuka aplikasi kamera bawaan HP
                     camInput.click();
                 },
                 (error) => {
@@ -701,7 +712,6 @@
             );
         }
 
-        // --- SISA KODE UTILITY TETAP SAMA ---
         function openFullImg(url, caption = "") { 
             document.getElementById('fullImg').src = url; 
             document.getElementById('modalCaption').innerText = caption; 
