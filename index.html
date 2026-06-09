@@ -230,6 +230,7 @@
     </div>
 
     <script>
+        // Kredensial Pengguna & Otoritas Sistem
         let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -239,6 +240,7 @@
         const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
         const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
 
+        // Konfigurasi Database Utama Firebase
         const firebaseConfig = { 
             apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
             databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
@@ -253,6 +255,7 @@
         let renderTimer;
         let editCrewId = null;
 
+        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -282,17 +285,13 @@
 
         // SKRIP JEMBATAN OTOMATIS PORTAL FEM
         function aksesPortalFEM() {
-            // Menyalin Username terlebih dahulu
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
                 
-                // Menyalin Sandi setelah user menekan OK
                 navigator.clipboard.writeText("pdc9_pic@123").then(() => {
-                    // Langsung mengalihkan browser HP ke halaman tujuan utama
                     window.open('https://www.femdpi.com/dashboard/', '_blank');
                 });
             }).catch(err => {
-                // Fallback jika fitur salin otomatis HP terblokir
                 alert("Kredensial Login:\nUsername: pdc9_pic\nSandi: pdc9_pic@123");
                 window.open('https://www.femdpi.com/dashboard/', '_blank');
             });
