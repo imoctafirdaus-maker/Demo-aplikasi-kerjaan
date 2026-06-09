@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
     <style>
         .dominos-blue { background-color: #006491; }
@@ -26,39 +27,9 @@
         .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
         .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
         
-        .status-item { padding: 4px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
+        .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
         .animate-blink { animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-
-        /* Style Kustom Ikon Motor Biru + Sinyal untuk Status Mengantar */
-        .delivery-icon-wrapper {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            margin-right: 8px;
-            position: relative;
-            vertical-align: middle;
-        }
-        .delivery-signal-icon {
-            font-size: 7px;
-            color: #006491;
-            line-height: 1;
-            margin-bottom: -1px;
-            animation: pulse-signal 1.2s infinite ease-in-out;
-        }
-        .delivery-bike-icon {
-            color: #006491;
-            font-size: 11px;
-            line-height: 1;
-        }
-        @keyframes pulse-signal {
-            0% { opacity: 0.3; transform: scale(0.9); }
-            50% { opacity: 1; transform: scale(1.1); }
-            100% { opacity: 0.3; transform: scale(0.9); }
-        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
         .profile-bubble { background: white; border-radius: 1.5rem; padding: 1rem 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; }
         .profile-bubble:active { transform: scale(0.98); background: #f8fafc; }
@@ -69,15 +40,24 @@
         .antaran-photo { cursor: pointer; transition: transform 0.2s; }
         .antaran-photo:active { transform: scale(0.92); }
 
+        /* Pengaturan luapan transform zoom modal gambar */
+        #modalContent { overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
+        #fullImg { transition: transform 0.05s ease-out; touch-action: none; pointer-events: auto; }
+
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
+
+        /* Bubble Warning Teguran Driver */
+        .warning-bubble { position: relative; background: #facc15; color: #000; font-size: 10px; font-weight: 900; padding: 8px 12px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 6px; display: inline-block; animation: pulse-warn 1.5s infinite; }
+        .warning-bubble::after { content: ''; position: absolute; right: 14px; bottom: -6px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #facc15; }
+        @keyframes pulse-warn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
 
-    <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4" onclick="this.style.display='none'">
-        <button class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center"><i class="fa fa-times text-2xl"></i></button>
-        <div id="modalContent" class="flex flex-col items-center">
+    <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4">
+        <button onclick="closeFullImgModal()" class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center z-[10002]"><i class="fa fa-times text-2xl"></i></button>
+        <div id="modalContent">
              <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
              <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
         </div>
@@ -105,7 +85,11 @@
             </div>
         </nav>
         
-        <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic" style="max-height: 80px; overflow-y: auto; border-bottom: 1px solid #e2e8f0;"></div>
+        <div class="bg-white border-b border-gray-200 flex justify-between items-center px-4" style="min-height: 35px;">
+            <div id="deliveryStatusBar" class="flex-1 flex flex-col text-[9px] font-black text-blue-900 uppercase italic max-height-[60px] overflow-y-auto py-1"></div>
+            <div id="adminActionZone" class="hidden pl-2"></div>
+        </div>
+        
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
@@ -201,7 +185,7 @@
                         <img id="imgPrev" class="hidden w-full h-32 object-cover rounded-lg mt-2 border-2 border-white">
                     </div>
                     <button onclick="saveData()" id="saveBtn" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
-                    <button onclick="cancelEdit()" id="cancelBtn" class="hidden w-full bg-gray-400 text-white py-3 rounded-xl font-bold uppercase text-[10px]">Batal</button>
+                    <button onclick="cancelBtn" id="cancelBtn" class="hidden w-full bg-gray-400 text-white py-3 rounded-xl font-bold uppercase text-[10px]">Batal</button>
                 </div>
             </div>
 
@@ -268,14 +252,8 @@
         let allData = {}; let photoBase64 = "";
         let renderTimer;
         let editCrewId = null;
+        let activeWarnings = {}; // Menyimpan data teguran aktif dari Firebase
 
-        // --- GLOBAL VARIABLES FOR LIVE GPS TRACKING ---
-        let gpsWatchId = null;
-        let lastSentTimestamp = 0;
-        const TRACKING_INTERVAL_MS = 3000; // Pembatasan interval maksimal 3 detik
-        let offlineLocationBuffer = null;
-
-        // DATA DICTIONARY KOORDINAT KECAMATAN SEKITAR JATIMAKMUR
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -283,7 +261,7 @@
             { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 },
             { name: "DUREN SAWIT", lat: -6.2343, lng: 106.9194 },
             { name: "MAKASAR", lat: -6.2735, lng: 106.8841 },
-            { name: "CIRACAS", lat: -6.3262, rounded_corners: true, lat: -6.3262, lng: 106.8797 }
+            { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
         ];
 
         window.onload = () => {
@@ -295,6 +273,13 @@
                 }
                 refreshUserDropdown();
                 if(currentUser === "Okta") renderCrewAdminList();
+            });
+
+            // Listen data teguran secara real-time
+            db.ref('warnings').on('value', snap => {
+                activeWarnings = snap.val() || {};
+                render(); 
+                updateAdminStatusBarIcon();
             });
 
             if(currentUser) bukaApp(currentUser);
@@ -310,7 +295,6 @@
             Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
         }
 
-        // --- CREW MANAGEMENT LOGIC (ADMIN ONLY) ---
         function showCrewManager() {
             document.getElementById('profileOptions').classList.add('hidden');
             document.getElementById('crewManagerView').classList.remove('hidden');
@@ -379,7 +363,6 @@
             document.getElementById('btnCancelCrew').classList.add('hidden');
         }
 
-        // --- USER & AUTH LOGIC ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -433,18 +416,16 @@
                 db.ref('presence/' + n + '/session').on('value', snap => {
                     if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
                 });
-                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); updateAdminStatusBarIcon(); });
             });
         }
 
         function handleLogout(withConfirm = true) { 
             if(withConfirm && !confirm("Keluar?")) return;
-            stopDriverGpsTracking(); // Matikan sensor GPS saat logout
             if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
 
-        // --- CORE FUNCTIONALITY ---
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
         
         function pushDeliveryStatus(nama, idCust = "") { 
@@ -452,83 +433,11 @@
             db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust }); 
         }
 
-        // --- LIVE GPS DRIVER TRACKING ENGINE ---
-        function startDriverGpsTracking(driverId) {
-            if (!navigator.geolocation) {
-                console.error("Fitur GPS tidak didukung perangkat.");
-                return;
-            }
-            if (gpsWatchId !== null) {
-                navigator.geolocation.clearWatch(gpsWatchId);
-            }
-
-            const geoOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
-
-            gpsWatchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const now = Date.now();
-                    if (now - lastSentTimestamp >= TRACKING_INTERVAL_MS) {
-                        const locationData = {
-                            driverId: driverId,
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            accuracy: position.coords.accuracy || 0,
-                            speed: position.coords.speed !== null ? position.coords.speed : 0,
-                            heading: position.coords.heading !== null ? position.coords.heading : 0,
-                            timestamp: firebase.database.ServerValue.TIMESTAMP
-                        };
-                        sendLocationToFirebase(driverId, locationData);
-                        lastSentTimestamp = now;
-                    }
-                },
-                (error) => { console.error("GPS Error: ", error.message); },
-                geoOptions
-            );
-        }
-
-        function stopDriverGpsTracking() {
-            if (gpsWatchId !== null) {
-                navigator.geolocation.clearWatch(gpsWatchId);
-                gpsWatchId = null;
-                console.log("Sensor pelacakan GPS dihentikan.");
-            }
-        }
-
-        function sendLocationToFirebase(driverId, data) {
-            const cleanId = driverId.replace(/[\.\#\$\[\]\/]/g, "_");
-            const dbRef = db.ref('drivers/' + cleanId + '/currentLocation');
-
-            if (navigator.onLine) {
-                dbRef.set(data).then(() => { offlineLocationBuffer = null; }).catch(e => console.error(e));
-            } else {
-                offlineLocationBuffer = { driverId: cleanId, data: data };
-            }
-        }
-
-        window.addEventListener('online', () => {
-            if (offlineLocationBuffer !== null) {
-                offlineLocationBuffer.data.timestamp = firebase.database.ServerValue.TIMESTAMP;
-                sendLocationToFirebase(offlineLocationBuffer.driverId, offlineLocationBuffer.data);
-            }
-        });
-
-        function openLiveDriverMap(driverName) {
-            const cleanId = driverName.replace(/[\.\#\$\[\]\/]/g, "_");
-            db.ref('drivers/' + cleanId + '/currentLocation').once('value', snap => {
-                if(snap.exists()) {
-                    const loc = snap.val();
-                    const url = `https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}`;
-                    window.open(url, '_blank');
-                } else {
-                    alert(`Lokasi real-time ${driverName} belum terdeteksi. Pastikan GPS di HP driver aktif.`);
-                }
-            });
-        }
-
         function startDeliveryStatusListener() {
             db.ref('delivery_activity').on('value', s => {
                 const bar = document.getElementById('deliveryStatusBar');
                 bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                
                 s.forEach(child => {
                     const d = child.val();
                     if (now - d.timestamp > 900000) {
@@ -536,31 +445,78 @@
                     } else { 
                         hasData = true; 
                         const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
-                        const cleanDriverName = d.name.replace(/['"\\]/g, '\\$&');
-                        
-                        bar.innerHTML += `
-                            <div class="status-item flex justify-between items-center px-1">
-                                <div class="flex items-center animate-blink">
-                                    <div class="delivery-icon-wrapper">
-                                        <div class="delivery-signal-icon"><i class="fa fa-wifi"></i></div>
-                                        <div class="delivery-bike-icon"><i class="fa fa-motorcycle"></i></div>
-                                    </div>
-                                    <span>(${textStatus})</span>
-                                </div>
-                                <button onclick="openLiveDriverMap('${cleanDriverName}')" class="ml-2 bg-blue-500 text-white w-6 h-6 rounded-md flex items-center justify-center text-[10px] shadow-sm active:scale-95" title="Lihat Posisi Kurir Real-Time">
-                                    <i class="fa fa-crosshairs text-[9px]"></i>
-                                </button>
-                            </div>`; 
+                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${textStatus})</span></div>`; 
                     }
                 });
-                bar.style.display = hasData ? "block" : "none";
+                updateAdminStatusBarIcon();
             });
+        }
+
+        // Fungsi Khusus Update Tampilan Icon Surat / Warning di Samping Status Bar
+        function updateAdminStatusBarIcon() {
+            const zone = document.getElementById('adminActionZone');
+            if (!zone) return;
+
+            db.ref('delivery_activity').once('value', snapshot => {
+                let activeDriver = "";
+                snapshot.forEach(child => {
+                    const d = child.val();
+                    if (Date.now() - d.timestamp <= 900000) {
+                        activeDriver = d.name; // Ambil nama driver aktif teratas
+                    }
+                });
+
+                if (!activeDriver) {
+                    zone.innerHTML = "";
+                    zone.classList.add('hidden');
+                    return;
+                }
+
+                zone.classList.remove('hidden');
+                
+                // Jika user yang login adalah Admin OKTA
+                if (currentUser === "Okta") {
+                    const isWarned = activeWarnings[activeDriver] ? true : false;
+                    zone.innerHTML = `
+                        <button onclick="toggleTeguranDriver('${activeDriver}')" class="text-gray-700 hover:text-red-600 transition-all p-1">
+                            <i class="${isWarned ? 'fa fa-envelope-open-text text-yellow-500 animate-bounce' : 'fa fa-envelope text-gray-800'} text-[14px]"></i>
+                        </button>
+                    `;
+                } else {
+                    // Jika user biasa/driver, tampilkan warning jika ia sedang ditegur oleh admin
+                    if (activeWarnings[currentUser]) {
+                        zone.innerHTML = `<i class="fa fa-exclamation-triangle text-yellow-500 text-[12px] animate-pulse"></i>`;
+                    } else {
+                        zone.innerHTML = "";
+                        zone.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        // Fungsi Pengendali Kirim Teguran Realtime ke Firebase oleh Admin Okta
+        function toggleTeguranDriver(driverName) {
+            if (currentUser !== "Okta") return;
+            if (activeWarnings[driverName]) {
+                if (confirm(`Batalkan teguran untuk ${driverName}?`)) {
+                    db.ref('warnings/' + driverName).remove();
+                }
+            } else {
+                if (confirm(`Kirim teguran kepada ${driverName} agar tidak lupa klik maps?`)) {
+                    db.ref('warnings/' + driverName).set({
+                        target: driverName,
+                        message: "Tekan icon maps ketika sampai dirumah customer",
+                        timestamp: Date.now()
+                    });
+                }
+            }
         }
 
         function render() {
             const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
             const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
+            
             Object.keys(allData).reverse().forEach(id => {
                 const i = allData[id];
                 const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
@@ -598,7 +554,6 @@
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
                 const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
 
-                // Generate conditional buttons for history view based on coordinate availability
                 let historyGpsControlsHtml = "";
                 if (i.maps) {
                     historyGpsControlsHtml = `
@@ -615,7 +570,6 @@
                     `;
                 }
 
-                // Pengkondisian penampilan kode area beserta ID khusus untuk menu history jika ada
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
                 if (i.status === 'done' && i.historyDisplayId) {
                     areaDisplayHtml = `
@@ -624,7 +578,21 @@
                     `;
                 }
 
-                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
+                // DETEKSI LOGIKA BALLOON WARNING TEGURAN: Jika driver card ini sedang di-OTW oleh driver yang mendapat teguran aktif
+                let warningBubbleHtml = "";
+                if (i.status === 'otw' && i.driverBy && activeWarnings[i.driverBy]) {
+                    warningBubbleHtml = `
+                        <div class="text-right">
+                            <div class="warning-bubble">
+                                <i class="fa fa-exclamation-triangle mr-1"></i> ${activeWarnings[i.driverBy].message}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const cardHtml = `
+                ${warningBubbleHtml}
+                <div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             ${areaDisplayHtml}
@@ -728,7 +696,8 @@
 
                         let updateData = { 
                             maps: generatedMapsUrl,
-                            area: areaFormatBaru
+                            area: areaFormatBaru,
+                            status: isHistory ? 'done' : (allData[id].status || 'active')
                         };
 
                         if (allData[id]) {
@@ -746,6 +715,13 @@
                             }
                         }
 
+                        // Jika driver sukses klik simpan koordinat/GPS, otomatis hilangkan peringatan teguran di database
+                        if(allData[id] && allData[id].driverBy) {
+                            db.ref('warnings/' + allData[id].driverBy).remove();
+                        } else {
+                            db.ref('warnings/' + currentUser).remove();
+                        }
+
                         return db.ref('customers/' + id).update(updateData).then(() => areaFormatBaru);
                     })
                     .then((areaFinal) => {
@@ -754,7 +730,8 @@
                     .catch((err) => {
                         let fallbackData = { 
                             maps: generatedMapsUrl,
-                            area: kecamatanOtomatis
+                            area: kecamatanOtomatis,
+                            status: isHistory ? 'done' : (allData[id].status || 'active')
                         };
 
                         if (allData[id]) {
@@ -770,6 +747,12 @@
                                     fallbackData.historyDisplayId = extractedId;
                                 }
                             }
+                        }
+
+                        if(allData[id] && allData[id].driverBy) {
+                            db.ref('warnings/' + allData[id].driverBy).remove();
+                        } else {
+                            db.ref('warnings/' + currentUser).remove();
                         }
 
                         db.ref('customers/' + id).update(fallbackData)
@@ -788,7 +771,18 @@
             );
         }
 
-        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; }
+        function openFullImg(url, caption = "") { 
+            document.getElementById('fullImg').src = url; 
+            document.getElementById('modalCaption').innerText = caption; 
+            document.getElementById('imgModal').style.display = 'flex'; 
+            initPinchZoom();
+        }
+
+        function closeFullImgModal() {
+            document.getElementById('imgModal').style.display = 'none';
+            resetPinchZoom();
+        }
+
         function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
         
         function processImage(input) {
@@ -798,14 +792,14 @@
                     const img = new Image();
                     img.onload = () => {
                         const c = document.createElement('canvas'); 
-                        const THUMB_W = 150; 
+                        const THUMB_W = 600; 
                         c.width = THUMB_W; 
                         c.height = img.height * (THUMB_W / img.width);
                         const ctx = c.getContext('2d');
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
                         ctx.drawImage(img, 0, 0, c.width, c.height);
-                        photoBase64 = c.toDataURL('image/jpeg', 0.5);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.75);
                         document.getElementById('imgPrev').src = photoBase64;
                         document.getElementById('imgPrev').classList.remove('hidden');
                         document.getElementById('btnRemovePhoto').classList.remove('hidden');
@@ -846,15 +840,16 @@
             if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
             if(allData[id].status !== 'otw') { 
                 db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
-                pushDeliveryStatus(currentUser); 
-                startDriverGpsTracking(currentUser); // Mengaktifkan pelacakan GPS real-time Driver
+                pushDeliveryStatus(currentUser, (allData[id].area && allData[id].area.startsWith("ID ")) ? allData[id].area.split(" ")[1] : ""); 
             } 
         }
 
         function setStatus(id, stat) { 
             if (stat === 'done') {
+                if(allData[id] && allData[id].driverBy) {
+                    db.ref('warnings/' + allData[id].driverBy).remove();
+                }
                 db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
-                stopDriverGpsTracking(); // Matikan sensor pelacakan setelah tugas selesai diantar
             } else {
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
@@ -874,7 +869,6 @@
                     
                     if(elapsed >= 1200) {
                         db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
-                        stopDriverGpsTracking(); // Lindungi baterai jika auto-done dipicu sistem
                         return;
                     }
 
@@ -953,7 +947,6 @@
                 showPage('list');
             } else { 
                 pushDeliveryStatus(currentUser, custId);
-                startDriverGpsTracking(currentUser); // Mengaktifkan pelacakan GPS real-time Driver via WA Direct
                 
                 const autoData = {
                     area: "ID " + custId,
@@ -984,6 +977,44 @@
             }
         }
 
+        let hammerInstance = null;
+        let scale = 1;
+        let lastScale = 1;
+
+        function initPinchZoom() {
+            const el = document.getElementById('fullImg');
+            if (!el) return;
+            
+            resetPinchZoom();
+            hammerInstance = new Hammer.Manager(el);
+            const pinch = new Hammer.Pinch();
+            hammerInstance.add([pinch]);
+
+            hammerInstance.on('pinchstart', () => {
+                lastScale = scale;
+            });
+
+            hammerInstance.on('pinchmove', (e) => {
+                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
+                el.style.transform = `scale(${scale})`;
+            });
+
+            hammerInstance.on('pinchend', () => {
+                lastScale = scale;
+            });
+        }
+
+        function resetPinchZoom() {
+            const el = document.getElementById('fullImg');
+            scale = 1;
+            lastScale = 1;
+            if (el) el.style.transform = 'scale(1)';
+            if (hammerInstance) {
+                hammerInstance.destroy();
+                hammerInstance = null;
+            }
+        }
+
         function checkAndResetIdsAtMidnight() {
             setInterval(() => {
                 const now = new Date();
@@ -1001,6 +1032,7 @@
                             });
                         }
                     });
+                    db.ref('warnings').remove(); // Bersihkan seluruh riwayat teguran saat tengah malam
                 }
             }, 1000);
         }
