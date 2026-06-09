@@ -29,11 +29,44 @@
         
         .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
         
-        /* Efek Ticker Text (Marquee Berjalan Moderen) */
-        .ticker-wrapper { overflow: hidden; white-space: nowrap; display: flex; align-items: center; }
+        /* --- MODIFIKASI STATUS BAR & ANIMASI MOTOR --- */
+        .ticker-wrapper { overflow: hidden; white-space: nowrap; display: flex; flex-direction: column; justify-content: space-between; position: relative; background: #ffffff; }
+        .ticker-text-container { width: 100%; overflow: hidden; white-space: nowrap; padding-top: 4px; }
         .ticker-text { display: inline-block; animation: ticker 25s linear infinite; padding-left: 100%; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
         
+        /* Track Animasi Motor */
+        .motor-track { position: relative; width: 100%; height: 26px; background: #f8fafc; border-top: 1px dashed #cbd5e1; overflow: hidden; }
+        .motor-anim-container { position: absolute; bottom: 1px; left: -60px; width: 50px; height: 22px; animation: driveRight 8s linear infinite, motorBump 0.15s linear infinite; }
+        
+        /* Desain Siluet Motor Mini & Orang */
+        .mini-motor-body { position: absolute; bottom: 5px; left: 10px; width: 28px; height: 10px; background: #e31837; border-radius: 4px 12px 2px 2px; }
+        .mini-rider { position: absolute; top: -10px; left: 8px; width: 11px; height: 11px; background: #006491; border-radius: 50% 50% 0 0; }
+        .mini-rider::after { content: ''; position: absolute; top: -4px; left: 2px; width: 8px; height: 6px; background: #334155; border-radius: 4px 4px 0 0; } /* Helm */
+        .mini-box { position: absolute; top: -8px; left: -2px; width: 10px; height: 10px; background: #f59e0b; border-radius: 2px; } /* Kotak Domino's */
+        .mini-wheel { position: absolute; bottom: 1px; width: 8px; height: 8px; background: #1e293b; border: 2px dashed #94a3b8; border-radius: 50%; animation: wheelSpin 0.15s linear infinite; }
+        .mini-back-wheel { left: 8px; }
+        .mini-front-wheel { left: 28px; }
+        
+        /* Efek Asap Knalpot */
+        .mini-exhaust { position: absolute; left: 2px; bottom: 5px; width: 6px; height: 3px; background: #64748b; }
+        .mini-smoke { position: absolute; left: -4px; bottom: 6px; display: flex; gap: 3px; }
+        .smoke-dot { width: 4px; height: 4px; background: rgba(148, 163, 184, 0.6); border-radius: 50%; opacity: 0; filter: blur(0.5px); }
+        .dot1 { animation: puff 0.6s linear infinite; }
+        .dot2 { animation: puff 0.6s linear infinite 0.2s; }
+        .dot3 { animation: puff 0.6s linear infinite 0.4s; }
+
+        /* Keyframes Motor */
+        @keyframes driveRight { 0% { left: -60px; } 100% { left: 100%; } }
+        @keyframes motorBump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+        @keyframes wheelSpin { 100% { transform: rotate(360deg); } }
+        @keyframes puff {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 0.7; }
+            50% { opacity: 0.4; }
+            100% { transform: translate(-12px, -6px) scale(2); opacity: 0; }
+        }
+        /* --------------------------------------------- */
+
         .animate-blink { animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
@@ -46,7 +79,6 @@
         .antaran-photo { cursor: pointer; transition: transform 0.2s; }
         .antaran-photo:active { transform: scale(0.92); }
 
-        /* Pengaturan luapan transform zoom modal gambar */
         #modalContent { overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
         #fullImg { transition: transform 0.05s ease-out; touch-action: none; pointer-events: auto; }
 
@@ -86,7 +118,28 @@
             </div>
         </nav>
         
-        <div id="deliveryStatusBar" class="bg-white px-4 ticker-wrapper text-[9px] font-black text-blue-900 uppercase italic" style="height: 35px; border-bottom: 1px solid #e2e8f0;"></div>
+        <div id="deliveryStatusBar" class="ticker-wrapper" style="height: 55px; border-bottom: 1px solid #e2e8f0; display: none;">
+            <div class="ticker-text-container text-[9px] font-black text-blue-900 uppercase italic">
+                <div id="tickerTextContent" class="ticker-text"></div>
+            </div>
+            <div class="motor-track">
+                <div class="motor-anim-container">
+                    <div class="mini-box"></div>
+                    <div class="mini-motor-body">
+                        <div class="mini-rider"></div>
+                        <div class="mini-exhaust"></div>
+                        <div class="mini-smoke">
+                            <div class="smoke-dot dot1"></div>
+                            <div class="smoke-dot dot2"></div>
+                            <div class="smoke-dot dot3"></div>
+                        </div>
+                    </div>
+                    <div class="mini-wheel mini-back-wheel"></div>
+                    <div class="mini-wheel mini-front-wheel"></div>
+                </div>
+            </div>
+        </div>
+        
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
@@ -250,7 +303,6 @@
         let renderTimer;
         let editCrewId = null;
 
-        // DATA DICTIONARY KOORDINAT KECAMATAN SEKITAR JATIMAKMUR
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -285,7 +337,6 @@
             Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
         }
 
-        // --- CREW MANAGEMENT LOGIC (ADMIN ONLY) ---
         function showCrewManager() {
             document.getElementById('profileOptions').classList.add('hidden');
             document.getElementById('crewManagerView').classList.remove('hidden');
@@ -354,7 +405,6 @@
             document.getElementById('btnCancelCrew').classList.add('hidden');
         }
 
-        // --- USER & AUTH LOGIC ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -418,7 +468,6 @@
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
 
-        // --- CORE FUNCTIONALITY ---
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
         
         function pushDeliveryStatus(nama, idCust = "") { 
@@ -426,10 +475,12 @@
             db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust }); 
         }
 
+        // MODIFIKASI: Listener Status Pengantaran (Menghilangkan +++ dan memicu Animasi Motor Bergerak)
         function startDeliveryStatusListener() {
             db.ref('delivery_activity').on('value', s => {
                 const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                const tickerContent = document.getElementById('tickerTextContent');
+                tickerContent.innerHTML = ""; const now = Date.now(); let hasData = false;
                 
                 let combinedText = "";
                 s.forEach(child => {
@@ -439,12 +490,12 @@
                     } else { 
                         hasData = true; 
                         const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
-                        combinedText += `+++ ${textStatus} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `;
+                        combinedText += `${textStatus}                `;
                     }
                 });
                 
                 if (hasData) {
-                    bar.innerHTML = `<div class="ticker-text"><i class="fa fa-motorcycle mr-2 text-[8px] text-red-500"></i>${combinedText}</div>`;
+                    tickerContent.innerHTML = `<i class="fa fa-motorcycle mr-2 text-[8px] text-red-500"></i>${combinedText}`;
                     bar.style.display = "flex";
                 } else {
                     bar.style.display = "none";
@@ -492,7 +543,6 @@
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
 
-                // Generate conditional buttons for history view based on coordinate availability
                 let historyGpsControlsHtml = "";
                 if (i.maps) {
                     historyGpsControlsHtml = `
@@ -509,7 +559,6 @@
                     `;
                 }
 
-                // Pengkondisian penampilan kode area beserta ID khusus untuk menu history jika ada
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
                 if (i.status === 'done' && i.historyDisplayId) {
                     areaDisplayHtml = `
@@ -606,7 +655,6 @@
 
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    // Memanggil OpenStreetMap Nominatim API untuk reverse geocoding real-time
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
                         headers: { 'Accept-Language': 'id' }
                     })
@@ -626,14 +674,12 @@
                             areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
                         }
 
-                        // Mengunci status agar tetap sesuai asalnya (jika dari history tetap done)
                         let updateData = { 
                             maps: generatedMapsUrl,
                             area: areaFormatBaru,
                             status: isHistory ? 'done' : (allData[id].status || 'active')
                         };
 
-                        // Pertahankan atau perbarui ID agar tidak pernah hilang saat icon GPS diklik di history
                         if (allData[id]) {
                             if (allData[id].historyDisplayId) {
                                 updateData.historyDisplayId = allData[id].historyDisplayId;
@@ -655,7 +701,6 @@
                         alert("Berhasil!\nKoordinat disimpan dan kode area " + name + " otomatis diganti menjadi:\n" + areaFinal);
                     })
                     .catch((err) => {
-                        // Fallback aman jika koneksi API luar bermasalah
                         let fallbackData = { 
                             maps: generatedMapsUrl,
                             area: kecamatanOtomatis,
@@ -693,7 +738,6 @@
             );
         }
 
-        // --- SISA KODE UTILITY TETAP SAMA ---
         function openFullImg(url, caption = "") { 
             document.getElementById('fullImg').src = url; 
             document.getElementById('modalCaption').innerText = caption; 
