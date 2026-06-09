@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <!-- Library Hammer.js untuk menangani gestur pinch zoom 2 jari -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
     <style>
@@ -20,7 +19,7 @@
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; transition: all 0.2s; }
         .nav-item.active { color: #006491; }
-        .nav-item.add { background: #006491 !important; color: white !important; width: 55px !important; height: 55px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
+        .nav-add { background: #006491 !important; color: white !important; width: 55px !important; height: 55px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
         
         .page { display: none; height: 100%; flex-direction: column; }
         .page.active { display: flex; }
@@ -47,18 +46,6 @@
 
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
-
-        /* CSS Animasi Ticker Teks Berkedip */
-        @keyframes ticker-marquee {
-            0% { transform: translate3d(100%, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
-        .animate-ticker-blink {
-            display: inline-block;
-            white-space: nowrap;
-            padding-left: 100%;
-            animation: ticker-marquee 10s linear infinite, blink 1s infinite;
-        }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -193,7 +180,7 @@
                 </div>
             </div>
 
-            <div id="page-chat" class="page p-4 bg-gray-100 overflow-y-auto">
+            <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
                 <div class="wa-card mb-20 mx-auto relative">
                     <div class="flex justify-between items-start mb-4 px-2">
                         <div class="w-16"></div>
@@ -347,20 +334,6 @@
             document.getElementById('btnCancelCrew').classList.remove('hidden');
         }
 
-        function deleteCrew(n) {
-            if(confirm(`Hapus crew ${n} dari database?`)) {
-                delete userPins[n];
-                db.ref('crew_settings').set(userPins);
-            }
-        }
-
-        function cancelCrewEdit() {
-            editCrewId = null;
-            document.getElementById('newCrewName').value = "";
-            document.getElementById('newCrewPin').value = "";
-            document.getElementById('btnCancelCrew').classList.add('hidden');
-        }
-
         // --- USER & AUTH LOGIC ---
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
@@ -489,26 +462,35 @@
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
-                const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
+                
+                // MELETAKKAN PERINGATAN KUNING DI SEBELAH KIRI ICON TITIK MAPS (ANTARAN AKTIF)
+                const coordBtnHtml = `
+                    <div class="flex items-center gap-2 bg-yellow-50 border border-yellow-200 p-1.5 px-2.5 rounded-xl w-full justify-between mt-1">
+                        <span class="text-[9px] text-yellow-700 font-black uppercase italic leading-tight">⚠️ Tekan icon maps ketika sampai dirumah customer</span>
+                        <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="text-blue-500 bg-white shadow-sm border border-blue-100 w-8 h-8 rounded-lg flex items-center justify-center shrink-0" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                    </div>`;
 
-                // Generate conditional buttons for history view based on coordinate availability
+                // MELETAKKAN PERINGATAN KUNING DI SEBELAH KIRI ICON TITIK MAPS (HISTORY)
                 let historyGpsControlsHtml = "";
                 if (i.maps) {
                     historyGpsControlsHtml = `
-                        <div class="flex flex-col items-center gap-1">
-                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                        <div class="flex flex-col gap-1.5 w-full items-end">
+                            <div class="flex items-center gap-2 bg-yellow-50 border border-yellow-200 p-1.5 px-2.5 rounded-xl w-full justify-between mt-1">
+                                <span class="text-[9px] text-yellow-700 font-black uppercase italic leading-tight">⚠️ Tekan icon maps ketika sampai dirumah customer</span>
+                                <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-gray-400 bg-white shadow-sm border border-gray-100 w-8 h-8 rounded-lg flex items-center justify-center shrink-0" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                            </div>
                             <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Navigasi Google Maps"><i class="fa fa-compass text-[11px]"></i></a>
                         </div>
                     `;
                 } else {
                     historyGpsControlsHtml = `
-                        <div class="flex flex-col items-center gap-1">
-                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                        <div class="flex items-center gap-2 bg-yellow-50 border border-yellow-200 p-1.5 px-2.5 rounded-xl w-full justify-between mt-1">
+                            <span class="text-[9px] text-yellow-700 font-black uppercase italic leading-tight">⚠️ Tekan icon maps ketika sampai dirumah customer</span>
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-blue-500 bg-white shadow-sm border border-blue-100 w-8 h-8 rounded-lg flex items-center justify-center shrink-0" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
                         </div>
                     `;
                 }
 
-                // Pengkondisian penampilan kode area beserta ID khusus untuk menu history jika ada
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
                 if (i.status === 'done' && i.historyDisplayId) {
                     areaDisplayHtml = `
@@ -517,24 +499,14 @@
                     `;
                 }
 
-                // Logika Penambahan Pesan Peringatan Kuning Ticker Berkedip (Hanya jika belum selesai)
-                let mapsNoteTickerHtml = "";
-                if (i.status !== 'done' && i.maps) {
-                    mapsNoteTickerHtml = `
-                        <div class="mt-2 overflow-hidden bg-amber-100 text-amber-700 text-[8px] font-black uppercase rounded p-1 h-5 flex items-center w-full">
-                            <span class="animate-ticker-blink">Tekan icon maps ketika sampai dirumah customer</span>
-                        </div>
-                    `;
-                }
-
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
-                        <div class="flex-1 min-w-0 mr-2">
+                        <div class="flex-1">
                             ${areaDisplayHtml}
                             <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
-                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                            <div class="flex items-center gap-2 mt-1">
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
-                                ${i.driverBy ? `<span class="driver-badge shrink-0">${i.driverBy}</span>` : ''}
+                                ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
                             </div>
                             ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
                         </div>
@@ -543,29 +515,26 @@
                             `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                             <div class="flex flex-col items-center">
-                                 <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
-                                 ${!i.maps ? coordBtnHtml : ''}
-                             </div>` 
+                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
                             : `<div class="flex gap-1 items-center">
                                  ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
-                                 <div class="flex flex-col items-center gap-1">
-                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
-                                     ${historyGpsControlsHtml}
-                                 </div>
+                                 <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
                                  <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
                                </div>`}
                         </div>
                     </div>
+                    
+                    <div class="mt-2 w-full">
+                        ${i.status !== 'done' && !i.maps ? coordBtnHtml : ''}
+                        ${i.status === 'done' ? historyGpsControlsHtml : ''}
+                    </div>
+
                     <div class="mt-3 ${i.status==='done'?'hidden':''}">
                         ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
-                    <div class="flex flex-col mt-3 ${i.status==='done'?'hidden':''}">
-                        <div class="flex gap-2 items-center w-full">
-                            ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 px-3 rounded-lg text-center font-bold text-[9px] italic uppercase shrink-0"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
-                            <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shrink-0"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
-                        </div>
-                        ${mapsNoteTickerHtml}
+                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
+                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                 </div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
@@ -721,7 +690,6 @@
                     const img = new Image();
                     img.onload = () => {
                         const c = document.createElement('canvas'); 
-                        // Resolusi dinaikkan ke lebar 600px agar cukup tajam saat di-zoom
                         const THUMB_W = 600; 
                         c.width = THUMB_W; 
                         c.height = img.height * (THUMB_W / img.width);
@@ -774,12 +742,10 @@
             } 
         }
 
-        // Modifikasi setStatus untuk memastikan properti display ID dibersihkan saat di-undo ke antaran aktif
         function setStatus(id, stat) { 
             if (stat === 'done') {
                 db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
             } else {
-                // Saat status diubah menjadi active kembali (Undo), historyDisplayId dibuang dari data
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
         }
@@ -925,7 +891,7 @@
             });
 
             hammerInstance.on('pinchmove', (e) => {
-                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); // Batasi zoom maksimal 4x, minimal 1x
+                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
                 el.style.transform = `scale(${scale})`;
             });
 
@@ -945,7 +911,6 @@
             }
         }
 
-        // Fungsi Penghapusan Otomatis 3 Digit ID tepat Pukul 00:00 WIB tanpa menghapus data riwayat
         function checkAndResetIdsAtMidnight() {
             setInterval(() => {
                 const now = new Date();
