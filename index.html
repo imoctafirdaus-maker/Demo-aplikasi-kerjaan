@@ -539,10 +539,12 @@
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                     
-                    <!-- BACKGROUND MERAH DAN TEKS BERKEDIP JIKA MAPS TIDAK TERSEDIA -->
+                    <!-- BACKGROUND MERAH DAN HANYA ICON WARNING YANG BERKEDIP -->
                     ${i.status !== 'done' && !i.maps ? `
                     <div class="flex items-center justify-between gap-2 mt-3 bg-red-600 p-2 rounded-xl border border-red-700 w-full shadow-inner">
-                        <span class="text-[9px] font-black text-white uppercase leading-tight animate-blink">⚠️ Tekan icon maps di sebelah kanan jika telah sampai dirumah customer</span>
+                        <span class="text-[9px] font-black text-white uppercase leading-tight">
+                            <span class="animate-blink inline-block mr-1">⚠️</span> Tekan icon maps di sebelah kanan jika telah sampai dirumah customer
+                        </span>
                         <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md active:scale-95" title="Ambil GPS Rumah"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
                     </div>` : ''}
                 </div>`;
