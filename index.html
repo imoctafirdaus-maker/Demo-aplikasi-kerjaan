@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <!-- Library Hammer.js untuk menangani gestur pinch zoom 2 jari -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
     <style>
@@ -476,7 +477,6 @@
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
-                const coordBtnHtml = `<button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>`;
 
                 // Generate conditional buttons for history view based on coordinate availability
                 let historyGpsControlsHtml = "";
@@ -520,10 +520,7 @@
                             `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                             <div class="flex flex-col items-center">
-                                 <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>
-                                 ${!i.maps ? coordBtnHtml : ''}
-                             </div>` 
+                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
                             : `<div class="flex gap-1 items-center">
                                  ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
                                  <div class="flex flex-col items-center gap-1">
@@ -541,10 +538,12 @@
                         ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
+                    
+                    <!-- RAPIKAN LETAK BARIS GPS JIKA MAPS TIDAK TERSEDIA -->
                     ${i.status !== 'done' && !i.maps ? `
-                    <div class="flex items-center justify-between gap-2 mt-3 bg-yellow-400 p-2 rounded-xl border border-yellow-500">
-                        <span class="text-[9px] font-black text-black uppercase">⚠️ Tekan icon maps di sebelah teks ini jika telah sampai dirumah customer</span>
-                        <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow" title="Ambil GPS Rumah"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                    <div class="flex items-center justify-between gap-2 mt-3 bg-yellow-400 p-2 rounded-xl border border-yellow-500 w-full shadow-inner">
+                        <span class="text-[9px] font-black text-black uppercase leading-tight">⚠️ Tekan icon maps di sebelah kanan jika telah sampai dirumah customer</span>
+                        <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md active:scale-95" title="Ambil GPS Rumah"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
                     </div>` : ''}
                 </div>`;
                 if(i.status === 'done') histHTML += cardHtml; 
@@ -679,6 +678,7 @@
             );
         }
 
+        // --- SISA KODE UTILITY TETAP SAMA ---
         function openFullImg(url, caption = "") { 
             document.getElementById('fullImg').src = url; 
             document.getElementById('modalCaption').innerText = caption; 
@@ -700,7 +700,6 @@
                     const img = new Image();
                     img.onload = () => {
                         const c = document.createElement('canvas'); 
-                        // Resolusi dinaikkan ke lebar 600px agar cukup tajam saat di-zoom
                         const THUMB_W = 600; 
                         c.width = THUMB_W; 
                         c.height = img.height * (THUMB_W / img.width);
@@ -753,12 +752,10 @@
             } 
         }
 
-        // Modifikasi setStatus untuk memastikan properti display ID dibersihkan saat di-undo ke antaran aktif
         function setStatus(id, stat) { 
             if (stat === 'done') {
                 db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
             } else {
-                // Saat status diubah menjadi active kembali (Undo), historyDisplayId dibuang dari data
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
         }
@@ -885,7 +882,6 @@
             }
         }
 
-        // Inisialisasi Logika Pinch Zoom dengan HammerJS
         let hammerInstance = null;
         let scale = 1;
         let lastScale = 1;
@@ -904,7 +900,7 @@
             });
 
             hammerInstance.on('pinchmove', (e) => {
-                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); // Batasi zoom maksimal 4x, minimal 1x
+                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
                 el.style.transform = `scale(${scale})`;
             });
 
@@ -924,7 +920,6 @@
             }
         }
 
-        // Fungsi Penghapusan Otomatis 3 Digit ID tepat Pukul 00:00 WIB tanpa menghapus data riwayat
         function checkAndResetIdsAtMidnight() {
             setInterval(() => {
                 const now = new Date();
