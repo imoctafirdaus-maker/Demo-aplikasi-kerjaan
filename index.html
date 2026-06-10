@@ -993,4 +993,14 @@
                             snapshot.forEach(childSnapshot => {
                                 const item = childSnapshot.val();
                                 if (item.status === 'done' && item.historyDisplayId) {
-                                    db.ref('customers/' + childSnapshot.key).update({
+                                    db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null });
+                                }
+                            });
+                        }
+                    });
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
