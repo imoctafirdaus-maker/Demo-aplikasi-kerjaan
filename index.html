@@ -27,10 +27,10 @@
         .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
         .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
         
-        /* Pengaturan animasi Ticker Text Baru (Kiri ke Rian) */
+        /* Pengaturan animasi Ticker Text Kiri ke Kanan */
         #deliveryStatusBar {
-            overflow: hidden !important; /* Mencegah scrollbar bawaan aktif */
-            white-space: nowrap; /* Memaksa teks dalam satu baris horizontal */
+            overflow: hidden !important;
+            white-space: nowrap;
             display: flex;
             align-items: center;
         }
@@ -42,31 +42,63 @@
         }
         .status-item { padding: 2px 0; border-bottom: none !important; display: inline-flex; align-items: center; }
         
-        /* Styling Tali dan Stickman Penarik Teks */
+        /* ========================================================
+           ANIMASI DRAMATIS STICKMAN SEPERTI KESULITAN MENARIK BEBAN
+           ======================================================== */
         .stickman-puller {
             display: inline-flex;
             align-items: center;
             margin-left: 8px;
         }
 
-        /* Animasi Langkah Kaki Stickman (Walking Effect) */
+        /* Seluruh tubuh menghentak maju mundur (Struggling/Jerking Effect) */
+        .stickman-body-group {
+            animation: struggle-jerk 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+            transform-origin: 20px 18px;
+        }
+
+        /* Tangan bergerak naik turun menarik tali tegang */
+        .stickman-arms {
+            animation: arm-pull 0.4s ease-in-out infinite alternate;
+            transform-origin: 20px 8px;
+        }
+
+        /* Kaki kiri menekuk menahan beban berat */
         .leg-left {
-            animation: walk-left 0.6s ease-in-out infinite alternate;
-            transform-origin: 24px 14px;
+            animation: heavy-step-left 0.8s ease-in-out infinite;
+            transform-origin: 20px 14px;
         }
+
+        /* Kaki kanan menghentak menyeret tanah */
         .leg-right {
-            animation: walk-right 0.6s ease-in-out infinite alternate;
-            transform-origin: 24px 14px;
+            animation: heavy-step-right 0.8s ease-in-out infinite;
+            transform-origin: 20px 14px;
         }
 
-        @keyframes walk-left {
-            0% { transform: rotate(-15deg); }
-            100% { transform: rotate(20deg); }
+        /* Keyframes Tubuh Berusaha Keras (Condong & Menghentak) */
+        @keyframes struggle-jerk {
+            0%, 100% { transform: rotate(-12deg) translate(0px, 0px); }
+            30% { transform: rotate(-18deg) translate(-2px, 1px); } /* Menarik sekuat tenaga ke belakang */
+            35% { transform: rotate(-10deg) translate(1px, -1px); }  /* Tersendat/tertarik beban sedikit ke depan */
+            70% { transform: rotate(-16deg) translate(-1px, 0px); }
         }
 
-        @keyframes walk-right {
-            0% { transform: rotate(20deg); }
-            100% { transform: rotate(-15deg); }
+        /* Keyframes Tangan Menarik Tali */
+        @keyframes arm-pull {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(15deg); }
+        }
+
+        /* Keyframes Kaki Kiri Menahan */
+        @keyframes heavy-step-left {
+            0%, 100% { d: path("M20 14 L15 17 L13 22"); } /* Menapak kokoh menekuk */
+            50% { d: path("M20 14 L17 19 L16 22"); }      /* Berpindah posisi menahan beban */
+        }
+
+        /* Keyframes Kaki Kanan Menyeret */
+        @keyframes heavy-step-right {
+            0%, 100% { d: path("M20 14 L23 18 L26 22"); } /* Tergantung di belakang */
+            50% { d: path("M20 14 L21 16 L22 22"); }      /* Menghentak maju untuk menapak */
         }
 
         @keyframes ticker-left-to-right {
@@ -328,7 +360,6 @@
             checkAndResetIdsAtMidnight();
         };
 
-        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
@@ -492,7 +523,6 @@
                 const bar = document.getElementById('deliveryStatusBar');
                 bar.innerHTML = ""; const now = Date.now(); let hasData = false;
                 
-                // Membuat container internal khusus untuk ticker animation
                 let innerHtmlTicker = '<div class="status-container">';
                 
                 s.forEach(child => {
@@ -504,18 +534,25 @@
                         innerHtmlTicker += `
                             <div class="status-item">
                                 <i class="fa fa-motorcycle mr-1 text-[7px] text-red-500"></i>
+                                <span>${textStatus}</span>
                                 <div class="stickman-puller">
-                                    <svg width="45" height="22" viewBox="0 0 45 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M45 13H24" stroke="#006491" stroke-width="1.5" stroke-dasharray="3 2"/>
-                                        <circle cx="24" cy="5" r="2.5" fill="#006491"/>
-                                        <path d="M24 7.5L24 14" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
-                                        <path d="M24 9L29 12" stroke="#006491" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M24 9L19 11" stroke="#006491" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path class="leg-left" d="M24 14L21 21" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
-                                        <path class="leg-right" d="M24 14L27 21" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
+                                    <svg width="45" height="24" viewBox="0 0 45 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M0 11 L19 11" stroke="#e31837" stroke-width="1.5" stroke-dasharray="2 1"/>
+                                        
+                                        <g class="stickman-body-group">
+                                            <circle cx="18" cy="4" r="2.5" fill="#006491"/>
+                                            <path d="M19 6.5 L21 14" stroke="#006491" stroke-width="2.5" stroke-linecap="round"/>
+                                            
+                                            <g class="stickman-arms">
+                                                <path d="M19 8 L14 11 L10 11" stroke="#006491" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M19 8 L15 12 L11 11" stroke="#006491" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </g>
+                                            
+                                            <path class="leg-left" d="M21 14 L15 18 L14 23" stroke="#006491" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path class="leg-right" d="M21 14 L24 17 L25 23" stroke="#006491" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </g>
                                     </svg>
                                 </div>
-                                <span class="ml-1">(${textStatus})</span>
                             </div>`; 
                     }
                 });
@@ -783,6 +820,7 @@
             );
         }
 
+        // ... Sisa fungsi JavaScript bawaan di bawah ini dipertahankan 100% utuh tanpa modifikasi ...
         function openFullImg(url, caption = "") { 
             document.getElementById('fullImg').src = url; 
             document.getElementById('modalCaption').innerText = caption; 
