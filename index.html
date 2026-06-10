@@ -27,7 +27,7 @@
         .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
         .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
         
-        /* Pengaturan animasi Ticker Text Baru (Kiri ke Kanan) */
+        /* Pengaturan animasi Ticker Text Baru (Kiri ke Rian) */
         #deliveryStatusBar {
             overflow: hidden !important; /* Mencegah scrollbar bawaan aktif */
             white-space: nowrap; /* Memaksa teks dalam satu baris horizontal */
@@ -46,7 +46,27 @@
         .stickman-puller {
             display: inline-flex;
             align-items: center;
-            margin-left: -10px;
+            margin-left: 8px;
+        }
+
+        /* Animasi Langkah Kaki Stickman (Walking Effect) */
+        .leg-left {
+            animation: walk-left 0.6s ease-in-out infinite alternate;
+            transform-origin: 24px 14px;
+        }
+        .leg-right {
+            animation: walk-right 0.6s ease-in-out infinite alternate;
+            transform-origin: 24px 14px;
+        }
+
+        @keyframes walk-left {
+            0% { transform: rotate(-15deg); }
+            100% { transform: rotate(20deg); }
+        }
+
+        @keyframes walk-right {
+            0% { transform: rotate(20deg); }
+            100% { transform: rotate(-15deg); }
         }
 
         @keyframes ticker-left-to-right {
@@ -484,18 +504,18 @@
                         innerHtmlTicker += `
                             <div class="status-item">
                                 <i class="fa fa-motorcycle mr-1 text-[7px] text-red-500"></i>
-                                <span>(${textStatus})</span>
                                 <div class="stickman-puller">
                                     <svg width="45" height="22" viewBox="0 0 45 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M0 13H22" stroke="#006491" stroke-width="2.5" stroke-dasharray="1 1"/>
-                                        <circle cx="28" cy="5" r="2.5" fill="#006491"/>
-                                        <path d="M28 7.5L24 14" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
-                                        <path d="M26 10L21 13" stroke="#006491" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M25 11L21 13" stroke="#006491" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M24 14L21 17L18 21" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
-                                        <path d="M24 14L28 17L33 21" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M45 13H24" stroke="#006491" stroke-width="1.5" stroke-dasharray="3 2"/>
+                                        <circle cx="24" cy="5" r="2.5" fill="#006491"/>
+                                        <path d="M24 7.5L24 14" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M24 9L29 12" stroke="#006491" stroke-width="1.8" stroke-linecap="round"/>
+                                        <path d="M24 9L19 11" stroke="#006491" stroke-width="1.8" stroke-linecap="round"/>
+                                        <path class="leg-left" d="M24 14L21 21" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
+                                        <path class="leg-right" d="M24 14L27 21" stroke="#006491" stroke-width="2" stroke-linecap="round"/>
                                     </svg>
                                 </div>
+                                <span class="ml-1">(${textStatus})</span>
                             </div>`; 
                     }
                 });
