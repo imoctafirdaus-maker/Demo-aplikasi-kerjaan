@@ -254,7 +254,7 @@
         let allData = {}; let photoBase64 = "";
         let renderTimer;
         let editCrewId = null;
-        let liveTrackingInterval = null;
+        let liveTrackingWatchId = null;
 
         // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
@@ -783,28 +783,34 @@
                 db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
                 pushDeliveryStatus(currentUser); 
                 
-                // OTOMATISASI: Lacak posisi terakhir driver tanpa klik manual
+                // MENGGUNAKAN WATCHPOSITION AGAR TETAP AKTIF DI LATAR BELAKANG VIA GPS HP
                 if (navigator.geolocation) {
-                    if (liveTrackingInterval) clearInterval(liveTrackingInterval);
+                    if (liveTrackingWatchId) {
+                        navigator.geolocation.clearWatch(liveTrackingWatchId);
+                        liveTrackingWatchId = null;
+                    }
                     
-                    const perbaruiLokasiOtomatis = () => {
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                const lat = position.coords.latitude;
-                                const lng = position.coords.longitude;
-                                const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
-                                
-                                db.ref('customers/' + id).update({
-                                    maps: generatedMapsUrl
-                                });
-                            },
-                            (error) => { console.error("Gagal update GPS otomatis:", error); },
-                            { enableHighAccuracy: true, timeout: 5000 }
-                        );
-                    };
-
-                    perbaruiLokasiOtomatis();
-                    liveTrackingInterval = setInterval(perbaruiLokasiOtomatis, 10000);
+                    liveTrackingWatchId = navigator.geolocation.watchPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
+                            
+                            db.ref('customers/' + id).update({
+                                maps: generatedMapsUrl
+                            });
+                        },
+                        (error) => {
+                            console.warn("Pelacakan akurasi tinggi bermasalah, mencoba konfigurasi ulang...", error);
+                        },
+                        { 
+                            enableHighAccuracy: true, 
+                            maximumAge: 0, 
+                            timeout: 15000 
+                        }
+                    );
+                } else {
+                    alert("⚠️ Browser HP ini tidak mendukung fitur lokasi GPS.");
                 }
             } 
         }
@@ -816,10 +822,10 @@
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
             
-            // OTOMATISASI: Matikan pelacakan GPS jika pesanan selesai atau batal OTW
-            if (liveTrackingInterval) {
-                clearInterval(liveTrackingInterval);
-                liveTrackingInterval = null;
+            // MEMATIKAN KUNCIPAN SENSOR GPS SECARA BERSIH SAAT SELESAI
+            if (liveTrackingWatchId) {
+                navigator.geolocation.clearWatch(liveTrackingWatchId);
+                liveTrackingWatchId = null;
             }
         }
 
