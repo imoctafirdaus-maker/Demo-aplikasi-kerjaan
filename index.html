@@ -192,14 +192,18 @@
 
             <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
                 <div class="wa-card mb-20 mx-auto relative">
-                    <div class="flex justify-between items-start mb-4 px-2">
-                        <div class="w-16"></div>
+                    <div class="flex justify-between items-start mb-4 px-2 gap-2">
                         
-                        <div class="flex flex-col items-center">
+                        <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
+                            <span class="text-black font-black uppercase text-[7px] tracking-tight leading-none mb-1.5">Konfirmasi WA Grab</span>
+                            <input type="checkbox" id="waDirectGrabConfirmation" class="checkbox-custom">
+                        </div>
+
+                        <div class="flex flex-col items-center shrink-0">
                             <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
                         </div>
                         
-                        <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white">
+                        <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
                             <span class="text-green-500 font-black uppercase text-[8px] tracking-tight leading-none mb-1.5">Payment Cash</span>
                             <input type="checkbox" id="waDirectCashPayment" class="checkbox-custom">
                         </div>
@@ -254,7 +258,6 @@
         let allData = {}; let photoBase64 = "";
         let renderTimer;
         let editCrewId = null;
-        let liveTrackingWatchId = null;
 
         // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
@@ -555,11 +558,7 @@
                         ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
                     <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.status === 'otw' ? 
-                            `<a href="${i.maps || '#'}" target="_blank" onclick="${!i.maps ? "alert('Menunggu koordinat pertama dari GPS HP Driver... Silakan coba sesaat lagi.'); return false;" : ''}" class="${i.maps ? 'dominos-blue' : 'bg-gray-400'} text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fa fa-satellite-dish mr-1 animate-pulse"></i> Pelacakan Live</a>`
-                            : 
-                            (i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : '')
-                        }
+                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                     
@@ -716,7 +715,6 @@
             );
         }
 
-        // ... Sisa fungsi helper (openFullImg, closeFullImgModal, secureDelete, processImage, saveData, editData, dll.) ...
         function openFullImg(url, caption = "") { 
             document.getElementById('fullImg').src = url; 
             document.getElementById('modalCaption').innerText = caption; 
@@ -787,36 +785,6 @@
             if(allData[id].status !== 'otw') { 
                 db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
                 pushDeliveryStatus(currentUser); 
-                
-                // MENGGUNAKAN WATCHPOSITION AGAR TETAP AKTIF DI LATAR BELAKANG VIA GPS HP
-                if (navigator.geolocation) {
-                    if (liveTrackingWatchId) {
-                        navigator.geolocation.clearWatch(liveTrackingWatchId);
-                        liveTrackingWatchId = null;
-                    }
-                    
-                    liveTrackingWatchId = navigator.geolocation.watchPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
-                            
-                            db.ref('customers/' + id).update({
-                                maps: generatedMapsUrl
-                            });
-                        },
-                        (error) => {
-                            console.warn("Pelacakan akurasi tinggi bermasalah, mencoba konfigurasi ulang...", error);
-                        },
-                        { 
-                            enableHighAccuracy: true, 
-                            maximumAge: 0, 
-                            timeout: 15000 
-                        }
-                    );
-                } else {
-                    alert("⚠️ Browser HP ini tidak mendukung fitur lokasi GPS.");
-                }
             } 
         }
 
@@ -825,12 +793,6 @@
                 db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
             } else {
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
-            }
-            
-            // MEMATIKAN KUNCIPAN SENSOR GPS SECARA BERSIH SAAT SELESAI
-            if (liveTrackingWatchId) {
-                navigator.geolocation.clearWatch(liveTrackingWatchId);
-                liveTrackingWatchId = null;
             }
         }
 
@@ -907,6 +869,7 @@
             let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, '');
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
             let isCash = document.getElementById('waDirectCashPayment').checked;
+            let isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
             
             if(!custName) return alert("Nama Customer wajib diisi!");
             if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!");
@@ -942,7 +905,9 @@
                 db.ref('customers').push(autoData);
 
                 let msg = "";
-                if (cashiersOnly.includes(currentUser)) {
+                if (isGrabConfirm) {
+                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.`;
+                } else if (cashiersOnly.includes(currentUser)) {
                     msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
                 } else {
                     msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`;
@@ -953,6 +918,7 @@
                 document.getElementById('waDirectCustId').value = "";
                 document.getElementById('waDirectNumber').value = "";
                 document.getElementById('waDirectCashPayment').checked = false;
+                document.getElementById('waDirectGrabConfirmation').checked = false;
             }
         }
 
