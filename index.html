@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
+    <!-- Pustaka Peta Gratis Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -225,6 +226,7 @@
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
                 </div>
 
+                <!-- KOLOM PETA LIVE GLOBAL JATIMAKMUR -->
                 <div class="w-full max-w-[350px] mx-auto rounded-3xl overflow-hidden shadow-md border-2 border-white bg-white p-2 mb-28">
                     <p class="text-[9px] font-black text-blue-900 uppercase italic mb-2 px-1"><i class="fa fa-satellite-dish text-red-500 animate-pulse mr-1"></i> Live Radar Driver - Jatimakmur</p>
                     <div id="liveGlobalMap" style="width: 100%; height: 260px; border-radius: 1.5rem; z-index: 1;"></div>
@@ -380,7 +382,7 @@
                         Object.keys(allData).forEach(id => {
                             if (allData[id].status === 'otw' && allData[id].driverBy === currentUser) {
                                 navigator.geolocation.getCurrentPosition((pos) => {
-                                    const generatedMapsUrl = "https://maps.google.com/?q=?q=" + pos.coords.latitude + "," + pos.coords.longitude;
+                                    const generatedMapsUrl = "https://maps.google.com/?q=" + pos.coords.latitude + "," + pos.coords.longitude;
                                     db.ref('customers/' + id).update({ maps: generatedMapsUrl });
                                 }, null, { enableHighAccuracy: true });
                             }
@@ -399,7 +401,6 @@
             }
         }
 
-        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
@@ -727,7 +728,7 @@
                 (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-                    const generatedMapsUrl = "https://maps.google.com/?q=?q=" + lat + "," + lng;
+                    const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
                     const camInput = document.getElementById('cameraCaptureHidden');
@@ -910,7 +911,7 @@
                         (position) => {
                             const lat = position.coords.latitude;
                             const lng = position.coords.longitude;
-                            const generatedMapsUrl = "https://maps.google.com/?q=?q=" + lat + "," + lng;
+                            const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
                             
                             db.ref('customers/' + id).update({
                                 maps: generatedMapsUrl
@@ -1038,34 +1039,56 @@
                 showPage('list');
             } else { 
                 pushDeliveryStatus(currentUser, custId);
-                
-                const autoData = {
-                    area: "ID " + custId,
-                    name: custName,
-                    phone: n,
-                    maps: "",
-                    photo: "",
-                    status: 'otw',
-                    startTime: Date.now(),
-                    timestamp: Date.now(),
-                    driverBy: currentUser,
-                    paymentMode: isCash ? 'cash' : 'other'
-                };
-                
-                // Menghasilkan referensi kunci Firebase baru sebelum dikirim
-                const newRecordRef = db.ref('customers').push();
-                newRecordRef.set(autoData).then(() => {
-                    // SENSOR TRIGGER OTOMATIS: Dapatkan koordinat GPS live saat ini untuk memindahkan kamera radar map internal
-                    if (navigator.geolocation && radarMap) {
-                        navigator.geolocation.getCurrentPosition((position) => {
-                            const currentLat = position.coords.latitude;
-                            const currentLng = position.coords.longitude;
-                            
-                            // Gerakkan kamera dan berikan efek zoom dekat ke posisi real-time driver saat ini di peta internal
-                            radarMap.setView([currentLat, currentLng], 16);
-                        }, null, { enableHighAccuracy: true });
-                    }
-                });
+                aktifkanWakeLockLayar();
+
+                // AMBIL GPS LANGSUNG SEBELUM PUSH AGAR MARKER MOTOR MUNCUL INSTAN PADA RADAR MAP DI BAWAH
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        const currentLat = position.coords.latitude;
+                        const currentLng = position.coords.longitude;
+                        const initialMapsUrl = "https://maps.google.com/?q=" + currentLat + "," + currentLng;
+
+                        const autoData = {
+                            area: "ID " + custId,
+                            name: custName,
+                            phone: n,
+                            maps: initialMapsUrl, // Koordinat GPS awal langsung disisipkan di sini
+                            photo: "",
+                            status: 'otw',
+                            startTime: Date.now(),
+                            timestamp: Date.now(),
+                            driverBy: currentUser,
+                            paymentMode: isCash ? 'cash' : 'other'
+                        };
+
+                        const newRecordRef = db.ref('customers').push();
+                        newRecordRef.set(autoData).then(() => {
+                            if (radarMap) {
+                                radarMap.setView([currentLat, currentLng], 16);
+                            }
+
+                            // AKTIFKAN TRACKING LIVE AGAR PERGERAKAN MOTOR BERJALAN REAL-TIME DI RADAR MAP
+                            liveTrackingWatchId = navigator.geolocation.watchPosition(
+                                (pos) => {
+                                    const lat = pos.coords.latitude;
+                                    const lng = pos.coords.longitude;
+                                    const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
+                                    db.ref('customers/' + newRecordRef.key).update({ maps: generatedMapsUrl });
+                                },
+                                null,
+                                { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
+                            );
+                        });
+                    }, () => {
+                        // Jika GPS perangkat lambat merespon, push cadangan tanpa peta awal
+                        const autoDataFallback = {
+                            area: "ID " + custId, name: custName, phone: n, maps: "", photo: "",
+                            status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser,
+                            paymentMode: isCash ? 'cash' : 'other'
+                        };
+                        db.ref('customers').push(autoDataFallback);
+                    }, { enableHighAccuracy: true, timeout: 5000 });
+                }
 
                 let msg = "";
                 if (isGrabConfirm) {
