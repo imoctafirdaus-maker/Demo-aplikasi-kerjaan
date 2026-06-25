@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
-    <!-- Pustaka Peta Gratis Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -226,7 +225,6 @@
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
                 </div>
 
-                <!-- KOLOM PETA LIVE GLOBAL JATIMAKMUR -->
                 <div class="w-full max-w-[350px] mx-auto rounded-3xl overflow-hidden shadow-md border-2 border-white bg-white p-2 mb-28">
                     <p class="text-[9px] font-black text-blue-900 uppercase italic mb-2 px-1"><i class="fa fa-satellite-dish text-red-500 animate-pulse mr-1"></i> Live Radar Driver - Jatimakmur</p>
                     <div id="liveGlobalMap" style="width: 100%; height: 260px; border-radius: 1.5rem; z-index: 1;"></div>
@@ -277,7 +275,7 @@
         let wakeLockObj = null; 
         
         // UPDATE KOORDINAT RESMI KUSTOM LEWAT SHARING LINK GOOGLE MAPS
-        const KOORDINAT_DOMINOS_JTM = [-6.287103, 106.924294]; 
+        const KOORDINAT_DOMINOS_JTM = [-6.286121, 106.923485]; 
 
         // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
@@ -401,6 +399,7 @@
             }
         }
 
+        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
@@ -1052,7 +1051,21 @@
                     driverBy: currentUser,
                     paymentMode: isCash ? 'cash' : 'other'
                 };
-                db.ref('customers').push(autoData);
+                
+                // Menghasilkan referensi kunci Firebase baru sebelum dikirim
+                const newRecordRef = db.ref('customers').push();
+                newRecordRef.set(autoData).then(() => {
+                    // SENSOR TRIGGER OTOMATIS: Dapatkan koordinat GPS live saat ini untuk memindahkan kamera radar map internal
+                    if (navigator.geolocation && radarMap) {
+                        navigator.geolocation.getCurrentPosition((position) => {
+                            const currentLat = position.coords.latitude;
+                            const currentLng = position.coords.longitude;
+                            
+                            // Gerakkan kamera dan berikan efek zoom dekat ke posisi real-time driver saat ini di peta internal
+                            radarMap.setView([currentLat, currentLng], 16);
+                        }, null, { enableHighAccuracy: true });
+                    }
+                });
 
                 let msg = "";
                 if (isGrabConfirm) {
