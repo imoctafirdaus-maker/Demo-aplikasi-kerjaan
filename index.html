@@ -172,7 +172,7 @@
             </div>
 
             <div id="page-add" class="page p-4 overflow-y-auto">
-                <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900_space-y-3">
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900 space-y-3">
                     <h2 id="formTitle" class="font-black text-blue-900 text-center uppercase text-xs">Tambah Antaran</h2>
                     <input type="hidden" id="editId">
                     <input type="text" id="custArea" placeholder="KODE AREA (A-1)" class="w-full bg-yellow-50 p-4 rounded-xl text-sm font-bold uppercase outline-none">
@@ -242,6 +242,7 @@
     </div>
 
     <script>
+        // Kredensial Pengguna & Otoritas Sistem
         let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -251,6 +252,7 @@
         const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
         const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
 
+        // Konfigurasi Database Utama Firebase
         const firebaseConfig = { 
             apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
             databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
@@ -265,13 +267,15 @@
         let renderTimer;
         let editCrewId = null;
 
+        // Variabel Navigasi & Render Objek Peta Internal Global
         let radarMap = null;
         let radarMarkers = {};
-        let liveTrackingWatchId = null;
-        let backgroundGpsInterval = null; // Interval cadangan saat diminimize
-        let wakeLockObj = null; // Objek pengunci layar hardware
+        let liveTrackingWatchId = null; 
+        let backgroundGpsInterval = null; 
+        let wakeLockObj = null; 
         const KOORDINAT_DOMINOS_JTM = [-6.28723, 106.92408];
 
+        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -284,8 +288,11 @@
 
         window.onload = () => {
             db.ref('crew_settings').on('value', snap => {
-                if(snap.exists()) { userPins = snap.val(); } 
-                else { db.ref('crew_settings').set(userPins); }
+                if(snap.exists()) {
+                    userPins = snap.val();
+                } else {
+                    db.ref('crew_settings').set(userPins);
+                }
                 refreshUserDropdown();
                 if(currentUser === "Okta") renderCrewAdminList();
             });
@@ -294,9 +301,10 @@
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
             checkAndResetIdsAtMidnight();
+            
             initRadarMapGlobal();
 
-            // SENSOR DETECTION: Jika driver keluar aplikasi, langsung amankan stream GPS
+            // Pengunci background anti-idle
             document.addEventListener('visibilitychange', handleVisibilityChange);
         };
 
@@ -312,14 +320,19 @@
                 iconAnchor: [14, 14]
             });
 
-            L.marker(KOORDINAT_DOMINOS_JTM, { icon: dominosIcon }).addTo(radarMap);
+            L.marker(KOORDINAT_DOMINOS_JTM, { icon: dominosIcon })
+             .addTo(radarMap)
+             .bindPopup(`<div class="text-center font-black text-blue-900 text-[10px] uppercase italic">Domino's Pizza<br><span class="text-red-500">Jatimakmur (Base)</span></div>`)
+             .openPopup();
         }
 
         function updateRadarMarkersOnMap() {
             if (!radarMap) return;
+
             Object.keys(radarMarkers).forEach(id => {
                 if (!allData[id] || allData[id].status !== 'otw' || !allData[id].maps) {
-                    radarMap.removeLayer(radarMarkers[id]); delete radarMarkers[id];
+                    radarMap.removeLayer(radarMarkers[id]);
+                    delete radarMarkers[id];
                 }
             });
 
@@ -331,15 +344,25 @@
                         const qParam = urlObj.searchParams.get('q');
                         if (qParam) {
                             const coords = qParam.split(',');
-                            const lat = parseFloat(coords[0]); const lng = parseFloat(coords[1]);
+                            const lat = parseFloat(coords[0]);
+                            const lng = parseFloat(coords[1]);
+
                             if (!isNaN(lat) && !isNaN(lng)) {
-                                if (radarMarkers[id]) { radarMarkers[id].setLatLng([lat, lng]); } 
-                                else {
+                                const popupText = `<div class="font-black text-blue-900 text-[9px] uppercase italic">Driver: <span class="text-red-500">${i.driverBy || 'Crew'}</span><br>Cust: ${i.name}</div>`;
+                                
+                                if (radarMarkers[id]) {
+                                    radarMarkers[id].setLatLng([lat, lng]);
+                                } else {
                                     const motorIcon = L.divIcon({
                                         html: `<div class="bg-red-500 border-2 border-white text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md animate-bounce"><i class="fa fa-motorcycle text-[10px]"></i></div>`,
-                                        className: '', iconSize: [24, 24], iconAnchor: [12, 12]
+                                        className: '',
+                                        iconSize: [24, 24],
+                                        iconAnchor: [12, 12]
                                     });
-                                    radarMarkers[id] = L.marker([lat, lng], { icon: motorIcon }).addTo(radarMap).bindPopup(`<div class="font-black text-blue-900 text-[9px] uppercase italic">Driver: <span class="text-red-500">${i.driverBy || 'Crew'}</span><br>Cust: ${i.name}</div>`);
+
+                                    radarMarkers[id] = L.marker([lat, lng], { icon: motorIcon })
+                                                        .addTo(radarMap)
+                                                        .bindPopup(popupText);
                                 }
                             }
                         }
@@ -348,10 +371,8 @@
             });
         }
 
-        // FITUR ANTI SLEEP: Memaksa koordinat menembak berkala saat beralih ke Maps/WhatsApp
         function handleVisibilityChange() {
             if (document.hidden) {
-                // Saat aplikasi berada di latar belakang, buat tembakan interval darurat
                 if (!backgroundGpsInterval) {
                     backgroundGpsInterval = setInterval(() => {
                         Object.keys(allData).forEach(id => {
@@ -362,11 +383,11 @@
                                 }, null, { enableHighAccuracy: true });
                             }
                         });
-                    }, 10000); // Tembak setiap 10 detik di background
+                    }, 10000); 
                 }
             } else {
                 if (backgroundGpsInterval) { clearInterval(backgroundGpsInterval); backgroundGpsInterval = null; }
-                aktifkanWakeLockLayar(); // Kunci kembali layar saat aplikasi dibuka lagi
+                aktifkanWakeLockLayar(); 
             }
         }
 
@@ -376,82 +397,177 @@
             }
         }
 
-        function goOTW(id) { 
-            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
-            if(allData[id].status !== 'otw') { 
-                // Driver mengonfirmasi wajib menjalankan pelacakan persisten
-                alert("🚀 PELACAKAN AKTIF!\n\nJangan tutup tab browser ini. Anda bisa langsung membuka Google Maps/WhatsApp, posisi Anda akan terpantau radar outlet JTM.");
-                
-                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
-                pushDeliveryStatus(currentUser); 
-                aktifkanWakeLockLayar();
-                
-                if (navigator.geolocation) {
-                    liveTrackingWatchId = navigator.geolocation.watchPosition(
-                        (position) => {
-                            const lat = position.coords.latitude; const lng = position.coords.longitude;
-                            const generatedMapsUrl = "https://maps.google.com/?q=?q=" + lat + "," + lng;
-                            db.ref('customers/' + id).update({ maps: generatedMapsUrl });
-                        },
-                        null, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
-                    );
-                }
-            } 
-        }
-
-        function setStatus(id, stat) { 
-            if (stat === 'done') { db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser }); } 
-            else { db.ref('customers/'+id).update({ status: stat, historyDisplayId: null }); }
-        }
-
+        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
-                navigator.clipboard.writeText("pdc9_pic@123").then(() => { window.open('https://www.femdpi.com/dashboard/', '_blank'); });
+                
+                navigator.clipboard.writeText("pdc9_pic@123").then(() => {
+                    window.open('https://www.femdpi.com/dashboard/', '_blank');
+                });
+            }).catch(err => {
+                alert("Kredensial Login:\nUsername: pdc9_pic\nSandi: pdc9_pic@123");
+                window.open('https://www.femdpi.com/dashboard/', '_blank');
             });
         }
 
         function refreshUserDropdown() {
-            const logSel = document.getElementById('selectUser'); if(!logSel) return;
+            const logSel = document.getElementById('selectUser');
+            if(!logSel) return;
             logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
             Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
         }
 
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
-            if (id === 'chat' && radarMap) { setTimeout(() => { radarMap.invalidateSize(); }, 100); }
+        function showCrewManager() {
+            document.getElementById('profileOptions').classList.add('hidden');
+            document.getElementById('crewManagerView').classList.remove('hidden');
+            renderCrewAdminList();
         }
 
-        function updateTimers() {
-            Object.keys(allData).forEach(id => {
-                if(allData[id].status === 'otw') {
-                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
-                    if(elapsed >= 1200) { db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" }); return; }
-                    const el = document.getElementById('timer-'+id);
-                    if(el) { const rem = (20 * 60) - elapsed; const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60); el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`; }
+        function closeCrewManager() {
+            document.getElementById('profileOptions').classList.remove('hidden');
+            document.getElementById('crewManagerView').classList.add('hidden');
+            cancelCrewEdit();
+        }
+
+        function renderCrewAdminList() {
+            const list = document.getElementById('crewListAdmin');
+            list.innerHTML = "";
+            Object.keys(userPins).forEach(n => {
+                const isProtected = (n === "Okta");
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-2 px-3 rounded-xl border border-gray-100">
+                        <div class="flex flex-col">
+                            <span class="font-black text-blue-900 text-[10px] uppercase italic">${n}</span>
+                            <span class="text-[8px] text-gray-400 font-bold">PIN: ****</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editCrew('${n}')" class="text-blue-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-edit"></i></button>
+                            ${!isProtected ? `<button onclick="deleteCrew('${n}')" class="text-red-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveCrew() {
+            const name = document.getElementById('newCrewName').value.trim();
+            const pin = document.getElementById('newCrewPin').value.trim();
+            if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
+            
+            if(editCrewId && editCrewId !== name) {
+                delete userPins[editCrewId];
+            }
+            userPins[name] = pin;
+            db.ref('crew_settings').set(userPins).then(() => {
+                alert("Data Crew Terupdate!");
+                cancelCrewEdit();
+            });
+        }
+
+        function editCrew(n) {
+            editCrewId = n;
+            document.getElementById('newCrewName').value = n;
+            document.getElementById('newCrewPin').value = userPins[n];
+            document.getElementById('btnCancelCrew').classList.remove('hidden');
+        }
+
+        function deleteCrew(n) {
+            if(confirm(`Hapus crew ${n} dari database?`)) {
+                delete userPins[n];
+                db.ref('crew_settings').set(userPins);
+            }
+        }
+
+        function cancelCrewEdit() {
+            editCrewId = null;
+            document.getElementById('newCrewName').value = "";
+            document.getElementById('newCrewPin').value = "";
+            document.getElementById('btnCancelCrew').classList.add('hidden');
+        }
+
+        function changeProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('userAvatar').src = base64;
+                    localStorage.setItem('profile_pic_' + currentUser, base64);
+                    updateProfileUI(); 
+                    updatePresence();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            const navAvatar = document.getElementById('navUserAvatar');
+            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            
+            document.getElementById('userAvatar').src = targetSrc;
+            navAvatar.src = targetSrc;
+            navAvatar.classList.remove('hidden');
+
+            if(currentUser === "Okta") {
+                document.getElementById('adminPanel').classList.remove('hidden');
+            } else {
+                document.getElementById('adminPanel').classList.add('hidden');
+                closeCrewManager();
+            }
+        }
+
+        function prosesLogin() {
+            const u = document.getElementById('selectUser').value;
+            const p = document.getElementById('inputPin').value;
+            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
+        }
+
+        function bukaApp(n) {
+            const isOkta = (n === "Okta");
+            db.ref('presence/' + n).once('value', snapshot => {
+                const existingData = snapshot.val();
+                if (!isOkta && existingData && existingData.session !== sessionID) {
+                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
                 }
+                currentUser = n; localStorage.setItem('jtm_user', n);
+                document.getElementById('userDisplay').innerText = n;
+                document.getElementById('pinOverlay').style.display = "none";
+                document.getElementById('mainContent').style.display = "flex";
+                updatePresence(); updateProfileUI();
+                db.ref('presence/' + n + '/session').on('value', snap => {
+                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
+                });
+                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); updateRadarMarkersOnMap(); });
             });
         }
 
-        function updatePresence() {
-            if(!currentUser) return;
-            const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
-            db.ref('presence/' + currentUser).set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
-            db.ref('presence/' + currentUser).onDisconnect().remove();
-            db.ref('presence').on('value', s => {
-                const el = document.getElementById('onlineBar'); el.innerHTML = "";
-                s.forEach(u => { el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border">${u.key}</span>`; });
-            });
+        function handleLogout(withConfirm = true) { 
+            if(withConfirm && !confirm("Keluar?")) return;
+            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+            localStorage.removeItem('jtm_user'); location.reload(); 
+        }
+
+        function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
+        
+        function pushDeliveryStatus(nama, idCust = "") { 
+            if(mgtAndCashiers.includes(nama)) return; 
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust }); 
         }
 
         function startDeliveryStatusListener() {
             db.ref('delivery_activity').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar'); bar.innerHTML = ""; let hasData = false;
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
                 s.forEach(child => {
                     const d = child.val();
-                    if (Date.now() - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { hasData = true; bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><span>(${d.name} SEDANG MENGANTAR)</span></div>`; }
+                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
+                    else { 
+                        hasData = true; 
+                        const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
+                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${textStatus})</span></div>`; 
+                    }
                 });
                 bar.style.display = hasData ? "block" : "none";
             });
@@ -462,33 +578,437 @@
             const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
             Object.keys(allData).reverse().forEach(id => {
-                const i = allData[id]; const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
+                const i = allData[id];
+                const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
                 if(i.status !== 'done') activeCount++;
-                let wa = (i.phone || "").replace(/\D/g, ''); if(wa.startsWith('0')) wa = '62' + wa.slice(1);
-                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(i.name)}`;
+                let wa = (i.phone || "").replace(/\D/g, '');
+                if(wa.startsWith('0')) wa = '62' + wa.slice(1);
+                
+                let msgWa = "";
+                if (cashiersOnly.includes(currentUser)) {
+                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
+                } else {
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                }
+                
+                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
+                const isBlockedUser = mgtAndCashiers.includes(currentUser);
+
+                const msgLate = `Halo bapak/ibu ${i.name}, mohon maaf yang sebesar-besarnya atas keterlambatan pengantaran pesanannya. Saat ini antrean pengiriman sedang sangat padat, namun tidak perlu khawatir karena pizza Bapak/ibu ${i.name},sedang dalam perjalanan dan akan tetap diantarkan. Mohon bersedia menunggu sebentar ya, Pak/Bu. Terima kasih banyak atas pengertiannya ☺️🙏`;
+                const waLateLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgLate)}`;
+
+                let infoSelesai = 'SELESAI';
+                if (i.status === 'done' && i.doneTime) {
+                    const tgl = new Date(i.doneTime);
+                    const jam = String(tgl.getHours()).padStart(2, '0');
+                    const min = String(tgl.getMinutes()).padStart(2, '0');
+                    const hariArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    const hari = hariArr[tgl.getDay()];
+                    const tglNum = tgl.getDate();
+                    const blnNum = tgl.getMonth() + 1;
+                    const thnNum = String(tgl.getFullYear()).slice(-2);
+                    const driver = i.doneBy || i.driverBy || currentUser;
+                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}`;
+                }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
+
+                let historyGpsControlsHtml = "";
+                if (i.maps) {
+                    historyGpsControlsHtml = `
+                        <div class="flex flex-col items-center gap-1">
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                            <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Navigasi Google Maps"><i class="fa fa-compass text-[11px]"></i></a>
+                        </div>
+                    `;
+                } else {
+                    historyGpsControlsHtml = `
+                        <div class="flex flex-col items-center gap-1">
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                        </div>
+                    `;
+                }
+
+                let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
+                if (i.status === 'done' && i.historyDisplayId) {
+                    areaDisplayHtml = `
+                        <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
+                        <p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>
+                    `;
+                }
+
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
+                            ${areaDisplayHtml}
                             <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
-                            <div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?'SELESAI':'READY'}</p></div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
+                                ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
+                            </div>
+                            ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
                         </div>
                         <div class="flex gap-2">
-                            ${i.status !== 'done' ? `<button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                            <button onclick="goOTW('${id}')" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw'?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : ''}
+                            ${i.status !== 'done' ? 
+                            `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
+                             <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
+                             <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
+                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
+                            : `<div class="flex gap-1 items-center">
+                                 ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
+                                 <div class="flex flex-col items-center gap-1">
+                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
+                                     ${historyGpsControlsHtml}
+                                 </div>
+                                 <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
+                               </div>`}
                         </div>
                     </div>
-                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.status === 'otw' ? `<a href="${i.maps || '#'}" target="_blank" class="${i.maps ? 'dominos-blue' : 'bg-gray-400'} text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fa fa-satellite-dish mr-1 animate-pulse"></i> Pelacakan Live</a>` : ''}
-                        <a href="${waLink}" target="_blank" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
+                    <div class="mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
+                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.status === 'otw' ? 
+                            `<a href="${i.maps || '#'}" target="_blank" onclick="${!i.maps ? "alert('Menunggu koordinat pertama dari GPS HP Driver... Silakan coba sesaat lagi.'); return false;" : ''}" class="${i.maps ? 'dominos-blue' : 'bg-gray-400'} text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fa fa-satellite-dish mr-1 animate-pulse"></i> Pelacakan Live</a>`
+                            : 
+                            (i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : '')
+                        }
+                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
+                    </div>
+                    
+                    ${i.status !== 'done' && !i.maps ? `
+                    <div class="flex items-center justify-between gap-2 mt-3 bg-red-600 p-2 rounded-xl border border-red-700 w-full shadow-inner">
+                        <span class="text-[9px] font-black text-white uppercase leading-tight">
+                            <span class="animate-blink inline-block mr-1">⚠️</span> Tekan icon maps di sebelah kanan jika telah sampai dirumah customer
+                        </span>
+                        <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md active:scale-95" title="Ambil GPS Rumah & Foto"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                    </div>` : ''}
                 </div>`;
-                if(i.status === 'done') histHTML += cardHtml; else if(searchStr.includes(filter)) listHTML += cardHtml;
+                if(i.status === 'done') histHTML += cardHtml; 
+                else if(searchStr.includes(filter)) listHTML += cardHtml;
             });
             list.innerHTML = listHTML; hist.innerHTML = histHTML;
             document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
+        }
+
+        function dapatkanKecamatanTerdekat(lat, lng) {
+            let kecamatanTerpilih = "JATIMAKMUR";
+            let jarakTerkecil = Infinity;
+
+            KECAMATAN_POLYGONS.forEach(kec => {
+                const R = 6371; 
+                const dLat = (kec.lat - lat) * Math.PI / 180;
+                const dLng = (kec.lng - lng) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const jarak = R * c;
+
+                if (jarak < jarakTerkecil) {
+                    jarakTerkecil = jarak;
+                    kecamatanTerpilih = kec.name;
+                }
+            });
+            return kecamatanTerpilih;
+        }
+
+        function ambilDanSimpanKoordinatStatus(id, name, isHistory = false) {
+            const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat & ambil foto rumah untuk ${name}?`);
+            if (!yakin) return;
+
+            if (!navigator.geolocation) {
+                alert("Gagal: HP tidak mendukung fitur GPS.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const generatedMapsUrl = "https://maps.google.com/?q=?q=" + lat + "," + lng;
+                    const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
+
+                    const camInput = document.getElementById('cameraCaptureHidden');
+                    camInput.value = ""; 
+
+                    camInput.onchange = (event) => {
+                        if (event.target.files && event.target.files[0]) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement('canvas');
+                                    const TARGET_WIDTH = 400; 
+                                    canvas.width = TARGET_WIDTH;
+                                    canvas.height = img.height * (TARGET_WIDTH / img.width);
+                                    
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.imageSmoothingEnabled = true;
+                                    ctx.imageSmoothingQuality = 'high';
+                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    
+                                    const compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                                        headers: { 'Accept-Language': 'id' }
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        const addr = data.address || {};
+                                        const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || "";
+                                        const jalan = addr.road || "";
+                                        
+                                        let areaFormatBaru = kecamatanOtomatis;
+                                        if (kelurahan || jalan) {
+                                            const detailArray = [];
+                                            if (kelurahan) detailArray.push(kelurahan.toUpperCase());
+                                            if (jalan) detailArray.push(jalan.toUpperCase());
+                                            areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
+                                        }
+
+                                        let updateData = { 
+                                            maps: generatedMapsUrl,
+                                            area: areaFormatBaru,
+                                            photo: compressedPhotoBase64, 
+                                            status: isHistory ? 'done' : (allData[id].status || 'active')
+                                        };
+
+                                        if (allData[id]) {
+                                            if (allData[id].historyDisplayId) {
+                                                updateData.historyDisplayId = allData[id].historyDisplayId;
+                                            } else {
+                                                let currentArea = allData[id].area || "";
+                                                let extractedId = "";
+                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
+                                                if (extractedId) updateData.historyDisplayId = extractedId;
+                                            }
+                                        }
+
+                                        return db.ref('customers/' + id).update(updateData).then(() => areaFormatBaru);
+                                    })
+                                    .then((areaFinal) => {
+                                        alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal);
+                                    })
+                                    .catch((err) => {
+                                        let fallbackData = { 
+                                            maps: generatedMapsUrl,
+                                            area: kecamatanOtomatis,
+                                            photo: compressedPhotoBase64,
+                                            status: isHistory ? 'done' : (allData[id].status || 'active')
+                                        };
+
+                                        if (allData[id]) {
+                                            if (allData[id].historyDisplayId) {
+                                                fallbackData.historyDisplayId = allData[id].historyDisplayId;
+                                            } else {
+                                                let currentArea = allData[id].area || "";
+                                                let extractedId = "";
+                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
+                                                if (extractedId) fallbackData.historyDisplayId = extractedId;
+                                            }
+                                        }
+
+                                        db.ref('customers/' + id).update(fallbackData)
+                                        .then(() => {
+                                            alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tetapi gagal memuat nama jalan. Area diset ke: " + kecamatanOtomatis);
+                                        });
+                                    });
+                                };
+                                img.src = e.target.result;
+                            };
+                            reader.readAsDataURL(event.target.files[0]);
+                        }
+                    };
+
+                    camInput.click();
+                },
+                (error) => {
+                    alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif.");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function openFullImg(url, caption = "") { 
+            document.getElementById('fullImg').src = url; 
+            document.getElementById('modalCaption').innerText = caption; 
+            document.getElementById('imgModal').style.display = 'flex'; 
+            initPinchZoom();
+        }
+
+        function closeFullImgModal() {
+            document.getElementById('imgModal').style.display = 'none';
+            resetPinchZoom();
+        }
+
+        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
+        
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas'); 
+                        const THUMB_W = 600; 
+                        c.width = THUMB_W; 
+                        c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.75);
+                        document.getElementById('imgPrev').src = photoBase64;
+                        document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveData() {
+            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
+            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
+            if (ph) {
+                const cleanInputPhone = ph.replace(/\D/g, '');
+                const isDuplicate = Object.keys(allData).some(id => {
+                    if (id === eid) return false; 
+                    const item = allData[id];
+                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
+                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
+                });
+                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
+            }
+            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
+            ref.then(() => resetForm());
+        }
+
+        function editData(id) {
+            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
+            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
+            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); }
+            document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
+        }
+
+        function goOTW(id) { 
+            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
+            if(allData[id].status !== 'otw') { 
+                alert("🚀 PELACAKAN AKTIF!\n\nJangan tutup tab browser ini. Anda bisa langsung membuka Google Maps/WhatsApp, posisi Anda akan terpantau radar outlet JTM.");
+                
+                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+                pushDeliveryStatus(currentUser); 
+                aktifkanWakeLockLayar();
+                
+                if (navigator.geolocation) {
+                    liveTrackingWatchId = navigator.geolocation.watchPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            const generatedMapsUrl = "https://maps.google.com/?q=?q=" + lat + "," + lng;
+                            
+                            db.ref('customers/' + id).update({
+                                maps: generatedMapsUrl
+                            });
+                        },
+                        (error) => {
+                            console.warn("Pelacakan akurasi tinggi bermasalah, mencoba konfigurasi ulang...", error);
+                        },
+                        { 
+                            enableHighAccuracy: true, 
+                            maximumAge: 0, 
+                            timeout: 30000 
+                        }
+                    );
+                } else {
+                    alert("⚠️ Browser HP ini tidak mendukung fitur lokasi GPS.");
+                }
+            } 
+        }
+
+        function setStatus(id, stat) { 
+            if (stat === 'done') {
+                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+            } else {
+                db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
+            }
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
+            if(id === 'home') closeCrewManager();
+            
+            if (id === 'chat' && radarMap) {
+                setTimeout(() => {
+                    radarMap.invalidateSize();
+                }, 100);
+            }
+        }
+
+        function updateTimers() {
+            Object.keys(allData).forEach(id => {
+                if(allData[id].status === 'otw') {
+                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
+                    const rem = (20 * 60) - elapsed;
+                    
+                    if(elapsed >= 1200) {
+                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
+                        return;
+                    }
+
+                    const el = document.getElementById('timer-'+id);
+                    if(el) {
+                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
+                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
+                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
+                    }
+                }
+            });
+        }
+
+        function updatePresence() {
+            if(!currentUser) return;
+            const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
+            const userStatusRef = db.ref('presence/' + currentUser);
+            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
+            userStatusRef.onDisconnect().remove();
+            
+            db.ref('presence').on('value', s => {
+                const el = document.getElementById('onlineBar'); el.innerHTML = "";
+                s.forEach(u => {
+                    const data = u.val();
+                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
+                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
+                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
+                    </span>`;
+                });
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
+            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
+            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+        }
+
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
+        function cancelEdit() { resetForm(); }
+        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+        
+        function changePinPrompt() {
+            const old = prompt("Masukkan PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("Masukkan PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) { 
+                    userPins[currentUser] = baru; 
+                    db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!"));
+                } else { alert("PIN harus 4 digit!"); }
+            } else { alert("PIN Salah!"); }
         }
 
         function openWaDirect() {
@@ -497,27 +1017,107 @@
             let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
             let isCash = document.getElementById('waDirectCashPayment').checked;
             let isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
-            if(!custName || !custId || !n) return alert("Lengkapi data!");
-            let wa = n.startsWith('0') ? '62' + n.slice(1) : n;
             
-            pushDeliveryStatus(currentUser, custId);
-            const autoData = { area: "ID " + custId, name: custName, phone: n, maps: "", photo: "", status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser, paymentMode: isCash ? 'cash' : 'other' };
-            db.ref('customers').push(autoData);
+            if(!custName) return alert("Nama Customer wajib diisi!");
+            if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!");
+            if(!n) return alert("Nomor HP kosong atau tidak valid!");
+            
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
+            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
+            
+            const activeId = Object.keys(allData).find(id => {
+                const dataN = (allData[id].phone || "").replace(/\D/g, '');
+                return allData[id].status !== 'done' && dataN.includes(searchN);
+            });
+            
+            if (activeId) {
+                document.getElementById('searchInput').value = allData[activeId].phone;
+                render(); 
+                showPage('list');
+            } else { 
+                pushDeliveryStatus(currentUser, custId);
+                
+                const autoData = {
+                    area: "ID " + custId,
+                    name: custName,
+                    phone: n,
+                    maps: "",
+                    photo: "",
+                    status: 'otw',
+                    startTime: Date.now(),
+                    timestamp: Date.now(),
+                    driverBy: currentUser,
+                    paymentMode: isCash ? 'cash' : 'other'
+                };
+                db.ref('customers').push(autoData);
 
-            let msg = isGrabConfirm ? `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur...` : `Halo Bapak/Ibu ${custName}...`;
-            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+                let msg = "";
+                if (isGrabConfirm) {
+                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.`;
+                } else if (cashiersOnly.includes(currentUser)) {
+                    msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
+                } else {
+                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`;
+                }
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+                
+                document.getElementById('waDirectCustName').value = "";
+                document.getElementById('waDirectCustId').value = "";
+                document.getElementById('waDirectNumber').value = "";
+                document.getElementById('waDirectCashPayment').checked = false;
+                document.getElementById('waDirectGrabConfirmation').checked = false;
+            }
         }
 
-        function bukaApp(n) {
-            currentUser = n; localStorage.setItem('jtm_user', n);
-            document.getElementById('pinOverlay').style.display = "none";
-            document.getElementById('mainContent').style.display = "flex";
-            updatePresence(); updateProfileUI();
-            db.ref('customers').on('value', s => { allData = s.val() || {}; render(); updateRadarMarkersOnMap(); });
+        let hammerInstance = null;
+        let scale = 1;
+        let lastScale = 1;
+
+        // Fitur zoom cubit foto rumah
+        function initPinchZoom() {
+            const el = document.getElementById('fullImg');
+            if (!el) return;
+            
+            resetPinchZoom();
+            hammerInstance = new Hammer.Manager(el);
+            const pinch = new Hammer.Pinch();
+            hammerInstance.add([pinch]);
+
+            hammerInstance.on('pinchstart', () => { lastScale = scale; });
+            hammerInstance.on('pinchmove', (e) => {
+                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
+                el.style.transform = `scale(${scale})`;
+            });
+            hammerInstance.on('pinchend', () => { lastScale = scale; });
         }
 
-        function updateProfileUI() { document.getElementById('userDisplay').innerText = currentUser; }
-        function saveCrew() {} function editCrew(n) {} function deleteCrew(n) {} function cancelCrewEdit() {} function changeProfilePhoto(input) {} function showCrewManager() {} function closeCrewManager() {} function renderCrewAdminList() {} function secureDelete(id) {} function processImage(input) {} function saveData() {} function editData(id) {} function resetForm() {} function removePhoto() {} function cancelEdit() {} function clearAllHistory() {} function checkAndResetIdsAtMidnight() {}
+        function resetPinchZoom() {
+            const el = document.getElementById('fullImg');
+            scale = 1; lastScale = 1;
+            if (el) el.style.transform = 'scale(1)';
+            if (hammerInstance) { hammerInstance.destroy(); hammerInstance = null; }
+        }
+
+        function checkAndResetIdsAtMidnight() {
+            setInterval(() => {
+                const now = new Date();
+                const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                const currentTimeWIB = new Intl.DateTimeFormat('id-ID', options).format(now);
+
+                if (currentTimeWIB === "00:00:00") {
+                    db.ref('customers').once('value', snapshot => {
+                        if (snapshot.exists()) {
+                            snapshot.forEach(childSnapshot => {
+                                const item = childSnapshot.val();
+                                if (item.status === 'done' && item.historyDisplayId) {
+                                    db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null });
+                                }
+                            });
+                        }
+                    });
+                }
+            }, 1000);
+        }
     </script>
 </body>
 </html>
