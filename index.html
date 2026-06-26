@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
-    <!-- Pustaka Peta Gratis Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -49,6 +48,12 @@
 
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
+
+        /* LIVE TRACKING CSS CLASSES */
+        .leaflet-marker-icon.marker-smooth { transition: transform 1.2s linear, opacity 0.3s ease; }
+        .custom-live-marker { position: relative; z-index: 1000; }
+        .custom-live-marker .pulsing-dot { animation: pulseRing 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1); }
+        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -89,7 +94,6 @@
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
-            
             <div id="page-home" class="page p-6 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
@@ -197,7 +201,6 @@
             <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
                 <div class="wa-card mb-4 mx-auto relative">
                     <div class="flex justify-between items-start mb-4 px-2 gap-2">
-                        
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
                             <span class="text-black font-black uppercase text-[7px] tracking-tight leading-none mb-1.5">Konfirmasi WA Grab</span>
                             <input type="checkbox" id="waDirectGrabConfirmation" class="checkbox-custom">
@@ -226,7 +229,6 @@
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
                 </div>
 
-                <!-- KOLOM PETA LIVE GLOBAL JATIMAKMUR -->
                 <div class="w-full max-w-[350px] mx-auto rounded-3xl overflow-hidden shadow-md border-2 border-white bg-white p-2 mb-28">
                     <p class="text-[9px] font-black text-blue-900 uppercase italic mb-2 px-1"><i class="fa fa-satellite-dish text-red-500 animate-pulse mr-1"></i> Live Radar Driver - Jatimakmur</p>
                     <div id="liveGlobalMap" style="width: 100%; height: 260px; border-radius: 1.5rem; z-index: 1;"></div>
@@ -244,7 +246,9 @@
     </div>
 
     <script>
-        // Kredensial Pengguna & Otoritas Sistem
+        // ==========================================
+        // KREDENSIAL & KONFIGURASI FIREBASE
+        // ==========================================
         let userPins = { 
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
             "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
@@ -254,7 +258,6 @@
         const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
         const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
 
-        // Konfigurasi Database Utama Firebase
         const firebaseConfig = { 
             apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
             databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
@@ -269,17 +272,11 @@
         let renderTimer;
         let editCrewId = null;
 
-        // Variabel Navigasi & Render Objek Peta Internal Global
+        // Peta & Background Vars
         let radarMap = null;
-        let radarMarkers = {};
-        let liveTrackingWatchId = null; 
-        let backgroundGpsInterval = null; 
         let wakeLockObj = null; 
         
-        // UPDATE KOORDINAT RESMI KUSTOM LEWAT SHARING LINK GOOGLE MAPS
         const KOORDINAT_DOMINOS_JTM = [-6.286121, 106.923485]; 
-
-        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -290,28 +287,107 @@
             { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
         ];
 
-        window.onload = () => {
-            db.ref('crew_settings').on('value', snap => {
-                if(snap.exists()) {
-                    userPins = snap.val();
-                } else {
-                    db.ref('crew_settings').set(userPins);
-                }
-                refreshUserDropdown();
-                if(currentUser === "Okta") renderCrewAdminList();
-            });
-
-            if(currentUser) bukaApp(currentUser);
-            setInterval(updateTimers, 1000);
-            startDeliveryStatusListener();
-            checkAndResetIdsAtMidnight();
+        // ==========================================
+        // TRACKING ENGINE (LIVE GPS TRACKING)
+        // ==========================================
+        const LiveTrackingEngine = {
+            watchId: null,
+            activeCustomerId: null,
+            lastLat: null,
+            lastLng: null,
+            retryCount: 0,
             
-            initRadarMapGlobal();
+            start: function(customerId, customerName) {
+                this.stop(); // Bersihkan watcher lama jika ada
+                this.activeCustomerId = customerId;
+                
+                aktifkanWakeLockLayar(); // Tahan layar hidup
+                
+                if (!navigator.geolocation) {
+                    alert("⚠️ Browser ini tidak mendukung pelacakan lokasi.");
+                    return;
+                }
 
-            // Pengunci background anti-idle
-            document.addEventListener('visibilitychange', handleVisibilityChange);
+                console.log("[TRACKING] Dimulai untuk ID:", customerId);
+                
+                // Gunakan watcher dengan akurasi tinggi
+                this.watchId = navigator.geolocation.watchPosition(
+                    (pos) => this.onPositionChange(pos, customerId),
+                    (err) => this.onError(err, customerId, customerName),
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+                );
+            },
+            
+            stop: function() {
+                if (this.watchId !== null) {
+                    navigator.geolocation.clearWatch(this.watchId);
+                    this.watchId = null;
+                    console.log("[TRACKING] Berhenti.");
+                }
+                this.activeCustomerId = null;
+                this.lastLat = null;
+                this.lastLng = null;
+                this.retryCount = 0;
+            },
+            
+            onPositionChange: function(pos, customerId) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const accuracy = pos.coords.accuracy;
+                
+                // Hitung jarak dari posisi terakhir untuk menghindari update spam (Optimasi Firebase Bandwidth)
+                if (this.lastLat && this.lastLng) {
+                    const dist = getDistanceFromLatLonInM(this.lastLat, this.lastLng, lat, lng);
+                    // Jika bergerak kurang dari 3 meter dan akurasi GPS buruk, abaikan update
+                    if (dist < 3 && accuracy > 15) return; 
+                }
+                
+                this.lastLat = lat; 
+                this.lastLng = lng;
+                this.retryCount = 0;
+
+                // Sync ke Firebase Realtime
+                const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
+                
+                // Menyimpan Data Payload Baru untuk Leaflet yang Smooth tanpa merusak 'maps' URL lama
+                db.ref('customers/' + customerId).update({
+                    maps: generatedMapsUrl,
+                    liveLat: lat,
+                    liveLng: lng,
+                    liveHeading: pos.coords.heading || 0,
+                    liveSpeed: pos.coords.speed || 0,
+                    liveAccuracy: accuracy
+                });
+            },
+            
+            onError: function(err, customerId, customerName) {
+                console.warn("[TRACKING] Error:", err.message);
+                if (this.retryCount < 3) {
+                    this.retryCount++;
+                    console.log("[TRACKING] Mencoba reconnect... (Percobaan " + this.retryCount + ")");
+                    setTimeout(() => this.start(customerId, customerName), 3000);
+                } else {
+                    alert("⚠️ Sinyal GPS hilang atau ditolak. Pastikan izin lokasi aktif agar titik radar bergerak.");
+                }
+            }
         };
 
+        // Utility: Hitung jarak antar koordinat
+        function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Radius bumi dalam meter
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c;
+        }
+
+        // ==========================================
+        // MARKER MANAGER (LEAFLET GIS)
+        // ==========================================
+        let radarMarkers = {};
+        
         function initRadarMapGlobal() {
             if (radarMap) return;
             radarMap = L.map('liveGlobalMap', { zoomControl: false }).setView(KOORDINAT_DOMINOS_JTM, 14);
@@ -333,67 +409,105 @@
         function updateRadarMarkersOnMap() {
             if (!radarMap) return;
 
+            // 1. Bersihkan marker yang sudah DONE atau tidak aktif
             Object.keys(radarMarkers).forEach(id => {
-                if (!allData[id] || allData[id].status !== 'otw' || !allData[id].maps) {
+                if (!allData[id] || allData[id].status !== 'otw') {
                     radarMap.removeLayer(radarMarkers[id]);
                     delete radarMarkers[id];
                 }
             });
 
+            // 2. Render atau Update posisi Marker Driver
             Object.keys(allData).forEach(id => {
                 const i = allData[id];
-                if (i.status === 'otw' && i.maps) {
-                    try {
-                        const urlObj = new URL(i.maps);
-                        const qParam = urlObj.searchParams.get('q');
-                        if (qParam) {
-                            const coords = qParam.split(',');
-                            const lat = parseFloat(coords[0]);
-                            const lng = parseFloat(coords[1]);
-
-                            if (!isNaN(lat) && !isNaN(lng)) {
-                                const popupText = `<div class="font-black text-blue-900 text-[9px] uppercase italic">Driver: <span class="text-red-500">${i.driverBy || 'Crew'}</span><br>Cust: ${i.name}</div>`;
-                                
-                                if (radarMarkers[id]) {
-                                    radarMarkers[id].setLatLng([lat, lng]);
-                                } else {
-                                    const motorIcon = L.divIcon({
-                                        html: `<div class="bg-red-500 border-2 border-white text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md animate-bounce"><i class="fa fa-motorcycle text-[10px]"></i></div>`,
-                                        className: '',
-                                        iconSize: [24, 24],
-                                        iconAnchor: [12, 12]
-                                    });
-
-                                    radarMarkers[id] = L.marker([lat, lng], { icon: motorIcon })
-                                                        .addTo(radarMap)
-                                                        .bindPopup(popupText);
+                if (i.status === 'otw') {
+                    // Cek ketersediaan payload koordinat baru, jika kosong fallback ke url parsing
+                    let lat = i.liveLat;
+                    let lng = i.liveLng;
+                    
+                    if (!lat || !lng) {
+                        if (i.maps) {
+                            try {
+                                const urlObj = new URL(i.maps);
+                                const qParam = urlObj.searchParams.get('q');
+                                if (qParam) {
+                                    const coords = qParam.split(',');
+                                    lat = parseFloat(coords[0]);
+                                    lng = parseFloat(coords[1]);
                                 }
-                            }
+                            } catch (e) {}
                         }
-                    } catch (e) {}
+                    }
+
+                    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                        const driverName = i.driverBy || 'Crew';
+                        const custName = i.name;
+                        const startTimeFormat = i.startTime ? new Date(i.startTime).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+
+                        if (radarMarkers[id]) {
+                            // Update posisi dengan transisi CSS halus
+                            radarMarkers[id].setLatLng([lat, lng]);
+                        } else {
+                            // Buat marker baru
+                            const htmlMarker = `
+                                <div class="custom-live-marker w-[110px] transform -translate-x-1/2 -translate-y-[100%] absolute flex flex-col items-center">
+                                    <div class="bg-white border-2 border-red-500 rounded-xl shadow-lg p-1.5 text-center w-full relative z-10">
+                                        <div class="bg-red-500 text-white text-[8px] font-black uppercase rounded mb-1 px-1 tracking-widest">${driverName}</div>
+                                        <div class="text-[9px] font-black text-blue-900 truncate px-1">${custName}</div>
+                                        <div class="text-[7px] text-gray-400 font-bold mt-0.5"><i class="fa fa-clock text-blue-400"></i> OTW: ${startTimeFormat}</div>
+                                    </div>
+                                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-xl mt-[-10px] z-20 pulsing-dot">
+                                        <i class="fa fa-motorcycle text-white text-[12px]"></i>
+                                    </div>
+                                </div>
+                            `;
+
+                            const motorIcon = L.divIcon({
+                                html: htmlMarker,
+                                className: 'marker-smooth',
+                                iconSize: [0, 0], // Biarkan 0, ukuran diatur di HTML internal custom-live-marker
+                                iconAnchor: [0, 0]
+                            });
+
+                            radarMarkers[id] = L.marker([lat, lng], { icon: motorIcon })
+                                                .addTo(radarMap)
+                                                .bindPopup(`<div class="font-black text-blue-900 text-[10px] uppercase italic text-center">Pelacakan Live<br><span class="text-red-500">${driverName}</span></div>`);
+                        }
+                    }
                 }
             });
         }
 
-        function handleVisibilityChange() {
-            if (document.hidden) {
-                if (!backgroundGpsInterval) {
-                    backgroundGpsInterval = setInterval(() => {
-                        Object.keys(allData).forEach(id => {
-                            if (allData[id].status === 'otw' && allData[id].driverBy === currentUser) {
-                                navigator.geolocation.getCurrentPosition((pos) => {
-                                    const generatedMapsUrl = "https://maps.google.com/?q=" + pos.coords.latitude + "," + pos.coords.longitude;
-                                    db.ref('customers/' + id).update({ maps: generatedMapsUrl });
-                                }, null, { enableHighAccuracy: true });
-                            }
-                        });
-                    }, 10000); 
+
+        // ==========================================
+        // INIT & DAEMON SYSTEM
+        // ==========================================
+        window.onload = () => {
+            db.ref('crew_settings').on('value', snap => {
+                if(snap.exists()) { userPins = snap.val(); } else { db.ref('crew_settings').set(userPins); }
+                refreshUserDropdown();
+                if(currentUser === "Okta") renderCrewAdminList();
+            });
+
+            if(currentUser) bukaApp(currentUser);
+            setInterval(updateTimers, 1000);
+            startDeliveryStatusListener();
+            checkAndResetIdsAtMidnight();
+            
+            initRadarMapGlobal();
+
+            // PWA Auto-Resume & Re-sync ketika layar aktif kembali
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    aktifkanWakeLockLayar(); 
+                    if (LiveTrackingEngine.activeCustomerId) {
+                        // Paksa re-trigger tracking saat kembali ke app
+                        const currId = LiveTrackingEngine.activeCustomerId;
+                        LiveTrackingEngine.start(currId, allData[currId]?.name || "");
+                    }
                 }
-            } else {
-                if (backgroundGpsInterval) { clearInterval(backgroundGpsInterval); backgroundGpsInterval = null; }
-                aktifkanWakeLockLayar(); 
-            }
-        }
+            });
+        };
 
         async function aktifkanWakeLockLayar() {
             if ('wakeLock' in navigator) {
@@ -401,10 +515,12 @@
             }
         }
 
+        // ==========================================
+        // LOGIC APLIKASI (Tidak Berubah)
+        // ==========================================
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
-                
                 navigator.clipboard.writeText("pdc9_pic@123").then(() => {
                     window.open('https://www.femdpi.com/dashboard/', '_blank');
                 });
@@ -458,14 +574,9 @@
             const pin = document.getElementById('newCrewPin').value.trim();
             if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
             
-            if(editCrewId && editCrewId !== name) {
-                delete userPins[editCrewId];
-            }
+            if(editCrewId && editCrewId !== name) { delete userPins[editCrewId]; }
             userPins[name] = pin;
-            db.ref('crew_settings').set(userPins).then(() => {
-                alert("Data Crew Terupdate!");
-                cancelCrewEdit();
-            });
+            db.ref('crew_settings').set(userPins).then(() => { alert("Data Crew Terupdate!"); cancelCrewEdit(); });
         }
 
         function editCrew(n) {
@@ -476,16 +587,12 @@
         }
 
         function deleteCrew(n) {
-            if(confirm(`Hapus crew ${n} dari database?`)) {
-                delete userPins[n];
-                db.ref('crew_settings').set(userPins);
-            }
+            if(confirm(`Hapus crew ${n} dari database?`)) { delete userPins[n]; db.ref('crew_settings').set(userPins); }
         }
 
         function cancelCrewEdit() {
             editCrewId = null;
-            document.getElementById('newCrewName').value = "";
-            document.getElementById('newCrewPin').value = "";
+            document.getElementById('newCrewName').value = ""; document.getElementById('newCrewPin').value = "";
             document.getElementById('btnCancelCrew').classList.add('hidden');
         }
 
@@ -496,8 +603,7 @@
                     const base64 = e.target.result;
                     document.getElementById('userAvatar').src = base64;
                     localStorage.setItem('profile_pic_' + currentUser, base64);
-                    updateProfileUI(); 
-                    updatePresence();
+                    updateProfileUI(); updatePresence();
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -509,21 +615,14 @@
             const navAvatar = document.getElementById('navUserAvatar');
             const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
             
-            document.getElementById('userAvatar').src = targetSrc;
-            navAvatar.src = targetSrc;
-            navAvatar.classList.remove('hidden');
+            document.getElementById('userAvatar').src = targetSrc; navAvatar.src = targetSrc; navAvatar.classList.remove('hidden');
 
-            if(currentUser === "Okta") {
-                document.getElementById('adminPanel').classList.remove('hidden');
-            } else {
-                document.getElementById('adminPanel').classList.add('hidden');
-                closeCrewManager();
-            }
+            if(currentUser === "Okta") { document.getElementById('adminPanel').classList.remove('hidden'); } 
+            else { document.getElementById('adminPanel').classList.add('hidden'); closeCrewManager(); }
         }
 
         function prosesLogin() {
-            const u = document.getElementById('selectUser').value;
-            const p = document.getElementById('inputPin').value;
+            const u = document.getElementById('selectUser').value; const p = document.getElementById('inputPin').value;
             if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
         }
 
@@ -539,16 +638,25 @@
                 document.getElementById('pinOverlay').style.display = "none";
                 document.getElementById('mainContent').style.display = "flex";
                 updatePresence(); updateProfileUI();
+                
                 db.ref('presence/' + n + '/session').on('value', snap => {
                     if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
                 });
-                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); updateRadarMarkersOnMap(); });
+                
+                db.ref('customers').on('value', s => { 
+                    allData = s.val() || {}; 
+                    render(); 
+                    updateRadarMarkersOnMap(); // Sinkronisasi marker Leaflet di sini
+                });
             });
         }
 
         function handleLogout(withConfirm = true) { 
             if(withConfirm && !confirm("Keluar?")) return;
-            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+            if(currentUser) { 
+                db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); 
+                LiveTrackingEngine.stop(); // Hentikan GPS saat logout
+            }
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
 
@@ -697,20 +805,9 @@
         function dapatkanKecamatanTerdekat(lat, lng) {
             let kecamatanTerpilih = "JATIMAKMUR";
             let jarakTerkecil = Infinity;
-
             KECAMATAN_POLYGONS.forEach(kec => {
-                const R = 6371; 
-                const dLat = (kec.lat - lat) * Math.PI / 180;
-                const dLng = (kec.lng - lng) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                          Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                const jarak = R * c;
-
-                if (jarak < jarakTerkecil) {
-                    jarakTerkecil = jarak;
-                    kecamatanTerpilih = kec.name;
-                }
+                const jarak = getDistanceFromLatLonInM(lat, lng, kec.lat, kec.lng);
+                if (jarak < jarakTerkecil) { jarakTerkecil = jarak; kecamatanTerpilih = kec.name; }
             });
             return kecamatanTerpilih;
         }
@@ -719,10 +816,7 @@
             const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat & ambil foto rumah untuk ${name}?`);
             if (!yakin) return;
 
-            if (!navigator.geolocation) {
-                alert("Gagal: HP tidak mendukung fitur GPS.");
-                return;
-            }
+            if (!navigator.geolocation) return alert("Gagal: HP tidak mendukung fitur GPS.");
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -777,44 +871,22 @@
                                         };
 
                                         if (allData[id]) {
-                                            if (allData[id].historyDisplayId) {
-                                                updateData.historyDisplayId = allData[id].historyDisplayId;
-                                            } else {
-                                                let currentArea = allData[id].area || "";
+                                            if (allData[id].historyDisplayId) updateData.historyDisplayId = allData[id].historyDisplayId;
+                                            else {
                                                 let extractedId = "";
-                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
+                                                if ((allData[id].area || "").startsWith("ID ")) extractedId = allData[id].area.split(" ")[1] || "";
                                                 if (extractedId) updateData.historyDisplayId = extractedId;
                                             }
                                         }
 
                                         return db.ref('customers/' + id).update(updateData).then(() => areaFormatBaru);
                                     })
-                                    .then((areaFinal) => {
-                                        alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal);
-                                    })
+                                    .then((areaFinal) => { alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal); })
                                     .catch((err) => {
-                                        let fallbackData = { 
-                                            maps: generatedMapsUrl,
-                                            area: kecamatanOtomatis,
-                                            photo: compressedPhotoBase64,
+                                        db.ref('customers/' + id).update({ 
+                                            maps: generatedMapsUrl, area: kecamatanOtomatis, photo: compressedPhotoBase64,
                                             status: isHistory ? 'done' : (allData[id].status || 'active')
-                                        };
-
-                                        if (allData[id]) {
-                                            if (allData[id].historyDisplayId) {
-                                                fallbackData.historyDisplayId = allData[id].historyDisplayId;
-                                            } else {
-                                                let currentArea = allData[id].area || "";
-                                                let extractedId = "";
-                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
-                                                if (extractedId) fallbackData.historyDisplayId = extractedId;
-                                            }
-                                        }
-
-                                        db.ref('customers/' + id).update(fallbackData)
-                                        .then(() => {
-                                            alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tetapi gagal memuat nama jalan. Area diset ke: " + kecamatanOtomatis);
-                                        });
+                                        }).then(() => { alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tapi gagal memuat nama jalan. Area diset: " + kecamatanOtomatis); });
                                     });
                                 };
                                 img.src = e.target.result;
@@ -822,28 +894,15 @@
                             reader.readAsDataURL(event.target.files[0]);
                         }
                     };
-
                     camInput.click();
                 },
-                (error) => {
-                    alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif.");
-                },
+                (error) => alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif."),
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
-        function openFullImg(url, caption = "") { 
-            document.getElementById('fullImg').src = url; 
-            document.getElementById('modalCaption').innerText = caption; 
-            document.getElementById('imgModal').style.display = 'flex'; 
-            initPinchZoom();
-        }
-
-        function closeFullImgModal() {
-            document.getElementById('imgModal').style.display = 'none';
-            resetPinchZoom();
-        }
-
+        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; initPinchZoom(); }
+        function closeFullImgModal() { document.getElementById('imgModal').style.display = 'none'; resetPinchZoom(); }
         function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
         
         function processImage(input) {
@@ -852,19 +911,11 @@
                 reader.onload = e => {
                     const img = new Image();
                     img.onload = () => {
-                        const c = document.createElement('canvas'); 
-                        const THUMB_W = 600; 
-                        c.width = THUMB_W; 
-                        c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
+                        const c = document.createElement('canvas'); c.width = 600; c.height = img.height * (600 / img.width);
+                        const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
                         ctx.drawImage(img, 0, 0, c.width, c.height);
                         photoBase64 = c.toDataURL('image/jpeg', 0.75);
-                        document.getElementById('imgPrev').src = photoBase64;
-                        document.getElementById('imgPrev').classList.remove('hidden');
-                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
+                        document.getElementById('imgPrev').src = photoBase64; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
                     };
                     img.src = e.target.result;
                 };
@@ -879,11 +930,10 @@
                 const cleanInputPhone = ph.replace(/\D/g, '');
                 const isDuplicate = Object.keys(allData).some(id => {
                     if (id === eid) return false; 
-                    const item = allData[id];
-                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
-                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
+                    const cleanExistPhone = (allData[id].phone || "").replace(/\D/g, '');
+                    return allData[id].status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
                 });
-                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
+                if (isDuplicate) return alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!");
             }
             const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
             const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
@@ -900,41 +950,20 @@
         function goOTW(id) { 
             if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
             if(allData[id].status !== 'otw') { 
-                alert("🚀 PELACAKAN AKTIF!\n\nJangan tutup tab browser ini. Anda bisa langsung membuka Google Maps/WhatsApp, posisi Anda akan terpantau radar outlet JTM.");
-                
+                alert("🚀 PELACAKAN AKTIF!\n\nPastikan layar HP tetap menyala atau diizinkan berjalan di latar belakang agar radar JTM mendeteksi posisi Anda.");
                 db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
                 pushDeliveryStatus(currentUser); 
-                aktifkanWakeLockLayar();
                 
-                if (navigator.geolocation) {
-                    liveTrackingWatchId = navigator.geolocation.watchPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
-                            
-                            db.ref('customers/' + id).update({
-                                maps: generatedMapsUrl
-                            });
-                        },
-                        (error) => {
-                            console.warn("Pelacakan akurasi tinggi bermasalah, mencoba konfigurasi ulang...", error);
-                        },
-                        { 
-                            enableHighAccuracy: true, 
-                            maximumAge: 0, 
-                            timeout: 30000 
-                        }
-                    );
-                } else {
-                    alert("⚠️ Browser HP ini tidak mendukung fitur lokasi GPS.");
-                }
+                // Mulai pelacakan terpusat
+                LiveTrackingEngine.start(id, allData[id].name);
             } 
         }
 
         function setStatus(id, stat) { 
             if (stat === 'done') {
                 db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+                // Matikan pelacakan jika id ini yang sedang ditrack device kita
+                if (LiveTrackingEngine.activeCustomerId === id) LiveTrackingEngine.stop();
             } else {
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
@@ -944,12 +973,7 @@
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
             if(id === 'home') closeCrewManager();
-            
-            if (id === 'chat' && radarMap) {
-                setTimeout(() => {
-                    radarMap.invalidateSize();
-                }, 100);
-            }
+            if (id === 'chat' && radarMap) { setTimeout(() => { radarMap.invalidateSize(); }, 100); }
         }
 
         function updateTimers() {
@@ -959,7 +983,7 @@
                     const rem = (20 * 60) - elapsed;
                     
                     if(elapsed >= 1200) {
-                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
+                        setStatus(id, 'done');
                         return;
                     }
 
@@ -985,18 +1009,15 @@
                 s.forEach(u => {
                     const data = u.val();
                     const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
-                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
-                    </span>`;
+                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5"><img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}</span>`;
                 });
             });
         }
 
         function resetForm() {
             document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
-            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
-            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = ""; removePhoto(); 
+            document.getElementById('formTitle').innerText = "Tambah Antaran"; document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
         }
 
         function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
@@ -1007,10 +1028,7 @@
             const old = prompt("Masukkan PIN Lama:");
             if (old === userPins[currentUser]) {
                 const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { 
-                    userPins[currentUser] = baru; 
-                    db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!"));
-                } else { alert("PIN harus 4 digit!"); }
+                if (baru && baru.length === 4) { userPins[currentUser] = baru; db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!")); } else { alert("PIN harus 4 digit!"); }
             } else { alert("PIN Salah!"); }
         }
 
@@ -1034,61 +1052,22 @@
             });
             
             if (activeId) {
-                document.getElementById('searchInput').value = allData[activeId].phone;
-                render(); 
-                showPage('list');
+                document.getElementById('searchInput').value = allData[activeId].phone; render(); showPage('list');
             } else { 
                 pushDeliveryStatus(currentUser, custId);
-                aktifkanWakeLockLayar();
 
-                // AMBIL GPS LANGSUNG SEBELUM PUSH AGAR MARKER MOTOR MUNCUL INSTAN PADA RADAR MAP DI BAWAH
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((position) => {
-                        const currentLat = position.coords.latitude;
-                        const currentLng = position.coords.longitude;
-                        const initialMapsUrl = "https://maps.google.com/?q=" + currentLat + "," + currentLng;
-
-                        const autoData = {
-                            area: "ID " + custId,
-                            name: custName,
-                            phone: n,
-                            maps: initialMapsUrl, // Koordinat GPS awal langsung disisipkan di sini
-                            photo: "",
-                            status: 'otw',
-                            startTime: Date.now(),
-                            timestamp: Date.now(),
-                            driverBy: currentUser,
-                            paymentMode: isCash ? 'cash' : 'other'
-                        };
-
-                        const newRecordRef = db.ref('customers').push();
-                        newRecordRef.set(autoData).then(() => {
-                            if (radarMap) {
-                                radarMap.setView([currentLat, currentLng], 16);
-                            }
-
-                            // AKTIFKAN TRACKING LIVE AGAR PERGERAKAN MOTOR BERJALAN REAL-TIME DI RADAR MAP
-                            liveTrackingWatchId = navigator.geolocation.watchPosition(
-                                (pos) => {
-                                    const lat = pos.coords.latitude;
-                                    const lng = pos.coords.longitude;
-                                    const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
-                                    db.ref('customers/' + newRecordRef.key).update({ maps: generatedMapsUrl });
-                                },
-                                null,
-                                { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
-                            );
-                        });
-                    }, () => {
-                        // Jika GPS perangkat lambat merespon, push cadangan tanpa peta awal
-                        const autoDataFallback = {
-                            area: "ID " + custId, name: custName, phone: n, maps: "", photo: "",
-                            status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser,
-                            paymentMode: isCash ? 'cash' : 'other'
-                        };
-                        db.ref('customers').push(autoDataFallback);
-                    }, { enableHighAccuracy: true, timeout: 5000 });
-                }
+                // Buat struktur data dengan pelacakan Engine baru
+                const autoDataFallback = {
+                    area: "ID " + custId, name: custName, phone: n, maps: "", photo: "",
+                    status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser,
+                    paymentMode: isCash ? 'cash' : 'other'
+                };
+                
+                const newRecordRef = db.ref('customers').push();
+                newRecordRef.set(autoDataFallback).then(() => {
+                    // Start Tracking Engine Live (menghindari duplikasi watchPosition)
+                    LiveTrackingEngine.start(newRecordRef.key, custName);
+                });
 
                 let msg = "";
                 if (isGrabConfirm) {
@@ -1100,40 +1079,25 @@
                 }
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
                 
-                document.getElementById('waDirectCustName').value = "";
-                document.getElementById('waDirectCustId').value = "";
-                document.getElementById('waDirectNumber').value = "";
-                document.getElementById('waDirectCashPayment').checked = false;
+                document.getElementById('waDirectCustName').value = ""; document.getElementById('waDirectCustId').value = "";
+                document.getElementById('waDirectNumber').value = ""; document.getElementById('waDirectCashPayment').checked = false;
                 document.getElementById('waDirectGrabConfirmation').checked = false;
             }
         }
 
-        let hammerInstance = null;
-        let scale = 1;
-        let lastScale = 1;
+        let hammerInstance = null; let scale = 1; let lastScale = 1;
 
         function initPinchZoom() {
-            const el = document.getElementById('fullImg');
-            if (!el) return;
-            
-            resetPinchZoom();
-            hammerInstance = new Hammer.Manager(el);
-            const pinch = new Hammer.Pinch();
-            hammerInstance.add([pinch]);
-
+            const el = document.getElementById('fullImg'); if (!el) return;
+            resetPinchZoom(); hammerInstance = new Hammer.Manager(el); const pinch = new Hammer.Pinch(); hammerInstance.add([pinch]);
             hammerInstance.on('pinchstart', () => { lastScale = scale; });
-            hammerInstance.on('pinchmove', (e) => {
-                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
-                el.style.transform = `scale(${scale})`;
-            });
+            hammerInstance.on('pinchmove', (e) => { scale = Math.max(1, Math.min(lastScale * e.scale, 4)); el.style.transform = `scale(${scale})`; });
             hammerInstance.on('pinchend', () => { lastScale = scale; });
         }
 
         function resetPinchZoom() {
-            const el = document.getElementById('fullImg');
-            scale = 1; lastScale = 1;
-            if (el) el.style.transform = 'scale(1)';
-            if (hammerInstance) { hammerInstance.destroy(); hammerInstance = null; }
+            const el = document.getElementById('fullImg'); scale = 1; lastScale = 1;
+            if (el) el.style.transform = 'scale(1)'; if (hammerInstance) { hammerInstance.destroy(); hammerInstance = null; }
         }
 
         function checkAndResetIdsAtMidnight() {
@@ -1141,15 +1105,12 @@
                 const now = new Date();
                 const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
                 const currentTimeWIB = new Intl.DateTimeFormat('id-ID', options).format(now);
-
                 if (currentTimeWIB === "00:00:00") {
                     db.ref('customers').once('value', snapshot => {
                         if (snapshot.exists()) {
                             snapshot.forEach(childSnapshot => {
                                 const item = childSnapshot.val();
-                                if (item.status === 'done' && item.historyDisplayId) {
-                                    db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null });
-                                }
+                                if (item.status === 'done' && item.historyDisplayId) { db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null }); }
                             });
                         }
                     });
