@@ -50,10 +50,10 @@
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
 
         /* LIVE TRACKING CSS CLASSES */
-        .leaflet-marker-icon.marker-smooth { transition: transform 1.2s linear, opacity 0.3s ease; }
+        .leaflet-marker-icon.marker-smooth { transition: transform 0.1s linear, opacity 0.3s ease; }
         .custom-live-marker { position: relative; z-index: 1000; }
         .custom-live-marker .pulsing-dot { animation: pulseRing 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1); }
-        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(0, 100, 145, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 100, 145, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 100, 145, 0); } }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -287,6 +287,12 @@
             { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
         ];
 
+        // ENHANCEMENT GLOBAL EXTENSIONS VARIABLE
+        window.liveTrackingTelemetry = {};
+        window.markerAnimationStates = {};
+        window.driverTrails = {};
+        window.isDeviceOfflineState = false;
+
         // ==========================================
         // TRACKING ENGINE (LIVE GPS TRACKING)
         // ==========================================
@@ -296,6 +302,11 @@
             lastLat: null,
             lastLng: null,
             retryCount: 0,
+            
+            // Variabel Throttling Layer Tambahan
+            lastThrottledTime: 0,
+            lastTrackedPositionLat: null,
+            lastTrackedPositionLng: null,
             
             start: function(customerId, customerName) {
                 this.stop(); // Bersihkan watcher lama jika ada
@@ -328,6 +339,9 @@
                 this.lastLat = null;
                 this.lastLng = null;
                 this.retryCount = 0;
+                this.lastThrottledTime = 0;
+                this.lastTrackedPositionLat = null;
+                this.lastTrackedPositionLng = null;
             },
             
             onPositionChange: function(pos, customerId) {
@@ -349,15 +363,45 @@
                 // Sync ke Firebase Realtime
                 const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
                 
-                // Menyimpan Data Payload Baru untuk Leaflet yang Smooth tanpa merusak 'maps' URL lama
-                db.ref('customers/' + customerId).update({
-                    maps: generatedMapsUrl,
-                    liveLat: lat,
-                    liveLng: lng,
-                    liveHeading: pos.coords.heading || 0,
-                    liveSpeed: pos.coords.speed || 0,
-                    liveAccuracy: accuracy
-                });
+                // SMART GPS ENHANCEMENT LAYER (PRIORITAS 2 & PRIORITAS 9)
+                const now = Date.now();
+                if (!this.lastThrottledTime) this.lastThrottledTime = 0;
+                if (!this.lastTrackedPositionLat) {
+                    this.lastTrackedPositionLat = lat;
+                    this.lastTrackedPositionLng = lng;
+                }
+                
+                const distFromLastTracked = getDistanceFromLatLonInM(this.lastTrackedPositionLat, this.lastTrackedPositionLng, lat, lng);
+                const timeElapsedSinceUpdate = now - this.lastThrottledTime;
+                
+                // Validasi Kondisi Pengiriman Pintar: Update maks 2.5 detik atau jarak > 5 meter, abaikan jika posisi hampir sama
+                if (this.lastThrottledTime === 0 || timeElapsedSinceUpdate >= 2500 || distFromLastTracked > 5) {
+                    if (distFromLastTracked >= 0.5 || timeElapsedSinceUpdate > 10000) {
+                        this.lastThrottledTime = now;
+                        this.lastTrackedPositionLat = lat;
+                        this.lastTrackedPositionLng = lng;
+
+                        // PRIORITAS 9: Kirim ke node terpisah tracking/
+                        db.ref('tracking/' + customerId).set({
+                            lat: lat,
+                            lng: lng,
+                            heading: pos.coords.heading || 0,
+                            speed: pos.coords.speed || 0,
+                            accuracy: accuracy,
+                            timestamp: now
+                        });
+
+                        // Menyimpan Data Payload Baru untuk Leaflet yang Smooth tanpa merusak 'maps' URL lama
+                        db.ref('customers/' + customerId).update({
+                            maps: generatedMapsUrl,
+                            liveLat: lat,
+                            liveLng: lng,
+                            liveHeading: pos.coords.heading || 0,
+                            liveSpeed: pos.coords.speed || 0,
+                            liveAccuracy: accuracy
+                        });
+                    }
+                }
             },
             
             onError: function(err, customerId, customerName) {
@@ -382,6 +426,153 @@
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
             return R * c;
         }
+
+        // ==========================================
+        // ENHANCEMENT LAYER INTERPOLATION ENGINE
+        // ==========================================
+        function animateMarkerSmoothly(markerId, marker, targetLat, targetLng) {
+            if (!window.markerAnimationStates[markerId]) {
+                window.markerAnimationStates[markerId] = {
+                    currentLat: marker.getLatLng().lat,
+                    currentLng: marker.getLatLng().lng,
+                    targetLat: targetLat,
+                    targetLng: targetLng,
+                    animating: false
+                };
+            }
+            
+            const state = window.markerAnimationStates[markerId];
+            state.targetLat = targetLat;
+            state.targetLng = targetLng;
+            
+            if (!state.animating) {
+                state.animating = true;
+                const lerpLoop = () => {
+                    const currentLatLng = marker.getLatLng();
+                    // LERP Constant (0.08) memberikan pergerakan 60 FPS bernuansa easing natural
+                    const lerpFactor = 0.08;
+                    const deltaLat = state.targetLat - currentLatLng.lat;
+                    const deltaLng = state.targetLng - currentLatLng.lng;
+                    
+                    if (Math.abs(deltaLat) < 0.000005 && Math.abs(deltaLng) < 0.000005) {
+                        marker.setLatLng([state.targetLat, state.targetLng]);
+                        state.animating = false;
+                        if (window.onMarkerSmoothMoveStep) {
+                            window.onMarkerSmoothMoveStep(markerId, state.targetLat, state.targetLng);
+                        }
+                    } else {
+                        const nextLat = currentLatLng.lat + deltaLat * lerpFactor;
+                        const nextLng = currentLatLng.lng + deltaLng * lerpFactor;
+                        marker.setLatLng([nextLat, nextLng]);
+                        if (window.onMarkerSmoothMoveStep) {
+                            window.onMarkerSmoothMoveStep(markerId, nextLat, nextLng);
+                        }
+                        requestAnimationFrame(lerpLoop);
+                    }
+                };
+                requestAnimationFrame(lerpLoop);
+            }
+        }
+
+        function smoothlyRotateMarkerElement(marker, heading) {
+            if (heading === undefined || heading === null) return;
+            const el = marker.getElement();
+            if (!el) return;
+            
+            const innerIcon = el.querySelector('.pulsing-dot');
+            if (!innerIcon) return;
+            
+            let currentRotation = parseFloat(innerIcon.dataset.currentRotation || "0");
+            let diff = (heading - currentRotation) % 360;
+            
+            // Cegah rotasi memutar balik melingkar 360 derajat yang aneh
+            if (diff > 180) diff -= 360;
+            if (diff < -180) diff += 360;
+            
+            let newRotation = currentRotation + diff;
+            innerIcon.style.transition = "transform 0.4s ease-out";
+            innerIcon.style.transform = `rotate(${newRotation}deg)`;
+            innerIcon.dataset.currentRotation = newRotation;
+        }
+
+        function getCustomerDestinationCoords(item) {
+            if (item.maps) {
+                try {
+                    if (item.maps.includes("googleusercontent.com/maps.google.com/0")) {
+                        const parts = item.maps.split("googleusercontent.com/maps.google.com/0");
+                        if (parts[1]) {
+                            const coords = parts[1].split(",");
+                            return { lat: parseFloat(coords[0]), lng: parseFloat(coords[1]) };
+                        }
+                    }
+                    const urlObj = new URL(item.maps);
+                    const qParam = urlObj.searchParams.get('q');
+                    if (qParam) {
+                        const coords = qParam.split(',');
+                        return { lat: parseFloat(coords[0]), lng: parseFloat(coords[1]) };
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        function autoAdjustCameraView() {
+            if (!radarMap) return;
+            const activeIds = Object.keys(radarMarkers);
+            if (activeIds.length === 0) return;
+            
+            if (activeIds.length === 1) {
+                const markerLatLng = radarMarkers[activeIds[0]].getLatLng();
+                radarMap.setView(markerLatLng, radarMap.getZoom() < 16 ? 16 : radarMap.getZoom(), { animate: true, duration: 1.2 });
+            } else {
+                const bounds = [];
+                activeIds.forEach(id => {
+                    bounds.push(radarMarkers[id].getLatLng());
+                });
+                bounds.push(KOORDINAT_DOMINOS_JTM); // Menyertakan Base Domino's JTM ke dalam batasan kamera
+                radarMap.flyToBounds(bounds, { padding: [40, 40], animate: true, duration: 1.2 });
+            }
+        }
+
+        // Hook untuk menggambar polyline secara realtime seiring pergerakan interpolasi marker
+        window.onMarkerSmoothMoveStep = function(markerId, currentLat, currentLng) {
+            if (!radarMap) return;
+            if (!window.driverTrails[markerId]) {
+                window.driverTrails[markerId] = L.polyline([], {
+                    color: '#e31837', // Menggunakan warna merah Domino's korporat yang mencolok & tajam
+                    weight: 3,
+                    opacity: 0.75,
+                    smoothFactor: 1.2
+                }).addTo(radarMap);
+            }
+            
+            const latlngs = window.driverTrails[markerId].getLatLngs();
+            const lastPoint = latlngs[latlngs.length - 1];
+            if (!lastPoint || getDistanceFromLatLonInM(lastPoint.lat, lastPoint.lng, currentLat, currentLng) > 1.5) {
+                window.driverTrails[markerId].addLatLng([currentLat, currentLng]);
+            }
+        };
+
+        // PRIORITAS 8: Modul Offline Recovery Layer
+        window.addEventListener('offline', () => {
+            window.isDeviceOfflineState = true;
+            Object.keys(radarMarkers).forEach(id => {
+                const el = radarMarkers[id].getElement();
+                if (el) el.style.filter = 'grayscale(100%) opacity(0.6)';
+            });
+        });
+
+        window.addEventListener('online', () => {
+            window.isDeviceOfflineState = false;
+            Object.keys(radarMarkers).forEach(id => {
+                const el = radarMarkers[id].getElement();
+                if (el) el.style.filter = 'none';
+            });
+            if (LiveTrackingEngine.activeCustomerId) {
+                const activeId = LiveTrackingEngine.activeCustomerId;
+                LiveTrackingEngine.start(activeId, allData[activeId]?.name || "Crew");
+            }
+        });
 
         // ==========================================
         // MARKER MANAGER (LEAFLET GIS)
@@ -409,31 +600,53 @@
         function updateRadarMarkersOnMap() {
             if (!radarMap) return;
 
-            // 1. Bersihkan marker yang sudah DONE atau tidak aktif
+            // 1. Bersihkan marker yang sudah DONE atau tidak aktif beserta trail-nya
             Object.keys(radarMarkers).forEach(id => {
                 if (!allData[id] || allData[id].status !== 'otw') {
                     radarMap.removeLayer(radarMarkers[id]);
                     delete radarMarkers[id];
+                    
+                    if (window.driverTrails[id]) {
+                        radarMap.removeLayer(window.driverTrails[id]);
+                        delete window.driverTrails[id];
+                    }
+                    if (window.markerAnimationStates[id]) {
+                        delete window.markerAnimationStates[id];
+                    }
                 }
             });
 
-            // 2. Render atau Update posisi Marker Driver
+            // 2. Render atau Update posisi Marker Driver secara dinamis
             Object.keys(allData).forEach(id => {
                 const i = allData[id];
                 if (i.status === 'otw') {
-                    // Cek ketersediaan payload koordinat baru, jika kosong fallback ke url parsing
-                    let lat = i.liveLat;
-                    let lng = i.liveLng;
+                    // Ambil dari node tracking ultra ringan terpisah jika tersedia
+                    const telemetry = (window.liveTrackingTelemetry && window.liveTrackingTelemetry[id]) ? window.liveTrackingTelemetry[id] : null;
+                    
+                    let lat = telemetry ? telemetry.lat : i.liveLat;
+                    let lng = telemetry ? telemetry.lng : i.liveLng;
+                    let heading = telemetry ? telemetry.heading : (i.liveHeading || 0);
+                    let speed = telemetry ? telemetry.speed : (i.liveSpeed || 0);
+                    let accuracy = telemetry ? telemetry.accuracy : (i.liveAccuracy || 0);
                     
                     if (!lat || !lng) {
                         if (i.maps) {
                             try {
-                                const urlObj = new URL(i.maps);
-                                const qParam = urlObj.searchParams.get('q');
-                                if (qParam) {
-                                    const coords = qParam.split(',');
-                                    lat = parseFloat(coords[0]);
-                                    lng = parseFloat(coords[1]);
+                                if (i.maps.includes("googleusercontent.com/maps.google.com/0")) {
+                                    const parts = i.maps.split("googleusercontent.com/maps.google.com/0");
+                                    if (parts[1]) {
+                                        const coords = parts[1].split(",");
+                                        lat = parseFloat(coords[0]);
+                                        lng = parseFloat(coords[1]);
+                                    }
+                                } else {
+                                    const urlObj = new URL(i.maps);
+                                    const qParam = urlObj.searchParams.get('q');
+                                    if (qParam) {
+                                        const coords = qParam.split(',');
+                                        lat = parseFloat(coords[0]);
+                                        lng = parseFloat(coords[1]);
+                                    }
                                 }
                             } catch (e) {}
                         }
@@ -444,38 +657,77 @@
                         const custName = i.name;
                         const startTimeFormat = i.startTime ? new Date(i.startTime).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '--:--';
 
-                        if (radarMarkers[id]) {
-                            // Update posisi dengan transisi CSS halus
-                            radarMarkers[id].setLatLng([lat, lng]);
+                        // PRIORITAS 4: Kalkulasi ETA Realtime Berdasarkan Kecepatan & Jarak Aktual Rumah
+                        let etaText = "Berhenti / Menunggu";
+                        const destCoords = getCustomerDestinationCoords(i);
+                        const baselineLat = destCoords ? destCoords.lat : KOORDINAT_DOMINOS_JTM[0];
+                        const baselineLng = destCoords ? destCoords.lng : KOORDINAT_DOMINOS_JTM[1];
+                        const distanceToTarget = getDistanceFromLatLonInM(lat, lng, baselineLat, baselineLng);
+                        
+                        if (speed > 0.2) {
+                            const minutes = Math.ceil((distanceToTarget / speed) / 60);
+                            etaText = `ETA ${minutes > 120 ? 10 : minutes} Menit`;
                         } else {
-                            // Buat marker baru
-                            const htmlMarker = `
-                                <div class="custom-live-marker w-[110px] transform -translate-x-1/2 -translate-y-[100%] absolute flex flex-col items-center">
-                                    <div class="bg-white border-2 border-red-500 rounded-xl shadow-lg p-1.5 text-center w-full relative z-10">
-                                        <div class="bg-red-500 text-white text-[8px] font-black uppercase rounded mb-1 px-1 tracking-widest">${driverName}</div>
-                                        <div class="text-[9px] font-black text-blue-900 truncate px-1">${custName}</div>
-                                        <div class="text-[7px] text-gray-400 font-bold mt-0.5"><i class="fa fa-clock text-blue-400"></i> OTW: ${startTimeFormat}</div>
-                                    </div>
-                                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-xl mt-[-10px] z-20 pulsing-dot">
-                                        <i class="fa fa-motorcycle text-white text-[12px]"></i>
-                                    </div>
-                                </div>
-                            `;
+                            etaText = distanceToTarget < 30 ? "Tiba di Lokasi" : "Berhenti";
+                        }
 
+                        // PRIORITAS 6: Status Kualitas Sinyal GPS Live Accuracy Indicator
+                        let gpsStatus = "🔴 Lemah";
+                        if (accuracy < 10) gpsStatus = "🟢 Sangat Akurat";
+                        else if (accuracy <= 20) gpsStatus = "🟡 Cukup";
+
+                        const htmlMarker = `
+                            <div class="custom-live-marker w-[110px] transform -translate-x-1/2 -translate-y-[100%] absolute flex flex-col items-center">
+                                <div class="bg-white border-2 border-red-500 rounded-xl shadow-lg p-1.5 text-center w-full relative z-10">
+                                    <div class="bg-red-500 text-white text-[8px] font-black uppercase rounded mb-1 px-1 tracking-widest">${driverName}</div>
+                                    <div class="text-[9px] font-black text-blue-900 truncate px-1">${custName}</div>
+                                    <div class="text-[7px] text-gray-400 font-bold mt-0.5"><i class="fa fa-clock text-blue-400"></i> OTW: ${startTimeFormat}</div>
+                                </div>
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-xl mt-[-10px] z-20 pulsing-dot">
+                                    <i class="fa fa-motorcycle text-white text-[12px]"></i>
+                                </div>
+                            </div>
+                        `;
+
+                        const popupContent = `
+                            <div class="font-black text-blue-900 text-[10px] uppercase italic text-center">
+                                Pelacakan Live<br><span class="text-red-500">${driverName}</span>
+                                <div class="mt-1 border-t border-dashed border-gray-200 pt-1 text-blue-700">🚲 ${etaText}</div>
+                                <div class="text-[8px] text-gray-500 font-bold mt-0.5">GPS: ${gpsStatus}</div>
+                            </div>
+                        `;
+
+                        if (radarMarkers[id]) {
+                            // PRIORITAS 1: Gerakan Halus 60 FPS menggunakan LERP & requestAnimationFrame
+                            animateMarkerSmoothly(id, radarMarkers[id], lat, lng);
+                            radarMarkers[id].setPopupContent(popupContent);
+                        } else {
+                            // Buat marker baru jika belum terdaftar di peta
                             const motorIcon = L.divIcon({
                                 html: htmlMarker,
                                 className: 'marker-smooth',
-                                iconSize: [0, 0], // Biarkan 0, ukuran diatur di HTML internal custom-live-marker
+                                iconSize: [0, 0],
                                 iconAnchor: [0, 0]
                             });
 
                             radarMarkers[id] = L.marker([lat, lng], { icon: motorIcon })
                                                 .addTo(radarMap)
-                                                .bindPopup(`<div class="font-black text-blue-900 text-[10px] uppercase italic text-center">Pelacakan Live<br><span class="text-red-500">${driverName}</span></div>`);
+                                                .bindPopup(popupContent);
+                        }
+
+                        // PRIORITAS 3: Rotasi Marker Halus Sesuai liveHeading
+                        smoothlyRotateMarkerElement(radarMarkers[id], heading);
+
+                        if (window.isDeviceOfflineState) {
+                            const markerEl = radarMarkers[id].getElement();
+                            if (markerEl) markerEl.style.filter = 'grayscale(100%) opacity(0.6)';
                         }
                     }
                 }
             });
+
+            // PRIORITAS 7: Deteksi Otomatis & Transisi Kamera Terpusat Halus (Auto Center / Auto Zoom FitBounds)
+            autoAdjustCameraView();
         }
 
 
@@ -647,6 +899,12 @@
                     allData = s.val() || {}; 
                     render(); 
                     updateRadarMarkersOnMap(); // Sinkronisasi marker Leaflet di sini
+                });
+
+                // Inisialisasi Listener Khusus Node Tracking Terpisah untuk Sinkronisasi Posisi Kilat
+                db.ref('tracking').on('value', snap => {
+                    window.liveTrackingTelemetry = snap.val() || {};
+                    updateRadarMarkersOnMap();
                 });
             });
         }
