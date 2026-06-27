@@ -279,7 +279,8 @@
         let radarMap = null;
         let wakeLockObj = null; 
         
-        const KOORDINAT_DOMINOS_JTM = [-6.286121, 106.923485]; 
+        // KOORDINAT BARU DOMINO'S JATIMAKMUR
+        const KOORDINAT_DOMINOS_JTM = [-6.285496, 106.935500]; 
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -480,23 +481,28 @@
         function autoAdjustCameraView() {
             if (!radarMap) return;
             const activeIds = Object.keys(radarMarkers);
-            if (activeIds.length === 0) return;
             
-            if (activeIds.length === 1) {
-                const markerLngLat = radarMarkers[activeIds[0]].getLngLat();
+            if (activeIds.length === 0) {
+                // Kamera akan stay auto-focus di koordinat Base Store dengan zoom 17 ketika tidak ada driver yang OTW
                 radarMap.flyTo({ 
-                    center: markerLngLat, 
-                    zoom: Math.max(radarMap.getZoom(), 16), 
+                    center: [KOORDINAT_DOMINOS_JTM[1], KOORDINAT_DOMINOS_JTM[0]], 
+                    zoom: 17, 
                     speed: 1.2 
                 });
-            } else {
-                const bounds = new maplibregl.LngLatBounds();
-                activeIds.forEach(id => {
-                    bounds.extend(radarMarkers[id].getLngLat());
-                });
-                bounds.extend([KOORDINAT_DOMINOS_JTM[1], KOORDINAT_DOMINOS_JTM[0]]); // Menyertakan Base Domino's JTM
-                radarMap.fitBounds(bounds, { padding: 40, duration: 1200 });
+                return;
             }
+            
+            // Kamera melakukan auto-fit bounds, menjadikan Base Store dan semua driver OTW sebagai target referensi
+            const bounds = new maplibregl.LngLatBounds();
+            // Menjadikan Base Store Domino's JTM selalu tercakup di dalam pandangan kamera
+            bounds.extend([KOORDINAT_DOMINOS_JTM[1], KOORDINAT_DOMINOS_JTM[0]]); 
+            
+            activeIds.forEach(id => {
+                bounds.extend(radarMarkers[id].getLngLat());
+            });
+            
+            // maxZoom: 17 diterapkan agar tidak zoom in terlampau dekat saat driver berada di dekat store
+            radarMap.fitBounds(bounds, { padding: 40, duration: 1200, maxZoom: 17 });
         }
 
         // WebGL GeoJSON Realtime Trail Hook (MapLibre Adapted)
@@ -583,7 +589,7 @@
                     }]
                 },
                 center: [KOORDINAT_DOMINOS_JTM[1], KOORDINAT_DOMINOS_JTM[0]], 
-                zoom: 14,
+                zoom: 17, // Menyetel default zoom Base Marker ke 17
                 attributionControl: false,
                 dragRotate: false
             });
