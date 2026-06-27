@@ -11,8 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     
     <style>
         .dominos-blue { background-color: #006491; }
@@ -49,11 +49,14 @@
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
 
-        /* LIVE TRACKING CSS CLASSES */
-        .leaflet-marker-icon.marker-smooth { transition: transform 0.1s linear, opacity 0.3s ease; }
+        /* LIVE TRACKING CSS CLASSES (MapLibre Adapted) */
+        .maplibregl-marker-smooth { transition: opacity 0.3s ease; }
         .custom-live-marker { position: relative; z-index: 1000; }
         .custom-live-marker .pulsing-dot { animation: pulseRing 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1); }
         @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(0, 100, 145, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 100, 145, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 100, 145, 0); } }
+        
+        /* Fix Popup Style in MapLibre */
+        .maplibregl-popup-content { border-radius: 1rem; padding: 10px 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -290,7 +293,7 @@
         // ENHANCEMENT GLOBAL EXTENSIONS VARIABLE
         window.liveTrackingTelemetry = {};
         window.markerAnimationStates = {};
-        window.driverTrails = {};
+        window.driverTrailData = {}; // Dirubah untuk MapLibre GeoJSON LineString
         window.isDeviceOfflineState = false;
 
         // ==========================================
@@ -303,25 +306,18 @@
             lastLng: null,
             retryCount: 0,
             
-            // Variabel Throttling Layer Tambahan
             lastThrottledTime: 0,
             lastTrackedPositionLat: null,
             lastTrackedPositionLng: null,
             
             start: function(customerId, customerName) {
-                this.stop(); // Bersihkan watcher lama jika ada
+                this.stop();
                 this.activeCustomerId = customerId;
+                aktifkanWakeLockLayar();
                 
-                aktifkanWakeLockLayar(); // Tahan layar hidup
-                
-                if (!navigator.geolocation) {
-                    alert("⚠️ Browser ini tidak mendukung pelacakan lokasi.");
-                    return;
-                }
-
+                if (!navigator.geolocation) { alert("⚠️ Browser ini tidak mendukung pelacakan lokasi."); return; }
                 console.log("[TRACKING] Dimulai untuk ID:", customerId);
                 
-                // Gunakan watcher dengan akurasi tinggi
                 this.watchId = navigator.geolocation.watchPosition(
                     (pos) => this.onPositionChange(pos, customerId),
                     (err) => this.onError(err, customerId, customerName),
@@ -345,60 +341,34 @@
             },
             
             onPositionChange: function(pos, customerId) {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                const accuracy = pos.coords.accuracy;
+                const lat = pos.coords.latitude; const lng = pos.coords.longitude; const accuracy = pos.coords.accuracy;
                 
-                // Hitung jarak dari posisi terakhir untuk menghindari update spam (Optimasi Firebase Bandwidth)
                 if (this.lastLat && this.lastLng) {
                     const dist = getDistanceFromLatLonInM(this.lastLat, this.lastLng, lat, lng);
-                    // Jika bergerak kurang dari 3 meter dan akurasi GPS buruk, abaikan update
                     if (dist < 3 && accuracy > 15) return; 
                 }
                 
-                this.lastLat = lat; 
-                this.lastLng = lng;
-                this.retryCount = 0;
-
-                // Sync ke Firebase Realtime
+                this.lastLat = lat; this.lastLng = lng; this.retryCount = 0;
                 const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
-                
-                // SMART GPS ENHANCEMENT LAYER (PRIORITAS 2 & PRIORITAS 9)
                 const now = Date.now();
                 if (!this.lastThrottledTime) this.lastThrottledTime = 0;
-                if (!this.lastTrackedPositionLat) {
-                    this.lastTrackedPositionLat = lat;
-                    this.lastTrackedPositionLng = lng;
-                }
+                if (!this.lastTrackedPositionLat) { this.lastTrackedPositionLat = lat; this.lastTrackedPositionLng = lng; }
                 
                 const distFromLastTracked = getDistanceFromLatLonInM(this.lastTrackedPositionLat, this.lastTrackedPositionLng, lat, lng);
                 const timeElapsedSinceUpdate = now - this.lastThrottledTime;
                 
-                // Validasi Kondisi Pengiriman Pintar: Update maks 2.5 detik atau jarak > 5 meter, abaikan jika posisi hampir sama
                 if (this.lastThrottledTime === 0 || timeElapsedSinceUpdate >= 2500 || distFromLastTracked > 5) {
                     if (distFromLastTracked >= 0.5 || timeElapsedSinceUpdate > 10000) {
-                        this.lastThrottledTime = now;
-                        this.lastTrackedPositionLat = lat;
-                        this.lastTrackedPositionLng = lng;
+                        this.lastThrottledTime = now; this.lastTrackedPositionLat = lat; this.lastTrackedPositionLng = lng;
 
-                        // PRIORITAS 9: Kirim ke node terpisah tracking/
                         db.ref('tracking/' + customerId).set({
-                            lat: lat,
-                            lng: lng,
-                            heading: pos.coords.heading || 0,
-                            speed: pos.coords.speed || 0,
-                            accuracy: accuracy,
-                            timestamp: now
+                            lat: lat, lng: lng, heading: pos.coords.heading || 0,
+                            speed: pos.coords.speed || 0, accuracy: accuracy, timestamp: now
                         });
 
-                        // Menyimpan Data Payload Baru untuk Leaflet yang Smooth tanpa merusak 'maps' URL lama
                         db.ref('customers/' + customerId).update({
-                            maps: generatedMapsUrl,
-                            liveLat: lat,
-                            liveLng: lng,
-                            liveHeading: pos.coords.heading || 0,
-                            liveSpeed: pos.coords.speed || 0,
-                            liveAccuracy: accuracy
+                            maps: generatedMapsUrl, liveLat: lat, liveLng: lng,
+                            liveHeading: pos.coords.heading || 0, liveSpeed: pos.coords.speed || 0, liveAccuracy: accuracy
                         });
                     }
                 }
@@ -408,7 +378,6 @@
                 console.warn("[TRACKING] Error:", err.message);
                 if (this.retryCount < 3) {
                     this.retryCount++;
-                    console.log("[TRACKING] Mencoba reconnect... (Percobaan " + this.retryCount + ")");
                     setTimeout(() => this.start(customerId, customerName), 3000);
                 } else {
                     alert("⚠️ Sinyal GPS hilang atau ditolak. Pastikan izin lokasi aktif agar titik radar bergerak.");
@@ -416,54 +385,47 @@
             }
         };
 
-        // Utility: Hitung jarak antar koordinat
         function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
-            const R = 6371000; // Radius bumi dalam meter
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
             return R * c;
         }
 
         // ==========================================
-        // ENHANCEMENT LAYER INTERPOLATION ENGINE
+        // ENHANCEMENT LAYER INTERPOLATION ENGINE (MAPLIBRE ADAPTED)
         // ==========================================
         function animateMarkerSmoothly(markerId, marker, targetLat, targetLng) {
             if (!window.markerAnimationStates[markerId]) {
+                const currentLngLat = marker.getLngLat();
                 window.markerAnimationStates[markerId] = {
-                    currentLat: marker.getLatLng().lat,
-                    currentLng: marker.getLatLng().lng,
-                    targetLat: targetLat,
-                    targetLng: targetLng,
-                    animating: false
+                    currentLat: currentLngLat.lat, currentLng: currentLngLat.lng,
+                    targetLat: targetLat, targetLng: targetLng, animating: false
                 };
             }
             
             const state = window.markerAnimationStates[markerId];
-            state.targetLat = targetLat;
-            state.targetLng = targetLng;
+            state.targetLat = targetLat; state.targetLng = targetLng;
             
             if (!state.animating) {
                 state.animating = true;
                 const lerpLoop = () => {
-                    const currentLatLng = marker.getLatLng();
-                    // LERP Constant (0.08) memberikan pergerakan 60 FPS bernuansa easing natural
+                    const currentLngLat = marker.getLngLat();
                     const lerpFactor = 0.08;
-                    const deltaLat = state.targetLat - currentLatLng.lat;
-                    const deltaLng = state.targetLng - currentLatLng.lng;
+                    const deltaLat = state.targetLat - currentLngLat.lat;
+                    const deltaLng = state.targetLng - currentLngLat.lng;
                     
                     if (Math.abs(deltaLat) < 0.000005 && Math.abs(deltaLng) < 0.000005) {
-                        marker.setLatLng([state.targetLat, state.targetLng]);
+                        marker.setLngLat([state.targetLng, state.targetLat]);
                         state.animating = false;
                         if (window.onMarkerSmoothMoveStep) {
                             window.onMarkerSmoothMoveStep(markerId, state.targetLat, state.targetLng);
                         }
                     } else {
-                        const nextLat = currentLatLng.lat + deltaLat * lerpFactor;
-                        const nextLng = currentLatLng.lng + deltaLng * lerpFactor;
-                        marker.setLatLng([nextLat, nextLng]);
+                        const nextLat = currentLngLat.lat + deltaLat * lerpFactor;
+                        const nextLng = currentLngLat.lng + deltaLng * lerpFactor;
+                        marker.setLngLat([nextLng, nextLat]);
                         if (window.onMarkerSmoothMoveStep) {
                             window.onMarkerSmoothMoveStep(markerId, nextLat, nextLng);
                         }
@@ -485,7 +447,6 @@
             let currentRotation = parseFloat(innerIcon.dataset.currentRotation || "0");
             let diff = (heading - currentRotation) % 360;
             
-            // Cegah rotasi memutar balik melingkar 360 derajat yang aneh
             if (diff > 180) diff -= 360;
             if (diff < -180) diff += 360;
             
@@ -522,38 +483,58 @@
             if (activeIds.length === 0) return;
             
             if (activeIds.length === 1) {
-                const markerLatLng = radarMarkers[activeIds[0]].getLatLng();
-                radarMap.setView(markerLatLng, radarMap.getZoom() < 16 ? 16 : radarMap.getZoom(), { animate: true, duration: 1.2 });
-            } else {
-                const bounds = [];
-                activeIds.forEach(id => {
-                    bounds.push(radarMarkers[id].getLatLng());
+                const markerLngLat = radarMarkers[activeIds[0]].getLngLat();
+                radarMap.flyTo({ 
+                    center: markerLngLat, 
+                    zoom: Math.max(radarMap.getZoom(), 16), 
+                    speed: 1.2 
                 });
-                bounds.push(KOORDINAT_DOMINOS_JTM); // Menyertakan Base Domino's JTM ke dalam batasan kamera
-                radarMap.flyToBounds(bounds, { padding: [40, 40], animate: true, duration: 1.2 });
+            } else {
+                const bounds = new maplibregl.LngLatBounds();
+                activeIds.forEach(id => {
+                    bounds.extend(radarMarkers[id].getLngLat());
+                });
+                bounds.extend([KOORDINAT_DOMINOS_JTM[1], KOORDINAT_DOMINOS_JTM[0]]); // Menyertakan Base Domino's JTM
+                radarMap.fitBounds(bounds, { padding: 40, duration: 1200 });
             }
         }
 
-        // Hook untuk menggambar polyline secara realtime seiring pergerakan interpolasi marker
+        // WebGL GeoJSON Realtime Trail Hook (MapLibre Adapted)
         window.onMarkerSmoothMoveStep = function(markerId, currentLat, currentLng) {
-            if (!radarMap) return;
-            if (!window.driverTrails[markerId]) {
-                window.driverTrails[markerId] = L.polyline([], {
-                    color: '#e31837', // Menggunakan warna merah Domino's korporat yang mencolok & tajam
-                    weight: 3,
-                    opacity: 0.75,
-                    smoothFactor: 1.2
-                }).addTo(radarMap);
+            if (!radarMap || !radarMap.getSource('driver-trails')) return;
+            
+            if (!window.driverTrailData[markerId]) {
+                window.driverTrailData[markerId] = [];
             }
             
-            const latlngs = window.driverTrails[markerId].getLatLngs();
-            const lastPoint = latlngs[latlngs.length - 1];
-            if (!lastPoint || getDistanceFromLatLonInM(lastPoint.lat, lastPoint.lng, currentLat, currentLng) > 1.5) {
-                window.driverTrails[markerId].addLatLng([currentLat, currentLng]);
+            const coords = window.driverTrailData[markerId];
+            const currentPoint = [currentLng, currentLat];
+            
+            if (coords.length === 0) {
+                coords.push(currentPoint);
+            } else {
+                const lastPoint = coords[coords.length - 1];
+                if (getDistanceFromLatLonInM(lastPoint[1], lastPoint[0], currentLat, currentLng) > 1.5) {
+                    coords.push(currentPoint);
+                }
             }
+            updateTrailsGeoJSON();
         };
 
-        // PRIORITAS 8: Modul Offline Recovery Layer
+        function updateTrailsGeoJSON() {
+            if(!radarMap || !radarMap.getSource('driver-trails')) return;
+            const features = Object.keys(window.driverTrailData).map(id => {
+                return {
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: window.driverTrailData[id] }
+                };
+            });
+            radarMap.getSource('driver-trails').setData({
+                type: 'FeatureCollection',
+                features: features
+            });
+        }
+
         window.addEventListener('offline', () => {
             window.isDeviceOfflineState = true;
             Object.keys(radarMarkers).forEach(id => {
@@ -575,40 +556,82 @@
         });
 
         // ==========================================
-        // MARKER MANAGER (LEAFLET GIS)
+        // MARKER MANAGER (MAPLIBRE GIS)
         // ==========================================
         let radarMarkers = {};
         
         function initRadarMapGlobal() {
             if (radarMap) return;
-            radarMap = L.map('liveGlobalMap', { zoomControl: false }).setView(KOORDINAT_DOMINOS_JTM, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(radarMap);
-
-            const dominosIcon = L.divIcon({
-                html: `<div class="bg-blue-600 border-2 border-white text-white w-7 h-7 rounded-lg flex items-center justify-center shadow-lg font-black italic text-[9px]">DPI</div>`,
-                className: '',
-                iconSize: [28, 28],
-                iconAnchor: [14, 14]
+            
+            radarMap = new maplibregl.Map({
+                container: 'liveGlobalMap',
+                style: {
+                    version: 8,
+                    sources: {
+                        osm: {
+                            type: 'raster',
+                            tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                            tileSize: 256
+                        }
+                    },
+                    layers: [{
+                        id: 'osm-layer',
+                        type: 'raster',
+                        source: 'osm',
+                        minzoom: 0,
+                        maxzoom: 19
+                    }]
+                },
+                center: [KOORDINAT_DOMINOS_JTM[1], KOORDINAT_DOMINOS_JTM[0]], 
+                zoom: 14,
+                attributionControl: false,
+                dragRotate: false
             });
 
-            L.marker(KOORDINAT_DOMINOS_JTM, { icon: dominosIcon })
-             .addTo(radarMap)
-             .bindPopup(`<div class="text-center font-black text-blue-900 text-[10px] uppercase italic">Domino's Pizza<br><span class="text-red-500">Jatimakmur (Base)</span></div>`)
-             .openPopup();
+            radarMap.on('load', () => {
+                // Inisialisasi Sumber GeoJSON WebGL Berkinerja Tinggi untuk Trail Perjalanan Driver
+                radarMap.addSource('driver-trails', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+                
+                radarMap.addLayer({
+                    id: 'driver-trails-layer',
+                    type: 'line',
+                    source: 'driver-trails',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: { 'line-color': '#e31837', 'line-width': 3, 'line-opacity': 0.75 }
+                });
+
+                // Marker Base Domino's Pizza
+                const dominosEl = document.createElement('div');
+                dominosEl.className = 'bg-blue-600 border-2 border-white text-white w-7 h-7 rounded-lg flex items-center justify-center shadow-lg font-black italic text-[9px]';
+                dominosEl.innerHTML = 'DPI';
+                
+                const basePopup = new maplibregl.Popup({ offset: 15, closeButton: false, closeOnClick: false })
+                    .setHTML(`<div class="text-center font-black text-blue-900 text-[10px] uppercase italic">Domino's Pizza<br><span class="text-red-500">Jatimakmur (Base)</span></div>`);
+
+                const baseMarker = new maplibregl.Marker({ element: dominosEl })
+                    .setLngLat([KOORDINAT_DOMINOS_JTM[1], KOORDINAT_DOMINOS_JTM[0]])
+                    .setPopup(basePopup)
+                    .addTo(radarMap);
+                    
+                baseMarker.togglePopup();
+            });
         }
 
         function updateRadarMarkersOnMap() {
             if (!radarMap) return;
 
-            // 1. Bersihkan marker yang sudah DONE atau tidak aktif beserta trail-nya
+            // 1. Bersihkan marker yang sudah DONE atau tidak aktif beserta trail-nya (WebGL Layer Cleanup)
             Object.keys(radarMarkers).forEach(id => {
                 if (!allData[id] || allData[id].status !== 'otw') {
-                    radarMap.removeLayer(radarMarkers[id]);
+                    radarMarkers[id].remove();
                     delete radarMarkers[id];
                     
-                    if (window.driverTrails[id]) {
-                        radarMap.removeLayer(window.driverTrails[id]);
-                        delete window.driverTrails[id];
+                    if (window.driverTrailData && window.driverTrailData[id]) {
+                        delete window.driverTrailData[id];
+                        updateTrailsGeoJSON(); // Refresh GeoJSON rendering
                     }
                     if (window.markerAnimationStates[id]) {
                         delete window.markerAnimationStates[id];
@@ -620,7 +643,6 @@
             Object.keys(allData).forEach(id => {
                 const i = allData[id];
                 if (i.status === 'otw') {
-                    // Ambil dari node tracking ultra ringan terpisah jika tersedia
                     const telemetry = (window.liveTrackingTelemetry && window.liveTrackingTelemetry[id]) ? window.liveTrackingTelemetry[id] : null;
                     
                     let lat = telemetry ? telemetry.lat : i.liveLat;
@@ -657,7 +679,6 @@
                         const custName = i.name;
                         const startTimeFormat = i.startTime ? new Date(i.startTime).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '--:--';
 
-                        // PRIORITAS 4: Kalkulasi ETA Realtime Berdasarkan Kecepatan & Jarak Aktual Rumah
                         let etaText = "Berhenti / Menunggu";
                         const destCoords = getCustomerDestinationCoords(i);
                         const baselineLat = destCoords ? destCoords.lat : KOORDINAT_DOMINOS_JTM[0];
@@ -671,7 +692,6 @@
                             etaText = distanceToTarget < 30 ? "Tiba di Lokasi" : "Berhenti";
                         }
 
-                        // PRIORITAS 6: Status Kualitas Sinyal GPS Live Accuracy Indicator
                         let gpsStatus = "🔴 Lemah";
                         if (accuracy < 10) gpsStatus = "🟢 Sangat Akurat";
                         else if (accuracy <= 20) gpsStatus = "🟡 Cukup";
@@ -698,24 +718,21 @@
                         `;
 
                         if (radarMarkers[id]) {
-                            // PRIORITAS 1: Gerakan Halus 60 FPS menggunakan LERP & requestAnimationFrame
                             animateMarkerSmoothly(id, radarMarkers[id], lat, lng);
-                            radarMarkers[id].setPopupContent(popupContent);
+                            radarMarkers[id].getPopup().setHTML(popupContent);
                         } else {
-                            // Buat marker baru jika belum terdaftar di peta
-                            const motorIcon = L.divIcon({
-                                html: htmlMarker,
-                                className: 'marker-smooth',
-                                iconSize: [0, 0],
-                                iconAnchor: [0, 0]
-                            });
+                            const markerWrapper = document.createElement('div');
+                            markerWrapper.className = 'maplibregl-marker-smooth';
+                            markerWrapper.innerHTML = htmlMarker;
 
-                            radarMarkers[id] = L.marker([lat, lng], { icon: motorIcon })
-                                                .addTo(radarMap)
-                                                .bindPopup(popupContent);
+                            const popup = new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(popupContent);
+
+                            radarMarkers[id] = new maplibregl.Marker({ element: markerWrapper })
+                                                .setLngLat([lng, lat])
+                                                .setPopup(popup)
+                                                .addTo(radarMap);
                         }
 
-                        // PRIORITAS 3: Rotasi Marker Halus Sesuai liveHeading
                         smoothlyRotateMarkerElement(radarMarkers[id], heading);
 
                         if (window.isDeviceOfflineState) {
@@ -726,10 +743,8 @@
                 }
             });
 
-            // PRIORITAS 7: Deteksi Otomatis & Transisi Kamera Terpusat Halus (Auto Center / Auto Zoom FitBounds)
             autoAdjustCameraView();
         }
-
 
         // ==========================================
         // INIT & DAEMON SYSTEM
@@ -748,12 +763,10 @@
             
             initRadarMapGlobal();
 
-            // PWA Auto-Resume & Re-sync ketika layar aktif kembali
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) {
                     aktifkanWakeLockLayar(); 
                     if (LiveTrackingEngine.activeCustomerId) {
-                        // Paksa re-trigger tracking saat kembali ke app
                         const currId = LiveTrackingEngine.activeCustomerId;
                         LiveTrackingEngine.start(currId, allData[currId]?.name || "");
                     }
@@ -768,7 +781,7 @@
         }
 
         // ==========================================
-        // LOGIC APLIKASI (Tidak Berubah)
+        // LOGIC APLIKASI (Dipertahankan 100%)
         // ==========================================
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
@@ -898,10 +911,9 @@
                 db.ref('customers').on('value', s => { 
                     allData = s.val() || {}; 
                     render(); 
-                    updateRadarMarkersOnMap(); // Sinkronisasi marker Leaflet di sini
+                    updateRadarMarkersOnMap();
                 });
 
-                // Inisialisasi Listener Khusus Node Tracking Terpisah untuk Sinkronisasi Posisi Kilat
                 db.ref('tracking').on('value', snap => {
                     window.liveTrackingTelemetry = snap.val() || {};
                     updateRadarMarkersOnMap();
@@ -913,7 +925,7 @@
             if(withConfirm && !confirm("Keluar?")) return;
             if(currentUser) { 
                 db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); 
-                LiveTrackingEngine.stop(); // Hentikan GPS saat logout
+                LiveTrackingEngine.stop(); 
             }
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
@@ -1212,7 +1224,6 @@
                 db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
                 pushDeliveryStatus(currentUser); 
                 
-                // Mulai pelacakan terpusat
                 LiveTrackingEngine.start(id, allData[id].name);
             } 
         }
@@ -1220,7 +1231,6 @@
         function setStatus(id, stat) { 
             if (stat === 'done') {
                 db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
-                // Matikan pelacakan jika id ini yang sedang ditrack device kita
                 if (LiveTrackingEngine.activeCustomerId === id) LiveTrackingEngine.stop();
             } else {
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
@@ -1231,7 +1241,7 @@
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
             if(id === 'home') closeCrewManager();
-            if (id === 'chat' && radarMap) { setTimeout(() => { radarMap.invalidateSize(); }, 100); }
+            if (id === 'chat' && radarMap) { setTimeout(() => { radarMap.resize(); }, 100); }
         }
 
         function updateTimers() {
@@ -1314,7 +1324,6 @@
             } else { 
                 pushDeliveryStatus(currentUser, custId);
 
-                // Buat struktur data dengan pelacakan Engine baru
                 const autoDataFallback = {
                     area: "ID " + custId, name: custName, phone: n, maps: "", photo: "",
                     status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser,
@@ -1323,7 +1332,6 @@
                 
                 const newRecordRef = db.ref('customers').push();
                 newRecordRef.set(autoDataFallback).then(() => {
-                    // Start Tracking Engine Live (menghindari duplikasi watchPosition)
                     LiveTrackingEngine.start(newRecordRef.key, custName);
                 });
 
