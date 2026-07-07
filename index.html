@@ -558,11 +558,7 @@
                         ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
                     </div>
                     <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.status === 'otw' ? 
-                            `<a href="${i.maps || '#'}" target="_blank" onclick="${!i.maps ? "alert('Menunggu koordinat pertama dari GPS HP Driver... Silakan coba sesaat lagi.'); return false;" : ''}" class="${i.maps ? 'dominos-blue' : 'bg-gray-400'} text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm"><i class="fa fa-satellite-dish mr-1 animate-pulse"></i> Pelacakan Live</a>`
-                            : 
-                            (i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : '')
-                        }
+                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
                         <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                     
