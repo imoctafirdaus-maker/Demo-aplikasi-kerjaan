@@ -118,6 +118,17 @@
                         </div>
                     </div>
 
+                    <div id="gojekMenu" class="hidden">
+                        <div onclick="openWaGojek()" class="profile-bubble border-green-200 bg-green-50/20">
+                            <div class="profile-icon bg-green-600 text-white"><i class="fa fa-motorcycle"></i></div>
+                            <div class="flex flex-col flex-1">
+                                <span class="font-black text-green-800 uppercase italic text-[11px]">WA Direct Gojek</span>
+                                <span class="text-[8px] font-bold text-gray-400 uppercase">Khusus Okta - Kirim Paket</span>
+                            </div>
+                            <i class="fab fa-whatsapp text-green-500 text-[10px]"></i>
+                        </div>
+                    </div>
+
                     <div onclick="aksesPortalFEM()" class="profile-bubble border-green-200 bg-green-50/20">
                         <div class="profile-icon bg-emerald-600 text-white"><i class="fa fa-layer-group"></i></div>
                         <div class="flex flex-col flex-1">
@@ -402,8 +413,10 @@
 
             if(currentUser === "Okta") {
                 document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('gojekMenu').classList.remove('hidden');
             } else {
                 document.getElementById('adminPanel').classList.add('hidden');
+                document.getElementById('gojekMenu').classList.add('hidden');
                 closeCrewManager();
             }
         }
@@ -862,6 +875,16 @@
                     db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!"));
                 } else { alert("PIN harus 4 digit!"); }
             } else { alert("PIN Salah!"); }
+        }
+
+        function openWaGojek() {
+            let n = prompt("Masukkan Nomor HP Customer Gojek:");
+            if (!n) return;
+            let nClean = n.replace(/\D/g, '');
+            if (!nClean) return alert("Nomor tidak valid!");
+            let wa = nClean.startsWith('0') ? '62' + nClean.slice(1) : (nClean.startsWith('8') ? '62' + nClean : nClean);
+            let msg = "Halo bapak/ibu saya okta driver gojek,mau kirim paket";
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function openWaDirect() {
