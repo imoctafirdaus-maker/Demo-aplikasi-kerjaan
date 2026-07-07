@@ -118,14 +118,22 @@
                         </div>
                     </div>
 
-                    <div id="gojekMenu" class="hidden">
-                        <div onclick="openWaGojek()" class="profile-bubble border-green-200 bg-green-50/20">
+                    <div id="gojekMenu" class="hidden space-y-3">
+                        <div onclick="toggleGojekInput()" class="profile-bubble border-green-200 bg-green-50/20">
                             <div class="profile-icon bg-green-600 text-white"><i class="fa fa-motorcycle"></i></div>
                             <div class="flex flex-col flex-1">
                                 <span class="font-black text-green-800 uppercase italic text-[11px]">WA Direct Gojek</span>
                                 <span class="text-[8px] font-bold text-gray-400 uppercase">Khusus Okta - Kirim Paket</span>
                             </div>
-                            <i class="fab fa-whatsapp text-green-500 text-[10px]"></i>
+                            <i id="gojekChevron" class="fa fa-chevron-down text-green-500 text-[10px] transition-transform"></i>
+                        </div>
+                        
+                        <div id="gojekInputView" class="hidden bg-white rounded-3xl p-4 shadow-sm border border-green-100">
+                            <p class="text-[9px] font-black text-green-800 uppercase italic mb-2 px-1">Nomor Customer Gojek</p>
+                            <div class="flex gap-2">
+                                <input type="tel" id="gojekWaNumber" placeholder="Masukan Nomor HP" class="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none font-bold text-center text-green-900 text-xs">
+                                <button onclick="prosesWaGojek()" class="bg-green-500 text-white px-4 py-3 rounded-xl font-black uppercase text-xs shadow-md active:scale-95 transition-transform"><i class="fab fa-whatsapp"></i></button>
+                            </div>
                         </div>
                     </div>
 
@@ -877,14 +885,32 @@
             } else { alert("PIN Salah!"); }
         }
 
-        function openWaGojek() {
-            let n = prompt("Masukkan Nomor HP Customer Gojek:");
-            if (!n) return;
+        function toggleGojekInput() {
+            const view = document.getElementById('gojekInputView');
+            const icon = document.getElementById('gojekChevron');
+            if (view.classList.contains('hidden')) {
+                view.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                view.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        function prosesWaGojek() {
+            let n = document.getElementById('gojekWaNumber').value.trim();
+            if (!n) return alert("Masukkan Nomor HP Customer Gojek terlebih dahulu!");
+            
             let nClean = n.replace(/\D/g, '');
             if (!nClean) return alert("Nomor tidak valid!");
+            
             let wa = nClean.startsWith('0') ? '62' + nClean.slice(1) : (nClean.startsWith('8') ? '62' + nClean : nClean);
             let msg = "Halo bapak/ibu saya okta driver gojek,mau kirim paket";
+            
             window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+            document.getElementById('gojekWaNumber').value = ""; 
         }
 
         function openWaDirect() {
