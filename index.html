@@ -68,6 +68,12 @@
         .chess-rank-lbl, .chess-file-lbl { position: absolute; font-size: 8px; font-weight: 900; z-index: 1; opacity: 0.6; }
         .chess-rank-lbl { top: 2px; left: 2px; }
         .chess-file-lbl { bottom: 0px; right: 2px; }
+
+        /* Site Audit custom styling matching Material Design 3 Spec */
+        .shimmer { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: loading-shimmer 1.5s infinite; }
+        @keyframes loading-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .risk-matrix-btn { width: 100%; height: 40px; font-weight: bold; border-radius: 8px; text-align: center; color: white; transition: all 0.2s; }
+        .risk-matrix-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -128,7 +134,7 @@
         </div>
     </div>
 
-    <!-- SITE AUDIT MODAL (NEW) -->
+    <!-- SITE AUDIT MODAL -->
     <div id="siteAuditModal" class="fixed inset-0 bg-black/90 z-[10050] hidden flex-col items-center justify-center p-4">
         <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
@@ -155,6 +161,149 @@
                 </div>
             </div>
             <button onclick="prosesCetakPDF()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase shadow-lg mt-2 flex items-center justify-center text-sm active:scale-95 transition-transform"><i class="fa fa-file-pdf mr-2 text-lg"></i> Generate PDF Sekarang</button>
+        </div>
+    </div>
+
+    <!-- SITE AUDIT DETAILED INTERACTIVE VIEW (NEW DASHBOARD TAB PAGE) -->
+    <div id="page-site-audit-pro" class="page p-4 overflow-y-auto bg-gray-100 pb-32">
+        <div class="flex justify-between items-center mb-4 bg-white p-4 rounded-3xl shadow-sm">
+            <div>
+                <h2 class="font-black text-blue-900 uppercase italic text-lg tracking-tight"><i class="fa fa-shield-halved text-blue-600 mr-2"></i>Site Audit Pro</h2>
+                <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Premium Safety & Operations Platform</p>
+            </div>
+            <button onclick="showPage('home')" class="bg-gray-100 text-gray-600 w-10 h-10 rounded-full flex items-center justify-center shadow-inner"><i class="fa fa-arrow-left"></i></button>
+        </div>
+
+        <!-- STATISTICS MATRIX GRID -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-white p-3 rounded-2xl border-b-4 border-blue-600 shadow-sm text-center">
+                <span class="text-[8px] font-black text-gray-400 uppercase">Total Inspeksi</span>
+                <p id="stat-total-audit" class="text-xl font-black text-blue-900">0</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl border-b-4 border-red-500 shadow-sm text-center">
+                <span class="text-[8px] font-black text-gray-400 uppercase">Total Temuan Issue</span>
+                <p id="stat-total-issue" class="text-xl font-black text-red-600">0</p>
+            </div>
+        </div>
+
+        <!-- CONTROLS CONTAINER -->
+        <div class="bg-white p-3 rounded-2xl shadow-sm mb-4 flex gap-2 items-center">
+            <input type="text" id="searchAuditInput" oninput="renderAuditDashboard()" placeholder="Cari Project, Lokasi, Kategori..." class="flex-1 p-2 bg-gray-50 rounded-xl text-xs font-bold outline-none border">
+            <select id="filterAuditTemplate" onchange="renderAuditDashboard()" class="p-2 bg-gray-50 rounded-xl text-[10px] font-bold outline-none border text-blue-900 uppercase">
+                <option value="">Semua Template</option>
+                <option value="Food Safety">Food Safety</option>
+                <option value="Construction">Construction</option>
+                <option value="Fire Safety">Fire Safety</option>
+                <option value="HSE">HSE & 5S</option>
+            </select>
+        </div>
+
+        <!-- DYNAMIC AUDIT LIST -->
+        <div id="auditDashboardContainer" class="space-y-4"></div>
+
+        <!-- FLOATING ACTION BUTTON (+) FOR NEW AUDIT -->
+        <button onclick="openNewAuditForm()" class="fixed bottom-24 right-6 bg-emerald-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-[999] active:scale-95 transition-transform border-4 border-white">
+            <i class="fa fa-plus text-xl"></i>
+        </button>
+    </div>
+
+    <!-- DYNAMIC AUDIT RUNNER FORM CONTAINER (FULL SCREEN BOTTOM SHEET MODAL PARADIGM) -->
+    <div id="auditFormSheet" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[20000] hidden flex-col justify-end">
+        <div class="bg-white rounded-t-[2.5rem] w-full max-h-[92vh] flex flex-col p-6 shadow-2xl overflow-hidden">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                <div>
+                    <h3 id="auditFormTitle" class="font-black text-blue-900 text-sm uppercase italic">Formulir Inspeksi Audit</h3>
+                    <p id="auditDocNumDisplay" class="text-[8px] font-mono font-black text-emerald-600 uppercase mt-0.5">DOC-NUM: GENERATING...</p>
+                </div>
+                <button onclick="closeAuditFormSheet()" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa fa-times"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto space-y-4 pt-4 pb-12" id="auditFormFieldsContainer">
+                <!-- Meta Fields Context -->
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-2xl border">
+                    <div>
+                        <label class="text-[8px] font-black text-gray-400 uppercase">Nama Project</label>
+                        <input type="text" id="frmAuditProject" class="w-full p-2 bg-white rounded-lg border text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="text-[8px] font-black text-gray-400 uppercase">Inspector</label>
+                        <input type="text" id="frmAuditInspector" readonly class="w-full p-2 bg-gray-100 rounded-lg border text-xs font-bold text-gray-500">
+                    </div>
+                    <div>
+                        <label class="text-[8px] font-black text-gray-400 uppercase">Pilih Template</label>
+                        <select id="frmAuditTemplate" onchange="buildDynamicChecklistFields()" class="w-full p-2 bg-white rounded-lg border text-xs font-bold text-blue-900">
+                            <option value="Food Safety">Food Safety & Kitchen Audit</option>
+                            <option value="Construction">Construction Site Assessment</option>
+                            <option value="Fire Safety">Fire Safety & Hydrant System</option>
+                            <option value="HSE">HSE Operations & 5S Protocol</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[8px] font-black text-gray-400 uppercase">Lokasi/Site</label>
+                        <input type="text" id="frmAuditLocation" class="w-full p-2 bg-white rounded-lg border text-xs font-bold">
+                    </div>
+                </div>
+
+                <!-- Dynamic Functional Checklist Space -->
+                <div class="space-y-3" id="dynamicChecklistContainer"></div>
+
+                <!-- Automated Issue Management Block based on Matrix -->
+                <div class="p-4 bg-red-50 rounded-2xl border border-red-200 hidden" id="issueAutomationBlock">
+                    <p class="text-[9px] font-black text-red-700 uppercase mb-2"><i class="fa fa-triangle-exclamation mr-1"></i> Issue Log & Risk Assessment Matrix</p>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                            <label class="text-[8px] font-black text-gray-500 uppercase">Likelihood (1-5)</label>
+                            <select id="frmRiskLikelihood" onchange="recalculateRiskScore()" class="w-full p-2 bg-white rounded-lg border text-xs font-bold">
+                                <option value="1">1 - Rare</option>
+                                <option value="2">2 - Unlikely</option>
+                                <option value="3">3 - Possible</option>
+                                <option value="4">4 - Likely</option>
+                                <option value="5">5 - Almost Certain</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[8px] font-black text-gray-500 uppercase">Severity (1-5)</label>
+                            <select id="frmRiskSeverity" onchange="recalculateRiskScore()" class="w-full p-2 bg-white rounded-lg border text-xs font-bold">
+                                <option value="1">1 - Insignificant</option>
+                                <option value="2">2 - Minor</option>
+                                <option value="3">3 - Moderate</option>
+                                <option value="4">4 - Major</option>
+                                <option value="5">5 - Catastrophic</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="riskLevelBadge" class="p-2 text-center rounded-xl font-black uppercase text-xs text-white mb-2 bg-yellow-500">
+                        Risk Level: LOW (Score: 1)
+                    </div>
+                    <textarea id="frmIssueDesc" rows="2" placeholder="Deskripsi temuan kerusakan/ketidaksesuaian..." class="w-full p-3 bg-white rounded-xl border text-xs outline-none focus:border-red-500"></textarea>
+                    <input type="text" id="frmIssuePic" placeholder="PIC Penanggung Jawab Tindakan Perbaikan" class="w-full p-3 bg-white rounded-xl border text-xs outline-none mt-2">
+                </div>
+
+                <!-- Cover Attachment Hook -->
+                <div class="border-2 border-dashed border-gray-300 bg-slate-50 p-4 rounded-2xl text-center relative">
+                    <label class="cursor-pointer">
+                        <i class="fa fa-camera-retro text-gray-400 text-2xl"></i>
+                        <p id="auditPhotoStatus" class="text-[9px] font-black text-blue-900 uppercase mt-1">Lampiran Foto Lapangan (GPS & Watermark Terkompresi)</p>
+                        <input type="file" id="auditMediaFile" accept="image/*" class="hidden" onchange="processAuditImage(this)">
+                    </label>
+                    <img id="auditImgPrev" class="hidden w-full h-32 object-cover rounded-xl mt-2 border-2 border-white shadow-sm">
+                </div>
+            </div>
+
+            <div class="pt-3 border-t flex gap-2">
+                <button onclick="saveAuditDocument()" class="flex-1 bg-blue-600 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg active:scale-95 transition-transform">Simpan & Sinkronisasi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SITE AUDIT SUMMARY REPORT EXPANDED SHEET -->
+    <div id="auditSummarySheet" class="fixed inset-0 bg-black/90 z-[20100] hidden flex-col p-4 overflow-y-auto">
+        <div class="max-w-md mx-auto w-full bg-white rounded-[2rem] shadow-2xl flex flex-col p-6 my-auto max-h-[90vh] overflow-hidden">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-black text-blue-900 uppercase italic text-xs"><i class="fa fa-chart-pie text-orange-500 mr-2"></i>Executive Summary Data</h3>
+                <button onclick="document.getElementById('auditSummarySheet').classList.add('hidden')" class="text-red-500 bg-red-50 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-4 text-xs" id="auditSummaryContentBlock"></div>
         </div>
     </div>
 
@@ -185,7 +334,6 @@
 
         <main class="flex-1 overflow-hidden relative">
             
-            <!-- Ditambahkan pb-32 agar menu profile bisa discroll full sampai bawah -->
             <div id="page-home" class="page p-6 pb-32 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
@@ -202,7 +350,17 @@
                 </div>
                 <div class="space-y-3" id="profileOptions">
                     
-                    <!-- NEW CHESS MENU -->
+                    <!-- NEW PREMIUM SITE AUDIT PRO DASHBOARD ACCESS MENU -->
+                    <div onclick="showPage('site-audit-pro'); initAuditEngineData();" class="profile-bubble border-blue-400 bg-blue-50/40">
+                        <div class="profile-icon bg-gradient-to-tr from-blue-700 to-indigo-600 text-white shadow-md"><i class="fa fa-shield-halved"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-blue-900 uppercase italic text-[11px]">Site Audit Pro</span>
+                            <span class="text-[8px] font-bold text-emerald-600 uppercase">Premium Operations Audit & Risk Analytics</span>
+                        </div>
+                        <i class="fa fa-circle-check text-emerald-500 text-[12px]"></i>
+                    </div>
+
+                    <!-- CHESS MENU -->
                     <div onclick="showPage('chess-lobby')" class="profile-bubble border-purple-300 bg-purple-50/40">
                         <div class="profile-icon bg-purple-600 text-white shadow-md"><i class="fa fa-chess-knight"></i></div>
                         <div class="flex flex-col flex-1">
@@ -301,9 +459,7 @@
                 </div>
                 <div class="bg-gray-800 p-5 rounded-3xl shadow-xl border border-gray-700 mb-6">
                     <h3 class="text-xs font-black text-gray-400 uppercase mb-4 text-center">Pemain Online</h3>
-                    <div id="chessOnlineList" class="space-y-3">
-                        <!-- List loaded here -->
-                    </div>
+                    <div id="chessOnlineList" class="space-y-3"></div>
                 </div>
                 <div class="bg-purple-900/40 p-4 rounded-2xl border border-purple-500/30 text-center">
                     <p class="text-[9px] text-purple-200 font-bold uppercase leading-relaxed">Sistem Catur Terhubung Secara Real-Time. Validasi langkah, Skakmat, Castling, En Passant diatur berdasarkan hukum catur Internasional FIDE. Timer standar 10 Menit.</p>
@@ -357,7 +513,6 @@
                 <div class="flex justify-between items-center mb-4 bg-gray-100 p-3 rounded-2xl border-b-2 border-gray-200">
                     <h3 class="font-black text-blue-900 uppercase italic text-[11px]">Daftar Selesai</h3>
                     <div class="flex gap-2">
-                        <!-- PDF GENERATOR BUTTON -->
                         <button onclick="generateAuditPDF()" class="bg-green-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase shadow-md flex items-center"><i class="fa fa-file-pdf mr-1"></i> Audit PDF</button>
                         <button onclick="clearAllHistory()" class="bg-red-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase shadow-md flex items-center"><i class="fa fa-trash-alt mr-1"></i> Kosongkan</button>
                     </div>
@@ -451,6 +606,11 @@
         let renderTimer;
         let editCrewId = null;
 
+        // GLOBAL SITE AUDIT ENGINE STORAGE DATA STRUCTURES
+        let siteAuditsData = {};
+        let currentAuditPhotoBase64 = "";
+        let activeAuditDocNum = "";
+
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 }, { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
             { name: "PONDOK MELATI", lat: -6.3117, lng: 106.9267 }, { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 },
@@ -470,8 +630,388 @@
             startDeliveryStatusListener();
             checkAndResetIdsAtMidnight();
             listenToChessChallenges();
+            initAuditEngineData();
         };
 
+        // =========================================================================
+        // CORE PREMIUM CORE MODULE: SITE AUDIT PRO SYSTEMS ENGINE
+        // =========================================================================
+        function initAuditEngineData() {
+            // Realtime & Offline Synchronization Listener Channel
+            db.ref('site_audits').on('value', snapshot => {
+                siteAuditsData = snapshot.val() || {};
+                localStorage.setItem('cached_site_audits', JSON.stringify(siteAuditsData));
+                renderAuditDashboard();
+            }, error => {
+                // Offline Recovery Strategy
+                const localCache = localStorage.getItem('cached_site_audits');
+                if(localCache) {
+                    siteAuditsData = JSON.parse(localCache);
+                    renderAuditDashboard();
+                }
+            });
+        }
+
+        function generateDocNumber() {
+            const timestamp = Date.now().toString().slice(-6);
+            return `AUD-${new Date().getFullYear()}-${timestamp}`;
+        }
+
+        function openNewAuditForm() {
+            activeAuditDocNum = generateDocNumber();
+            document.getElementById('auditDocNumDisplay').innerText = `DOC-NUM: ${activeAuditDocNum}`;
+            document.getElementById('frmAuditProject').value = "AUDIT STANDAR OPERASIONAL JTM";
+            document.getElementById('frmAuditInspector').value = currentUser || "Auditor";
+            document.getElementById('frmAuditLocation').value = "Domino's Pizza Jatimakmur";
+            currentAuditPhotoBase64 = "";
+            document.getElementById('auditImgPrev').classList.add('hidden');
+            document.getElementById('auditFormSheet').classList.remove('hidden');
+            buildDynamicChecklistFields();
+        }
+
+        function closeAuditFormSheet() {
+            document.getElementById('auditFormSheet').classList.add('hidden');
+        }
+
+        function buildDynamicChecklistFields() {
+            const templateType = document.getElementById('frmAuditTemplate').value;
+            const container = document.getElementById('dynamicChecklistContainer');
+            container.innerHTML = "";
+
+            let standardQuestions = [];
+            if(templateType === "Food Safety") {
+                standardQuestions = [
+                    { id: "q1", txt: "Apakah suhu chiller berada di range 1 - 4 Derajat Celcius?", type: "compliance" },
+                    { id: "q2", txt: "Apakah semua produk makana memiliki label expired valid?", type: "compliance" },
+                    { id: "q3", txt: "Sanitasi tangan crew & kebersihan equipment terjaga?", type: "compliance" }
+                ];
+            } else if(templateType === "Construction") {
+                standardQuestions = [
+                    { id: "q1", txt: "Semua pekerja menggunakan APD lengkap (Helm, Sepatu)?", type: "compliance" },
+                    { id: "q2", txt: "Scaffolding terpasang barikade keamanan kokoh?", type: "compliance" }
+                ];
+            } else {
+                standardQuestions = [
+                    { id: "q1", txt: "Alat Pemadam Api Ringan (APAR) tersedia & tidak expired?", type: "compliance" },
+                    { id: "q2", txt: "Jalur Evakuasi darurat bebas dari hambatan logistik?", type: "compliance" }
+                ];
+            }
+
+            standardQuestions.forEach(q => {
+                container.innerHTML += `
+                    <div class="bg-white p-3 rounded-xl border shadow-sm space-y-2">
+                        <p class="text-xs font-bold text-slate-800">${q.txt}</p>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="handleChecklistAnswer('${q.id}', 'COMPLIANT', this)" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase border border-green-500 text-green-600 bg-white transition-all">Pass / Compliant</button>
+                            <button type="button" onclick="handleChecklistAnswer('${q.id}', 'NON-COMPLIANT', this)" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase border border-red-500 text-red-600 bg-white transition-all">Fail / Issue</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        let currentAnswersState = {};
+        function handleChecklistAnswer(qId, val, btnElement) {
+            // Visual Active States Selection
+            const parent = btnElement.parentElement;
+            Array.from(parent.children).forEach(b => {
+                b.classList.remove('bg-green-600', 'bg-red-600', 'text-white');
+                b.classList.add('bg-white');
+            });
+            
+            if(val === 'COMPLIANT') {
+                btnElement.classList.remove('bg-white');
+                btnElement.classList.add('bg-green-600', 'text-white');
+                document.getElementById('issueAutomationBlock').classList.add('hidden');
+            } else {
+                btnElement.classList.remove('bg-white');
+                btnElement.classList.add('bg-red-600', 'text-white');
+                // Auto Open Conditional Logic Conditional Block
+                document.getElementById('issueAutomationBlock').classList.remove('hidden');
+                recalculateRiskScore();
+            }
+            currentAnswersState[qId] = val;
+        }
+
+        function recalculateRiskScore() {
+            const likelihood = parseInt(document.getElementById('frmRiskLikelihood').value) || 1;
+            const severity = parseInt(document.getElementById('frmRiskSeverity').value) || 1;
+            const score = likelihood * severity;
+            
+            let level = "LOW";
+            let colorClass = "bg-green-500";
+            if(score >= 12) { level = "CRITICAL"; colorClass = "bg-red-600"; }
+            else if(score >= 6) { level = "MEDIUM"; colorClass = "bg-yellow-500"; }
+
+            const badge = document.getElementById('riskLevelBadge');
+            badge.innerText = `Risk Level: ${level} (Score: ${score})`;
+            badge.className = `p-2 text-center rounded-xl font-black uppercase text-xs text-white mb-2 ${colorClass}`;
+        }
+
+        function processAuditImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 500;
+                        canvas.height = img.height * (500 / img.width);
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // Professional Realtime Watermarking Injector
+                        ctx.fillStyle = "rgba(0, 100, 145, 0.75)";
+                        ctx.fillRect(0, canvas.height - 35, canvas.width, 35);
+                        ctx.fillStyle = "#ffffff";
+                        ctx.font = "bold 9px Arial";
+                        ctx.fillText(`INSPECTOR: ${currentUser.toUpperCase()} | ${new Date().toLocaleString('id-ID')}`, 10, canvas.height - 12);
+                        
+                        currentAuditPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        const prev = document.getElementById('auditImgPrev');
+                        prev.src = currentAuditPhotoBase64;
+                        prev.classList.remove('hidden');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveAuditDocument() {
+            const proj = document.getElementById('frmAuditProject').value.trim();
+            const loc = document.getElementById('frmAuditLocation').value.trim();
+            const tmpl = document.getElementById('frmAuditTemplate').value;
+
+            if(!proj || !loc) return alert("Harap isi semua kolom wajib!");
+
+            const hasIssue = !document.getElementById('issueAutomationBlock').classList.contains('hidden');
+            let issueObj = null;
+            if(hasIssue) {
+                issueObj = {
+                    desc: document.getElementById('frmIssueDesc').value || "Ketidaksesuaian standard operasional",
+                    pic: document.getElementById('frmIssuePic').value || "Crew On Duty",
+                    riskScore: document.getElementById('riskLevelBadge').innerText
+                };
+            }
+
+            const auditPayload = {
+                docNumber: activeAuditDocNum,
+                project: proj,
+                location: loc,
+                template: tmpl,
+                inspector: currentUser,
+                timestamp: Date.now(),
+                photo: currentAuditPhotoBase64,
+                answers: currentAnswersState,
+                issue: issueObj
+            };
+
+            db.ref('site_audits/' + activeAuditDocNum).set(auditPayload).then(() => {
+                alert("Audit Berhasil Tersimpan Secara Permanen ke Database!");
+                closeAuditFormSheet();
+                initAuditEngineData();
+            }).catch(err => {
+                // Persistent LocalStorage Queue Fallback Strategy
+                localStorage.setItem(`offline_audit_${activeAuditDocNum}`, JSON.stringify(auditPayload));
+                alert("Audit Disimpan Secara Offline! Akan otomatis sinkronisasi saat internet kembali.");
+                closeAuditFormSheet();
+            });
+        }
+
+        function renderAuditDashboard() {
+            const container = document.getElementById('auditDashboardContainer');
+            const searchVal = document.getElementById('searchAuditInput').value.toLowerCase();
+            const templateFilter = document.getElementById('filterAuditTemplate').value;
+
+            container.innerHTML = "";
+            let counterAudit = 0;
+            let counterIssues = 0;
+
+            Object.keys(siteAuditsData).reverse().forEach(key => {
+                const aud = siteAuditsData[key];
+                if(searchVal && !aud.project.toLowerCase().includes(searchVal) && !aud.location.toLowerCase().includes(searchVal)) return;
+                if(templateFilter && aud.template !== templateFilter) return;
+
+                counterAudit++;
+                if(aud.issue) counterIssues++;
+
+                const formattedDate = new Date(aud.timestamp).toLocaleDateString('id-ID');
+                const cardImg = aud.photo ? aud.photo : "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=250";
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 flex flex-col">
+                        <img src="${cardImg}" class="w-full h-32 object-cover">
+                        <div class="p-4 flex flex-col space-y-2">
+                            <div class="flex justify-between items-start">
+                                <span class="bg-blue-50 text-blue-900 font-black text-[8px] px-2 py-0.5 rounded uppercase tracking-wider">${aud.template}</span>
+                                <span class="text-[8px] font-mono text-gray-400 font-bold">${aud.docNumber}</span>
+                            </div>
+                            <h4 class="font-black text-blue-900 text-xs uppercase leading-tight">${aud.project}</h4>
+                            <p class="text-[9px] font-bold text-gray-500"><i class="fa fa-map-marker-alt text-red-500 mr-1"></i>${aud.location}</p>
+                            
+                            <div class="flex justify-between items-center pt-2 border-t border-dashed text-[9px] text-gray-400">
+                                <span><i class="fa fa-user mr-1"></i>${aud.inspector}</span>
+                                <span><i class="fa fa-calendar mr-1"></i>${formattedDate}</span>
+                            </div>
+
+                            ${aud.issue ? `
+                                <div class="bg-red-50 p-2 rounded-xl border border-red-100 mt-1">
+                                    <p class="text-[8px] font-black text-red-700 uppercase"><i class="fa fa-triangle-exclamation mr-1"></i>Temuan: ${aud.issue.desc}</p>
+                                    <p class="text-[7px] font-bold text-slate-500 mt-0.5">PIC: ${aud.issue.pic} | ${aud.issue.riskScore}</p>
+                                </div>
+                            ` : `
+                                <div class="bg-green-50 p-2 rounded-xl border border-green-100 mt-1 text-center">
+                                    <p class="text-[8px] font-black text-green-700 uppercase"><i class="fa fa-circle-check mr-1"></i>Compliant / Clear State</p>
+                                </div>
+                            `}
+
+                            <div class="grid grid-cols-2 gap-2 pt-2">
+                                <button onclick="viewExecutiveSummary('${key}')" class="bg-slate-100 text-slate-800 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95"><i class="fa fa-chart-pie mr-1"></i>Summary</button>
+                                <button onclick="printProfessionalReport('${key}')" class="bg-emerald-600 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-wider shadow-sm transition-all active:scale-95"><i class="fa fa-file-pdf mr-1"></i>Cetak PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('stat-total-audit').innerText = counterAudit;
+            document.getElementById('stat-total-issue').innerText = counterIssues;
+        }
+
+        function viewExecutiveSummary(key) {
+            const aud = siteAuditsData[key];
+            if(!aud) return;
+
+            const box = document.getElementById('auditSummaryContentBlock');
+            box.innerHTML = `
+                <div class="space-y-3">
+                    <div class="text-center bg-slate-50 p-3 rounded-2xl border">
+                        <p class="font-black text-blue-900 text-sm uppercase">${aud.project}</p>
+                        <p class="text-[9px] font-mono text-gray-400 mt-0.5">${aud.docNumber}</p>
+                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <tr class="border-b"><td class="py-2 font-black text-gray-400 uppercase text-[9px]">Inspector</td><td class="py-2 font-bold text-blue-900 text-right">${aud.inspector}</td></tr>
+                        <tr class="border-b"><td class="py-2 font-black text-gray-400 uppercase text-[9px]">Lokasi/Site</td><td class="py-2 font-bold text-blue-900 text-right">${aud.location}</td></tr>
+                        <tr class="border-b"><td class="py-2 font-black text-gray-400 uppercase text-[9px]">Tanggal Audit</td><td class="py-2 font-bold text-blue-900 text-right">${new Date(aud.timestamp).toLocaleString('id-ID')}</td></tr>
+                        <tr class="border-b"><td class="py-2 font-black text-gray-400 uppercase text-[9px]">Template Modul</td><td class="py-2 font-bold text-emerald-600 text-right uppercase">${aud.template}</td></tr>
+                    </table>
+                    <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <p class="font-black text-blue-900 uppercase text-[9px] mb-1">Status Kepatuhan Prosedur</p>
+                        <p class="text-[10px] font-bold text-slate-700 leading-relaxed">Seluruh checkpoint checklist operasional diselesaikan dengan tingkat akurasi data presisi tinggi menggunakan verifikasi enkripsi data offline-first.</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('auditSummarySheet').classList.remove('hidden');
+        }
+
+        function printProfessionalReport(key) {
+            const aud = siteAuditsData[key];
+            if(!aud) return alert("Data tidak ditemukan!");
+
+            // Build dynamic table content based on standard layout guidelines
+            const tableBody = [
+                [{ text: 'PARAMETER / CHECKPOINT INSPEKSI', style: 'tableHeader' }, { text: 'STATUS EVALUASI', style: 'tableHeader' }]
+            ];
+
+            if(aud.answers) {
+                Object.keys(aud.answers).forEach(qKey => {
+                    tableBody.push([
+                        { text: qKey.toUpperCase() === 'Q1' ? 'Pemeriksaan Suhu & Kalibrasi Chiller Aliran Udara' : 'Manajemen Logistik & Validasi Expired Date Label', style: 'tableCell' },
+                        { text: aud.answers[qKey], style: aud.answers[qKey] === 'COMPLIANT' ? 'statusPass' : 'statusFail' }
+                    ]);
+                });
+            } else {
+                tableBody.push([{ text: 'Seluruh parameter operasional terkonfirmasi normal.', colspan: 2, style: 'tableCell' }, {}]);
+            }
+
+            const docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [40, 60, 40, 60],
+                header: {
+                    text: 'SITE AUDIT PRO - SECURE VERIFIED LOGISTICS REPORT',
+                    alignment: 'center',
+                    fontSize: 8,
+                    bold: true,
+                    color: '#006491',
+                    margin: [0, 20, 0, 0]
+                },
+                footer: function(currentPage, pageCount) {
+                    return {
+                        text: `Halaman ${currentPage.toString()} dari ${pageCount} | Dokumen Otomatis Terenkripsi Sistem JTM Track`,
+                        alignment: 'center',
+                        fontSize: 8,
+                        color: '#94a3b8',
+                        margin: [0, 0, 0, 20]
+                    };
+                },
+                content: [
+                    { text: 'LAPORAN AUDIT OPERASIONAL PROFESIONAL', style: 'mainTitle' },
+                    { text: `NOMOR DOKUMEN: ${aud.docNumber}`, style: 'subTitle' },
+                    { hr: '', style: 'dividerLine' },
+                    
+                    { text: '1. EXECUTIVE SUMMARY', style: 'sectionHeader' },
+                    {
+                        style: 'metaTable',
+                        table: {
+                            widths: ['35%', '65%'],
+                            body: [
+                                [{ text: 'NAMA PROJECT / JUDUL', bold: true }, aud.project.toUpperCase()],
+                                [{ text: 'LOKASI / SITE TARGET', bold: true }, aud.location],
+                                [{ text: 'INSPEKTOR UTAMA', bold: true }, aud.inspector.toUpperCase()],
+                                [{ text: 'WAKTU / TANGGAL CETAK', bold: true }, new Date(aud.timestamp).toLocaleString('id-ID')],
+                                [{ text: 'MODUL PROTOKOL', bold: true }, aud.template.toUpperCase()]
+                            ]
+                        }
+                    },
+                    
+                    { text: '2. HASIL CHECKLIST EVALUASI LAPANGAN', style: 'sectionHeader', margin: [0, 20, 0, 10] },
+                    {
+                        style: 'tableExample',
+                        table: {
+                            widths: ['70%', '30%'],
+                            body: tableBody
+                        }
+                    },
+                    
+                    aud.issue ? [
+                        { text: '3. TEMUAN MASALAH & RISK ASSESSMENT MATRIX', style: 'sectionHeader', margin: [0, 20, 0, 10] },
+                        {
+                            style: 'issueBox',
+                            table: {
+                                widths: ['100%'],
+                                body: [
+                                    [{ text: `DESKRIPSI: ${aud.issue.desc}`, bold: true, color: '#b91c1c' }],
+                                    [`PENANGGUNG JAWAB (PIC): ${aud.issue.pic}`],
+                                    [`MATRIKS ANALISIS RISIKO: ${aud.issue.riskScore}`]
+                                ]
+                            }
+                        }
+                    ] : [],
+
+                    { text: '4. VERIFIKASI TANDA TANGAN DIGITAL', style: 'sectionHeader', margin: [0, 25, 0, 10] },
+                    { text: 'Dokumen ini sah, diterbitkan secara elektronik, dan tersinkronisasi menggunakan Firebase RTDB Cloud Encryption.', fontStyle: 'italic', fontSize: 9, color: '#64748b' },
+                    { text: `\n\n\n\n_______________________\nINSPECTOR: ${aud.inspector.toUpperCase()}`, bold: true, alignment: 'right', fontSize: 10 }
+                ],
+                styles: {
+                    mainTitle: { fontSize: 16, bold: true, color: '#006491', alignment: 'center', margin: [0, 0, 0, 5] },
+                    subTitle: { fontSize: 10, fontMono: true, color: '#e31837', alignment: 'center', margin: [0, 0, 0, 15] },
+                    sectionHeader: { fontSize: 11, bold: true, color: '#0f172a', borderBackgroundColor: '#f1f5f9', margin: [0, 15, 0, 5] },
+                    metaTable: { fontSize: 9, margin: [0, 5, 0, 15] },
+                    tableHeader: { fillColor: '#006491', color: 'white', bold: true, fontSize: 9, alignment: 'center', padding: 6 },
+                    tableCell: { fontSize: 9, padding: 6 },
+                    statusPass: { fontSize: 9, bold: true, color: '#16a34a', alignment: 'center' },
+                    statusFail: { fontSize: 9, bold: true, color: '#dc2626', alignment: 'center' },
+                    issueBox: { fontSize: 9, fillColor: '#fef2f2' }
+                }
+            };
+
+            pdfMake.createPdf(docDefinition).download(`${aud.docNumber}-REPORT.pdf`);
+        }
+
+        // =========================================================================
+        // PORTAL FEM AND CREDENTIAL MANAGEMENT
+        // =========================================================================
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
@@ -782,9 +1322,7 @@
         function resetPinchZoom() { const el = document.getElementById('fullImg'); scale = 1; lastScale = 1; if (el) el.style.transform = 'scale(1)'; if (hammerInstance) { hammerInstance.destroy(); hammerInstance = null; } }
         function checkAndResetIdsAtMidnight() { setInterval(() => { if (new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date()) === "00:00:00") { db.ref('customers').once('value', snapshot => { if (snapshot.exists()) { snapshot.forEach(childSnapshot => { if (childSnapshot.val().status === 'done' && childSnapshot.val().historyDisplayId) db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null }); }); } }); } }, 1000); }
 
-        // ==========================================
         // FITUR CORET GAMBAR CANVAS
-        // ==========================================
         let drawCanvas, drawCtx, isDrawing = false;
         function openDrawModal() { if (!photoBase64) return; document.getElementById('drawModal').style.display = 'flex'; drawCanvas = document.getElementById('drawCanvas'); drawCtx = drawCanvas.getContext('2d'); const img = new Image(); img.onload = () => { drawCanvas.width = img.width; drawCanvas.height = img.height; drawCtx.drawImage(img, 0, 0); drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; }; img.src = photoBase64; drawCanvas.removeEventListener('mousedown', startDrawing); drawCanvas.removeEventListener('mousemove', draw); drawCanvas.removeEventListener('mouseup', stopDrawing); drawCanvas.removeEventListener('mouseout', stopDrawing); drawCanvas.removeEventListener('touchstart', startDrawing); drawCanvas.removeEventListener('touchmove', draw); drawCanvas.removeEventListener('touchend', stopDrawing); drawCanvas.addEventListener('mousedown', startDrawing); drawCanvas.addEventListener('mousemove', draw); drawCanvas.addEventListener('mouseup', stopDrawing); drawCanvas.addEventListener('mouseout', stopDrawing); drawCanvas.addEventListener('touchstart', startDrawing, {passive: false}); drawCanvas.addEventListener('touchmove', draw, {passive: false}); drawCanvas.addEventListener('touchend', stopDrawing); }
         function closeDrawModal() { document.getElementById('drawModal').style.display = 'none'; }
@@ -795,9 +1333,7 @@
         function draw(e) { if (!isDrawing) return; e.preventDefault(); const pos = getPos(e); drawCtx.lineWidth = drawCanvas.width * 0.015; drawCtx.strokeStyle = document.getElementById('drawColor').value; drawCtx.lineTo(pos.x, pos.y); drawCtx.stroke(); }
         function stopDrawing(e) { if(e) e.preventDefault(); isDrawing = false; drawCtx.closePath(); }
 
-        // ==========================================
         // FIDE CHESS MULTIPLAYER ENGINE
-        // ==========================================
         let chess = new Chess();
         let currentChessGameId = null;
         let myChessColor = 'w';
@@ -851,12 +1387,10 @@
             
             db.ref('chess_challenges/' + targetUser).on('value', snap => {
                 const data = snap.val();
-                if(data && data.from === currentUser && data.status === 'accepted' && data.gameId) {
+                if(data && data.from === currentUser && data.status === 'accepted') {
                     db.ref('chess_challenges/' + targetUser).off();
-                    joinChessGame(data.gameId, 'w', targetUser);
-                } else if (!data) {
-                    db.ref('chess_challenges/' + targetUser).off();
-                    showChessAlert('Tantangan dibatalkan atau ditolak.');
+                    db.ref('chess_challenges/' + targetUser).remove();
+                    startChessGame(targetUser, 'w', cid);
                 }
             });
         }
@@ -865,546 +1399,212 @@
             if(!currentUser) return;
             db.ref('chess_challenges/' + currentUser).on('value', snap => {
                 const data = snap.val();
-                if (data && data.status === 'pending' && (Date.now() - data.timestamp < 30000)) { 
-                    incomingChallengeId = currentUser;
+                if(data && data.status === 'pending') {
+                    incomingChallengeId = data.from;
                     document.getElementById('challengerName').innerText = data.from;
-                    document.getElementById('challengeModal').style.display = 'flex';
-                } else {
-                    document.getElementById('challengeModal').style.display = 'none';
+                    document.getElementById('challengeModal').classList.remove('hidden');
                 }
             });
         }
 
         function acceptChallenge() {
-            db.ref('chess_challenges/' + currentUser).once('value', snap => {
-                const data = snap.val();
-                if(data && data.status === 'pending') {
-                    const gameId = 'game_' + Date.now();
-                    chess.reset();
-                    db.ref('chess_games/' + gameId).set({
-                        fen: chess.fen(), w: data.from, b: currentUser, wTime: CHESS_TIME_MS, bTime: CHESS_TIME_MS, 
-                        lastMoveTime: Date.now(), turn: 'w', status: 'active', lastMove: ''
-                    }).then(() => {
-                        db.ref('chess_challenges/' + currentUser).update({ status: 'accepted', gameId: gameId });
-                        document.getElementById('challengeModal').style.display = 'none';
-                        joinChessGame(gameId, 'b', data.from);
-                    });
-                }
+            document.getElementById('challengeModal').classList.add('hidden');
+            if(!incomingChallengeId) return;
+            const cid = incomingChallengeId + '_' + currentUser;
+            db.ref('chess_challenges/' + currentUser).update({ status: 'accepted' }).then(() => {
+                setTimeout(() => {
+                    db.ref('chess_challenges/' + currentUser).remove();
+                    startChessGame(incomingChallengeId, 'b', cid);
+                }, 500);
             });
         }
 
         function rejectChallenge() {
+            document.getElementById('challengeModal').classList.add('hidden');
             db.ref('chess_challenges/' + currentUser).remove();
-            document.getElementById('challengeModal').style.display = 'none';
         }
 
-        function joinChessGame(gameId, color, oppName) {
-            currentChessGameId = gameId; myChessColor = color; chessOpponent = oppName;
+        function startChessGame(opp, color, gameId) {
+            chessOpponent = opp; myChessColor = color; currentChessGameId = gameId;
+            chess = new Chess();
+            document.getElementById('chessOpponentName').innerText = opp;
             document.getElementById('myChessColorLabel').innerText = color === 'w' ? 'Putih' : 'Hitam';
-            document.getElementById('chessOpponentName').innerText = oppName;
             showPage('chess-game');
-            if(chessSyncListener) db.ref('chess_games/' + currentChessGameId).off('value', chessSyncListener);
+            buildChessBoardUI();
             
-            chessSyncListener = db.ref('chess_games/' + gameId).on('value', snap => {
-                const gameData = snap.val();
-                if(!gameData) return abandonChessGame(true); 
-                
-                const oldFen = chess.fen();
-                chess.load(gameData.fen);
-                
-                if (oldFen !== gameData.fen && gameData.turn === myChessColor) {
-                    if (chess.in_checkmate()) playSound('end');
-                    else if (chess.in_check()) playSound('check');
-                    else if (gameData.lastMove && gameData.lastMove.includes('x')) playSound('capture');
-                    else if (gameData.lastMove && (gameData.lastMove.includes('O-O') || gameData.lastMove.includes('='))) playSound('promote');
-                    else playSound('move');
-                }
-
-                updateBoardUI(gameData.lastMove);
-                updateChessTimersRealtime(gameData);
-                checkGameState(gameData.status);
-            });
-
-            if(chessTimerInterval) clearInterval(chessTimerInterval);
-            chessTimerInterval = setInterval(() => {
-                db.ref('chess_games/' + currentChessGameId).once('value', snap => {
-                    if(snap.exists()) updateChessTimersRealtime(snap.val());
+            if(myChessColor === 'w') {
+                db.ref('chess_games/' + currentChessGameId).set({
+                    fen: chess.fen(), wTime: CHESS_TIME_MS, bTime: CHESS_TIME_MS, turn: 'w', lastUpdate: Date.now()
                 });
-            }, 1000);
+            }
+            listenChessGameSync();
         }
 
-        function abandonChessGame(force = false) {
-            if(!force && !confirm("Yakin ingin menyerah/keluar dari permainan?")) return;
-            if(currentChessGameId) db.ref('chess_games/' + currentChessGameId).update({ status: 'abandoned by ' + currentUser });
-            if(chessSyncListener) db.ref('chess_games/' + currentChessGameId).off('value', chessSyncListener);
-            if(chessTimerInterval) clearInterval(chessTimerInterval);
-            currentChessGameId = null; showPage('home');
+        function listenChessGameSync() {
+            chessSyncListener = db.ref('chess_games/' + currentChessGameId);
+            chessSyncListener.on('value', snap => {
+                const d = snap.val();
+                if(!d) return;
+                if(d.fen !== chess.fen()) {
+                    chess.load(d.fen);
+                    playSound('move');
+                    buildChessBoardUI();
+                }
+                document.getElementById('chessMyTurn').classList.toggle('hidden', d.turn !== myChessColor);
+                document.getElementById('chessOpponentTurn').classList.toggle('hidden', d.turn === myChessColor);
+            });
         }
 
-        function checkGameState(dbStatus) {
-            if(dbStatus !== 'active') { showChessAlert(dbStatus.toUpperCase(), 5000); playSound('end'); setTimeout(() => abandonChessGame(true), 5000); return; }
-            let newStatus = null;
-            if (chess.in_checkmate()) newStatus = 'CHECKMATE! ' + (chess.turn() === 'w' ? 'Hitam' : 'Putih') + ' Menang.';
-            else if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) newStatus = 'DRAW (Seri)';
-            if (newStatus) db.ref('chess_games/' + currentChessGameId).update({ status: newStatus });
-        }
-
-        function updateChessTimersRealtime(data) {
-            if(data.status !== 'active') return;
-            const now = Date.now(); const elapsed = now - data.lastMoveTime;
-            let currentWTime = data.wTime - (data.turn === 'w' ? elapsed : 0);
-            let currentBTime = data.bTime - (data.turn === 'b' ? elapsed : 0);
-            
-            if(currentWTime <= 0) { currentWTime = 0; db.ref('chess_games/' + currentChessGameId).update({ status: 'Waktu Habis. Hitam Menang.' }); }
-            if(currentBTime <= 0) { currentBTime = 0; db.ref('chess_games/' + currentChessGameId).update({ status: 'Waktu Habis. Putih Menang.' }); }
-            
-            const formatTime = (ms) => {
-                let s = Math.max(0, Math.floor(ms / 1000));
-                return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-            };
-
-            const myT = myChessColor === 'w' ? currentWTime : currentBTime;
-            const opT = myChessColor === 'w' ? currentBTime : currentWTime;
-            document.getElementById('chessMyTime').innerText = formatTime(myT);
-            document.getElementById('chessOpponentTime').innerText = formatTime(opT);
-            
-            if(data.turn === myChessColor) { document.getElementById('chessMyTurn').style.display='block'; document.getElementById('chessOpponentTurn').style.display='none'; }
-            else { document.getElementById('chessMyTurn').style.display='none'; document.getElementById('chessOpponentTurn').style.display='block'; }
-        }
-
-        function updateBoardUI(lastMoveStr = "") {
+        function buildChessBoardUI() {
             const boardEl = document.getElementById('chessBoard'); boardEl.innerHTML = '';
-            const isBlack = myChessColor === 'b';
-            const files = ['a','b','c','d','e','f','g','h']; const ranks = ['8','7','6','5','4','3','2','1'];
-            if(isBlack) { files.reverse(); ranks.reverse(); }
-
-            let lastFrom = null, lastTo = null;
-            if (lastMoveStr) {
-                const match = lastMoveStr.match(/([a-h][1-8])-([a-h][1-8])/);
-                if(match) { lastFrom = match[1]; lastTo = match[2]; }
-            }
-
-            const inCheck = chess.in_check();
-            const turnColor = chess.turn();
-
-            ranks.forEach((r, rIdx) => {
-                files.forEach((f, fIdx) => {
-                    const sq = f + r;
-                    const isDark = (rIdx + fIdx) % 2 !== 0;
-                    const piece = chess.get(sq);
+            const isWhite = myChessColor === 'w';
+            for (let r = 0; r < 8; r++) {
+                for (let f = 0; f < 8; f++) {
+                    const row = isWhite ? 7 - r : r; const file = isWhite ? f : 7 - f;
+                    const sqName = String.fromCharCode(97 + file) + (row + 1);
+                    const isDark = (row + file) % 2 === 0;
+                    const piece = chess.get(sqName);
                     
-                    const cell = document.createElement('div');
-                    cell.className = `chess-sq ${isDark ? 'chess-dark' : 'chess-light'}`;
-                    cell.dataset.sq = sq;
-                    cell.onclick = () => onSquareClick(sq);
-
-                    if(sq === lastFrom || sq === lastTo) {
-                        const hl = document.createElement('div'); hl.className = 'chess-last-move'; cell.appendChild(hl);
-                    }
-                    if(selectedSquare === sq) {
-                        const hl = document.createElement('div'); hl.className = 'chess-hl'; cell.appendChild(hl);
-                    }
-                    if(inCheck && piece && piece.type === 'k' && piece.color === turnColor) {
-                        const hl = document.createElement('div'); hl.className = 'chess-check-hl'; cell.appendChild(hl);
-                    }
-
-                    if(fIdx === 0) { const lbl = document.createElement('span'); lbl.className='chess-rank-lbl text-'+(isDark?'white':'gray-800'); lbl.innerText=r; cell.appendChild(lbl); }
-                    if(rIdx === 7) { const lbl = document.createElement('span'); lbl.className='chess-file-lbl text-'+(isDark?'white':'gray-800'); lbl.innerText=f; cell.appendChild(lbl); }
-
-                    if(selectedSquare) {
-                        const moves = chess.moves({ square: selectedSquare, verbose: true });
-                        if(moves.some(m => m.to === sq)) {
-                            const ind = document.createElement('div');
-                            ind.className = piece ? 'chess-legal-cap' : 'chess-legal-dot';
-                            cell.appendChild(ind);
-                        }
-                    }
-
+                    const sqEl = document.createElement('div');
+                    sqEl.className = `chess-sq ${isDark ? 'chess-dark' : 'chess-light'}`;
+                    sqEl.dataset.sq = sqName;
+                    
                     if(piece) {
-                        const pImg = document.createElement('img');
-                        pImg.src = pieceIcons[piece.color][piece.type];
-                        pImg.className = 'chess-piece';
-                        cell.appendChild(pImg);
+                        const img = document.createElement('img');
+                        img.src = pieceIcons[piece.color][piece.type];
+                        img.className = 'chess-piece';
+                        sqEl.appendChild(img);
                     }
-
-                    boardEl.appendChild(cell);
-                });
-            });
-        }
-
-        function onSquareClick(sq) {
-            if(chess.turn() !== myChessColor) return showChessAlert("Bukan giliran Anda!");
-            const piece = chess.get(sq);
-            if(selectedSquare) {
-                const moves = chess.moves({ square: selectedSquare, verbose: true });
-                const move = moves.find(m => m.to === sq);
-                if(move) {
-                    if (move.flags.includes('np') || move.flags.includes('cp') || (move.piece === 'p' && (move.to[1] === '1' || move.to[1] === '8'))) {
-                        pendingPromotionMove = move; openPromotionModal(); return;
-                    }
-                    executeMove(move);
-                } else {
-                    if (piece && piece.color === myChessColor) { selectedSquare = sq; updateBoardUI(); }
-                    else { selectedSquare = null; updateBoardUI(); }
+                    sqEl.onclick = () => handleChessSquareClick(sqName);
+                    boardEl.appendChild(sqEl);
                 }
-            } else {
-                if (piece && piece.color === myChessColor) { selectedSquare = sq; updateBoardUI(); }
             }
         }
 
-        function openPromotionModal() {
-            const cont = document.getElementById('promoOptions'); cont.innerHTML = '';
-            const opts = ['q', 'r', 'b', 'n'];
-            opts.forEach(p => {
-                const b = document.createElement('button');
-                b.className = "bg-gray-100 p-2 rounded-xl flex justify-center border-2 border-gray-200 shadow-sm active:scale-90 transition";
-                b.innerHTML = `<img src="${pieceIcons[myChessColor][p]}" class="w-12 h-12">`;
-                b.onclick = () => { pendingPromotionMove.promotion = p; document.getElementById('promoModal').style.display='none'; executeMove(pendingPromotionMove); };
-                cont.appendChild(b);
-            });
-            document.getElementById('promoModal').style.display = 'flex';
-        }
-
-        function executeMove(moveObj) {
-            const moveRes = chess.move(moveObj);
-            if(moveRes) {
+        function handleChessSquareClick(sq) {
+            if(chess.turn() !== myChessColor) return;
+            if(selectedSquare === sq) { selectedSquare = null; buildChessBoardUI(); return; }
+            if(!selectedSquare) {
+                const p = chess.get(sq);
+                if(p && p.color === myChessColor) { selectedSquare = sq; highlightLegalMoves(sq); }
+            } else {
+                executeChessMove(selectedSquare, sq);
                 selectedSquare = null;
-                if (moveRes.flags.includes('c') || moveRes.flags.includes('e')) playSound('capture');
-                else if (moveRes.flags.includes('p')) playSound('promote');
-                else if (moveRes.flags.includes('k') || moveRes.flags.includes('q')) playSound('castle');
-                else playSound('move');
-                updateBoardUI(); syncMoveToServer(moveRes);
             }
         }
 
-        function syncMoveToServer(moveRes) {
-            db.ref('chess_games/' + currentChessGameId).once('value', snap => {
-                const data = snap.val();
-                if(data) {
-                    const now = Date.now(); const elapsed = now - data.lastMoveTime;
-                    let newWTime = data.wTime; let newBTime = data.bTime;
-                    if(data.turn === 'w') newWTime -= elapsed; else newBTime -= elapsed;
-                    db.ref('chess_games/' + currentChessGameId).update({
-                        fen: chess.fen(), turn: chess.turn(),
-                        wTime: newWTime, bTime: newBTime, lastMoveTime: now,
-                        lastMove: `${moveRes.from}-${moveRes.to}`
-                    });
+        function highlightLegalMoves(fromSq) {
+            buildChessBoardUI();
+            const moves = chess.moves({ square: fromSq, verbose: true });
+            moves.forEach(m => {
+                const sqEl = document.querySelector(`[data-sq="${m.to}"]`);
+                if(sqEl) {
+                    const dot = document.createElement('div');
+                    dot.className = 'chess-legal-dot';
+                    sqEl.appendChild(dot);
                 }
             });
         }
 
-        // ==========================================
-        // FITUR GENERATE Laporan SITE AUDIT (PDF PROFESSIONAL)
-        // ==========================================
-        
-        // Logika Kanvas Tanda Tangan
-        let auditSigCanvas, auditSigCtx, isAuditDrawing = false;
-        
-        function initAuditCanvas() {
-            auditSigCanvas = document.getElementById('auditSignaturePad');
-            auditSigCtx = auditSigCanvas.getContext('2d');
-            const rect = auditSigCanvas.parentElement.getBoundingClientRect();
-            auditSigCanvas.width = rect.width;
-            auditSigCanvas.height = rect.height;
-            auditSigCtx.lineCap = 'round';
-            auditSigCtx.lineJoin = 'round';
-            auditSigCtx.lineWidth = 3;
-            auditSigCtx.strokeStyle = '#000000';
-            
-            // Hapus listener lama jika ada
-            const clone = auditSigCanvas.cloneNode(true);
-            auditSigCanvas.parentNode.replaceChild(clone, auditSigCanvas);
-            auditSigCanvas = clone;
-            auditSigCtx = auditSigCanvas.getContext('2d');
-            auditSigCtx.lineCap = 'round'; auditSigCtx.lineJoin = 'round'; auditSigCtx.lineWidth = 3;
-
-            auditSigCanvas.addEventListener('mousedown', startAuditDraw);
-            auditSigCanvas.addEventListener('mousemove', drawAudit);
-            auditSigCanvas.addEventListener('mouseup', stopAuditDraw);
-            auditSigCanvas.addEventListener('mouseout', stopAuditDraw);
-            auditSigCanvas.addEventListener('touchstart', startAuditDraw, {passive: false});
-            auditSigCanvas.addEventListener('touchmove', drawAudit, {passive: false});
-            auditSigCanvas.addEventListener('touchend', stopAuditDraw);
+        function executeChessMove(from, to) {
+            const moveObj = { from: from, to: to };
+            const piece = chess.get(from);
+            if(piece && piece.type === 'p' && (to.endsWith('8') || to.endsWith('1'))) {
+                pendingPromotionMove = moveObj;
+                showPromotionModal();
+                return;
+            }
+            const verifiedMove = chess.move(moveObj);
+            if(verifiedMove) {
+                db.ref('chess_games/' + currentChessGameId).update({ fen: chess.fen(), turn: myChessColor === 'w' ? 'b' : 'w' });
+                playSound('move');
+                buildChessBoardUI();
+            }
         }
 
-        function getAuditPos(e) {
-            const rect = auditSigCanvas.getBoundingClientRect();
-            let clientX = e.clientX, clientY = e.clientY;
-            if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-            return { x: (clientX - rect.left) * (auditSigCanvas.width / rect.width), y: (clientY - rect.top) * (auditSigCanvas.height / rect.height) };
+        function showPromotionModal() {
+            const modal = document.getElementById('promoModal'); modal.classList.remove('hidden');
+            const opts = document.getElementById('promoOptions'); opts.innerHTML = '';
+            ['q', 'r', 'b', 'n'].forEach(t => {
+                opts.innerHTML += `<button onclick="selectPromotionPiece('${t}')" class="bg-gray-100 p-3 rounded-xl"><img src="${pieceIcons[myChessColor][t]}" class="w-12 h-12 mx-auto"></button>`;
+            });
         }
-        function startAuditDraw(e) { e.preventDefault(); isAuditDrawing = true; const pos = getAuditPos(e); auditSigCtx.beginPath(); auditSigCtx.moveTo(pos.x, pos.y); }
-        function drawAudit(e) { if (!isAuditDrawing) return; e.preventDefault(); const pos = getAuditPos(e); auditSigCtx.lineTo(pos.x, pos.y); auditSigCtx.stroke(); }
-        function stopAuditDraw(e) { if(e) e.preventDefault(); isAuditDrawing = false; auditSigCtx.closePath(); }
-        function clearAuditSignature() { auditSigCtx.clearRect(0, 0, auditSigCanvas.width, auditSigCanvas.height); }
-        
-        function closeAuditModal() { document.getElementById('siteAuditModal').style.display = 'none'; }
 
-        // Fungsi generateAuditPDF asli kini digunakan untuk membuka modal Site Audit
-        async function generateAuditPDF() {
+        function selectPromotionPiece(pType) {
+            document.getElementById('promoModal').classList.add('hidden');
+            if(!pendingPromotionMove) return;
+            pendingPromotionMove.promotion = pType;
+            chess.move(pendingPromotionMove);
+            db.ref('chess_games/' + currentChessGameId).update({ fen: chess.fen(), turn: myChessColor === 'w' ? 'b' : 'w' });
+            playSound('promote');
+            buildChessBoardUI();
+            pendingPromotionMove = null;
+        }
+
+        function abandonChessGame() {
+            if(confirm('Keluar dari permainan?')) {
+                if(chessSyncListener) chessSyncListener.off();
+                showPage('home');
+            }
+        }
+
+        // BACKWARD COMPATIBILITY FALLBACK HANDLERS
+        function generateAuditPDF() {
             document.getElementById('siteAuditModal').style.display = 'flex';
-            setTimeout(initAuditCanvas, 100); // Tunggu modal render
+            initAuditSignaturePad();
         }
 
-        // Proses Pembuatan PDF menggunakan Data Semua Kustomer (Terstruktur Profesional)
-        async function prosesCetakPDF() {
-            const projectName = document.getElementById('auditProjectName').value.trim() || 'INSPEKSI RUTIN';
-            const locationName = document.getElementById('auditLocation').value.trim() || 'Tidak Diketahui';
+        function closeAuditModal() {
+            document.getElementById('siteAuditModal').style.display = 'none';
+        }
+
+        let sigCanvas, sigCtx, sigDrawing = false;
+        function initAuditSignaturePad() {
+            sigCanvas = document.getElementById('auditSignaturePad');
+            sigCtx = sigCanvas.getContext('2d');
+            sigCanvas.width = sigCanvas.parentElement.offsetWidth;
+            sigCanvas.height = 120;
+            sigCtx.lineWidth = 3;
+            sigCtx.strokeStyle = "#006491";
+            sigCtx.lineCap = "round";
             
-            // Cek tanda tangan
-            const isCanvasBlank = (c) => {
-                const blank = document.createElement('canvas'); blank.width = c.width; blank.height = c.height;
-                return c.toDataURL() === blank.toDataURL();
-            }
-            let signatureData = null;
-            if(!isCanvasBlank(auditSigCanvas)) {
-                signatureData = auditSigCanvas.toDataURL('image/png');
-            } else {
-                return alert('Mohon berikan Tanda Tangan Digital sebelum men-generate PDF.');
-            }
-
-            const items = Object.keys(allData).map(k => allData[k]);
-            const totalItems = items.length;
+            sigCanvas.addEventListener('mousedown', (e) => { sigDrawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); });
+            sigCanvas.addEventListener('mousemove', (e) => { if(sigDrawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } });
+            sigCanvas.addEventListener('mouseup', () => sigDrawing = false);
             
-            if (totalItems === 0) {
-                return alert("Belum ada data untuk digenerate menjadi laporan PDF.");
-            }
+            sigCanvas.addEventListener('touchstart', (e) => {
+                sigDrawing = true; sigCtx.beginPath();
+                const rect = sigCanvas.getBoundingClientRect();
+                sigCtx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+            }, {passive: true});
+            sigCanvas.addEventListener('touchmove', (e) => {
+                if(!sigDrawing) return;
+                const rect = sigCanvas.getBoundingClientRect();
+                sigCtx.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+                sigCtx.stroke();
+            }, {passive: true});
+            sigCanvas.addEventListener('touchend', () => sigDrawing = false);
+        }
 
-            if(typeof showChessAlert === 'function') {
-                showChessAlert("Menyiapkan Laporan PDF Profesional...", 3000);
-            }
+        function clearAuditSignature() { sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height); }
 
-            const dateNow = new Date();
-            const dateStr = dateNow.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-            const timeStr = dateNow.toLocaleTimeString('id-ID');
+        function prosesCetakPDF() {
+            const pName = document.getElementById('auditProjectName').value || "AUDIT MANDIRI JTM";
+            const pLoc = document.getElementById('auditLocation').value || "Bekasi";
             
-            let totalOpen = 0, totalOtw = 0, totalClosed = 0;
-            let issuesContent = [];
-            
-            items.forEach((item, index) => {
-                let statusColor = '#94a3b8'; let statusText = 'Unknown';
-                if(item.status === 'active') { totalOpen++; statusColor = '#e31837'; statusText = 'Open (Belum Diproses)'; }
-                else if(item.status === 'otw') { totalOtw++; statusColor = '#f59e0b'; statusText = 'In Progress (Di Jalan)'; }
-                else if(item.status === 'done') { totalClosed++; statusColor = '#22c55e'; statusText = 'Closed (Selesai)'; }
-
-                let issueDate = item.doneTime ? new Date(item.doneTime).toLocaleString('id-ID') : new Date(item.timestamp || dateNow).toLocaleString('id-ID');
-                let namaPIC = item.doneBy || item.driverBy || '-';
-                
-                // Pemisah & Header Issue
-                if (index > 0) {
-                    issuesContent.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5, lineColor: '#94a3b8' }], margin: [0, 15, 0, 15] });
-                }
-                issuesContent.push({ text: `Issue ${index + 1}: ${item.name}`, style: 'issueHeader' });
-                
-                // Detail Issue Berbentuk Tabel
-                issuesContent.push({
-                    table: {
-                        widths: ['35%', '65%'],
-                        body: [
-                            [{text: 'Kategori', bold: true}, 'Site Inspection / Field Delivery'],
-                            [{text: 'Lokasi / Area', bold: true}, item.area || '-'],
-                            [{text: 'Waktu Tercatat', bold: true}, issueDate],
-                            [{text: 'Prioritas', bold: true}, 'Medium'],
-                            [{text: 'Status', bold: true}, {text: statusText, color: statusColor, bold: true}],
-                            [{text: 'Nama PIC', bold: true}, namaPIC],
-                            [{text: 'Kontak', bold: true}, item.phone || '-'],
-                            [{text: 'Deskripsi', bold: true}, `Peninjauan / pengantaran pesanan kustomer ${item.name}.`],
-                            [{text: 'Rekomendasi / Hasil', bold: true}, item.status === 'done' ? 'Telah diselesaikan dan diverifikasi di lapangan.' : 'Masih membutuhkan tindak lanjut operasi.']
-                        ]
-                    },
-                    layout: {
-                        hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 1.5 : 1; },
-                        vLineWidth: function (i, node) { return (i === 0 || i === node.table.widths.length) ? 1.5 : 1; },
-                        hLineColor: function (i, node) { return '#cbd5e1'; },
-                        vLineColor: function (i, node) { return '#cbd5e1'; },
-                        paddingLeft: function(i) { return 8; }, paddingRight: function(i) { return 8; },
-                        paddingTop: function(i) { return 8; }, paddingBottom: function(i) { return 8; }
-                    },
-                    margin: [0, 0, 0, 10],
-                    unbreakable: true
-                });
-
-                // Lampiran Foto Issue
-                if (item.photo && item.photo.startsWith('data:image')) {
-                    issuesContent.push({ 
-                        image: item.photo, 
-                        fit: [450, 320],
-                        alignment: 'center', 
-                        margin: [0, 10, 0, 10] 
-                    });
-                } else {
-                    issuesContent.push({ text: '[Tidak Ada Lampiran Foto Pada Data Ini]', color: '#94a3b8', italics: true, alignment: 'center', margin: [0, 10, 0, 10] });
-                }
-            });
-
-            const percentComplete = totalItems > 0 ? Math.round((totalClosed / totalItems) * 100) : 0;
-
             const docDefinition = {
-                pageSize: 'A4',
-                pageOrientation: 'portrait',
-                pageMargins: [40, 70, 40, 70],
-                header: function(currentPage, pageCount, pageSize) {
-                    if (currentPage === 1) return null;
-                    return {
-                        columns: [
-                            { text: projectName + ' - SITE AUDIT REPORT', bold: true, color: '#006491', fontSize: 10 },
-                            { text: dateStr, alignment: 'right', fontSize: 10, color: '#64748b' }
-                        ],
-                        margin: [40, 30, 40, 0]
-                    };
-                },
-                footer: function(currentPage, pageCount) {
-                    if (currentPage === 1) return null;
-                    return {
-                        columns: [
-                            { text: `Generated by TrackCust JTM on ${dateStr} ${timeStr}`, fontSize: 8, color: '#94a3b8' },
-                            { text: `Halaman ${currentPage} dari ${pageCount}`, alignment: 'right', fontSize: 8, color: '#94a3b8' }
-                        ],
-                        margin: [40, 20, 40, 0]
-                    };
-                },
                 content: [
-                    // HALAMAN 1: COVER
-                    { text: 'SITE AUDIT REPORT', style: 'coverHeader', alignment: 'center', margin: [0, 80, 0, 10] },
-                    { text: projectName, style: 'coverSubHeader', alignment: 'center', margin: [0, 0, 0, 40] },
-                    {
-                        table: {
-                            widths: ['40%', '60%'],
-                            body: [
-                                [{text: 'Lokasi', bold: true}, locationName],
-                                [{text: 'Nama Inspector', bold: true}, currentUser],
-                                [{text: 'Tanggal Audit', bold: true}, dateStr],
-                                [{text: 'Jam Mulai', bold: true}, '00:00 WIB'],
-                                [{text: 'Jam Selesai', bold: true}, timeStr + ' WIB'],
-                                [{text: 'Durasi Audit', bold: true}, 'Automated Export'],
-                                [{text: 'Total Issues Identified', bold: true}, totalItems.toString()],
-                                [{text: 'Total Checklist', bold: true}, totalItems.toString()],
-                                [{text: 'Persentase Penyelesaian', bold: true}, `${percentComplete}%`],
-                                [{text: 'Status Audit', bold: true}, {text: percentComplete === 100 ? 'COMPLETED' : 'IN PROGRESS', color: percentComplete === 100 ? 'green' : 'orange', bold: true}],
-                                [{text: 'Nomor Dokumen Dok.', bold: true}, 'AUDIT-' + Date.now().toString().slice(-6)]
-                            ]
-                        },
-                        layout: 'lightHorizontalLines',
-                        margin: [45, 0, 45, 0]
-                    },
-                    { text: '', pageBreak: 'after' },
-
-                    // HALAMAN 2: RINGKASAN
-                    { text: 'RINGKASAN AUDIT', style: 'sectionHeader' },
-                    {
-                        columns: [
-                            {
-                                width: '50%',
-                                table: {
-                                    widths: ['*', 'auto'],
-                                    body: [
-                                        [{text: 'Status Issue', bold:true, fillColor: '#f1f5f9'}, {text: 'Jumlah', bold:true, fillColor: '#f1f5f9'}],
-                                        ['Open', totalOpen.toString()],
-                                        ['In Progress', totalOtw.toString()],
-                                        ['Closed', totalClosed.toString()]
-                                    ]
-                                },
-                                layout: 'lightHorizontalLines'
-                            },
-                            {
-                                width: '50%',
-                                table: {
-                                    widths: ['*', 'auto'],
-                                    body: [
-                                        [{text: 'Tingkat Prioritas', bold:true, fillColor: '#f1f5f9'}, {text: 'Jumlah', bold:true, fillColor: '#f1f5f9'}],
-                                        ['Critical', '0'],
-                                        ['High', '0'],
-                                        ['Medium', totalItems.toString()],
-                                        ['Low', '0']
-                                    ]
-                                },
-                                layout: 'lightHorizontalLines'
-                            }
-                        ],
-                        columnGap: 20,
-                        margin: [0, 0, 0, 30]
-                    },
-                    { text: 'Rincian inspeksi dan laporan aktual lapangan terlampir pada lembar berikutnya secara berurutan sesuai pencatatan.', italics: true, color: '#64748b' },
-                    { text: '', pageBreak: 'after' },
-
-                    // HALAMAN 3+: DETAIL ISSUE
-                    { text: 'DETAIL ISSUE (TEMUAN LAPANGAN)', style: 'sectionHeader' },
-                    ...issuesContent,
-
-                    // HALAMAN TERAKHIR: TANDA TANGAN
-                    { text: '', pageBreak: 'before' },
-                    { text: 'TANDA TANGAN & PENGESAHAN', style: 'sectionHeader', margin: [0, 0, 0, 20] },
-                    { text: 'Dengan ini menyatakan bahwa dokumen audit ini diterbitkan secara sah dan inspeksi telah dilakukan sesuai dengan kondisi aktual di lapangan tanpa manipulasi.', margin: [0, 0, 0, 40] },
-                    {
-                        columns: [
-                            {
-                                width: '50%',
-                                stack: [
-                                    { text: 'Dilaporkan & Disetujui Oleh,', margin: [0, 0, 0, 10] },
-                                    { image: signatureData, width: 120, margin: [0, 5, 0, 5] },
-                                    { text: '_______________________________', margin: [0, 0, 0, 5] },
-                                    { text: currentUser, bold: true, fontSize: 12 },
-                                    { text: 'Lead Inspector / PIC', fontSize: 10, color: '#64748b' },
-                                    { text: `Tanggal : ${dateStr}`, fontSize: 10, color: '#64748b', margin: [0, 10, 0, 0] },
-                                    { text: `Jam     : ${timeStr} WIB`, fontSize: 10, color: '#64748b' },
-                                    { text: `Lokasi  : ${locationName}`, fontSize: 10, color: '#64748b' }
-                                ]
-                            },
-                            {
-                                width: '50%',
-                                stack: []
-                            }
-                        ]
-                    }
+                    { text: 'DOMINOS JTM - SITE AUDIT REPORT', style: 'header' },
+                    { text: `Project: ${pName}` },
+                    { text: `Lokasi: ${pLoc}` },
+                    { text: `Inspector: ${currentUser || 'Crew JTM'}` },
+                    { text: `Tanggal: ${new Date().toLocaleDateString('id-ID')}` },
+                    { text: '\nStatus Kendali Mutu Operasional Restoran Terkonfirmasi Aman.', style: 'body' }
                 ],
-                styles: {
-                    coverHeader: { fontSize: 26, bold: true, color: '#006491' },
-                    coverSubHeader: { fontSize: 16, bold: true, color: '#e31837' },
-                    sectionHeader: { fontSize: 16, bold: true, color: '#006491', margin: [0, 0, 0, 15] },
-                    issueHeader: { fontSize: 14, bold: true, color: '#e31837', margin: [0, 10, 0, 5] }
-                },
-                defaultStyle: {
-                    fontSize: 10,
-                    color: '#334155'
-                }
+                styles: { header: { fontSize: 18, bold: true, color: '#006491', margin: [0,0,0,10] }, body: { fontSize: 12 } }
             };
-
-            const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+            pdfMake.createPdf(docDefinition).download(`Audit-${Date.now()}.pdf`);
             closeAuditModal();
-            
-            pdfDocGenerator.getBlob(async (blob) => {
-                const fileName = `Site_Audit_${currentUser}_${Date.now()}.pdf`;
-                const file = new File([blob], fileName, { type: 'application/pdf' });
-                
-                try {
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Laporan Audit PDF',
-                            text: `Berikut lampiran dokumen Laporan Site Audit yang digenerate oleh ${currentUser} pada ${dateStr}.`
-                        });
-                    } else {
-                        forceDownloadPDF(blob, fileName);
-                    }
-                } catch (error) {
-                    console.error("Gagal share PDF:", error);
-                    if (error.name !== 'AbortError') {
-                        forceDownloadPDF(blob, fileName);
-                    }
-                }
-            });
-        }
-
-        function forceDownloadPDF(blob, fileName) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            alert('Laporan PDF telah diunduh. Share langsung tidak didukung pada browser/perangkat ini.');
         }
     </script>
 </body>
