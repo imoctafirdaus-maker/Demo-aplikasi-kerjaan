@@ -11,6 +11,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
+    <!-- FIDE Chess Engine Logic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    
     <style>
         .dominos-blue { background-color: #006491; }
         .dominos-red { background-color: #e31837; }
@@ -45,9 +48,57 @@
 
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
+
+        /* Chess Board Styles */
+        .chess-container { width: 100%; max-width: 400px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); border: 6px solid #1e293b; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); background-color: #1e293b; }
+        .chess-sq { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; user-select: none; }
+        .chess-light { background-color: #f1f5f9; }
+        .chess-dark { background-color: #64748b; }
+        .chess-piece { width: 85%; height: 85%; z-index: 10; cursor: pointer; drop-shadow: 0 2px 3px rgba(0,0,0,0.4); transition: transform 0.1s ease; }
+        .chess-piece:active { transform: scale(1.15); }
+        .chess-hl { position: absolute; inset: 0; background-color: rgba(234, 179, 8, 0.4); z-index: 5; }
+        .chess-last-move { position: absolute; inset: 0; background-color: rgba(59, 130, 246, 0.3); z-index: 4; }
+        .chess-legal-dot { position: absolute; width: 28%; height: 28%; background-color: rgba(0,0,0,0.2); border-radius: 50%; z-index: 6; pointer-events: none; }
+        .chess-legal-cap { position: absolute; width: 90%; height: 90%; border: 4px solid rgba(0,0,0,0.2); border-radius: 50%; z-index: 6; pointer-events: none; }
+        .chess-check-hl { position: absolute; inset: 0; background-color: rgba(239, 68, 68, 0.7); z-index: 4; }
+        .chess-rank-lbl, .chess-file-lbl { position: absolute; font-size: 8px; font-weight: 900; z-index: 1; opacity: 0.6; }
+        .chess-rank-lbl { top: 2px; left: 2px; }
+        .chess-file-lbl { bottom: 0px; right: 2px; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
+
+    <!-- Audio Chess Sounds -->
+    <audio id="snd-move" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3"></audio>
+    <audio id="snd-capture" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3"></audio>
+    <audio id="snd-check" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/check.mp3"></audio>
+    <audio id="snd-end" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3"></audio>
+    <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3"></audio>
+    <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3"></audio>
+
+    <!-- FIDE Promosi Modal -->
+    <div id="promoModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-3xl text-center w-64 shadow-2xl">
+            <h3 class="font-black text-blue-900 uppercase mb-4 text-sm">Pilih Promosi Bidak</h3>
+            <div class="grid grid-cols-2 gap-4" id="promoOptions"></div>
+        </div>
+    </div>
+
+    <!-- Modal Incoming Challenge -->
+    <div id="challengeModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-3xl text-center shadow-2xl animate-bounce">
+            <i class="fa fa-chess text-4xl text-purple-600 mb-3"></i>
+            <h3 class="font-black text-blue-900 uppercase text-lg" id="challengerName">User</h3>
+            <p class="text-xs font-bold text-gray-500 mb-6">Menantang Anda Bermain Catur!</p>
+            <div class="flex gap-3">
+                <button onclick="acceptChallenge()" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-black uppercase shadow-lg">Terima</button>
+                <button onclick="rejectChallenge()" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black uppercase shadow-lg">Tolak</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Akhir Catur -->
+    <div id="chessAlert" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-blue-900 text-white px-6 py-3 rounded-full font-black uppercase text-sm shadow-2xl z-[10030] hidden transition-all duration-300"></div>
 
     <input type="file" id="cameraCaptureHidden" accept="image/*" capture="environment" class="hidden">
 
@@ -56,6 +107,20 @@
         <div id="modalContent">
              <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
              <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
+        </div>
+    </div>
+
+    <div id="drawModal" class="fixed inset-0 bg-black/95 z-[10010] hidden flex-col items-center justify-center p-0">
+        <div class="absolute top-4 left-4 z-[10011] flex gap-2">
+            <button onclick="closeDrawModal()" class="bg-gray-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm">Batal</button>
+        </div>
+        <div class="absolute top-4 right-4 z-[10011] flex gap-2 items-center">
+            <input type="color" id="drawColor" value="#00ff00" class="w-8 h-8 rounded-full border-2 border-white shadow-lg p-0 cursor-pointer outline-none bg-transparent">
+            <button onclick="clearDraw()" class="bg-yellow-500 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-undo"></i></button>
+            <button onclick="saveDraw()" class="bg-blue-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm">Selesai</button>
+        </div>
+        <div class="w-full h-full flex items-center justify-center overflow-hidden touch-none" id="drawContainer">
+            <canvas id="drawCanvas" class="max-w-full max-h-full object-contain touch-none shadow-2xl"></canvas>
         </div>
     </div>
 
@@ -101,6 +166,17 @@
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
                 <div class="space-y-3" id="profileOptions">
+                    
+                    <!-- NEW CHESS MENU -->
+                    <div onclick="showPage('chess-lobby')" class="profile-bubble border-purple-300 bg-purple-50/40">
+                        <div class="profile-icon bg-purple-600 text-white shadow-md"><i class="fa fa-chess-knight"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-purple-900 uppercase italic text-[11px]">Catur Online</span>
+                            <span class="text-[8px] font-bold text-purple-500 uppercase">Live Multiplayer (Aturan FIDE)</span>
+                        </div>
+                        <i class="fa fa-chevron-right text-purple-300 text-[10px]"></i>
+                    </div>
+
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
@@ -171,6 +247,59 @@
                 </div>
             </div>
 
+            <!-- CHESS LOBBY PAGE -->
+            <div id="page-chess-lobby" class="page p-6 bg-gray-900 overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showPage('home')" class="text-white bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-arrow-left"></i></button>
+                    <h2 class="font-black text-white uppercase italic text-lg tracking-widest"><i class="fa fa-chess mr-2 text-purple-500"></i> Chess Lobby</h2>
+                    <div class="w-10"></div>
+                </div>
+                <div class="bg-gray-800 p-5 rounded-3xl shadow-xl border border-gray-700 mb-6">
+                    <h3 class="text-xs font-black text-gray-400 uppercase mb-4 text-center">Pemain Online</h3>
+                    <div id="chessOnlineList" class="space-y-3">
+                        <!-- List loaded here -->
+                    </div>
+                </div>
+                <div class="bg-purple-900/40 p-4 rounded-2xl border border-purple-500/30 text-center">
+                    <p class="text-[9px] text-purple-200 font-bold uppercase leading-relaxed">Sistem Catur Terhubung Secara Real-Time. Validasi langkah, Skakmat, Castling, En Passant diatur berdasarkan hukum catur Internasional FIDE. Timer standar 10 Menit.</p>
+                </div>
+            </div>
+
+            <!-- CHESS GAME PAGE -->
+            <div id="page-chess-game" class="page bg-gray-900 flex-col pb-20">
+                <div class="flex-1 flex flex-col justify-center items-center px-4 max-w-lg mx-auto w-full relative">
+                    
+                    <div class="w-full flex justify-between items-center mb-4 bg-gray-800 p-3 rounded-2xl border border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-gray-400 border-2 border-gray-600"><i class="fa fa-user"></i></div>
+                            <div class="flex flex-col">
+                                <span id="chessOpponentName" class="font-black text-white text-xs uppercase">Opponent</span>
+                                <span id="chessOpponentTime" class="font-mono font-bold text-purple-400 text-sm">10:00</span>
+                            </div>
+                        </div>
+                        <div id="chessOpponentTurn" class="hidden w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e]"></div>
+                    </div>
+
+                    <!-- Papan Catur -->
+                    <div id="chessBoard" class="chess-container"></div>
+
+                    <div class="w-full flex justify-between items-center mt-4 bg-gray-800 p-3 rounded-2xl border border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white border-2 border-blue-400 shadow-[0_0_15px_#2563eb]"><i class="fa fa-user"></i></div>
+                            <div class="flex flex-col">
+                                <span class="font-black text-white text-xs uppercase">Anda (<span id="myChessColorLabel">Putih</span>)</span>
+                                <span id="chessMyTime" class="font-mono font-bold text-purple-400 text-sm">10:00</span>
+                            </div>
+                        </div>
+                        <div id="chessMyTurn" class="hidden w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e]"></div>
+                    </div>
+
+                    <div class="w-full mt-6 flex justify-center">
+                        <button onclick="abandonChessGame()" class="bg-red-600 text-white px-6 py-3 rounded-full font-black uppercase text-[10px] shadow-lg flex items-center gap-2"><i class="fa fa-flag"></i> Menyerah / Keluar</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="page-list" class="page active p-4 overflow-y-auto">
                 <div class="flex justify-between items-center mb-3">
                     <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Driver/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
@@ -201,6 +330,7 @@
                             <p class="text-[9px] font-black text-blue-900 uppercase mt-1" id="photoStatus">Foto Rumah</p>
                             <input type="file" id="housePhoto" accept="image/*" class="hidden" onchange="processImage(this)">
                         </label>
+                        <button onclick="openDrawModal()" id="btnDrawPhoto" class="hidden absolute top-2 right-10 bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg" title="Coret Gambar"><i class="fa fa-pen text-[10px]"></i></button>
                         <button onclick="removePhoto()" id="btnRemovePhoto" class="hidden absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-times text-[10px]"></i></button>
                         <img id="imgPrev" class="hidden w-full h-32 object-cover rounded-lg mt-2 border-2 border-white">
                     </div>
@@ -212,24 +342,19 @@
             <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
                 <div class="wa-card mb-20 mx-auto relative">
                     <div class="flex justify-between items-start mb-4 px-2 gap-2">
-                        
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
                             <span class="text-black font-black uppercase text-[7px] tracking-tight leading-none mb-1.5">Konfirmasi WA Grab</span>
                             <input type="checkbox" id="waDirectGrabConfirmation" class="checkbox-custom">
                         </div>
-
                         <div class="flex flex-col items-center shrink-0">
                             <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
                         </div>
-                        
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
                             <span class="text-black font-black uppercase text-[8px] tracking-tight leading-none mb-1.5">Payment Cash</span>
                             <input type="checkbox" id="waDirectCashPayment" class="checkbox-custom">
                         </div>
                     </div>
-
                     <h2 class="font-black text-blue-900 uppercase italic text-[12px] mb-3">Manual Input Chat</h2>
-                    
                     <div class="space-y-3 mb-4">
                         <input type="text" id="waDirectCustName" placeholder="Nama Customer (Wajib)" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-bold text-center text-blue-900 text-sm">
                         <div class="flex gap-2">
@@ -237,7 +362,6 @@
                             <input type="tel" id="waDirectNumber" placeholder="Input Nomor HP Manual" class="w-2/3 p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
                         </div>
                     </div>
-                    
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
                 </div>
             </div>
@@ -278,42 +402,31 @@
         let renderTimer;
         let editCrewId = null;
 
-        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
-            { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
-            { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
-            { name: "PONDOK MELATI", lat: -6.3117, lng: 106.9267 },
-            { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 },
-            { name: "DUREN SAWIT", lat: -6.2343, lng: 106.9194 },
-            { name: "MAKASAR", lat: -6.2735, lng: 106.8841 },
+            { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 }, { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
+            { name: "PONDOK MELATI", lat: -6.3117, lng: 106.9267 }, { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 },
+            { name: "DUREN SAWIT", lat: -6.2343, lng: 106.9194 }, { name: "MAKASAR", lat: -6.2735, lng: 106.8841 },
             { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
         ];
 
         window.onload = () => {
             db.ref('crew_settings').on('value', snap => {
-                if(snap.exists()) {
-                    userPins = snap.val();
-                } else {
-                    db.ref('crew_settings').set(userPins);
-                }
+                if(snap.exists()) userPins = snap.val();
+                else db.ref('crew_settings').set(userPins);
                 refreshUserDropdown();
                 if(currentUser === "Okta") renderCrewAdminList();
             });
-
             if(currentUser) bukaApp(currentUser);
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
             checkAndResetIdsAtMidnight();
+            listenToChessChallenges();
         };
 
-        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
-                
-                navigator.clipboard.writeText("pdc9_pic@123").then(() => {
-                    window.open('https://www.femdpi.com/dashboard/', '_blank');
-                });
+                navigator.clipboard.writeText("pdc9_pic@123").then(() => { window.open('https://www.femdpi.com/dashboard/', '_blank'); });
             }).catch(err => {
                 alert("Kredensial Login:\nUsername: pdc9_pic\nSandi: pdc9_pic@123");
                 window.open('https://www.femdpi.com/dashboard/', '_blank');
@@ -327,21 +440,11 @@
             Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
         }
 
-        function showCrewManager() {
-            document.getElementById('profileOptions').classList.add('hidden');
-            document.getElementById('crewManagerView').classList.remove('hidden');
-            renderCrewAdminList();
-        }
-
-        function closeCrewManager() {
-            document.getElementById('profileOptions').classList.remove('hidden');
-            document.getElementById('crewManagerView').classList.add('hidden');
-            cancelCrewEdit();
-        }
+        function showCrewManager() { document.getElementById('profileOptions').classList.add('hidden'); document.getElementById('crewManagerView').classList.remove('hidden'); renderCrewAdminList(); }
+        function closeCrewManager() { document.getElementById('profileOptions').classList.remove('hidden'); document.getElementById('crewManagerView').classList.add('hidden'); cancelCrewEdit(); }
 
         function renderCrewAdminList() {
-            const list = document.getElementById('crewListAdmin');
-            list.innerHTML = "";
+            const list = document.getElementById('crewListAdmin'); list.innerHTML = "";
             Object.keys(userPins).forEach(n => {
                 const isProtected = (n === "Okta");
                 list.innerHTML += `
@@ -354,56 +457,29 @@
                             <button onclick="editCrew('${n}')" class="text-blue-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-edit"></i></button>
                             ${!isProtected ? `<button onclick="deleteCrew('${n}')" class="text-red-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-trash"></i></button>` : ''}
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
         function saveCrew() {
-            const name = document.getElementById('newCrewName').value.trim();
-            const pin = document.getElementById('newCrewPin').value.trim();
+            const name = document.getElementById('newCrewName').value.trim(); const pin = document.getElementById('newCrewPin').value.trim();
             if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
-            
-            if(editCrewId && editCrewId !== name) {
-                delete userPins[editCrewId];
-            }
+            if(editCrewId && editCrewId !== name) delete userPins[editCrewId];
             userPins[name] = pin;
-            db.ref('crew_settings').set(userPins).then(() => {
-                alert("Data Crew Terupdate!");
-                cancelCrewEdit();
-            });
+            db.ref('crew_settings').set(userPins).then(() => { alert("Data Crew Terupdate!"); cancelCrewEdit(); });
         }
 
-        function editCrew(n) {
-            editCrewId = n;
-            document.getElementById('newCrewName').value = n;
-            document.getElementById('newCrewPin').value = userPins[n];
-            document.getElementById('btnCancelCrew').classList.remove('hidden');
-        }
-
-        function deleteCrew(n) {
-            if(confirm(`Hapus crew ${n} dari database?`)) {
-                delete userPins[n];
-                db.ref('crew_settings').set(userPins);
-            }
-        }
-
-        function cancelCrewEdit() {
-            editCrewId = null;
-            document.getElementById('newCrewName').value = "";
-            document.getElementById('newCrewPin').value = "";
-            document.getElementById('btnCancelCrew').classList.add('hidden');
-        }
+        function editCrew(n) { editCrewId = n; document.getElementById('newCrewName').value = n; document.getElementById('newCrewPin').value = userPins[n]; document.getElementById('btnCancelCrew').classList.remove('hidden'); }
+        function deleteCrew(n) { if(confirm(`Hapus crew ${n}?`)) { delete userPins[n]; db.ref('crew_settings').set(userPins); } }
+        function cancelCrewEdit() { editCrewId = null; document.getElementById('newCrewName').value = ""; document.getElementById('newCrewPin').value = ""; document.getElementById('btnCancelCrew').classList.add('hidden'); }
 
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    document.getElementById('userAvatar').src = base64;
+                    const base64 = e.target.result; document.getElementById('userAvatar').src = base64;
                     localStorage.setItem('profile_pic_' + currentUser, base64);
-                    updateProfileUI(); 
-                    updatePresence();
+                    updateProfileUI(); updatePresence();
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -414,24 +490,13 @@
             const savedPic = localStorage.getItem('profile_pic_' + currentUser);
             const navAvatar = document.getElementById('navUserAvatar');
             const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
-            
-            document.getElementById('userAvatar').src = targetSrc;
-            navAvatar.src = targetSrc;
-            navAvatar.classList.remove('hidden');
-
-            if(currentUser === "Okta") {
-                document.getElementById('adminPanel').classList.remove('hidden');
-                document.getElementById('gojekMenu').classList.remove('hidden');
-            } else {
-                document.getElementById('adminPanel').classList.add('hidden');
-                document.getElementById('gojekMenu').classList.add('hidden');
-                closeCrewManager();
-            }
+            document.getElementById('userAvatar').src = targetSrc; navAvatar.src = targetSrc; navAvatar.classList.remove('hidden');
+            if(currentUser === "Okta") { document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('gojekMenu').classList.remove('hidden'); } 
+            else { document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('gojekMenu').classList.add('hidden'); closeCrewManager(); }
         }
 
         function prosesLogin() {
-            const u = document.getElementById('selectUser').value;
-            const p = document.getElementById('inputPin').value;
+            const u = document.getElementById('selectUser').value; const p = document.getElementById('inputPin').value;
             if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
         }
 
@@ -439,17 +504,11 @@
             const isOkta = (n === "Okta");
             db.ref('presence/' + n).once('value', snapshot => {
                 const existingData = snapshot.val();
-                if (!isOkta && existingData && existingData.session !== sessionID) {
-                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
-                }
-                currentUser = n; localStorage.setItem('jtm_user', n);
-                document.getElementById('userDisplay').innerText = n;
-                document.getElementById('pinOverlay').style.display = "none";
-                document.getElementById('mainContent').style.display = "flex";
+                if (!isOkta && existingData && existingData.session !== sessionID) { if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return; }
+                currentUser = n; localStorage.setItem('jtm_user', n); document.getElementById('userDisplay').innerText = n;
+                document.getElementById('pinOverlay').style.display = "none"; document.getElementById('mainContent').style.display = "flex";
                 updatePresence(); updateProfileUI();
-                db.ref('presence/' + n + '/session').on('value', snap => {
-                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
-                });
+                db.ref('presence/' + n + '/session').on('value', snap => { if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi berakhir."); handleLogout(false); } });
                 db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
             });
         }
@@ -469,14 +528,12 @@
 
         function startDeliveryStatusListener() {
             db.ref('delivery_activity').on('value', s => {
-                const bar = document.getElementById('deliveryStatusBar');
-                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                const bar = document.getElementById('deliveryStatusBar'); bar.innerHTML = ""; const now = Date.now(); let hasData = false;
                 s.forEach(child => {
                     const d = child.val();
                     if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
                     else { 
-                        hasData = true; 
-                        const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
+                        hasData = true; const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
                         bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${textStatus})</span></div>`; 
                     }
                 });
@@ -485,159 +542,62 @@
         }
 
         function render() {
-            const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
-            const filter = document.getElementById('searchInput').value.toLowerCase();
+            const list = document.getElementById('activeList'); const hist = document.getElementById('historyList'); const filter = document.getElementById('searchInput').value.toLowerCase();
             let activeCount = 0; let listHTML = ""; let histHTML = "";
             Object.keys(allData).reverse().forEach(id => {
-                const i = allData[id];
-                const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
+                const i = allData[id]; const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
                 if(i.status !== 'done') activeCount++;
-                let wa = (i.phone || "").replace(/\D/g, '');
-                if(wa.startsWith('0')) wa = '62' + wa.slice(1);
+                let wa = (i.phone || "").replace(/\D/g, ''); if(wa.startsWith('0')) wa = '62' + wa.slice(1);
                 
-                let msgWa = "";
-                if (cashiersOnly.includes(currentUser)) {
-                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
-                } else {
-                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
-                }
-                
-                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
-                const isBlockedUser = mgtAndCashiers.includes(currentUser);
-
+                let msgWa = cashiersOnly.includes(currentUser) ? `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....` : `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`; const isBlockedUser = mgtAndCashiers.includes(currentUser);
                 const msgLate = `Halo bapak/ibu ${i.name}, mohon maaf yang sebesar-besarnya atas keterlambatan pengantaran pesanannya. Saat ini antrean pengiriman sedang sangat padat, namun tidak perlu khawatir karena pizza Bapak/ibu ${i.name},sedang dalam perjalanan dan akan tetap diantarkan. Mohon bersedia menunggu sebentar ya, Pak/Bu. Terima kasih banyak atas pengertiannya ☺️🙏`;
                 const waLateLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgLate)}`;
-
+                let finalDriver = i.driverBy || i.doneBy || (i.status === 'done' ? currentUser : "");
                 let infoSelesai = 'SELESAI';
                 if (i.status === 'done' && i.doneTime) {
-                    const tgl = new Date(i.doneTime);
-                    const jam = String(tgl.getHours()).padStart(2, '0');
-                    const min = String(tgl.getMinutes()).padStart(2, '0');
-                    const hariArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                    const hari = hariArr[tgl.getDay()];
-                    const tglNum = tgl.getDate();
-                    const blnNum = tgl.getMonth() + 1;
-                    const thnNum = String(tgl.getFullYear()).slice(-2);
-                    const driver = i.doneBy || i.driverBy || currentUser;
-                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${driver}`;
+                    const tgl = new Date(i.doneTime); const jam = String(tgl.getHours()).padStart(2, '0'); const min = String(tgl.getMinutes()).padStart(2, '0');
+                    const hariArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']; const hari = hariArr[tgl.getDay()];
+                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tgl.getDate()}.${tgl.getMonth() + 1}.${String(tgl.getFullYear()).slice(-2)} OLEH ${finalDriver}`;
                 }
-
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
-
-                let historyGpsControlsHtml = "";
-                if (i.maps) {
-                    historyGpsControlsHtml = `
-                        <div class="flex flex-col items-center gap-1">
-                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
-                            <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Navigasi Google Maps"><i class="fa fa-compass text-[11px]"></i></a>
-                        </div>
-                    `;
-                } else {
-                    historyGpsControlsHtml = `
-                        <div class="flex flex-col items-center gap-1">
-                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
-                        </div>
-                    `;
-                }
-
-                let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
-                if (i.status === 'done' && i.historyDisplayId) {
-                    areaDisplayHtml = `
-                        <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
-                        <p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>
-                    `;
-                }
+                let historyGpsControlsHtml = i.maps ? `<div class="flex flex-col items-center gap-1"><button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button><a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Navigasi Google Maps"><i class="fa fa-compass text-[11px]"></i></a></div>` : `<div class="flex flex-col items-center gap-1"><button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button></div>`;
+                let areaDisplayHtml = (i.status === 'done' && i.historyDisplayId) ? `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p><p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>` : `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            ${areaDisplayHtml}
-                            <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
-                            <div class="flex items-center gap-2 mt-1">
-                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
-                                ${i.driverBy ? `<span class="driver-badge">${i.driverBy}</span>` : ''}
-                            </div>
-                            ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
-                        </div>
-                        <div class="flex gap-2">
-                            ${i.status !== 'done' ? 
-                            `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
-                             <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
-                             <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
-                            : `<div class="flex gap-1 items-center">
-                                 ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
-                                 <div class="flex flex-col items-center gap-1">
-                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
-                                     ${historyGpsControlsHtml}
-                                 </div>
-                                 <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
-                               </div>`}
-                        </div>
-                    </div>
-                    <div class="mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
-                    </div>
-                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
-                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
-                    </div>
-                    
-                    ${i.status !== 'done' && !i.maps ? `
-                    <div class="flex items-center justify-between gap-2 mt-3 bg-red-600 p-2 rounded-xl border border-red-700 w-full shadow-inner">
-                        <span class="text-[9px] font-black text-white uppercase leading-tight">
-                            <span class="animate-blink inline-block mr-1">⚠️</span> Tekan icon maps di sebelah kanan jika telah sampai dirumah customer
-                        </span>
-                        <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md active:scale-95" title="Ambil GPS Rumah & Foto"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
-                    </div>` : ''}
+                    <div class="flex justify-between items-start"><div class="flex-1">${areaDisplayHtml}<h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3><div class="flex items-center gap-2 mt-1"><p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>${finalDriver ? `<span class="driver-badge">${finalDriver}</span>` : ''}</div>${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}</div>
+                    <div class="flex gap-2">
+                        ${i.status !== 'done' ? `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button><button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button><button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button><button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` : `<div class="flex gap-1 items-center">${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}<div class="flex flex-col items-center gap-1"><button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>${historyGpsControlsHtml}</div><a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a></div>`}
+                    </div></div>
+                    <div class="mt-3 ${i.status==='done'?'hidden':''}">${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}</div>
+                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}<a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a></div>
+                    ${i.status !== 'done' && !i.maps ? `<div class="flex items-center justify-between gap-2 mt-3 bg-red-600 p-2 rounded-xl border border-red-700 w-full shadow-inner"><span class="text-[9px] font-black text-white uppercase leading-tight"><span class="animate-blink inline-block mr-1">⚠️</span> Tekan icon maps dikanan jika telah sampai</span><button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md active:scale-95"><i class="fa fa-map-marker-alt text-[11px]"></i></button></div>` : ''}
                 </div>`;
-                if(i.status === 'done') histHTML += cardHtml; 
-                else if(searchStr.includes(filter)) listHTML += cardHtml;
+                if(i.status === 'done') histHTML += cardHtml; else if(searchStr.includes(filter)) listHTML += cardHtml;
             });
-            list.innerHTML = listHTML; hist.innerHTML = histHTML;
-            document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
+            list.innerHTML = listHTML; hist.innerHTML = histHTML; document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
         }
 
         function dapatkanKecamatanTerdekat(lat, lng) {
-            let kecamatanTerpilih = "JATIMAKMUR";
-            let jarakTerkecil = Infinity;
-
+            let kecTerpilih = "JATIMAKMUR", jarakTerkecil = Infinity;
             KECAMATAN_POLYGONS.forEach(kec => {
-                const R = 6371; 
-                const dLat = (kec.lat - lat) * Math.PI / 180;
-                const dLng = (kec.lng - lng) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                          Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                const jarak = R * c;
-
-                if (jarak < jarakTerkecil) {
-                    jarakTerkecil = jarak;
-                    kecamatanTerpilih = kec.name;
-                }
+                const R = 6371, dLat = (kec.lat - lat) * Math.PI / 180, dLng = (kec.lng - lng) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+                const jarak = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                if (jarak < jarakTerkecil) { jarakTerkecil = jarak; kecTerpilih = kec.name; }
             });
-            return kecamatanTerpilih;
+            return kecTerpilih;
         }
 
         function ambilDanSimpanKoordinatStatus(id, name, isHistory = false) {
-            const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat & ambil foto rumah untuk ${name}?`);
-            if (!yakin) return;
-
-            if (!navigator.geolocation) {
-                alert("Gagal: HP tidak mendukung fitur GPS.");
-                return;
-            }
-
+            if (!confirm(`Yakin simpan koordinat & ambil foto untuk ${name}?`)) return;
+            if (!navigator.geolocation) return alert("Gagal: GPS tidak didukung.");
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
+                    const lat = position.coords.latitude, lng = position.coords.longitude;
                     const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
-                    const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
-
-                    const camInput = document.getElementById('cameraCaptureHidden');
-                    camInput.value = ""; 
-
+                    const kecOtomatis = dapatkanKecamatanTerdekat(lat, lng);
+                    const camInput = document.getElementById('cameraCaptureHidden'); camInput.value = ""; 
                     camInput.onchange = (event) => {
                         if (event.target.files && event.target.files[0]) {
                             const reader = new FileReader();
@@ -645,109 +605,35 @@
                                 const img = new Image();
                                 img.onload = () => {
                                     const canvas = document.createElement('canvas');
-                                    const TARGET_WIDTH = 400; 
-                                    canvas.width = TARGET_WIDTH;
-                                    canvas.height = img.height * (TARGET_WIDTH / img.width);
-                                    
-                                    const ctx = canvas.getContext('2d');
-                                    ctx.imageSmoothingEnabled = true;
-                                    ctx.imageSmoothingQuality = 'high';
-                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                                    
+                                    canvas.width = 400; canvas.height = img.height * (400 / img.width);
+                                    const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                                     const compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-                                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
-                                        headers: { 'Accept-Language': 'id' }
-                                    })
-                                    .then(response => response.json())
+                                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, { headers: { 'Accept-Language': 'id' } })
+                                    .then(res => res.json())
                                     .then(data => {
-                                        const addr = data.address || {};
-                                        const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || "";
-                                        const jalan = addr.road || "";
-                                        
-                                        let areaFormatBaru = kecamatanOtomatis;
-                                        if (kelurahan || jalan) {
-                                            const detailArray = [];
-                                            if (kelurahan) detailArray.push(kelurahan.toUpperCase());
-                                            if (jalan) detailArray.push(jalan.toUpperCase());
-                                            areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
-                                        }
-
-                                        let updateData = { 
-                                            maps: generatedMapsUrl,
-                                            area: areaFormatBaru,
-                                            photo: compressedPhotoBase64, 
-                                            status: isHistory ? 'done' : (allData[id].status || 'active')
-                                        };
-
+                                        const addr = data.address || {}; const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || ""; const jalan = addr.road || "";
+                                        let areaFormatBaru = kecOtomatis;
+                                        if (kelurahan || jalan) { const arr = []; if(kelurahan)arr.push(kelurahan.toUpperCase()); if(jalan)arr.push(jalan.toUpperCase()); areaFormatBaru = `${kecOtomatis} (${arr.join(', ')})`; }
+                                        let updateData = { maps: generatedMapsUrl, area: areaFormatBaru, photo: compressedPhotoBase64, status: isHistory ? 'done' : (allData[id].status || 'active') };
                                         if (allData[id]) {
-                                            if (allData[id].historyDisplayId) {
-                                                updateData.historyDisplayId = allData[id].historyDisplayId;
-                                            } else {
-                                                let currentArea = allData[id].area || "";
-                                                let extractedId = "";
-                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
-                                                if (extractedId) updateData.historyDisplayId = extractedId;
-                                            }
+                                            if (allData[id].historyDisplayId) updateData.historyDisplayId = allData[id].historyDisplayId;
+                                            else { let ex = ""; if ((allData[id].area || "").startsWith("ID ")) ex = allData[id].area.split(" ")[1] || ""; if (ex) updateData.historyDisplayId = ex; }
                                         }
-
                                         return db.ref('customers/' + id).update(updateData).then(() => areaFormatBaru);
-                                    })
-                                    .then((areaFinal) => {
-                                        alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal);
-                                    })
-                                    .catch((err) => {
-                                        let fallbackData = { 
-                                            maps: generatedMapsUrl,
-                                            area: kecamatanOtomatis,
-                                            photo: compressedPhotoBase64,
-                                            status: isHistory ? 'done' : (allData[id].status || 'active')
-                                        };
-
-                                        if (allData[id]) {
-                                            if (allData[id].historyDisplayId) {
-                                                fallbackData.historyDisplayId = allData[id].historyDisplayId;
-                                            } else {
-                                                let currentArea = allData[id].area || "";
-                                                let extractedId = "";
-                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
-                                                if (extractedId) fallbackData.historyDisplayId = extractedId;
-                                            }
-                                        }
-
-                                        db.ref('customers/' + id).update(fallbackData)
-                                        .then(() => {
-                                            alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tetapi gagal memuat nama jalan. Area diset ke: " + kecamatanOtomatis);
-                                        });
+                                    }).then((areaFinal) => alert("Berhasil!\nArea: " + areaFinal)).catch(() => {
+                                        let fallbackData = { maps: generatedMapsUrl, area: kecOtomatis, photo: compressedPhotoBase64, status: isHistory ? 'done' : (allData[id].status || 'active') };
+                                        db.ref('customers/' + id).update(fallbackData).then(() => alert("Berhasil (Tanpa nama jalan). Area: " + kecOtomatis));
                                     });
-                                };
-                                img.src = e.target.result;
-                            };
-                            reader.readAsDataURL(event.target.files[0]);
+                                }; img.src = e.target.result;
+                            }; reader.readAsDataURL(event.target.files[0]);
                         }
-                    };
-
-                    camInput.click();
-                },
-                (error) => {
-                    alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif.");
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    }; camInput.click();
+                }, (error) => alert("Gagal GPS."), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
-        function openFullImg(url, caption = "") { 
-            document.getElementById('fullImg').src = url; 
-            document.getElementById('modalCaption').innerText = caption; 
-            document.getElementById('imgModal').style.display = 'flex'; 
-            initPinchZoom();
-        }
-
-        function closeFullImgModal() {
-            document.getElementById('imgModal').style.display = 'none';
-            resetPinchZoom();
-        }
-
+        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; initPinchZoom(); }
+        function closeFullImgModal() { document.getElementById('imgModal').style.display = 'none'; resetPinchZoom(); }
         function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
         
         function processImage(input) {
@@ -756,278 +642,428 @@
                 reader.onload = e => {
                     const img = new Image();
                     img.onload = () => {
-                        const c = document.createElement('canvas'); 
-                        const THUMB_W = 600; 
-                        c.width = THUMB_W; 
-                        c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        const c = document.createElement('canvas'); c.width = 600; c.height = img.height * (600 / img.width);
+                        const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.drawImage(img, 0, 0, c.width, c.height);
                         photoBase64 = c.toDataURL('image/jpeg', 0.75);
-                        document.getElementById('imgPrev').src = photoBase64;
-                        document.getElementById('imgPrev').classList.remove('hidden');
-                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                        document.getElementById('imgPrev').src = photoBase64; document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden'); document.getElementById('btnDrawPhoto').classList.remove('hidden');
                         document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
+                    }; img.src = e.target.result;
+                }; reader.readAsDataURL(input.files[0]);
             }
         }
 
         function saveData() {
-            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
-            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
+            const a = document.getElementById('custArea').value, n = document.getElementById('custName').value, ph = document.getElementById('custPhone').value, eid = document.getElementById('editId').value;
+            if(!a || !n) return alert("Lengkapi data!");
             if (ph) {
                 const cleanInputPhone = ph.replace(/\D/g, '');
-                const isDuplicate = Object.keys(allData).some(id => {
-                    if (id === eid) return false; 
-                    const item = allData[id];
-                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
-                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
-                });
-                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
+                if (Object.keys(allData).some(id => id !== eid && allData[id].status !== 'done' && (allData[id].phone || "").replace(/\D/g, '') === cleanInputPhone && cleanInputPhone !== "")) return alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!");
             }
             const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
-            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
-            ref.then(() => resetForm());
+            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d); ref.then(() => resetForm());
         }
 
         function editData(id) {
             const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
             document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
-            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); }
+            if(i.photo) { photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden'); document.getElementById('btnDrawPhoto').classList.remove('hidden'); }
             document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
         }
 
-        function goOTW(id) { 
-            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
-            if(allData[id].status !== 'otw') { 
-                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
-                pushDeliveryStatus(currentUser); 
-            } 
-        }
-
-        function setStatus(id, stat) { 
-            if (stat === 'done') {
-                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
-            } else {
-                db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
-            }
-        }
+        function goOTW(id) { if(mgtAndCashiers.includes(currentUser)) return alert("Tidak diizinkan mengantar!"); if(allData[id].status !== 'otw') { db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); pushDeliveryStatus(currentUser); } }
+        function setStatus(id, stat) { if (stat === 'done') db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser }); else db.ref('customers/'+id).update({ status: stat, historyDisplayId: null }); }
 
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-'+id));
             if(id === 'home') closeCrewManager();
+            if(id === 'chess-lobby') renderChessOnlineList();
         }
 
         function updateTimers() {
             Object.keys(allData).forEach(id => {
                 if(allData[id].status === 'otw') {
-                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
-                    const rem = (20 * 60) - elapsed;
-                    
-                    if(elapsed >= 1200) {
-                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
-                        return;
-                    }
-
+                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000); const rem = (20 * 60) - elapsed;
+                    if(elapsed >= 1200) { db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" }); return; }
                     const el = document.getElementById('timer-'+id);
-                    if(el) {
-                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
-                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
-                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
-                    }
+                    if(el) { const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60); el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`; if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic"; }
                 }
             });
         }
 
         function updatePresence() {
-            if(!currentUser) return;
-            const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
-            const userStatusRef = db.ref('presence/' + currentUser);
-            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
-            userStatusRef.onDisconnect().remove();
-            
+            if(!currentUser) return; const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
+            const userStatusRef = db.ref('presence/' + currentUser); userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo }); userStatusRef.onDisconnect().remove();
             db.ref('presence').on('value', s => {
                 const el = document.getElementById('onlineBar'); el.innerHTML = "";
                 s.forEach(u => {
-                    const data = u.val();
-                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
-                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
-                    </span>`;
+                    const photoUrl = u.val().photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
+                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5"><img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}</span>`;
+                });
+                if(document.getElementById('page-chess-lobby').classList.contains('active')) renderChessOnlineList();
+            });
+        }
+
+        function resetForm() { document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = ""; document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = ""; removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran"; document.getElementById('cancelBtn').classList.add('hidden'); showPage('list'); }
+        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('btnDrawPhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
+        function cancelEdit() { resetForm(); }
+        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+        
+        function changePinPrompt() { const old = prompt("PIN Lama:"); if (old === userPins[currentUser]) { const baru = prompt("PIN Baru (4 Digit):"); if (baru && baru.length === 4) { userPins[currentUser] = baru; db.ref('crew_settings').set(userPins).then(() => alert("PIN diubah!")); } else alert("Harus 4 digit!"); } else alert("PIN Salah!"); }
+        function toggleGojekInput() { const view = document.getElementById('gojekInputView'), icon = document.getElementById('gojekChevron'); if (view.classList.contains('hidden')) { view.classList.remove('hidden'); icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); } else { view.classList.add('hidden'); icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); } }
+        function prosesWaGojek() { let n = document.getElementById('gojekWaNumber').value.trim(); if (!n) return alert("Masukkan Nomor!"); let nClean = n.replace(/\D/g, ''); if (!nClean) return alert("Nomor tidak valid!"); window.open(`https://wa.me/${nClean.startsWith('0') ? '62' + nClean.slice(1) : (nClean.startsWith('8') ? '62' + nClean : nClean)}?text=${encodeURIComponent("Halo bapak/ibu saya okta driver gojek,mau kirim paket")}`, '_blank'); document.getElementById('gojekWaNumber').value = ""; }
+
+        function openWaDirect() {
+            let custName = document.getElementById('waDirectCustName').value.trim(), custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, ''), n = document.getElementById('waDirectNumber').value.replace(/\D/g, ''), isCash = document.getElementById('waDirectCashPayment').checked, isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
+            if(!custName) return alert("Nama wajib!"); if(!custId || custId.length !== 3) return alert("ID wajib 3 digit!"); if(!n) return alert("Nomor tidak valid!");
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n), searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
+            const activeId = Object.keys(allData).find(id => allData[id].status !== 'done' && (allData[id].phone || "").replace(/\D/g, '').includes(searchN));
+            if (activeId) { document.getElementById('searchInput').value = allData[activeId].phone; render(); showPage('list'); } 
+            else { 
+                pushDeliveryStatus(currentUser, custId); db.ref('customers').push({ area: "ID " + custId, name: custName, phone: n, maps: "", photo: "", status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser, paymentMode: isCash ? 'cash' : 'other' });
+                let msg = isGrabConfirm ? `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.` : cashiersOnly.includes(currentUser) ? `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....` : `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`;
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+                document.getElementById('waDirectCustName').value = ""; document.getElementById('waDirectCustId').value = ""; document.getElementById('waDirectNumber').value = ""; document.getElementById('waDirectCashPayment').checked = false; document.getElementById('waDirectGrabConfirmation').checked = false;
+            }
+        }
+
+        let hammerInstance = null, scale = 1, lastScale = 1;
+        function initPinchZoom() { const el = document.getElementById('fullImg'); if (!el) return; resetPinchZoom(); hammerInstance = new Hammer.Manager(el); hammerInstance.add([new Hammer.Pinch()]); hammerInstance.on('pinchstart', () => lastScale = scale); hammerInstance.on('pinchmove', (e) => { scale = Math.max(1, Math.min(lastScale * e.scale, 4)); el.style.transform = `scale(${scale})`; }); hammerInstance.on('pinchend', () => lastScale = scale); }
+        function resetPinchZoom() { const el = document.getElementById('fullImg'); scale = 1; lastScale = 1; if (el) el.style.transform = 'scale(1)'; if (hammerInstance) { hammerInstance.destroy(); hammerInstance = null; } }
+        function checkAndResetIdsAtMidnight() { setInterval(() => { if (new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date()) === "00:00:00") { db.ref('customers').once('value', snapshot => { if (snapshot.exists()) { snapshot.forEach(childSnapshot => { if (childSnapshot.val().status === 'done' && childSnapshot.val().historyDisplayId) db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null }); }); } }); } }, 1000); }
+
+        // ==========================================
+        // FITUR CORET GAMBAR CANVAS
+        // ==========================================
+        let drawCanvas, drawCtx, isDrawing = false;
+        function openDrawModal() { if (!photoBase64) return; document.getElementById('drawModal').style.display = 'flex'; drawCanvas = document.getElementById('drawCanvas'); drawCtx = drawCanvas.getContext('2d'); const img = new Image(); img.onload = () => { drawCanvas.width = img.width; drawCanvas.height = img.height; drawCtx.drawImage(img, 0, 0); drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; }; img.src = photoBase64; drawCanvas.removeEventListener('mousedown', startDrawing); drawCanvas.removeEventListener('mousemove', draw); drawCanvas.removeEventListener('mouseup', stopDrawing); drawCanvas.removeEventListener('mouseout', stopDrawing); drawCanvas.removeEventListener('touchstart', startDrawing); drawCanvas.removeEventListener('touchmove', draw); drawCanvas.removeEventListener('touchend', stopDrawing); drawCanvas.addEventListener('mousedown', startDrawing); drawCanvas.addEventListener('mousemove', draw); drawCanvas.addEventListener('mouseup', stopDrawing); drawCanvas.addEventListener('mouseout', stopDrawing); drawCanvas.addEventListener('touchstart', startDrawing, {passive: false}); drawCanvas.addEventListener('touchmove', draw, {passive: false}); drawCanvas.addEventListener('touchend', stopDrawing); }
+        function closeDrawModal() { document.getElementById('drawModal').style.display = 'none'; }
+        function clearDraw() { const img = new Image(); img.onload = () => { drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); drawCtx.drawImage(img, 0, 0); }; img.src = photoBase64; }
+        function saveDraw() { photoBase64 = drawCanvas.toDataURL('image/jpeg', 0.8); document.getElementById('imgPrev').src = photoBase64; closeDrawModal(); }
+        function getPos(e) { const rect = drawCanvas.getBoundingClientRect(); let clientX = e.clientX, clientY = e.clientY; if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; } return { x: (clientX - rect.left) * (drawCanvas.width / rect.width), y: (clientY - rect.top) * (drawCanvas.height / rect.height) }; }
+        function startDrawing(e) { e.preventDefault(); isDrawing = true; const pos = getPos(e); drawCtx.beginPath(); drawCtx.moveTo(pos.x, pos.y); }
+        function draw(e) { if (!isDrawing) return; e.preventDefault(); const pos = getPos(e); drawCtx.lineWidth = drawCanvas.width * 0.015; drawCtx.strokeStyle = document.getElementById('drawColor').value; drawCtx.lineTo(pos.x, pos.y); drawCtx.stroke(); }
+        function stopDrawing(e) { if(e) e.preventDefault(); isDrawing = false; drawCtx.closePath(); }
+
+        // ==========================================
+        // FIDE CHESS MULTIPLAYER ENGINE
+        // ==========================================
+        let chess = new Chess();
+        let currentChessGameId = null;
+        let myChessColor = 'w';
+        let chessOpponent = "";
+        let selectedSquare = null;
+        let pendingPromotionMove = null;
+        let chessSyncListener = null;
+        let chessTimerInterval = null;
+        const CHESS_TIME_MS = 10 * 60 * 1000; 
+        let incomingChallengeId = null;
+
+        const pieceIcons = {
+            'w': { 'p': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', 'n': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg', 'b': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg', 'r': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg', 'q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg', 'k': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg' },
+            'b': { 'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg', 'n': 'https://upload.wikimedia.org/wikipedia/commons/e/e5/Chess_ndt45.svg', 'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg', 'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg', 'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg', 'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg' }
+        };
+
+        function playSound(type) { document.getElementById('snd-' + type)?.play().catch(()=>{}); }
+        function showChessAlert(msg, duration = 3000) {
+            const al = document.getElementById('chessAlert');
+            al.innerText = msg; al.classList.remove('hidden');
+            setTimeout(() => al.classList.add('hidden'), duration);
+        }
+
+        // LOBBY & CHALLENGES
+        function renderChessOnlineList() {
+            if(!document.getElementById('page-chess-lobby').classList.contains('active')) return;
+            const container = document.getElementById('chessOnlineList'); container.innerHTML = '';
+            db.ref('presence').once('value', s => {
+                let hasOthers = false;
+                s.forEach(u => {
+                    if (u.key !== currentUser && u.val().online) {
+                        hasOthers = true;
+                        container.innerHTML += `
+                            <div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-2xl border border-gray-600">
+                                <div class="flex items-center gap-3">
+                                    <img src="${u.val().photo || `https://ui-avatars.com/api/?name=${u.key}&background=6b21a8&color=fff`}" class="w-10 h-10 rounded-full border-2 border-purple-500">
+                                    <span class="font-black text-white uppercase text-xs">${u.key}</span>
+                                </div>
+                                <button onclick="sendChallenge('${u.key}')" class="bg-purple-600 text-white px-4 py-2 rounded-xl font-black uppercase text-[10px] shadow-lg active:scale-95 transition">Tantang</button>
+                            </div>
+                        `;
+                    }
+                });
+                if(!hasOthers) container.innerHTML = '<p class="text-xs text-gray-500 text-center font-bold">Tidak ada pemain lain online.</p>';
+            });
+        }
+
+        function sendChallenge(targetUser) {
+            const cid = currentUser + '_' + targetUser;
+            db.ref('chess_challenges/' + targetUser).set({ from: currentUser, status: 'pending', timestamp: Date.now() });
+            showChessAlert('Tantangan dikirim ke ' + targetUser + '...');
+            
+            // Listen if accepted
+            db.ref('chess_challenges/' + targetUser).on('value', snap => {
+                const data = snap.val();
+                if(data && data.from === currentUser && data.status === 'accepted' && data.gameId) {
+                    db.ref('chess_challenges/' + targetUser).off();
+                    joinChessGame(data.gameId, 'w', targetUser); // Challenger is White
+                } else if (!data) {
+                    db.ref('chess_challenges/' + targetUser).off();
+                    showChessAlert('Tantangan dibatalkan atau ditolak.');
+                }
+            });
+        }
+
+        function listenToChessChallenges() {
+            if(!currentUser) return;
+            db.ref('chess_challenges/' + currentUser).on('value', snap => {
+                const data = snap.val();
+                if (data && data.status === 'pending' && (Date.now() - data.timestamp < 30000)) { // 30s expiry
+                    incomingChallengeId = currentUser;
+                    document.getElementById('challengerName').innerText = data.from;
+                    document.getElementById('challengeModal').style.display = 'flex';
+                } else {
+                    document.getElementById('challengeModal').style.display = 'none';
+                }
+            });
+        }
+
+        function acceptChallenge() {
+            db.ref('chess_challenges/' + currentUser).once('value', snap => {
+                const data = snap.val();
+                if(data && data.status === 'pending') {
+                    const gameId = 'game_' + Date.now();
+                    // Create game in DB
+                    chess.reset();
+                    db.ref('chess_games/' + gameId).set({
+                        fen: chess.fen(), w: data.from, b: currentUser, wTime: CHESS_TIME_MS, bTime: CHESS_TIME_MS, 
+                        lastMoveTime: Date.now(), turn: 'w', status: 'active', lastMove: ''
+                    }).then(() => {
+                        db.ref('chess_challenges/' + currentUser).update({ status: 'accepted', gameId: gameId });
+                        document.getElementById('challengeModal').style.display = 'none';
+                        joinChessGame(gameId, 'b', data.from); // Accepter is Black
+                    });
+                }
+            });
+        }
+
+        function rejectChallenge() {
+            db.ref('chess_challenges/' + currentUser).remove();
+            document.getElementById('challengeModal').style.display = 'none';
+        }
+
+        // GAME LOGIC
+        function joinChessGame(gameId, color, oppName) {
+            currentChessGameId = gameId; myChessColor = color; chessOpponent = oppName;
+            document.getElementById('myChessColorLabel').innerText = color === 'w' ? 'Putih' : 'Hitam';
+            document.getElementById('chessOpponentName').innerText = oppName;
+            showPage('chess-game');
+            if(chessSyncListener) db.ref('chess_games/' + currentChessGameId).off('value', chessSyncListener);
+            
+            chessSyncListener = db.ref('chess_games/' + gameId).on('value', snap => {
+                const gameData = snap.val();
+                if(!gameData) return abandonChessGame(true); // Game deleted
+                
+                const oldFen = chess.fen();
+                chess.load(gameData.fen);
+                
+                // Audio Feedback
+                if (oldFen !== gameData.fen && gameData.turn === myChessColor) { // Opponent just moved
+                    if (chess.in_checkmate()) playSound('end');
+                    else if (chess.in_check()) playSound('check');
+                    else if (gameData.lastMove && gameData.lastMove.includes('x')) playSound('capture');
+                    else if (gameData.lastMove && (gameData.lastMove.includes('O-O') || gameData.lastMove.includes('='))) playSound('promote');
+                    else playSound('move');
+                }
+
+                updateBoardUI(gameData.lastMove);
+                updateChessTimersRealtime(gameData);
+                checkGameState(gameData.status);
+            });
+
+            if(chessTimerInterval) clearInterval(chessTimerInterval);
+            chessTimerInterval = setInterval(() => {
+                db.ref('chess_games/' + currentChessGameId).once('value', snap => {
+                    if(snap.exists()) updateChessTimersRealtime(snap.val());
+                });
+            }, 1000);
+        }
+
+        function abandonChessGame(force = false) {
+            if(!force && !confirm("Yakin ingin menyerah/keluar dari permainan?")) return;
+            if(currentChessGameId) db.ref('chess_games/' + currentChessGameId).update({ status: 'abandoned by ' + currentUser });
+            if(chessSyncListener) db.ref('chess_games/' + currentChessGameId).off('value', chessSyncListener);
+            if(chessTimerInterval) clearInterval(chessTimerInterval);
+            currentChessGameId = null; showPage('home');
+        }
+
+        function checkGameState(dbStatus) {
+            if(dbStatus !== 'active') { showChessAlert(dbStatus.toUpperCase(), 5000); playSound('end'); setTimeout(() => abandonChessGame(true), 5000); return; }
+            let newStatus = null;
+            if (chess.in_checkmate()) newStatus = 'CHECKMATE! ' + (chess.turn() === 'w' ? 'Hitam' : 'Putih') + ' Menang.';
+            else if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) newStatus = 'DRAW (Seri)';
+            if (newStatus) db.ref('chess_games/' + currentChessGameId).update({ status: newStatus });
+        }
+
+        function updateChessTimersRealtime(data) {
+            if(data.status !== 'active') return;
+            const now = Date.now(); const elapsed = now - data.lastMoveTime;
+            let currentWTime = data.wTime - (data.turn === 'w' ? elapsed : 0);
+            let currentBTime = data.bTime - (data.turn === 'b' ? elapsed : 0);
+            
+            if(currentWTime <= 0) { currentWTime = 0; db.ref('chess_games/' + currentChessGameId).update({ status: 'Waktu Habis. Hitam Menang.' }); }
+            if(currentBTime <= 0) { currentBTime = 0; db.ref('chess_games/' + currentChessGameId).update({ status: 'Waktu Habis. Putih Menang.' }); }
+            
+            const formatTime = (ms) => {
+                let s = Math.max(0, Math.floor(ms / 1000));
+                return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+            };
+
+            const myT = myChessColor === 'w' ? currentWTime : currentBTime;
+            const opT = myChessColor === 'w' ? currentBTime : currentWTime;
+            document.getElementById('chessMyTime').innerText = formatTime(myT);
+            document.getElementById('chessOpponentTime').innerText = formatTime(opT);
+            
+            if(data.turn === myChessColor) { document.getElementById('chessMyTurn').style.display='block'; document.getElementById('chessOpponentTurn').style.display='none'; }
+            else { document.getElementById('chessMyTurn').style.display='none'; document.getElementById('chessOpponentTurn').style.display='block'; }
+        }
+
+        function updateBoardUI(lastMoveStr = "") {
+            const boardEl = document.getElementById('chessBoard'); boardEl.innerHTML = '';
+            const isBlack = myChessColor === 'b';
+            const files = ['a','b','c','d','e','f','g','h']; const ranks = ['8','7','6','5','4','3','2','1'];
+            if(isBlack) { files.reverse(); ranks.reverse(); }
+
+            // Extract last move squares for highlight
+            let lastFrom = null, lastTo = null;
+            if (lastMoveStr) {
+                const match = lastMoveStr.match(/([a-h][1-8])-([a-h][1-8])/); // Stored as "e2-e4" format in DB manually
+                if(match) { lastFrom = match[1]; lastTo = match[2]; }
+            }
+
+            const inCheck = chess.in_check();
+            const turnColor = chess.turn();
+
+            ranks.forEach((r, rIdx) => {
+                files.forEach((f, fIdx) => {
+                    const sq = f + r;
+                    const isDark = (rIdx + fIdx) % 2 !== 0;
+                    const piece = chess.get(sq);
+                    
+                    const cell = document.createElement('div');
+                    cell.className = `chess-sq ${isDark ? 'chess-dark' : 'chess-light'}`;
+                    cell.dataset.sq = sq;
+                    cell.onclick = () => onSquareClick(sq);
+
+                    // Highlights
+                    if(sq === lastFrom || sq === lastTo) {
+                        const hl = document.createElement('div'); hl.className = 'chess-last-move'; cell.appendChild(hl);
+                    }
+                    if(selectedSquare === sq) {
+                        const hl = document.createElement('div'); hl.className = 'chess-hl'; cell.appendChild(hl);
+                    }
+                    if(inCheck && piece && piece.type === 'k' && piece.color === turnColor) {
+                        const hl = document.createElement('div'); hl.className = 'chess-check-hl'; cell.appendChild(hl);
+                    }
+
+                    // Coordinate labels (A-H, 1-8)
+                    if(fIdx === 0) { const lbl = document.createElement('span'); lbl.className='chess-rank-lbl text-'+(isDark?'white':'gray-800'); lbl.innerText=r; cell.appendChild(lbl); }
+                    if(rIdx === 7) { const lbl = document.createElement('span'); lbl.className='chess-file-lbl text-'+(isDark?'white':'gray-800'); lbl.innerText=f; cell.appendChild(lbl); }
+
+                    // Legal move indicator
+                    if(selectedSquare) {
+                        const moves = chess.moves({ square: selectedSquare, verbose: true });
+                        if(moves.some(m => m.to === sq)) {
+                            const ind = document.createElement('div');
+                            ind.className = piece ? 'chess-legal-cap' : 'chess-legal-dot';
+                            cell.appendChild(ind);
+                        }
+                    }
+
+                    // Piece
+                    if(piece) {
+                        const pImg = document.createElement('img');
+                        pImg.src = pieceIcons[piece.color][piece.type];
+                        pImg.className = 'chess-piece';
+                        cell.appendChild(pImg);
+                    }
+
+                    boardEl.appendChild(cell);
                 });
             });
         }
 
-        function resetForm() {
-            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
-            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
-            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
-        }
-
-        function removePhoto() { photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; }
-        function cancelEdit() { resetForm(); }
-        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
-        
-        function changePinPrompt() {
-            const old = prompt("Masukkan PIN Lama:");
-            if (old === userPins[currentUser]) {
-                const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { 
-                    userPins[currentUser] = baru; 
-                    db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!"));
-                } else { alert("PIN harus 4 digit!"); }
-            } else { alert("PIN Salah!"); }
-        }
-
-        function toggleGojekInput() {
-            const view = document.getElementById('gojekInputView');
-            const icon = document.getElementById('gojekChevron');
-            if (view.classList.contains('hidden')) {
-                view.classList.remove('hidden');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
-            } else {
-                view.classList.add('hidden');
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-            }
-        }
-
-        function prosesWaGojek() {
-            let n = document.getElementById('gojekWaNumber').value.trim();
-            if (!n) return alert("Masukkan Nomor HP Customer Gojek terlebih dahulu!");
+        function onSquareClick(sq) {
+            if(chess.turn() !== myChessColor) return showChessAlert("Bukan giliran Anda!");
             
-            let nClean = n.replace(/\D/g, '');
-            if (!nClean) return alert("Nomor tidak valid!");
+            const piece = chess.get(sq);
             
-            let wa = nClean.startsWith('0') ? '62' + nClean.slice(1) : (nClean.startsWith('8') ? '62' + nClean : nClean);
-            let msg = "Halo bapak/ibu saya okta driver gojek,mau kirim paket";
-            
-            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
-            document.getElementById('gojekWaNumber').value = ""; 
-        }
-
-        function openWaDirect() {
-            let custName = document.getElementById('waDirectCustName').value.trim();
-            let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, '');
-            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
-            let isCash = document.getElementById('waDirectCashPayment').checked;
-            let isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
-            
-            if(!custName) return alert("Nama Customer wajib diisi!");
-            if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!");
-            if(!n) return alert("Nomor HP kosong atau tidak valid!");
-            
-            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
-            
-            const activeId = Object.keys(allData).find(id => {
-                const dataN = (allData[id].phone || "").replace(/\D/g, '');
-                return allData[id].status !== 'done' && dataN.includes(searchN);
-            });
-            
-            if (activeId) {
-                document.getElementById('searchInput').value = allData[activeId].phone;
-                render(); 
-                showPage('list');
-            } else { 
-                pushDeliveryStatus(currentUser, custId);
+            // If already selected a square, try to move
+            if(selectedSquare) {
+                const moves = chess.moves({ square: selectedSquare, verbose: true });
+                const move = moves.find(m => m.to === sq);
                 
-                const autoData = {
-                    area: "ID " + custId,
-                    name: custName,
-                    phone: n,
-                    maps: "",
-                    photo: "",
-                    status: 'otw',
-                    startTime: Date.now(),
-                    timestamp: Date.now(),
-                    driverBy: currentUser,
-                    paymentMode: isCash ? 'cash' : 'other'
-                };
-                db.ref('customers').push(autoData);
-
-                let msg = "";
-                if (isGrabConfirm) {
-                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.`;
-                } else if (cashiersOnly.includes(currentUser)) {
-                    msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
+                if(move) {
+                    // Check Promotion FIDE
+                    if (move.flags.includes('np') || move.flags.includes('cp') || (move.piece === 'p' && (move.to[1] === '1' || move.to[1] === '8'))) {
+                        pendingPromotionMove = move;
+                        openPromotionModal();
+                        return;
+                    }
+                    executeMove(move);
                 } else {
-                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`;
+                    // Clicking another own piece changes selection
+                    if (piece && piece.color === myChessColor) { selectedSquare = sq; updateBoardUI(); }
+                    else { selectedSquare = null; updateBoardUI(); }
                 }
-                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+            } else {
+                if (piece && piece.color === myChessColor) { selectedSquare = sq; updateBoardUI(); }
+            }
+        }
+
+        function openPromotionModal() {
+            const cont = document.getElementById('promoOptions'); cont.innerHTML = '';
+            const opts = ['q', 'r', 'b', 'n'];
+            opts.forEach(p => {
+                const b = document.createElement('button');
+                b.className = "bg-gray-100 p-2 rounded-xl flex justify-center border-2 border-gray-200 shadow-sm active:scale-90 transition";
+                b.innerHTML = `<img src="${pieceIcons[myChessColor][p]}" class="w-12 h-12">`;
+                b.onclick = () => { pendingPromotionMove.promotion = p; document.getElementById('promoModal').style.display='none'; executeMove(pendingPromotionMove); };
+                cont.appendChild(b);
+            });
+            document.getElementById('promoModal').style.display = 'flex';
+        }
+
+        function executeMove(moveObj) {
+            const moveRes = chess.move(moveObj);
+            if(moveRes) {
+                selectedSquare = null;
+                // Play local sound immediately for responsiveness
+                if (moveRes.flags.includes('c') || moveRes.flags.includes('e')) playSound('capture');
+                else if (moveRes.flags.includes('p')) playSound('promote');
+                else if (moveRes.flags.includes('k') || moveRes.flags.includes('q')) playSound('castle');
+                else playSound('move');
                 
-                document.getElementById('waDirectCustName').value = "";
-                document.getElementById('waDirectCustId').value = "";
-                document.getElementById('waDirectNumber').value = "";
-                document.getElementById('waDirectCashPayment').checked = false;
-                document.getElementById('waDirectGrabConfirmation').checked = false;
+                updateBoardUI();
+                syncMoveToServer(moveRes);
             }
         }
 
-        let hammerInstance = null;
-        let scale = 1;
-        let lastScale = 1;
-
-        function initPinchZoom() {
-            const el = document.getElementById('fullImg');
-            if (!el) return;
-            
-            resetPinchZoom();
-            hammerInstance = new Hammer.Manager(el);
-            const pinch = new Hammer.Pinch();
-            hammerInstance.add([pinch]);
-
-            hammerInstance.on('pinchstart', () => {
-                lastScale = scale;
-            });
-
-            hammerInstance.on('pinchmove', (e) => {
-                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
-                el.style.transform = `scale(${scale})`;
-            });
-
-            hammerInstance.on('pinchend', () => {
-                lastScale = scale;
-            });
-        }
-
-        function resetPinchZoom() {
-            const el = document.getElementById('fullImg');
-            scale = 1;
-            lastScale = 1;
-            if (el) el.style.transform = 'scale(1)';
-            if (hammerInstance) {
-                hammerInstance.destroy();
-                hammerInstance = null;
-            }
-        }
-
-        function checkAndResetIdsAtMidnight() {
-            setInterval(() => {
-                const now = new Date();
-                const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-                const currentTimeWIB = new Intl.DateTimeFormat('id-ID', options).format(now);
-
-                if (currentTimeWIB === "00:00:00") {
-                    db.ref('customers').once('value', snapshot => {
-                        if (snapshot.exists()) {
-                            snapshot.forEach(childSnapshot => {
-                                const item = childSnapshot.val();
-                                if (item.status === 'done' && item.historyDisplayId) {
-                                    db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null });
-                                }
-                            });
-                        }
+        function syncMoveToServer(moveRes) {
+            db.ref('chess_games/' + currentChessGameId).once('value', snap => {
+                const data = snap.val();
+                if(data) {
+                    const now = Date.now(); const elapsed = now - data.lastMoveTime;
+                    let newWTime = data.wTime; let newBTime = data.bTime;
+                    if(data.turn === 'w') newWTime -= elapsed; else newBTime -= elapsed;
+                    
+                    db.ref('chess_games/' + currentChessGameId).update({
+                        fen: chess.fen(), turn: chess.turn(),
+                        wTime: newWTime, bTime: newBTime, lastMoveTime: now,
+                        lastMove: `${moveRes.from}-${moveRes.to}`
                     });
                 }
-            }, 1000);
+            });
         }
     </script>
 </body>
