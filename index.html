@@ -11,11 +11,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
+    <!-- Library Game Catur -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    
+
     <style>
         .dominos-blue { background-color: #006491; }
         .dominos-red { background-color: #e31837; }
@@ -51,7 +49,7 @@
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
 
-        /* Tema Papan Catur Profesional: Putih (Krem) & Cokelat */
+        /* CSS KHUSUS GAME CATUR */
         .chess-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); box-sizing: border-box; margin: 0 auto; border: 4px solid #4a2e1b; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); background-color: #4a2e1b; overflow: hidden; }
         .chess-sq { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; user-select: none; box-sizing: border-box; }
         .chess-light { background-color: #f0d9b5; color: #b58863; }
@@ -73,6 +71,7 @@
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
 
+    <!-- AUDIO CATUR -->
     <audio id="snd-move" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3" preload="auto"></audio>
     <audio id="snd-capture" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3" preload="auto"></audio>
     <audio id="snd-check" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/check.mp3" preload="auto"></audio>
@@ -80,6 +79,7 @@
     <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3" preload="auto"></audio>
     <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3" preload="auto"></audio>
 
+    <!-- MODAL CATUR -->
     <div id="promoModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-gray-800 p-6 rounded-3xl text-center w-64 shadow-2xl border border-gray-700">
             <h3 class="font-black text-white uppercase mb-4 text-sm tracking-widest">Promosi Bidak</h3>
@@ -101,6 +101,32 @@
 
     <div id="chessAlert" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-2xl z-[10030] hidden transition-all duration-300 border-2 border-emerald-500 flex items-center gap-3"></div>
 
+    <!-- ELEMEN APLIKASI UTAMA -->
+    <input type="file" id="cameraCaptureHidden" accept="image/*" capture="environment" class="hidden">
+
+    <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4">
+        <button onclick="closeFullImgModal()" class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center z-[10002]"><i class="fa fa-times text-2xl"></i></button>
+        <div id="modalContent">
+             <img id="fullImg" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
+             <p id="modalCaption" class="text-white mt-4 font-black italic uppercase tracking-widest text-center"></p>
+        </div>
+    </div>
+
+    <!-- Modal Coret Gambar (Baru) -->
+    <div id="drawModal" class="fixed inset-0 bg-black/95 z-[10010] hidden flex-col items-center justify-center p-0">
+        <div class="absolute top-4 left-4 z-[10011] flex gap-2">
+            <button onclick="closeDrawModal()" class="bg-gray-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm">Batal</button>
+        </div>
+        <div class="absolute top-4 right-4 z-[10011] flex gap-2 items-center">
+            <input type="color" id="drawColor" value="#00ff00" class="w-8 h-8 rounded-full border-2 border-white shadow-lg p-0 cursor-pointer outline-none bg-transparent">
+            <button onclick="clearDraw()" class="bg-yellow-500 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-undo"></i></button>
+            <button onclick="saveDraw()" class="bg-blue-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm">Selesai</button>
+        </div>
+        <div class="w-full h-full flex items-center justify-center overflow-hidden touch-none" id="drawContainer">
+            <canvas id="drawCanvas" class="max-w-full max-h-full object-contain touch-none shadow-2xl"></canvas>
+        </div>
+    </div>
+
     <div id="pinOverlay" class="fixed inset-0 dominos-blue z-[10000] flex flex-col items-center justify-center p-6">
         <div class="text-center mb-8 text-white">
             <h1 class="font-black italic text-4xl uppercase">Domino's</h1>
@@ -117,20 +143,41 @@
         <nav class="dominos-blue p-4 text-white shadow-md flex justify-between items-center">
             <h1 class="font-black italic uppercase text-lg">Domino's <span class="text-red-400">JTM</span></h1>
             <div class="flex items-center gap-2">
-                <img id="navUserAvatar" src="" class="header-avatar hidden">
+                <img id="navUserAvatar" src="" class="header-avatar hidden" onclick="openFullImg(this.src, currentUser)">
                 <span id="userDisplay" class="bg-white text-blue-900 px-3 py-1 rounded-full text-[10px] font-black uppercase">User</span>
-                <button onclick="location.reload()" class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center shadow-inner"><i class="fa fa-sync-alt text-[10px]"></i></button>
+                <button onclick="location.reload()" class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center shadow-inner active:scale-90"><i class="fa fa-sync-alt text-[10px]"></i></button>
             </div>
         </nav>
+        
+        <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic" style="max-height: 60px; overflow-y: auto; border-bottom: 1px solid #e2e8f0;"></div>
+        <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
-            <div id="page-home" class="page active p-6 pb-32 overflow-y-auto bg-gray-50">
+            
+            <div id="page-home" class="page p-6 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
-                    <img id="userAvatar" src="" class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover">
+                    <div class="relative group">
+                        <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff" 
+                             class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover cursor-pointer"
+                             onclick="openFullImg(this.src, currentUser)">
+                        <label class="absolute bottom-0 right-0 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-white cursor-pointer shadow-lg">
+                            <i class="fa fa-camera text-[10px]"></i>
+                            <input type="file" accept="image/*" class="hidden" onchange="changeProfilePhoto(this)">
+                        </label>
+                    </div>
                     <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
-                <div class="space-y-3">
-                    <div onclick="showPage('chess-lobby')" class="profile-bubble bg-gray-900 hover:bg-gray-800 transition">
+                
+                <div class="space-y-3" id="profileOptions">
+                    <div onclick="changePinPrompt()" class="profile-bubble">
+                        <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
+                        <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
+                        <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
+                    </div>
+
+                    <!-- TAMBAHAN MENU GAME CATUR -->
+                    <div onclick="showPage('chess-lobby')" class="profile-bubble bg-gray-900 hover:bg-gray-800 transition border-gray-700">
                         <div class="profile-icon bg-emerald-600 text-white shadow-md"><i class="fa fa-chess-knight"></i></div>
                         <div class="flex flex-col flex-1">
                             <span class="font-black text-white uppercase italic text-[11px]">Catur Profesional</span>
@@ -138,9 +185,72 @@
                         </div>
                         <i class="fa fa-chevron-right text-gray-500 text-[10px]"></i>
                     </div>
+
+                    <div id="adminPanel" class="hidden space-y-3">
+                        <div class="border-t-2 border-dashed border-gray-200 my-4 pt-4">
+                            <h4 class="text-[9px] font-black text-gray-400 uppercase mb-3 px-2">Admin Management</h4>
+                            <div onclick="showCrewManager()" class="profile-bubble border-blue-200 bg-blue-50/30">
+                                <div class="profile-icon bg-blue-600 text-white"><i class="fa fa-users-cog"></i></div>
+                                <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Management Crew</span>
+                                <i class="fa fa-chevron-right text-blue-300 text-[10px]"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="gojekMenu" class="hidden space-y-3">
+                        <div onclick="toggleGojekInput()" class="profile-bubble border-green-200 bg-green-50/20">
+                            <div class="profile-icon bg-green-600 text-white"><i class="fa fa-motorcycle"></i></div>
+                            <div class="flex flex-col flex-1">
+                                <span class="font-black text-green-800 uppercase italic text-[11px]">WA Direct Gojek</span>
+                                <span class="text-[8px] font-bold text-gray-400 uppercase">Khusus Okta - Kirim Paket</span>
+                            </div>
+                            <i id="gojekChevron" class="fa fa-chevron-down text-green-500 text-[10px] transition-transform"></i>
+                        </div>
+                        
+                        <div id="gojekInputView" class="hidden bg-white rounded-3xl p-4 shadow-sm border border-green-100">
+                            <p class="text-[9px] font-black text-green-800 uppercase italic mb-2 px-1">Nomor Customer Gojek</p>
+                            <div class="flex gap-2">
+                                <input type="tel" id="gojekWaNumber" placeholder="Masukan Nomor HP" class="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none font-bold text-center text-green-900 text-xs">
+                                <button onclick="prosesWaGojek()" class="bg-green-500 text-white px-4 py-3 rounded-xl font-black uppercase text-xs shadow-md active:scale-95 transition-transform"><i class="fab fa-whatsapp"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div onclick="aksesPortalFEM()" class="profile-bubble border-green-200 bg-green-50/20">
+                        <div class="profile-icon bg-emerald-600 text-white"><i class="fa fa-layer-group"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-emerald-800 uppercase italic text-[11px]">Login Portal FEM (DPI)</span>
+                            <span class="text-[8px] font-bold text-gray-400 uppercase">Auto-Copy Username & Sandi</span>
+                        </div>
+                        <i class="fa fa-external-link-alt text-emerald-500 text-[10px]"></i>
+                    </div>
+
+                    <div onclick="handleLogout()" class="profile-bubble">
+                        <div class="profile-icon bg-red-50 text-red-600"><i class="fa fa-sign-out-alt"></i></div>
+                        <span class="font-black text-red-600 uppercase italic text-[11px] flex-1">Keluar Sistem</span>
+                        <i class="fa fa-chevron-right text-red-200 text-[10px]"></i>
+                    </div>
+                </div>
+
+                <div id="crewManagerView" class="hidden mt-4 bg-white rounded-3xl p-5 shadow-inner border border-blue-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-black text-blue-900 uppercase italic text-xs">Daftar Crew Database</h3>
+                        <button onclick="closeCrewManager()" class="text-gray-400"><i class="fa fa-times"></i></button>
+                    </div>
+                    <div class="space-y-2 mb-6 max-h-64 overflow-y-auto" id="crewListAdmin"></div>
+                    <div class="bg-gray-50 p-4 rounded-2xl space-y-2">
+                        <p class="text-[9px] font-black text-blue-900 uppercase italic mb-1">Tambah/Edit Crew</p>
+                        <input type="text" id="newCrewName" placeholder="NAMA LENGKAP" class="w-full p-3 rounded-xl text-[10px] font-bold outline-none border">
+                        <input type="password" id="newCrewPin" maxlength="4" placeholder="PIN 4 DIGIT" class="w-full p-3 rounded-xl text-[10px] font-bold outline-none border">
+                        <div class="flex gap-2">
+                           <button onclick="saveCrew()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[9px]">Simpan Crew</button>
+                           <button onclick="cancelCrewEdit()" id="btnCancelCrew" class="hidden flex-1 bg-gray-400 text-white py-3 rounded-xl font-black uppercase text-[9px]">Batal</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            <!-- HALAMAN LOBBY CATUR (NEW) -->
             <div id="page-chess-lobby" class="page p-6 bg-[#161512] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="showPage('home')" class="text-gray-300 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
@@ -152,6 +262,7 @@
                 </div>
             </div>
 
+            <!-- HALAMAN GAME CATUR (NEW) -->
             <div id="page-chess-game" class="page bg-[#161512] flex-col pb-20 justify-center">
                 <div class="flex-1 flex flex-col justify-center items-center px-4 max-w-lg mx-auto w-full relative">
                     <div class="w-full flex justify-between items-center mb-3">
@@ -180,10 +291,116 @@
                     </div>
                 </div>
             </div>
+
+            <div id="page-list" class="page active p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-3">
+                    <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Driver/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
+                    <div id="countActive" class="bg-red-500 text-white px-3 py-2 rounded-xl text-[10px] font-black italic">0 AKTIF</div>
+                </div>
+                <div id="activeList" class="space-y-4 pb-32"></div>
+            </div>
+
+            <div id="page-history" class="page p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4 bg-gray-100 p-3 rounded-2xl border-b-2 border-gray-200">
+                    <h3 class="font-black text-blue-900 uppercase italic text-[11px]">Daftar Selesai</h3>
+                    <button onclick="clearAllHistory()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-md"><i class="fa fa-trash-alt mr-1"></i> Kosongkan</button>
+                </div>
+                <div id="historyList" class="space-y-4 pb-32"></div>
+            </div>
+
+            <div id="page-add" class="page p-4 overflow-y-auto">
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900 space-y-3">
+                    <h2 id="formTitle" class="font-black text-blue-900 text-center uppercase text-xs">Tambah Antaran</h2>
+                    <input type="hidden" id="editId">
+                    <input type="text" id="custArea" placeholder="KODE AREA (A-1)" class="w-full bg-yellow-50 p-4 rounded-xl text-sm font-bold uppercase outline-none">
+                    <input type="text" id="custName" placeholder="Nama Pelanggan" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="tel" id="custPhone" placeholder="Nomor HP" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none font-bold">
+                    <input type="text" id="custMaps" placeholder="Link Google Maps" class="w-full bg-gray-50 p-4 rounded-xl text-sm outline-none">
+                    <div class="bg-blue-50 p-4 rounded-xl border-2 border-dashed border-blue-200 text-center relative">
+                        <label class="cursor-pointer">
+                            <i class="fa fa-camera text-blue-400 text-xl"></i>
+                            <p class="text-[9px] font-black text-blue-900 uppercase mt-1" id="photoStatus">Foto Rumah</p>
+                            <input type="file" id="housePhoto" accept="image/*" class="hidden" onchange="processImage(this)">
+                        </label>
+                        <button onclick="openDrawModal()" id="btnDrawPhoto" class="hidden absolute top-2 right-10 bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg" title="Coret Gambar"><i class="fa fa-pen text-[10px]"></i></button>
+                        <button onclick="removePhoto()" id="btnRemovePhoto" class="hidden absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-times text-[10px]"></i></button>
+                        <img id="imgPrev" class="hidden w-full h-32 object-cover rounded-lg mt-2 border-2 border-white">
+                    </div>
+                    <button onclick="saveData()" id="saveBtn" class="w-full dominos-red text-white py-4 rounded-2xl font-black uppercase text-sm">Simpan</button>
+                    <button onclick="cancelEdit()" id="cancelBtn" class="hidden w-full bg-gray-400 text-white py-3 rounded-xl font-bold uppercase text-[10px]">Batal</button>
+                </div>
+            </div>
+
+            <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
+                <div class="wa-card mb-20 mx-auto relative">
+                    <div class="flex justify-between items-start mb-4 px-2 gap-2">
+                        
+                        <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
+                            <span class="text-black font-black uppercase text-[7px] tracking-tight leading-none mb-1.5">Konfirmasi WA Grab</span>
+                            <input type="checkbox" id="waDirectGrabConfirmation" class="checkbox-custom">
+                        </div>
+
+                        <div class="flex flex-col items-center shrink-0">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                        </div>
+                        
+                        <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
+                            <span class="text-black font-black uppercase text-[8px] tracking-tight leading-none mb-1.5">Payment Cash</span>
+                            <input type="checkbox" id="waDirectCashPayment" class="checkbox-custom">
+                        </div>
+                    </div>
+
+                    <h2 class="font-black text-blue-900 uppercase italic text-[12px] mb-3">Manual Input Chat</h2>
+                    
+                    <div class="space-y-3 mb-4">
+                        <input type="text" id="waDirectCustName" placeholder="Nama Customer (Wajib)" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-bold text-center text-blue-900 text-sm">
+                        <div class="flex gap-2">
+                            <input type="text" id="waDirectCustId" maxlength="3" placeholder="ID (3 No)" inputmode="numeric" class="w-1/3 p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
+                            <input type="tel" id="waDirectNumber" placeholder="Input Nomor HP Manual" class="w-2/3 p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
+                        </div>
+                    </div>
+                    
+                    <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
+                </div>
+            </div>
         </main>
+
+        <div class="bottom-nav">
+            <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
+            <div onclick="showPage('history')" class="nav-item" id="nav-history"><i class="fa fa-history mb-1 text-xl"></i><span>History</span></div>
+            <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
+            <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
+            <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span></div>
+        </div>
     </div>
 
     <script>
+        // Kredensial Pengguna & Otoritas Sistem
+        let userPins = { 
+            "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
+            "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
+            "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
+            "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
+        };
+        const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
+        const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
+
+        // Konfigurasi Database Utama Firebase
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
+            databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "trackcust-jtm" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        let currentUser = localStorage.getItem('jtm_user') || "";
+        let sessionID = Math.random().toString(36).substring(2, 15);
+        let allData = {}; let photoBase64 = "";
+        let renderTimer;
+        let editCrewId = null;
+
+        // VARIABEL GAME CATUR
         const pieceIcons = {
             'w': { 
                 'p': 'https://chessboardjs.com/img/chesspieces/wikipedia/wP.png', 
@@ -215,44 +432,886 @@
         let bTime = 10 * 60;
         let lastTimestamp = 0;
 
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
-            databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
-            projectId: "trackcust-jtm" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        
-        let currentUser = localStorage.getItem('jtm_user') || "";
-        let sessionID = Math.random().toString(36).substring(2, 15);
+        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
+        const KECAMATAN_POLYGONS = [
+            { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
+            { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
+            { name: "PONDOK MELATI", lat: -6.3117, lng: 106.9267 },
+            { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 },
+            { name: "DUREN SAWIT", lat: -6.2343, lng: 106.9194 },
+            { name: "MAKASAR", lat: -6.2735, lng: 106.8841 },
+            { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
+        ];
 
         window.onload = () => {
+            db.ref('crew_settings').on('value', snap => {
+                if(snap.exists()) {
+                    userPins = snap.val();
+                } else {
+                    db.ref('crew_settings').set(userPins);
+                }
+                refreshUserDropdown();
+                if(currentUser === "Okta") renderCrewAdminList();
+            });
+
             if(currentUser) bukaApp(currentUser);
+            setInterval(updateTimers, 1000);
+            startDeliveryStatusListener();
+            checkAndResetIdsAtMidnight();
+
+            // Init listener catur ketika load
             listenToChessChallenges();
         };
 
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
-            if(id === 'chess-lobby') renderChessOnlineList();
-            if(id !== 'chess-game' && chessTimerInterval) clearInterval(chessTimerInterval);
+        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
+        function aksesPortalFEM() {
+            navigator.clipboard.writeText("pdc9_pic").then(() => {
+                alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
+                
+                navigator.clipboard.writeText("pdc9_pic@123").then(() => {
+                    window.open('https://www.femdpi.com/dashboard/', '_blank');
+                });
+            }).catch(err => {
+                alert("Kredensial Login:\nUsername: pdc9_pic\nSandi: pdc9_pic@123");
+                window.open('https://www.femdpi.com/dashboard/', '_blank');
+            });
+        }
+
+        function refreshUserDropdown() {
+            const logSel = document.getElementById('selectUser');
+            if(!logSel) return;
+            logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
+            Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+        }
+
+        function showCrewManager() {
+            document.getElementById('profileOptions').classList.add('hidden');
+            document.getElementById('crewManagerView').classList.remove('hidden');
+            renderCrewAdminList();
+        }
+
+        function closeCrewManager() {
+            document.getElementById('profileOptions').classList.remove('hidden');
+            document.getElementById('crewManagerView').classList.add('hidden');
+            cancelCrewEdit();
+        }
+
+        function renderCrewAdminList() {
+            const list = document.getElementById('crewListAdmin');
+            list.innerHTML = "";
+            Object.keys(userPins).forEach(n => {
+                const isProtected = (n === "Okta");
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-2 px-3 rounded-xl border border-gray-100">
+                        <div class="flex flex-col">
+                            <span class="font-black text-blue-900 text-[10px] uppercase italic">${n}</span>
+                            <span class="text-[8px] text-gray-400 font-bold">PIN: ****</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editCrew('${n}')" class="text-blue-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-edit"></i></button>
+                            ${!isProtected ? `<button onclick="deleteCrew('${n}')" class="text-red-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveCrew() {
+            const name = document.getElementById('newCrewName').value.trim();
+            const pin = document.getElementById('newCrewPin').value.trim();
+            if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
+            
+            if(editCrewId && editCrewId !== name) {
+                delete userPins[editCrewId];
+            }
+            userPins[name] = pin;
+            db.ref('crew_settings').set(userPins).then(() => {
+                alert("Data Crew Terupdate!");
+                cancelCrewEdit();
+            });
+        }
+
+        function editCrew(n) {
+            editCrewId = n;
+            document.getElementById('newCrewName').value = n;
+            document.getElementById('newCrewPin').value = userPins[n];
+            document.getElementById('btnCancelCrew').classList.remove('hidden');
+        }
+
+        function deleteCrew(n) {
+            if(confirm(`Hapus crew ${n} dari database?`)) {
+                delete userPins[n];
+                db.ref('crew_settings').set(userPins);
+            }
+        }
+
+        function cancelCrewEdit() {
+            editCrewId = null;
+            document.getElementById('newCrewName').value = "";
+            document.getElementById('newCrewPin').value = "";
+            document.getElementById('btnCancelCrew').classList.add('hidden');
+        }
+
+        function changeProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('userAvatar').src = base64;
+                    localStorage.setItem('profile_pic_' + currentUser, base64);
+                    updateProfileUI(); 
+                    updatePresence();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function updateProfileUI() {
+            document.getElementById('userNameFull').innerText = currentUser;
+            const savedPic = localStorage.getItem('profile_pic_' + currentUser);
+            const navAvatar = document.getElementById('navUserAvatar');
+            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
+            
+            document.getElementById('userAvatar').src = targetSrc;
+            navAvatar.src = targetSrc;
+            navAvatar.classList.remove('hidden');
+
+            if(currentUser === "Okta") {
+                document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('gojekMenu').classList.remove('hidden');
+            } else {
+                document.getElementById('adminPanel').classList.add('hidden');
+                document.getElementById('gojekMenu').classList.add('hidden');
+                closeCrewManager();
+            }
+        }
+
+        function prosesLogin() {
+            const u = document.getElementById('selectUser').value;
+            const p = document.getElementById('inputPin').value;
+            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
         }
 
         function bukaApp(n) {
-            currentUser = n; localStorage.setItem('jtm_user', n);
-            document.getElementById('userDisplay').innerText = n;
-            document.getElementById('userNameFull').innerText = n;
-            document.getElementById('pinOverlay').style.display = "none"; 
-            document.getElementById('mainContent').style.display = "flex";
-            
-            const savedPic = localStorage.getItem('profile_pic_' + currentUser) || `https://ui-avatars.com/api/?name=${n}&background=006491&color=fff`;
-            document.getElementById('userAvatar').src = savedPic;
-            document.getElementById('navUserAvatar').src = savedPic; 
-            document.getElementById('navUserAvatar').classList.remove('hidden');
-
-            db.ref('presence/' + n).set({ online: true, session: sessionID, lastActive: Date.now(), photo: savedPic });
-            db.ref('presence/' + n).onDisconnect().remove();
+            const isOkta = (n === "Okta");
+            db.ref('presence/' + n).once('value', snapshot => {
+                const existingData = snapshot.val();
+                if (!isOkta && existingData && existingData.session !== sessionID) {
+                    if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
+                }
+                currentUser = n; localStorage.setItem('jtm_user', n);
+                document.getElementById('userDisplay').innerText = n;
+                document.getElementById('pinOverlay').style.display = "none";
+                document.getElementById('mainContent').style.display = "flex";
+                updatePresence(); updateProfileUI();
+                db.ref('presence/' + n + '/session').on('value', snap => {
+                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
+                });
+                db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+            });
         }
 
+        function handleLogout(withConfirm = true) { 
+            if(withConfirm && !confirm("Keluar?")) return;
+            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
+            localStorage.removeItem('jtm_user'); location.reload(); 
+        }
+
+        function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
+        
+        function pushDeliveryStatus(nama, idCust = "") { 
+            if(mgtAndCashiers.includes(nama)) return; 
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust }); 
+        }
+
+        function startDeliveryStatusListener() {
+            db.ref('delivery_activity').on('value', s => {
+                const bar = document.getElementById('deliveryStatusBar');
+                bar.innerHTML = ""; const now = Date.now(); let hasData = false;
+                s.forEach(child => {
+                    const d = child.val();
+                    if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
+                    else { 
+                        hasData = true; 
+                        const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
+                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${textStatus})</span></div>`; 
+                    }
+                });
+                bar.style.display = hasData ? "block" : "none";
+            });
+        }
+
+        function render() {
+            const list = document.getElementById('activeList'); const hist = document.getElementById('historyList');
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            let activeCount = 0; let listHTML = ""; let histHTML = "";
+            Object.keys(allData).reverse().forEach(id => {
+                const i = allData[id];
+                const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
+                if(i.status !== 'done') activeCount++;
+                let wa = (i.phone || "").replace(/\D/g, '');
+                if(wa.startsWith('0')) wa = '62' + wa.slice(1);
+                
+                let msgWa = "";
+                if (cashiersOnly.includes(currentUser)) {
+                    msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
+                } else {
+                    msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
+                }
+                
+                const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
+                const isBlockedUser = mgtAndCashiers.includes(currentUser);
+
+                const msgLate = `Halo bapak/ibu ${i.name}, mohon maaf yang sebesar-besarnya atas keterlambatan pengantaran pesanannya. Saat ini antrean pengiriman sedang sangat padat, namun tidak perlu khawatir karena pizza Bapak/ibu ${i.name},sedang dalam perjalanan dan akan tetap diantarkan. Mohon bersedia menunggu sebentar ya, Pak/Bu. Terima kasih banyak atas pengertiannya ☺️🙏`;
+                const waLateLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgLate)}`;
+
+                let finalDriver = i.driverBy || i.doneBy || (i.status === 'done' ? currentUser : "");
+
+                let infoSelesai = 'SELESAI';
+                if (i.status === 'done' && i.doneTime) {
+                    const tgl = new Date(i.doneTime);
+                    const jam = String(tgl.getHours()).padStart(2, '0');
+                    const min = String(tgl.getMinutes()).padStart(2, '0');
+                    const hariArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    const hari = hariArr[tgl.getDay()];
+                    const tglNum = tgl.getDate();
+                    const blnNum = tgl.getMonth() + 1;
+                    const thnNum = String(tgl.getFullYear()).slice(-2);
+                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${finalDriver}`;
+                }
+
+                const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
+
+                let historyGpsControlsHtml = "";
+                if (i.maps) {
+                    historyGpsControlsHtml = `
+                        <div class="flex flex-col items-center gap-1">
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-gray-400 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                            <a href="${i.maps}" target="_blank" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center" title="Navigasi Google Maps"><i class="fa fa-compass text-[11px]"></i></a>
+                        </div>
+                    `;
+                } else {
+                    historyGpsControlsHtml = `
+                        <div class="flex flex-col items-center gap-1">
+                            <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', true)" class="text-blue-500 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1" title="Ambil GPS Rumah & Ganti Area"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                        </div>
+                    `;
+                }
+
+                let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
+                if (i.status === 'done' && i.historyDisplayId) {
+                    areaDisplayHtml = `
+                        <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
+                        <p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>
+                    `;
+                }
+
+                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            ${areaDisplayHtml}
+                            <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
+                                ${finalDriver ? `<span class="driver-badge">${finalDriver}</span>` : ''}
+                            </div>
+                            ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
+                        </div>
+                        <div class="flex gap-2">
+                            ${i.status !== 'done' ? 
+                            `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
+                             <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
+                             <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
+                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
+                            : `<div class="flex gap-1 items-center">
+                                 ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
+                                 <div class="flex flex-col items-center gap-1">
+                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
+                                     ${historyGpsControlsHtml}
+                                 </div>
+                                 <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
+                               </div>`}
+                        </div>
+                    </div>
+                    <div class="mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
+                    </div>
+                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
+                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
+                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
+                    </div>
+                    
+                    ${i.status !== 'done' && !i.maps ? `
+                    <div class="flex items-center justify-between gap-2 mt-3 bg-red-600 p-2 rounded-xl border border-red-700 w-full shadow-inner">
+                        <span class="text-[9px] font-black text-white uppercase leading-tight">
+                            <span class="animate-blink inline-block mr-1">⚠️</span> Tekan icon maps di sebelah kanan jika telah sampai dirumah customer
+                        </span>
+                        <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md active:scale-95" title="Ambil GPS Rumah & Foto"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
+                    </div>` : ''}
+                </div>`;
+                if(i.status === 'done') histHTML += cardHtml; 
+                else if(searchStr.includes(filter)) listHTML += cardHtml;
+            });
+            list.innerHTML = listHTML; hist.innerHTML = histHTML;
+            document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
+        }
+
+        function dapatkanKecamatanTerdekat(lat, lng) {
+            let kecamatanTerpilih = "JATIMAKMUR";
+            let jarakTerkecil = Infinity;
+
+            KECAMATAN_POLYGONS.forEach(kec => {
+                const R = 6371; 
+                const dLat = (kec.lat - lat) * Math.PI / 180;
+                const dLng = (kec.lng - lng) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const jarak = R * c;
+
+                if (jarak < jarakTerkecil) {
+                    jarakTerkecil = jarak;
+                    kecamatanTerpilih = kec.name;
+                }
+            });
+            return kecamatanTerpilih;
+        }
+
+        function ambilDanSimpanKoordinatStatus(id, name, isHistory = false) {
+            const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat & ambil foto rumah untuk ${name}?`);
+            if (!yakin) return;
+
+            if (!navigator.geolocation) {
+                alert("Gagal: HP tidak mendukung fitur GPS.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
+                    const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
+
+                    const camInput = document.getElementById('cameraCaptureHidden');
+                    camInput.value = ""; 
+
+                    camInput.onchange = (event) => {
+                        if (event.target.files && event.target.files[0]) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement('canvas');
+                                    const TARGET_WIDTH = 400; 
+                                    canvas.width = TARGET_WIDTH;
+                                    canvas.height = img.height * (TARGET_WIDTH / img.width);
+                                    
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.imageSmoothingEnabled = true;
+                                    ctx.imageSmoothingQuality = 'high';
+                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    
+                                    const compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                                        headers: { 'Accept-Language': 'id' }
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        const addr = data.address || {};
+                                        const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || "";
+                                        const jalan = addr.road || "";
+                                        
+                                        let areaFormatBaru = kecamatanOtomatis;
+                                        if (kelurahan || jalan) {
+                                            const detailArray = [];
+                                            if (kelurahan) detailArray.push(kelurahan.toUpperCase());
+                                            if (jalan) detailArray.push(jalan.toUpperCase());
+                                            areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
+                                        }
+
+                                        let updateData = { 
+                                            maps: generatedMapsUrl,
+                                            area: areaFormatBaru,
+                                            photo: compressedPhotoBase64, 
+                                            status: isHistory ? 'done' : (allData[id].status || 'active')
+                                        };
+
+                                        if (allData[id]) {
+                                            if (allData[id].historyDisplayId) {
+                                                updateData.historyDisplayId = allData[id].historyDisplayId;
+                                            } else {
+                                                let currentArea = allData[id].area || "";
+                                                let extractedId = "";
+                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
+                                                if (extractedId) updateData.historyDisplayId = extractedId;
+                                            }
+                                        }
+
+                                        return db.ref('customers/' + id).update(updateData).then(() => areaFormatBaru);
+                                    })
+                                    .then((areaFinal) => {
+                                        alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal);
+                                    })
+                                    .catch((err) => {
+                                        let fallbackData = { 
+                                            maps: generatedMapsUrl,
+                                            area: kecamatanOtomatis,
+                                            photo: compressedPhotoBase64,
+                                            status: isHistory ? 'done' : (allData[id].status || 'active')
+                                        };
+
+                                        if (allData[id]) {
+                                            if (allData[id].historyDisplayId) {
+                                                fallbackData.historyDisplayId = allData[id].historyDisplayId;
+                                            } else {
+                                                let currentArea = allData[id].area || "";
+                                                let extractedId = "";
+                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
+                                                if (extractedId) fallbackData.historyDisplayId = extractedId;
+                                            }
+                                        }
+
+                                        db.ref('customers/' + id).update(fallbackData)
+                                        .then(() => {
+                                            alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tetapi gagal memuat nama jalan. Area diset ke: " + kecamatanOtomatis);
+                                        });
+                                    });
+                                };
+                                img.src = e.target.result;
+                            };
+                            reader.readAsDataURL(event.target.files[0]);
+                        }
+                    };
+
+                    camInput.click();
+                },
+                (error) => {
+                    alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif.");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function openFullImg(url, caption = "") { 
+            document.getElementById('fullImg').src = url; 
+            document.getElementById('modalCaption').innerText = caption; 
+            document.getElementById('imgModal').style.display = 'flex'; 
+            initPinchZoom();
+        }
+
+        function closeFullImgModal() {
+            document.getElementById('imgModal').style.display = 'none';
+            resetPinchZoom();
+        }
+
+        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
+        
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas'); 
+                        const THUMB_W = 600; 
+                        c.width = THUMB_W; 
+                        c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        photoBase64 = c.toDataURL('image/jpeg', 0.75);
+                        document.getElementById('imgPrev').src = photoBase64;
+                        document.getElementById('imgPrev').classList.remove('hidden');
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                        document.getElementById('btnDrawPhoto').classList.remove('hidden');
+                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveData() {
+            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
+            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
+            if (ph) {
+                const cleanInputPhone = ph.replace(/\D/g, '');
+                const isDuplicate = Object.keys(allData).some(id => {
+                    if (id === eid) return false; 
+                    const item = allData[id];
+                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
+                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
+                });
+                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
+            }
+            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
+            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
+            ref.then(() => resetForm());
+        }
+
+        function editData(id) {
+            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
+            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
+            if(i.photo) { 
+                photoBase64 = i.photo; 
+                document.getElementById('imgPrev').src = i.photo; 
+                document.getElementById('imgPrev').classList.remove('hidden'); 
+                document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                document.getElementById('btnDrawPhoto').classList.remove('hidden'); 
+            }
+            document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
+        }
+
+        function goOTW(id) { 
+            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
+            if(allData[id].status !== 'otw') { 
+                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
+                pushDeliveryStatus(currentUser); 
+            } 
+        }
+
+        function setStatus(id, stat) { 
+            if (stat === 'done') {
+                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+            } else {
+                db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
+            }
+        }
+
+        // --- Modifikasi showPage untuk Mendukung Catur ---
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
+            document.querySelectorAll('.nav-item').forEach(n => {
+                if(n.id === 'nav-'+id) n.classList.add('active');
+                else n.classList.remove('active');
+            });
+            if(id === 'home') closeCrewManager();
+            
+            // Logika Catur tambahan
+            if(id === 'chess-lobby') renderChessOnlineList();
+            if(id !== 'chess-game' && typeof chessTimerInterval !== 'undefined' && chessTimerInterval) clearInterval(chessTimerInterval);
+        }
+
+        function updateTimers() {
+            Object.keys(allData).forEach(id => {
+                if(allData[id].status === 'otw') {
+                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
+                    const rem = (20 * 60) - elapsed;
+                    
+                    if(elapsed >= 1200) {
+                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
+                        return;
+                    }
+
+                    const el = document.getElementById('timer-'+id);
+                    if(el) {
+                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
+                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
+                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
+                    }
+                }
+            });
+        }
+
+        function updatePresence() {
+            if(!currentUser) return;
+            const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
+            const userStatusRef = db.ref('presence/' + currentUser);
+            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
+            userStatusRef.onDisconnect().remove();
+            
+            db.ref('presence').on('value', s => {
+                const el = document.getElementById('onlineBar'); el.innerHTML = "";
+                s.forEach(u => {
+                    const data = u.val();
+                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
+                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
+                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
+                    </span>`;
+                });
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
+            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
+            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
+            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
+        }
+
+        function removePhoto() { 
+            photoBase64 = ""; 
+            document.getElementById('imgPrev').classList.add('hidden'); 
+            document.getElementById('btnRemovePhoto').classList.add('hidden'); 
+            document.getElementById('btnDrawPhoto').classList.add('hidden');
+            document.getElementById('photoStatus').innerText = "Foto Rumah"; 
+        }
+        function cancelEdit() { resetForm(); }
+        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
+        
+        function changePinPrompt() {
+            const old = prompt("Masukkan PIN Lama:");
+            if (old === userPins[currentUser]) {
+                const baru = prompt("Masukkan PIN Baru (4 Digit):");
+                if (baru && baru.length === 4) { 
+                    userPins[currentUser] = baru; 
+                    db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!"));
+                } else { alert("PIN harus 4 digit!"); }
+            } else { alert("PIN Salah!"); }
+        }
+
+        function toggleGojekInput() {
+            const view = document.getElementById('gojekInputView');
+            const icon = document.getElementById('gojekChevron');
+            if (view.classList.contains('hidden')) {
+                view.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                view.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        function prosesWaGojek() {
+            let n = document.getElementById('gojekWaNumber').value.trim();
+            if (!n) return alert("Masukkan Nomor HP Customer Gojek terlebih dahulu!");
+            
+            let nClean = n.replace(/\D/g, '');
+            if (!nClean) return alert("Nomor tidak valid!");
+            
+            let wa = nClean.startsWith('0') ? '62' + nClean.slice(1) : (nClean.startsWith('8') ? '62' + nClean : nClean);
+            let msg = "Halo bapak/ibu saya okta driver gojek,mau kirim paket";
+            
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+            document.getElementById('gojekWaNumber').value = ""; 
+        }
+
+        function openWaDirect() {
+            let custName = document.getElementById('waDirectCustName').value.trim();
+            let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, '');
+            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
+            let isCash = document.getElementById('waDirectCashPayment').checked;
+            let isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
+            
+            if(!custName) return alert("Nama Customer wajib diisi!");
+            if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!");
+            if(!n) return alert("Nomor HP kosong atau tidak valid!");
+            
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
+            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
+            
+            const activeId = Object.keys(allData).find(id => {
+                const dataN = (allData[id].phone || "").replace(/\D/g, '');
+                return allData[id].status !== 'done' && dataN.includes(searchN);
+            });
+            
+            if (activeId) {
+                document.getElementById('searchInput').value = allData[activeId].phone;
+                render(); 
+                showPage('list');
+            } else { 
+                pushDeliveryStatus(currentUser, custId);
+                
+                const autoData = {
+                    area: "ID " + custId,
+                    name: custName,
+                    phone: n,
+                    maps: "",
+                    photo: "",
+                    status: 'otw',
+                    startTime: Date.now(),
+                    timestamp: Date.now(),
+                    driverBy: currentUser,
+                    paymentMode: isCash ? 'cash' : 'other'
+                };
+                db.ref('customers').push(autoData);
+
+                let msg = "";
+                if (isGrabConfirm) {
+                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.`;
+                } else if (cashiersOnly.includes(currentUser)) {
+                    msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
+                } else {
+                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`;
+                }
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+                
+                document.getElementById('waDirectCustName').value = "";
+                document.getElementById('waDirectCustId').value = "";
+                document.getElementById('waDirectNumber').value = "";
+                document.getElementById('waDirectCashPayment').checked = false;
+                document.getElementById('waDirectGrabConfirmation').checked = false;
+            }
+        }
+
+        let hammerInstance = null;
+        let scale = 1;
+        let lastScale = 1;
+
+        function initPinchZoom() {
+            const el = document.getElementById('fullImg');
+            if (!el) return;
+            
+            resetPinchZoom();
+            hammerInstance = new Hammer.Manager(el);
+            const pinch = new Hammer.Pinch();
+            hammerInstance.add([pinch]);
+
+            hammerInstance.on('pinchstart', () => {
+                lastScale = scale;
+            });
+
+            hammerInstance.on('pinchmove', (e) => {
+                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
+                el.style.transform = `scale(${scale})`;
+            });
+
+            hammerInstance.on('pinchend', () => {
+                lastScale = scale;
+            });
+        }
+
+        function resetPinchZoom() {
+            const el = document.getElementById('fullImg');
+            scale = 1;
+            lastScale = 1;
+            if (el) el.style.transform = 'scale(1)';
+            if (hammerInstance) {
+                hammerInstance.destroy();
+                hammerInstance = null;
+            }
+        }
+
+        function checkAndResetIdsAtMidnight() {
+            setInterval(() => {
+                const now = new Date();
+                const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                const currentTimeWIB = new Intl.DateTimeFormat('id-ID', options).format(now);
+
+                if (currentTimeWIB === "00:00:00") {
+                    db.ref('customers').once('value', snapshot => {
+                        if (snapshot.exists()) {
+                            snapshot.forEach(childSnapshot => {
+                                const item = childSnapshot.val();
+                                if (item.status === 'done' && item.historyDisplayId) {
+                                    db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null });
+                                }
+                            });
+                        }
+                    });
+                }
+            }, 1000);
+        }
+
+        // ==========================================
+        // FITUR CORET GAMBAR (DRAW ON CANVAS LOGIC)
+        // ==========================================
+        let drawCanvas, drawCtx, isDrawing = false;
+        
+        function openDrawModal() {
+            if (!photoBase64) return;
+            document.getElementById('drawModal').style.display = 'flex';
+            drawCanvas = document.getElementById('drawCanvas');
+            drawCtx = drawCanvas.getContext('2d');
+            
+            const img = new Image();
+            img.onload = () => {
+                drawCanvas.width = img.width;
+                drawCanvas.height = img.height;
+                drawCtx.drawImage(img, 0, 0);
+                drawCtx.lineCap = 'round';
+                drawCtx.lineJoin = 'round';
+            };
+            img.src = photoBase64;
+            
+            // Hapus listener lama jika ada (mencegah duplikat)
+            drawCanvas.removeEventListener('mousedown', startDrawing);
+            drawCanvas.removeEventListener('mousemove', draw);
+            drawCanvas.removeEventListener('mouseup', stopDrawing);
+            drawCanvas.removeEventListener('mouseout', stopDrawing);
+            drawCanvas.removeEventListener('touchstart', startDrawing);
+            drawCanvas.removeEventListener('touchmove', draw);
+            drawCanvas.removeEventListener('touchend', stopDrawing);
+
+            // Pasang event listener baru
+            drawCanvas.addEventListener('mousedown', startDrawing);
+            drawCanvas.addEventListener('mousemove', draw);
+            drawCanvas.addEventListener('mouseup', stopDrawing);
+            drawCanvas.addEventListener('mouseout', stopDrawing);
+            
+            drawCanvas.addEventListener('touchstart', startDrawing, {passive: false});
+            drawCanvas.addEventListener('touchmove', draw, {passive: false});
+            drawCanvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function closeDrawModal() {
+            document.getElementById('drawModal').style.display = 'none';
+        }
+
+        function clearDraw() {
+            const img = new Image();
+            img.onload = () => {
+                drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                drawCtx.drawImage(img, 0, 0);
+            };
+            img.src = photoBase64; 
+        }
+
+        function saveDraw() {
+            photoBase64 = drawCanvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('imgPrev').src = photoBase64;
+            closeDrawModal();
+        }
+        
+        function getPos(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            const scaleX = drawCanvas.width / rect.width;
+            const scaleY = drawCanvas.height / rect.height;
+            
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        }
+
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            const pos = getPos(e);
+            drawCtx.beginPath();
+            drawCtx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            drawCtx.lineWidth = drawCanvas.width * 0.015; // responsive brush size (1.5% of width)
+            drawCtx.strokeStyle = document.getElementById('drawColor').value;
+            drawCtx.lineTo(pos.x, pos.y);
+            drawCtx.stroke();
+        }
+
+        function stopDrawing(e) {
+            if(e) e.preventDefault();
+            isDrawing = false;
+            drawCtx.closePath();
+        }
+
+        // ==========================================
+        // JAVASCRIPT GAME CATUR (INTEGRASI)
+        // ==========================================
         function renderChessOnlineList() {
             db.ref('presence').once('value', snapshot => {
                 const list = document.getElementById('chessOnlineList');
@@ -318,6 +1377,14 @@
             });
         }
 
+        // Tambahan Method Reject Challenge (Mencegah error saat tombol ditolak)
+        function rejectChallenge() {
+            document.getElementById('challengeModal').style.display = 'none';
+            if(currentUser) {
+                db.ref(`chess_challenges/${currentUser}`).remove();
+            }
+        }
+
         function initChessGame(gameId, color, opponentName) {
             currentChessGameId = gameId; myChessColor = color; chessOpponent = opponentName;
             chess = new Chess();
@@ -355,7 +1422,6 @@
             });
         }
 
-        // Fungsi Hitung Mundur Waktu Aktif & Responsif
         function startLocalTimer() {
             if (chessTimerInterval) clearInterval(chessTimerInterval);
             
