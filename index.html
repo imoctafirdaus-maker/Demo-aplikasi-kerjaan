@@ -11,10 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
-    <!-- FIDE Chess Engine Logic -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     
-    <!-- PDFMake Library for Professional PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     
@@ -54,12 +52,12 @@
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
 
         /* Professional Chess Board Styles (Chess.com / Lichess Style) */
-        .chess-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); border: 4px solid #2c3e50; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); background-color: #2c3e50; overflow: hidden; }
-        .chess-sq { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; user-select: none; }
+        .chess-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); box-sizing: border-box; margin: 0 auto; border: 4px solid #2c3e50; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); background-color: #2c3e50; overflow: hidden; }
+        .chess-sq { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; user-select: none; box-sizing: border-box; }
         .chess-light { background-color: #ebecd0; color: #739552; }
         .chess-dark { background-color: #739552; color: #ebecd0; }
-        .chess-piece { width: 85%; height: 85%; z-index: 10; cursor: pointer; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.4)); transition: transform 0.15s ease-out; }
-        .chess-piece.dragging { transform: scale(1.2); z-index: 100; cursor: grabbing; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); }
+        .chess-piece { width: 95%; height: 95%; z-index: 10; cursor: pointer; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.6)); transition: transform 0.15s ease-out; object-fit: contain; }
+        .chess-piece.dragging { transform: scale(1.2); z-index: 100; cursor: grabbing; filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); }
         .chess-hl { position: absolute; inset: 0; background-color: rgba(246, 246, 105, 0.5); z-index: 5; } /* Selected square */
         .chess-last-move { position: absolute; inset: 0; background-color: rgba(255, 255, 51, 0.4); z-index: 4; } /* Last move highlight */
         .chess-legal-dot { position: absolute; width: 25%; height: 25%; background-color: rgba(0,0,0,0.2); border-radius: 50%; z-index: 6; pointer-events: none; }
@@ -79,7 +77,6 @@
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
 
-    <!-- Audio Chess Sounds -->
     <audio id="snd-move" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3" preload="auto"></audio>
     <audio id="snd-capture" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3" preload="auto"></audio>
     <audio id="snd-check" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/check.mp3" preload="auto"></audio>
@@ -87,7 +84,6 @@
     <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3" preload="auto"></audio>
     <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3" preload="auto"></audio>
 
-    <!-- FIDE Promosi Modal -->
     <div id="promoModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-gray-800 p-6 rounded-3xl text-center w-64 shadow-2xl border border-gray-700">
             <h3 class="font-black text-white uppercase mb-4 text-sm tracking-widest">Promosi Bidak</h3>
@@ -95,7 +91,6 @@
         </div>
     </div>
 
-    <!-- Modal Incoming Challenge -->
     <div id="challengeModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-gray-900 p-8 rounded-3xl text-center shadow-2xl border border-gray-700 animate-bounce">
             <i class="fa fa-chess-knight text-5xl text-emerald-500 mb-4 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]"></i>
@@ -108,12 +103,10 @@
         </div>
     </div>
 
-    <!-- Alert Akhir Catur -->
     <div id="chessAlert" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-2xl z-[10030] hidden transition-all duration-300 border-2 border-emerald-500 flex items-center gap-3"></div>
 
     <input type="file" id="cameraCaptureHidden" accept="image/*" capture="environment" class="hidden">
 
-    <!-- Modal Gambar -->
     <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4">
         <button onclick="closeFullImgModal()" class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center z-[10002]"><i class="fa fa-times text-2xl"></i></button>
         <div id="modalContent">
@@ -122,7 +115,6 @@
         </div>
     </div>
 
-    <!-- Modal Coret (Draw) -->
     <div id="drawModal" class="fixed inset-0 bg-black/95 z-[10010] hidden flex-col items-center justify-center p-0">
         <div class="absolute top-4 left-4 z-[10011] flex gap-2">
             <button onclick="closeDrawModal()" class="bg-gray-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm">Batal</button>
@@ -137,12 +129,9 @@
         </div>
     </div>
 
-    <!-- SITE AUDIT MODAL -->
     <div id="siteAuditModal" class="fixed inset-0 bg-black/90 z-[10050] hidden flex-col items-center justify-center p-4">
-        <!-- Kode Audit Modal tetap sama -->
-    </div>
+        </div>
 
-    <!-- MAIN CONTENT APP -->
     <div id="pinOverlay" class="fixed inset-0 dominos-blue z-[10000] flex flex-col items-center justify-center p-6">
         <div class="text-center mb-8 text-white">
             <h1 class="font-black italic text-4xl uppercase">Domino's</h1>
@@ -169,7 +158,6 @@
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
-            <!-- PAGE: HOME / PROFILE -->
             <div id="page-home" class="page active p-6 pb-32 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
@@ -185,7 +173,6 @@
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
                 <div class="space-y-3" id="profileOptions">
-                    <!-- CHESS MENU -->
                     <div onclick="showPage('chess-lobby')" class="profile-bubble border-gray-700 bg-gray-900 group hover:bg-gray-800 transition">
                         <div class="profile-icon bg-emerald-600 text-white shadow-md"><i class="fa fa-chess-knight"></i></div>
                         <div class="flex flex-col flex-1">
@@ -209,7 +196,6 @@
                 </div>
             </div>
 
-            <!-- CHESS LOBBY PAGE -->
             <div id="page-chess-lobby" class="page p-6 bg-[#161512] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="showPage('home')" class="text-gray-300 hover:text-white bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition"><i class="fa fa-arrow-left"></i></button>
@@ -226,11 +212,9 @@
                 </div>
             </div>
 
-            <!-- CHESS GAME PAGE (PROFESSIONAL UI) -->
             <div id="page-chess-game" class="page bg-[#161512] flex-col pb-20 justify-center">
                 <div class="flex-1 flex flex-col justify-center items-center px-2 sm:px-4 max-w-lg mx-auto w-full relative">
                     
-                    <!-- Opponent Info -->
                     <div class="w-full flex justify-between items-center mb-3">
                         <div class="flex items-center gap-3">
                             <img id="chessOpponentAvatar" src="https://ui-avatars.com/api/?name=Opponent&background=2c3e50&color=fff" class="w-10 h-10 rounded bg-gray-700 object-cover shadow-md">
@@ -244,10 +228,8 @@
                         </div>
                     </div>
 
-                    <!-- Papan Catur -->
                     <div id="chessBoard" class="chess-container shadow-2xl"></div>
 
-                    <!-- My Info -->
                     <div class="w-full flex justify-between items-center mt-3">
                         <div class="flex items-center gap-3">
                             <img id="chessMyAvatar" src="https://ui-avatars.com/api/?name=You&background=16a34a&color=fff" class="w-10 h-10 rounded bg-emerald-600 object-cover shadow-md">
@@ -261,15 +243,12 @@
                         </div>
                     </div>
 
-                    <!-- Game Controls -->
                     <div class="w-full mt-6 flex justify-center gap-4">
                         <button onclick="abandonChessGame()" class="bg-gray-800 text-gray-300 hover:text-white px-6 py-3 rounded-xl font-black uppercase text-[10px] shadow-lg flex items-center gap-2 transition hover:bg-gray-700 border border-gray-600"><i class="fa fa-flag"></i> Resign</button>
                     </div>
                 </div>
             </div>
 
-            <!-- OTHER PAGES PLACEHOLDERS (List, History, Add, Chat) -->
-            <!-- Mempertahankan struktur yang sama agar aplikasi tidak rusak -->
             <div id="page-list" class="page p-4 overflow-y-auto"></div>
             <div id="page-history" class="page p-4 overflow-y-auto"></div>
             <div id="page-add" class="page p-4 overflow-y-auto"></div>
@@ -345,23 +324,23 @@
         // FULL FIDE CHESS ENGINE & MULTIPLAYER LOGIC (COMPLETED)
         // =========================================================================
         
-        // Pilihan Ikon Bidak Catur (Merujuk WikiMedia, dilengkapi Hitam)
+        // Pilihan Ikon Bidak Catur (3D Neo Set)
         const pieceIcons = {
             'w': { 
-                'p': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', 
-                'n': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg', 
-                'b': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg', 
-                'r': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg', 
-                'q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg', 
-                'k': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg' 
+                'p': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/wp.png', 
+                'n': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/wn.png', 
+                'b': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/wb.png', 
+                'r': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/wr.png', 
+                'q': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/wq.png', 
+                'k': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/wk.png' 
             },
             'b': { 
-                'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg', 
-                'n': 'https://upload.wikimedia.org/wikipedia/commons/f/f4/Chess_ndt45.svg', 
-                'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg', 
-                'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg', 
-                'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg', 
-                'k': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Chess_kdt45.svg' 
+                'p': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/bp.png', 
+                'n': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/bn.png', 
+                'b': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/bb.png', 
+                'r': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/br.png', 
+                'q': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/bq.png', 
+                'k': 'https://images.chesscomfiles.com/chess-themes/pieces/neo_3d/150/bk.png' 
             }
         };
 
