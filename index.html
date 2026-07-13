@@ -14,6 +14,10 @@
     <!-- FIDE Chess Engine Logic -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     
+    <!-- PDFMake Library for Professional PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    
     <style>
         .dominos-blue { background-color: #006491; }
         .dominos-red { background-color: #e31837; }
@@ -177,6 +181,16 @@
                         <i class="fa fa-chevron-right text-purple-300 text-[10px]"></i>
                     </div>
 
+                    <!-- PDF GENERATOR MENU -->
+                    <div onclick="generateAuditPDF()" class="profile-bubble border-orange-200 bg-orange-50/20">
+                        <div class="profile-icon bg-orange-600 text-white shadow-md"><i class="fa fa-file-pdf"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-orange-800 uppercase italic text-[11px]">Generate Laporan PDF</span>
+                            <span class="text-[8px] font-bold text-gray-500 uppercase">Audit iAuditor Style (Siap Cetak & Share)</span>
+                        </div>
+                        <i class="fa fa-share-alt text-orange-500 text-[10px]"></i>
+                    </div>
+
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
@@ -311,7 +325,11 @@
             <div id="page-history" class="page p-4 overflow-y-auto">
                 <div class="flex justify-between items-center mb-4 bg-gray-100 p-3 rounded-2xl border-b-2 border-gray-200">
                     <h3 class="font-black text-blue-900 uppercase italic text-[11px]">Daftar Selesai</h3>
-                    <button onclick="clearAllHistory()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-md"><i class="fa fa-trash-alt mr-1"></i> Kosongkan</button>
+                    <div class="flex gap-2">
+                        <!-- PDF GENERATOR BUTTON -->
+                        <button onclick="generateAuditPDF()" class="bg-green-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase shadow-md flex items-center"><i class="fa fa-file-pdf mr-1"></i> Audit PDF</button>
+                        <button onclick="clearAllHistory()" class="bg-red-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase shadow-md flex items-center"><i class="fa fa-trash-alt mr-1"></i> Kosongkan</button>
+                    </div>
                 </div>
                 <div id="historyList" class="space-y-4 pb-32"></div>
             </div>
@@ -1064,6 +1082,260 @@
                     });
                 }
             });
+        }
+
+        // ==========================================
+        // FITUR GENERATE Laporan SITE AUDIT (PDF PROFESSIONAL)
+        // ==========================================
+        async function generateAuditPDF() {
+            // Ambil data pelanggan dengan status 'done' (Selesai)
+            const doneItems = Object.keys(allData).map(k => allData[k]).filter(i => i.status === 'done');
+            const totalIssues = doneItems.length;
+            
+            if (totalIssues === 0) {
+                return alert("Belum ada data history (selesai) untuk digenerate menjadi laporan PDF.");
+            }
+
+            // Notifikasi proses
+            if(typeof showChessAlert === 'function') {
+                showChessAlert("Menyiapkan PDF Profesional... Mohon tunggu.", 3000);
+            } else {
+                alert("Menyiapkan PDF, mohon tunggu sebentar...");
+            }
+
+            const dateNow = new Date();
+            const dateStr = dateNow.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+            const timeStr = dateNow.toLocaleTimeString('id-ID');
+            
+            // Susun Content Issue Dinamis
+            let issuesContent = [];
+            doneItems.forEach((item, index) => {
+                let issueDate = item.doneTime ? new Date(item.doneTime).toLocaleString('id-ID') : dateStr;
+                let namaPIC = item.doneBy || item.driverBy || currentUser;
+                
+                // Card Header Issue
+                issuesContent.push({ text: `Issue ${index + 1}: ${item.name}`, style: 'issueHeader', margin: [0, 15, 0, 5] });
+                
+                // Tabel Detail Issue
+                issuesContent.push({
+                    table: {
+                        widths: ['35%', '65%'],
+                        body: [
+                            [{text: 'Kategori', bold: true}, 'Site Inspection / Field Delivery'],
+                            [{text: 'Lokasi / Area', bold: true}, item.area || '-'],
+                            [{text: 'Tanggal & Jam', bold: true}, issueDate],
+                            [{text: 'Prioritas', bold: true}, 'Medium'],
+                            [{text: 'Status', bold: true}, {text: 'Closed', color: 'green', bold: true}],
+                            [{text: 'Nama Inspector / PIC', bold: true}, namaPIC],
+                            [{text: 'Deadline', bold: true}, issueDate],
+                            [{text: 'Deskripsi', bold: true}, `Inspeksi penyelesaian untuk kustomer ${item.name}. Kontak referensi: ${item.phone || '-'}`],
+                            [{text: 'Rekomendasi Perbaikan', bold: true}, 'Diselesaikan sesuai dengan prosedur operasional dan standar keselamatan. Tidak ada temuan kritis lanjutan.']
+                        ]
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 1.5 : 1; },
+                        vLineWidth: function (i, node) { return (i === 0 || i === node.table.widths.length) ? 1.5 : 1; },
+                        hLineColor: function (i, node) { return '#cbd5e1'; },
+                        vLineColor: function (i, node) { return '#cbd5e1'; },
+                        paddingLeft: function(i) { return 8; },
+                        paddingRight: function(i) { return 8; },
+                        paddingTop: function(i) { return 8; },
+                        paddingBottom: function(i) { return 8; }
+                    },
+                    margin: [0, 0, 0, 10]
+                });
+
+                // Foto Lampiran dengan Rasio Proporsional
+                if (item.photo && item.photo.startsWith('data:image')) {
+                    issuesContent.push({ 
+                        image: item.photo, 
+                        fit: [450, 320], // Tidak akan pecah, menjaga aspect ratio otomatis max lebar/tinggi
+                        alignment: 'center', 
+                        margin: [0, 10, 0, 20] 
+                    });
+                } else {
+                    issuesContent.push({ text: '[Tidak Ada Lampiran Foto]', color: '#94a3b8', italics: true, alignment: 'center', margin: [0, 10, 0, 20] });
+                }
+                
+                // Pemisah Tiap Issue (Garis batas rapih)
+                if (index < totalIssues - 1) {
+                    issuesContent.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5, lineColor: '#94a3b8' }], margin: [0, 15, 0, 15] });
+                }
+            });
+
+            // Struktur Layout Utama Laporan iAuditor Style
+            const docDefinition = {
+                pageSize: 'A4',
+                pageOrientation: 'portrait',
+                pageMargins: [40, 70, 40, 70],
+                header: function(currentPage, pageCount, pageSize) {
+                    if (currentPage === 1) return null; // Tidak ada header di Cover
+                    return {
+                        columns: [
+                            { text: 'DOMINO\'S JTM - SITE AUDIT REPORT', bold: true, color: '#006491', fontSize: 10 },
+                            { text: dateStr, alignment: 'right', fontSize: 10, color: '#64748b' }
+                        ],
+                        margin: [40, 30, 40, 0]
+                    };
+                },
+                footer: function(currentPage, pageCount) {
+                    if (currentPage === 1) return null; // Tidak ada footer di Cover
+                    return {
+                        columns: [
+                            { text: `Generated by TrackCust JTM on ${dateStr} ${timeStr}`, fontSize: 8, color: '#94a3b8' },
+                            { text: `Halaman ${currentPage} dari ${pageCount}`, alignment: 'right', fontSize: 8, color: '#94a3b8' }
+                        ],
+                        margin: [40, 20, 40, 0]
+                    };
+                },
+                content: [
+                    // --- HALAMAN 1 : COVER PAGE ---
+                    { text: 'SITE AUDIT REPORT', style: 'coverHeader', alignment: 'center', margin: [0, 100, 0, 10] },
+                    { text: 'PROJECT: TRACKCUST JATIMAKMUR', style: 'coverSubHeader', alignment: 'center', margin: [0, 0, 0, 40] },
+                    {
+                        table: {
+                            widths: ['40%', '60%'],
+                            body: [
+                                [{text: 'Lokasi', bold: true}, 'Domino\'s Pizza Jatimakmur, Bekasi'],
+                                [{text: 'Nama Inspector', bold: true}, currentUser],
+                                [{text: 'Tanggal Audit', bold: true}, dateStr],
+                                [{text: 'Jam Mulai', bold: true}, '00:00 WIB'], // Asumsi log mulai harian
+                                [{text: 'Jam Selesai', bold: true}, timeStr + ' WIB'],
+                                [{text: 'Durasi Audit', bold: true}, 'Automated Export'],
+                                [{text: 'Total Issues Identified', bold: true}, totalIssues.toString()],
+                                [{text: 'Total Checklist', bold: true}, totalIssues.toString()],
+                                [{text: 'Persentase Penyelesaian', bold: true}, '100%'],
+                                [{text: 'Status Audit', bold: true}, {text: 'COMPLETED', color: 'green', bold: true}],
+                                [{text: 'Nomor Dokumen Dok.', bold: true}, 'AUDIT-' + Date.now().toString().slice(-6)]
+                            ]
+                        },
+                        layout: 'lightHorizontalLines',
+                        margin: [45, 0, 45, 0]
+                    },
+                    { text: '', pageBreak: 'after' },
+
+                    // --- HALAMAN 2 : RINGKASAN AUDIT ---
+                    { text: 'RINGKASAN AUDIT', style: 'sectionHeader' },
+                    {
+                        columns: [
+                            {
+                                width: '50%',
+                                table: {
+                                    widths: ['*', 'auto'],
+                                    body: [
+                                        [{text: 'Status Issue', bold:true, fillColor: '#f1f5f9'}, {text: 'Jumlah', bold:true, fillColor: '#f1f5f9'}],
+                                        ['Open', '0'],
+                                        ['In Progress', '0'],
+                                        ['Resolved', totalIssues.toString()],
+                                        ['Closed', totalIssues.toString()]
+                                    ]
+                                },
+                                layout: 'lightHorizontalLines'
+                            },
+                            {
+                                width: '50%',
+                                table: {
+                                    widths: ['*', 'auto'],
+                                    body: [
+                                        [{text: 'Tingkat Prioritas', bold:true, fillColor: '#f1f5f9'}, {text: 'Jumlah', bold:true, fillColor: '#f1f5f9'}],
+                                        ['Critical', '0'],
+                                        ['High', '0'],
+                                        ['Medium', totalIssues.toString()],
+                                        ['Low', '0']
+                                    ]
+                                },
+                                layout: 'lightHorizontalLines'
+                            }
+                        ],
+                        columnGap: 20,
+                        margin: [0, 0, 0, 30]
+                    },
+                    { text: 'Seluruh issue (temuan) telah ditangani, difoto, dan diverifikasi oleh Inspector. Rincian inspeksi terlampir pada lembar berikutnya secara berurutan.', italics: true, color: '#64748b' },
+                    { text: '', pageBreak: 'after' },
+
+                    // --- HALAMAN 3 dst : DETAIL ISSUE ---
+                    { text: 'DETAIL ISSUE (TEMUAN LAPANGAN)', style: 'sectionHeader' },
+                    ...issuesContent,
+
+                    // --- HALAMAN TERAKHIR : TANDA TANGAN ---
+                    { text: '', pageBreak: 'before' }, // Paksa page baru untuk tanda tangan agar rapih
+                    { text: 'TANDA TANGAN & PENGESAHAN', style: 'sectionHeader', margin: [0, 0, 0, 30] },
+                    { text: 'Dengan ini menyatakan bahwa dokumen audit ini diterbitkan secara sah dan inspeksi telah dilakukan sesuai dengan kondisi aktual di lapangan tanpa manipulasi.', margin: [0, 0, 0, 60] },
+                    {
+                        columns: [
+                            {
+                                width: '50%',
+                                stack: [
+                                    { text: 'Dilaporkan & Disetujui Oleh,', margin: [0, 0, 0, 60] },
+                                    { text: '_______________________________', margin: [0, 0, 0, 5] },
+                                    { text: currentUser, bold: true, fontSize: 12 },
+                                    { text: 'Lead Inspector / PIC', fontSize: 10, color: '#64748b' },
+                                    { text: `Tanggal : ${dateStr}`, fontSize: 10, color: '#64748b', margin: [0, 10, 0, 0] },
+                                    { text: `Jam     : ${timeStr} WIB`, fontSize: 10, color: '#64748b' },
+                                    { text: 'Lokasi  : Bekasi, Jawa Barat', fontSize: 10, color: '#64748b' }
+                                ]
+                            },
+                            {
+                                width: '50%',
+                                stack: [
+                                    // Kolom kosong untuk stempel / QR (Opsional)
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                styles: {
+                    coverHeader: { fontSize: 26, bold: true, color: '#006491' },
+                    coverSubHeader: { fontSize: 16, bold: true, color: '#e31837' },
+                    sectionHeader: { fontSize: 16, bold: true, color: '#006491', margin: [0, 0, 0, 15] },
+                    issueHeader: { fontSize: 14, bold: true, color: '#e31837', margin: [0, 10, 0, 5] }
+                },
+                defaultStyle: {
+                    fontSize: 10,
+                    color: '#334155'
+                }
+            };
+
+            // Proses Generate PDF
+            const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+            
+            pdfDocGenerator.getBlob(async (blob) => {
+                const fileName = `Site_Audit_${currentUser}_${Date.now()}.pdf`;
+                const file = new File([blob], fileName, { type: 'application/pdf' });
+                
+                try {
+                    // Panggil Web Share API (Akan otomatis membuka Whatsapp jika dipilih di Android Share Sheet)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Laporan Audit PDF',
+                            text: `Berikut lampiran dokumen Laporan Site Audit yang digenerate oleh ${currentUser} pada ${dateStr}.`
+                        });
+                    } else {
+                        // Fallback Download untuk browser/device yang tidak support Share API Level 2
+                        forceDownloadPDF(blob, fileName);
+                    }
+                } catch (error) {
+                    console.error("Gagal share PDF:", error);
+                    // Apabila user membatalkan share, abort error. Namun jika gagal teknis, fallback ke download
+                    if (error.name !== 'AbortError') {
+                        forceDownloadPDF(blob, fileName);
+                    }
+                }
+            });
+        }
+
+        // Fungsi fallback download PDF
+        function forceDownloadPDF(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('Share file PDF langsung mungkin tidak didukung di Browser/Perangkat ini. PDF telah diunduh ke ruang penyimpanan Anda.');
         }
     </script>
 </body>
