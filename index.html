@@ -128,6 +128,36 @@
         </div>
     </div>
 
+    <!-- SITE AUDIT MODAL (NEW) -->
+    <div id="siteAuditModal" class="fixed inset-0 bg-black/90 z-[10050] hidden flex-col items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 class="font-black text-blue-900 uppercase italic text-lg"><i class="fa fa-clipboard-check text-green-500 mr-2"></i> Setup Site Audit</h2>
+                <button onclick="closeAuditModal()" class="text-red-500 bg-red-50 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="space-y-4 overflow-y-auto pb-4 flex-1">
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase">Nama Project / Judul Laporan</label>
+                    <input type="text" id="auditProjectName" value="INSPEKSI RUTIN JTM" placeholder="Contoh: Inspeksi JTM" class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none font-bold text-sm text-blue-900">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-500 uppercase">Lokasi Audit</label>
+                    <input type="text" id="auditLocation" value="Domino's Pizza Jatimakmur, Bekasi" placeholder="Lokasi Audit" class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none font-bold text-sm text-blue-900">
+                </div>
+                <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                    <p class="text-[9px] font-black text-blue-900 uppercase mb-2"><i class="fa fa-pen-nib mr-1"></i> Tanda Tangan Digital Inspector</p>
+                    <div class="border-2 border-dashed border-gray-300 bg-white rounded-xl touch-none relative overflow-hidden" id="sigContainer" style="height: 120px;">
+                        <canvas id="auditSignaturePad" class="absolute inset-0 w-full h-full cursor-crosshair"></canvas>
+                    </div>
+                    <div class="flex justify-end mt-2">
+                        <button onclick="clearAuditSignature()" class="bg-yellow-500 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase shadow-sm"><i class="fa fa-eraser mr-1"></i> Ulangi TTD</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="prosesCetakPDF()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase shadow-lg mt-2 flex items-center justify-center text-sm active:scale-95 transition-transform"><i class="fa fa-file-pdf mr-2 text-lg"></i> Generate PDF Sekarang</button>
+        </div>
+    </div>
+
     <div id="pinOverlay" class="fixed inset-0 dominos-blue z-[10000] flex flex-col items-center justify-center p-6">
         <div class="text-center mb-8 text-white">
             <h1 class="font-black italic text-4xl uppercase">Domino's</h1>
@@ -155,7 +185,8 @@
 
         <main class="flex-1 overflow-hidden relative">
             
-            <div id="page-home" class="page p-6 overflow-y-auto bg-gray-50">
+            <!-- Ditambahkan pb-32 agar menu profile bisa discroll full sampai bawah -->
+            <div id="page-home" class="page p-6 pb-32 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
                         <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff" 
@@ -790,7 +821,6 @@
             setTimeout(() => al.classList.add('hidden'), duration);
         }
 
-        // LOBBY & CHALLENGES
         function renderChessOnlineList() {
             if(!document.getElementById('page-chess-lobby').classList.contains('active')) return;
             const container = document.getElementById('chessOnlineList'); container.innerHTML = '';
@@ -819,12 +849,11 @@
             db.ref('chess_challenges/' + targetUser).set({ from: currentUser, status: 'pending', timestamp: Date.now() });
             showChessAlert('Tantangan dikirim ke ' + targetUser + '...');
             
-            // Listen if accepted
             db.ref('chess_challenges/' + targetUser).on('value', snap => {
                 const data = snap.val();
                 if(data && data.from === currentUser && data.status === 'accepted' && data.gameId) {
                     db.ref('chess_challenges/' + targetUser).off();
-                    joinChessGame(data.gameId, 'w', targetUser); // Challenger is White
+                    joinChessGame(data.gameId, 'w', targetUser);
                 } else if (!data) {
                     db.ref('chess_challenges/' + targetUser).off();
                     showChessAlert('Tantangan dibatalkan atau ditolak.');
@@ -836,7 +865,7 @@
             if(!currentUser) return;
             db.ref('chess_challenges/' + currentUser).on('value', snap => {
                 const data = snap.val();
-                if (data && data.status === 'pending' && (Date.now() - data.timestamp < 30000)) { // 30s expiry
+                if (data && data.status === 'pending' && (Date.now() - data.timestamp < 30000)) { 
                     incomingChallengeId = currentUser;
                     document.getElementById('challengerName').innerText = data.from;
                     document.getElementById('challengeModal').style.display = 'flex';
@@ -851,7 +880,6 @@
                 const data = snap.val();
                 if(data && data.status === 'pending') {
                     const gameId = 'game_' + Date.now();
-                    // Create game in DB
                     chess.reset();
                     db.ref('chess_games/' + gameId).set({
                         fen: chess.fen(), w: data.from, b: currentUser, wTime: CHESS_TIME_MS, bTime: CHESS_TIME_MS, 
@@ -859,7 +887,7 @@
                     }).then(() => {
                         db.ref('chess_challenges/' + currentUser).update({ status: 'accepted', gameId: gameId });
                         document.getElementById('challengeModal').style.display = 'none';
-                        joinChessGame(gameId, 'b', data.from); // Accepter is Black
+                        joinChessGame(gameId, 'b', data.from);
                     });
                 }
             });
@@ -870,7 +898,6 @@
             document.getElementById('challengeModal').style.display = 'none';
         }
 
-        // GAME LOGIC
         function joinChessGame(gameId, color, oppName) {
             currentChessGameId = gameId; myChessColor = color; chessOpponent = oppName;
             document.getElementById('myChessColorLabel').innerText = color === 'w' ? 'Putih' : 'Hitam';
@@ -880,13 +907,12 @@
             
             chessSyncListener = db.ref('chess_games/' + gameId).on('value', snap => {
                 const gameData = snap.val();
-                if(!gameData) return abandonChessGame(true); // Game deleted
+                if(!gameData) return abandonChessGame(true); 
                 
                 const oldFen = chess.fen();
                 chess.load(gameData.fen);
                 
-                // Audio Feedback
-                if (oldFen !== gameData.fen && gameData.turn === myChessColor) { // Opponent just moved
+                if (oldFen !== gameData.fen && gameData.turn === myChessColor) {
                     if (chess.in_checkmate()) playSound('end');
                     else if (chess.in_check()) playSound('check');
                     else if (gameData.lastMove && gameData.lastMove.includes('x')) playSound('capture');
@@ -952,10 +978,9 @@
             const files = ['a','b','c','d','e','f','g','h']; const ranks = ['8','7','6','5','4','3','2','1'];
             if(isBlack) { files.reverse(); ranks.reverse(); }
 
-            // Extract last move squares for highlight
             let lastFrom = null, lastTo = null;
             if (lastMoveStr) {
-                const match = lastMoveStr.match(/([a-h][1-8])-([a-h][1-8])/); // Stored as "e2-e4" format in DB manually
+                const match = lastMoveStr.match(/([a-h][1-8])-([a-h][1-8])/);
                 if(match) { lastFrom = match[1]; lastTo = match[2]; }
             }
 
@@ -973,7 +998,6 @@
                     cell.dataset.sq = sq;
                     cell.onclick = () => onSquareClick(sq);
 
-                    // Highlights
                     if(sq === lastFrom || sq === lastTo) {
                         const hl = document.createElement('div'); hl.className = 'chess-last-move'; cell.appendChild(hl);
                     }
@@ -984,11 +1008,9 @@
                         const hl = document.createElement('div'); hl.className = 'chess-check-hl'; cell.appendChild(hl);
                     }
 
-                    // Coordinate labels (A-H, 1-8)
                     if(fIdx === 0) { const lbl = document.createElement('span'); lbl.className='chess-rank-lbl text-'+(isDark?'white':'gray-800'); lbl.innerText=r; cell.appendChild(lbl); }
                     if(rIdx === 7) { const lbl = document.createElement('span'); lbl.className='chess-file-lbl text-'+(isDark?'white':'gray-800'); lbl.innerText=f; cell.appendChild(lbl); }
 
-                    // Legal move indicator
                     if(selectedSquare) {
                         const moves = chess.moves({ square: selectedSquare, verbose: true });
                         if(moves.some(m => m.to === sq)) {
@@ -998,7 +1020,6 @@
                         }
                     }
 
-                    // Piece
                     if(piece) {
                         const pImg = document.createElement('img');
                         pImg.src = pieceIcons[piece.color][piece.type];
@@ -1013,24 +1034,16 @@
 
         function onSquareClick(sq) {
             if(chess.turn() !== myChessColor) return showChessAlert("Bukan giliran Anda!");
-            
             const piece = chess.get(sq);
-            
-            // If already selected a square, try to move
             if(selectedSquare) {
                 const moves = chess.moves({ square: selectedSquare, verbose: true });
                 const move = moves.find(m => m.to === sq);
-                
                 if(move) {
-                    // Check Promotion FIDE
                     if (move.flags.includes('np') || move.flags.includes('cp') || (move.piece === 'p' && (move.to[1] === '1' || move.to[1] === '8'))) {
-                        pendingPromotionMove = move;
-                        openPromotionModal();
-                        return;
+                        pendingPromotionMove = move; openPromotionModal(); return;
                     }
                     executeMove(move);
                 } else {
-                    // Clicking another own piece changes selection
                     if (piece && piece.color === myChessColor) { selectedSquare = sq; updateBoardUI(); }
                     else { selectedSquare = null; updateBoardUI(); }
                 }
@@ -1056,14 +1069,11 @@
             const moveRes = chess.move(moveObj);
             if(moveRes) {
                 selectedSquare = null;
-                // Play local sound immediately for responsiveness
                 if (moveRes.flags.includes('c') || moveRes.flags.includes('e')) playSound('capture');
                 else if (moveRes.flags.includes('p')) playSound('promote');
                 else if (moveRes.flags.includes('k') || moveRes.flags.includes('q')) playSound('castle');
                 else playSound('move');
-                
-                updateBoardUI();
-                syncMoveToServer(moveRes);
+                updateBoardUI(); syncMoveToServer(moveRes);
             }
         }
 
@@ -1074,7 +1084,6 @@
                     const now = Date.now(); const elapsed = now - data.lastMoveTime;
                     let newWTime = data.wTime; let newBTime = data.bTime;
                     if(data.turn === 'w') newWTime -= elapsed; else newBTime -= elapsed;
-                    
                     db.ref('chess_games/' + currentChessGameId).update({
                         fen: chess.fen(), turn: chess.turn(),
                         wTime: newWTime, bTime: newBTime, lastMoveTime: now,
@@ -1087,49 +1096,120 @@
         // ==========================================
         // FITUR GENERATE Laporan SITE AUDIT (PDF PROFESSIONAL)
         // ==========================================
-        async function generateAuditPDF() {
-            // Ambil data pelanggan dengan status 'done' (Selesai)
-            const doneItems = Object.keys(allData).map(k => allData[k]).filter(i => i.status === 'done');
-            const totalIssues = doneItems.length;
+        
+        // Logika Kanvas Tanda Tangan
+        let auditSigCanvas, auditSigCtx, isAuditDrawing = false;
+        
+        function initAuditCanvas() {
+            auditSigCanvas = document.getElementById('auditSignaturePad');
+            auditSigCtx = auditSigCanvas.getContext('2d');
+            const rect = auditSigCanvas.parentElement.getBoundingClientRect();
+            auditSigCanvas.width = rect.width;
+            auditSigCanvas.height = rect.height;
+            auditSigCtx.lineCap = 'round';
+            auditSigCtx.lineJoin = 'round';
+            auditSigCtx.lineWidth = 3;
+            auditSigCtx.strokeStyle = '#000000';
             
-            if (totalIssues === 0) {
-                return alert("Belum ada data history (selesai) untuk digenerate menjadi laporan PDF.");
+            // Hapus listener lama jika ada
+            const clone = auditSigCanvas.cloneNode(true);
+            auditSigCanvas.parentNode.replaceChild(clone, auditSigCanvas);
+            auditSigCanvas = clone;
+            auditSigCtx = auditSigCanvas.getContext('2d');
+            auditSigCtx.lineCap = 'round'; auditSigCtx.lineJoin = 'round'; auditSigCtx.lineWidth = 3;
+
+            auditSigCanvas.addEventListener('mousedown', startAuditDraw);
+            auditSigCanvas.addEventListener('mousemove', drawAudit);
+            auditSigCanvas.addEventListener('mouseup', stopAuditDraw);
+            auditSigCanvas.addEventListener('mouseout', stopAuditDraw);
+            auditSigCanvas.addEventListener('touchstart', startAuditDraw, {passive: false});
+            auditSigCanvas.addEventListener('touchmove', drawAudit, {passive: false});
+            auditSigCanvas.addEventListener('touchend', stopAuditDraw);
+        }
+
+        function getAuditPos(e) {
+            const rect = auditSigCanvas.getBoundingClientRect();
+            let clientX = e.clientX, clientY = e.clientY;
+            if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+            return { x: (clientX - rect.left) * (auditSigCanvas.width / rect.width), y: (clientY - rect.top) * (auditSigCanvas.height / rect.height) };
+        }
+        function startAuditDraw(e) { e.preventDefault(); isAuditDrawing = true; const pos = getAuditPos(e); auditSigCtx.beginPath(); auditSigCtx.moveTo(pos.x, pos.y); }
+        function drawAudit(e) { if (!isAuditDrawing) return; e.preventDefault(); const pos = getAuditPos(e); auditSigCtx.lineTo(pos.x, pos.y); auditSigCtx.stroke(); }
+        function stopAuditDraw(e) { if(e) e.preventDefault(); isAuditDrawing = false; auditSigCtx.closePath(); }
+        function clearAuditSignature() { auditSigCtx.clearRect(0, 0, auditSigCanvas.width, auditSigCanvas.height); }
+        
+        function closeAuditModal() { document.getElementById('siteAuditModal').style.display = 'none'; }
+
+        // Fungsi generateAuditPDF asli kini digunakan untuk membuka modal Site Audit
+        async function generateAuditPDF() {
+            document.getElementById('siteAuditModal').style.display = 'flex';
+            setTimeout(initAuditCanvas, 100); // Tunggu modal render
+        }
+
+        // Proses Pembuatan PDF menggunakan Data Semua Kustomer (Terstruktur Profesional)
+        async function prosesCetakPDF() {
+            const projectName = document.getElementById('auditProjectName').value.trim() || 'INSPEKSI RUTIN';
+            const locationName = document.getElementById('auditLocation').value.trim() || 'Tidak Diketahui';
+            
+            // Cek tanda tangan
+            const isCanvasBlank = (c) => {
+                const blank = document.createElement('canvas'); blank.width = c.width; blank.height = c.height;
+                return c.toDataURL() === blank.toDataURL();
+            }
+            let signatureData = null;
+            if(!isCanvasBlank(auditSigCanvas)) {
+                signatureData = auditSigCanvas.toDataURL('image/png');
+            } else {
+                return alert('Mohon berikan Tanda Tangan Digital sebelum men-generate PDF.');
             }
 
-            // Notifikasi proses
+            const items = Object.keys(allData).map(k => allData[k]);
+            const totalItems = items.length;
+            
+            if (totalItems === 0) {
+                return alert("Belum ada data untuk digenerate menjadi laporan PDF.");
+            }
+
             if(typeof showChessAlert === 'function') {
-                showChessAlert("Menyiapkan PDF Profesional... Mohon tunggu.", 3000);
-            } else {
-                alert("Menyiapkan PDF, mohon tunggu sebentar...");
+                showChessAlert("Menyiapkan Laporan PDF Profesional...", 3000);
             }
 
             const dateNow = new Date();
             const dateStr = dateNow.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
             const timeStr = dateNow.toLocaleTimeString('id-ID');
             
-            // Susun Content Issue Dinamis
+            let totalOpen = 0, totalOtw = 0, totalClosed = 0;
             let issuesContent = [];
-            doneItems.forEach((item, index) => {
-                let issueDate = item.doneTime ? new Date(item.doneTime).toLocaleString('id-ID') : dateStr;
-                let namaPIC = item.doneBy || item.driverBy || currentUser;
+            
+            items.forEach((item, index) => {
+                let statusColor = '#94a3b8'; let statusText = 'Unknown';
+                if(item.status === 'active') { totalOpen++; statusColor = '#e31837'; statusText = 'Open (Belum Diproses)'; }
+                else if(item.status === 'otw') { totalOtw++; statusColor = '#f59e0b'; statusText = 'In Progress (Di Jalan)'; }
+                else if(item.status === 'done') { totalClosed++; statusColor = '#22c55e'; statusText = 'Closed (Selesai)'; }
+
+                let issueDate = item.doneTime ? new Date(item.doneTime).toLocaleString('id-ID') : new Date(item.timestamp || dateNow).toLocaleString('id-ID');
+                let namaPIC = item.doneBy || item.driverBy || '-';
                 
-                // Card Header Issue
-                issuesContent.push({ text: `Issue ${index + 1}: ${item.name}`, style: 'issueHeader', margin: [0, 15, 0, 5] });
+                // Pemisah & Header Issue
+                if (index > 0) {
+                    issuesContent.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5, lineColor: '#94a3b8' }], margin: [0, 15, 0, 15] });
+                }
+                issuesContent.push({ text: `Issue ${index + 1}: ${item.name}`, style: 'issueHeader' });
                 
-                // Tabel Detail Issue
+                // Detail Issue Berbentuk Tabel
                 issuesContent.push({
                     table: {
                         widths: ['35%', '65%'],
                         body: [
                             [{text: 'Kategori', bold: true}, 'Site Inspection / Field Delivery'],
                             [{text: 'Lokasi / Area', bold: true}, item.area || '-'],
-                            [{text: 'Tanggal & Jam', bold: true}, issueDate],
+                            [{text: 'Waktu Tercatat', bold: true}, issueDate],
                             [{text: 'Prioritas', bold: true}, 'Medium'],
-                            [{text: 'Status', bold: true}, {text: 'Closed', color: 'green', bold: true}],
-                            [{text: 'Nama Inspector / PIC', bold: true}, namaPIC],
-                            [{text: 'Deadline', bold: true}, issueDate],
-                            [{text: 'Deskripsi', bold: true}, `Inspeksi penyelesaian untuk kustomer ${item.name}. Kontak referensi: ${item.phone || '-'}`],
-                            [{text: 'Rekomendasi Perbaikan', bold: true}, 'Diselesaikan sesuai dengan prosedur operasional dan standar keselamatan. Tidak ada temuan kritis lanjutan.']
+                            [{text: 'Status', bold: true}, {text: statusText, color: statusColor, bold: true}],
+                            [{text: 'Nama PIC', bold: true}, namaPIC],
+                            [{text: 'Kontak', bold: true}, item.phone || '-'],
+                            [{text: 'Deskripsi', bold: true}, `Peninjauan / pengantaran pesanan kustomer ${item.name}.`],
+                            [{text: 'Rekomendasi / Hasil', bold: true}, item.status === 'done' ? 'Telah diselesaikan dan diverifikasi di lapangan.' : 'Masih membutuhkan tindak lanjut operasi.']
                         ]
                     },
                     layout: {
@@ -1137,49 +1217,44 @@
                         vLineWidth: function (i, node) { return (i === 0 || i === node.table.widths.length) ? 1.5 : 1; },
                         hLineColor: function (i, node) { return '#cbd5e1'; },
                         vLineColor: function (i, node) { return '#cbd5e1'; },
-                        paddingLeft: function(i) { return 8; },
-                        paddingRight: function(i) { return 8; },
-                        paddingTop: function(i) { return 8; },
-                        paddingBottom: function(i) { return 8; }
+                        paddingLeft: function(i) { return 8; }, paddingRight: function(i) { return 8; },
+                        paddingTop: function(i) { return 8; }, paddingBottom: function(i) { return 8; }
                     },
-                    margin: [0, 0, 0, 10]
+                    margin: [0, 0, 0, 10],
+                    unbreakable: true
                 });
 
-                // Foto Lampiran dengan Rasio Proporsional
+                // Lampiran Foto Issue
                 if (item.photo && item.photo.startsWith('data:image')) {
                     issuesContent.push({ 
                         image: item.photo, 
-                        fit: [450, 320], // Tidak akan pecah, menjaga aspect ratio otomatis max lebar/tinggi
+                        fit: [450, 320],
                         alignment: 'center', 
-                        margin: [0, 10, 0, 20] 
+                        margin: [0, 10, 0, 10] 
                     });
                 } else {
-                    issuesContent.push({ text: '[Tidak Ada Lampiran Foto]', color: '#94a3b8', italics: true, alignment: 'center', margin: [0, 10, 0, 20] });
-                }
-                
-                // Pemisah Tiap Issue (Garis batas rapih)
-                if (index < totalIssues - 1) {
-                    issuesContent.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5, lineColor: '#94a3b8' }], margin: [0, 15, 0, 15] });
+                    issuesContent.push({ text: '[Tidak Ada Lampiran Foto Pada Data Ini]', color: '#94a3b8', italics: true, alignment: 'center', margin: [0, 10, 0, 10] });
                 }
             });
 
-            // Struktur Layout Utama Laporan iAuditor Style
+            const percentComplete = totalItems > 0 ? Math.round((totalClosed / totalItems) * 100) : 0;
+
             const docDefinition = {
                 pageSize: 'A4',
                 pageOrientation: 'portrait',
                 pageMargins: [40, 70, 40, 70],
                 header: function(currentPage, pageCount, pageSize) {
-                    if (currentPage === 1) return null; // Tidak ada header di Cover
+                    if (currentPage === 1) return null;
                     return {
                         columns: [
-                            { text: 'DOMINO\'S JTM - SITE AUDIT REPORT', bold: true, color: '#006491', fontSize: 10 },
+                            { text: projectName + ' - SITE AUDIT REPORT', bold: true, color: '#006491', fontSize: 10 },
                             { text: dateStr, alignment: 'right', fontSize: 10, color: '#64748b' }
                         ],
                         margin: [40, 30, 40, 0]
                     };
                 },
                 footer: function(currentPage, pageCount) {
-                    if (currentPage === 1) return null; // Tidak ada footer di Cover
+                    if (currentPage === 1) return null;
                     return {
                         columns: [
                             { text: `Generated by TrackCust JTM on ${dateStr} ${timeStr}`, fontSize: 8, color: '#94a3b8' },
@@ -1189,23 +1264,23 @@
                     };
                 },
                 content: [
-                    // --- HALAMAN 1 : COVER PAGE ---
-                    { text: 'SITE AUDIT REPORT', style: 'coverHeader', alignment: 'center', margin: [0, 100, 0, 10] },
-                    { text: 'PROJECT: TRACKCUST JATIMAKMUR', style: 'coverSubHeader', alignment: 'center', margin: [0, 0, 0, 40] },
+                    // HALAMAN 1: COVER
+                    { text: 'SITE AUDIT REPORT', style: 'coverHeader', alignment: 'center', margin: [0, 80, 0, 10] },
+                    { text: projectName, style: 'coverSubHeader', alignment: 'center', margin: [0, 0, 0, 40] },
                     {
                         table: {
                             widths: ['40%', '60%'],
                             body: [
-                                [{text: 'Lokasi', bold: true}, 'Domino\'s Pizza Jatimakmur, Bekasi'],
+                                [{text: 'Lokasi', bold: true}, locationName],
                                 [{text: 'Nama Inspector', bold: true}, currentUser],
                                 [{text: 'Tanggal Audit', bold: true}, dateStr],
-                                [{text: 'Jam Mulai', bold: true}, '00:00 WIB'], // Asumsi log mulai harian
+                                [{text: 'Jam Mulai', bold: true}, '00:00 WIB'],
                                 [{text: 'Jam Selesai', bold: true}, timeStr + ' WIB'],
                                 [{text: 'Durasi Audit', bold: true}, 'Automated Export'],
-                                [{text: 'Total Issues Identified', bold: true}, totalIssues.toString()],
-                                [{text: 'Total Checklist', bold: true}, totalIssues.toString()],
-                                [{text: 'Persentase Penyelesaian', bold: true}, '100%'],
-                                [{text: 'Status Audit', bold: true}, {text: 'COMPLETED', color: 'green', bold: true}],
+                                [{text: 'Total Issues Identified', bold: true}, totalItems.toString()],
+                                [{text: 'Total Checklist', bold: true}, totalItems.toString()],
+                                [{text: 'Persentase Penyelesaian', bold: true}, `${percentComplete}%`],
+                                [{text: 'Status Audit', bold: true}, {text: percentComplete === 100 ? 'COMPLETED' : 'IN PROGRESS', color: percentComplete === 100 ? 'green' : 'orange', bold: true}],
                                 [{text: 'Nomor Dokumen Dok.', bold: true}, 'AUDIT-' + Date.now().toString().slice(-6)]
                             ]
                         },
@@ -1214,7 +1289,7 @@
                     },
                     { text: '', pageBreak: 'after' },
 
-                    // --- HALAMAN 2 : RINGKASAN AUDIT ---
+                    // HALAMAN 2: RINGKASAN
                     { text: 'RINGKASAN AUDIT', style: 'sectionHeader' },
                     {
                         columns: [
@@ -1224,10 +1299,9 @@
                                     widths: ['*', 'auto'],
                                     body: [
                                         [{text: 'Status Issue', bold:true, fillColor: '#f1f5f9'}, {text: 'Jumlah', bold:true, fillColor: '#f1f5f9'}],
-                                        ['Open', '0'],
-                                        ['In Progress', '0'],
-                                        ['Resolved', totalIssues.toString()],
-                                        ['Closed', totalIssues.toString()]
+                                        ['Open', totalOpen.toString()],
+                                        ['In Progress', totalOtw.toString()],
+                                        ['Closed', totalClosed.toString()]
                                     ]
                                 },
                                 layout: 'lightHorizontalLines'
@@ -1240,7 +1314,7 @@
                                         [{text: 'Tingkat Prioritas', bold:true, fillColor: '#f1f5f9'}, {text: 'Jumlah', bold:true, fillColor: '#f1f5f9'}],
                                         ['Critical', '0'],
                                         ['High', '0'],
-                                        ['Medium', totalIssues.toString()],
+                                        ['Medium', totalItems.toString()],
                                         ['Low', '0']
                                     ]
                                 },
@@ -1250,36 +1324,35 @@
                         columnGap: 20,
                         margin: [0, 0, 0, 30]
                     },
-                    { text: 'Seluruh issue (temuan) telah ditangani, difoto, dan diverifikasi oleh Inspector. Rincian inspeksi terlampir pada lembar berikutnya secara berurutan.', italics: true, color: '#64748b' },
+                    { text: 'Rincian inspeksi dan laporan aktual lapangan terlampir pada lembar berikutnya secara berurutan sesuai pencatatan.', italics: true, color: '#64748b' },
                     { text: '', pageBreak: 'after' },
 
-                    // --- HALAMAN 3 dst : DETAIL ISSUE ---
+                    // HALAMAN 3+: DETAIL ISSUE
                     { text: 'DETAIL ISSUE (TEMUAN LAPANGAN)', style: 'sectionHeader' },
                     ...issuesContent,
 
-                    // --- HALAMAN TERAKHIR : TANDA TANGAN ---
-                    { text: '', pageBreak: 'before' }, // Paksa page baru untuk tanda tangan agar rapih
-                    { text: 'TANDA TANGAN & PENGESAHAN', style: 'sectionHeader', margin: [0, 0, 0, 30] },
-                    { text: 'Dengan ini menyatakan bahwa dokumen audit ini diterbitkan secara sah dan inspeksi telah dilakukan sesuai dengan kondisi aktual di lapangan tanpa manipulasi.', margin: [0, 0, 0, 60] },
+                    // HALAMAN TERAKHIR: TANDA TANGAN
+                    { text: '', pageBreak: 'before' },
+                    { text: 'TANDA TANGAN & PENGESAHAN', style: 'sectionHeader', margin: [0, 0, 0, 20] },
+                    { text: 'Dengan ini menyatakan bahwa dokumen audit ini diterbitkan secara sah dan inspeksi telah dilakukan sesuai dengan kondisi aktual di lapangan tanpa manipulasi.', margin: [0, 0, 0, 40] },
                     {
                         columns: [
                             {
                                 width: '50%',
                                 stack: [
-                                    { text: 'Dilaporkan & Disetujui Oleh,', margin: [0, 0, 0, 60] },
+                                    { text: 'Dilaporkan & Disetujui Oleh,', margin: [0, 0, 0, 10] },
+                                    { image: signatureData, width: 120, margin: [0, 5, 0, 5] },
                                     { text: '_______________________________', margin: [0, 0, 0, 5] },
                                     { text: currentUser, bold: true, fontSize: 12 },
                                     { text: 'Lead Inspector / PIC', fontSize: 10, color: '#64748b' },
                                     { text: `Tanggal : ${dateStr}`, fontSize: 10, color: '#64748b', margin: [0, 10, 0, 0] },
                                     { text: `Jam     : ${timeStr} WIB`, fontSize: 10, color: '#64748b' },
-                                    { text: 'Lokasi  : Bekasi, Jawa Barat', fontSize: 10, color: '#64748b' }
+                                    { text: `Lokasi  : ${locationName}`, fontSize: 10, color: '#64748b' }
                                 ]
                             },
                             {
                                 width: '50%',
-                                stack: [
-                                    // Kolom kosong untuk stempel / QR (Opsional)
-                                ]
+                                stack: []
                             }
                         ]
                     }
@@ -1296,15 +1369,14 @@
                 }
             };
 
-            // Proses Generate PDF
             const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+            closeAuditModal();
             
             pdfDocGenerator.getBlob(async (blob) => {
                 const fileName = `Site_Audit_${currentUser}_${Date.now()}.pdf`;
                 const file = new File([blob], fileName, { type: 'application/pdf' });
                 
                 try {
-                    // Panggil Web Share API (Akan otomatis membuka Whatsapp jika dipilih di Android Share Sheet)
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             files: [file],
@@ -1312,12 +1384,10 @@
                             text: `Berikut lampiran dokumen Laporan Site Audit yang digenerate oleh ${currentUser} pada ${dateStr}.`
                         });
                     } else {
-                        // Fallback Download untuk browser/device yang tidak support Share API Level 2
                         forceDownloadPDF(blob, fileName);
                     }
                 } catch (error) {
                     console.error("Gagal share PDF:", error);
-                    // Apabila user membatalkan share, abort error. Namun jika gagal teknis, fallback ke download
                     if (error.name !== 'AbortError') {
                         forceDownloadPDF(blob, fileName);
                     }
@@ -1325,7 +1395,6 @@
             });
         }
 
-        // Fungsi fallback download PDF
         function forceDownloadPDF(blob, fileName) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1335,7 +1404,7 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert('Share file PDF langsung mungkin tidak didukung di Browser/Perangkat ini. PDF telah diunduh ke ruang penyimpanan Anda.');
+            alert('Laporan PDF telah diunduh. Share langsung tidak didukung pada browser/perangkat ini.');
         }
     </script>
 </body>
