@@ -160,7 +160,6 @@
 
         <main class="flex-1 overflow-hidden relative">
             
-            <!-- DITAMBAHKAN pb-32 DISINI -->
             <div id="page-home" class="page p-6 pb-32 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
@@ -1416,15 +1415,19 @@
             });
         }
 
-        // INJEKSI: FITUR VOICE CHAT (WEBRTC)
+        // INJEKSI FIX: MENCEGAH CRASH WEB-RTC
         async function toggleVoiceChat() {
             const btn = document.getElementById('btnVoiceToggle');
             if(isVoiceActive) {
                 isVoiceActive = false;
-                if(localStream) localStream.getTracks().forEach(t => t.stop());
+                if(localStream) {
+                    localStream.getTracks().forEach(t => t.stop());
+                    localStream = null;
+                }
                 btn.innerHTML = '<i class="fa fa-microphone-slash text-[10px]"></i>';
                 btn.className = 'bg-gray-700 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg';
                 db.ref(`chess_games/${currentChessGameId}/webrtc_status/${currentUser}`).set('muted');
+                db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${currentUser}`).remove(); // Bersihkan sinyal
                 setupWebRTC(); 
                 return;
             }
@@ -1434,6 +1437,7 @@
                 btn.innerHTML = '<i class="fa fa-microphone text-[10px]"></i>';
                 btn.className = 'bg-emerald-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-pulse';
                 db.ref(`chess_games/${currentChessGameId}/webrtc_status/${currentUser}`).set('talking');
+                db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${currentUser}`).remove(); // Bersihkan sinyal
                 setupWebRTC();
             } catch(e) { alert("Mic error: " + e.message); }
         }
@@ -1488,7 +1492,7 @@
         }
 
         function initVoiceStatusListener() {
-            setupWebRTC(); // initial listen ready state
+            setupWebRTC(); 
             db.ref(`chess_games/${currentChessGameId}/webrtc_status/${chessOpponent}`).on('value', snap => {
                 const status = snap.val();
                 const oppInd = document.getElementById('oppVoiceIndicator');
@@ -1587,7 +1591,6 @@
             
             showPage('chess-game');
 
-            // INJEKSI: RESET LOGIC TAMBAHAN SEBELUM GAME MULAI
             scoreProcessedForGame = false;
             updateAndLoadScores();
             initChessChat();
@@ -1600,12 +1603,16 @@
                 const game = snap.val();
                 if(!game) return;
                 
+                // INJEKSI FIX: Abaikan update yang asalnya cuma dari Chat/WebRTC (mencegah LAG)
+                if (game.status === 'active' && game.lastUpdate === lastTimestamp) {
+                    return; 
+                }
+                
                 if(game.status === 'ended') {
                     document.getElementById('chessResetContainer').classList.remove('hidden');
                     if (chessTimerInterval) clearInterval(chessTimerInterval);
                     const pemenang = game.winner ? (game.winner === 'w' ? game.white : game.black) : 'Seri';
                     
-                    // INJEKSI: LOGIC PENAMBAHAN SKOR OTOMATIS
                     if(!scoreProcessedForGame) {
                         scoreProcessedForGame = true;
                         db.ref(`chess_scores/${currentUser}`).once('value', sSnap => {
@@ -1620,6 +1627,7 @@
                         });
                     }
 
+                    lastTimestamp = game.lastUpdate; // Cegah re-render atau alert ganda saat end
                     showAlert(`Game Selesai! Pemenang: ${pemenang} (${game.reason || 'Selesai'})`, "blue");
                     return;
                 } else {
@@ -1691,14 +1699,14 @@
             db.ref(`chess_games/${currentChessGameId}`).update({
                 status: 'ended',
                 winner: loserColor === 'w' ? 'b' : 'w',
-                reason: 'Waktu Habis (Timeout)'
+                reason: 'Waktu Habis (Timeout)',
+                lastUpdate: Date.now() // INJEKSI FIX: Update waktu
             });
         }
 
         function renderChessBoard(lastMoveObj = null) {
             const boardEl = document.getElementById('chessBoard');
             
-            // INJEKSI: LOGIC ANIMASI PERGERAKAN BIDAK
             if (lastMoveObj && lastRenderedFen !== chess.fen() && !isAnimatingPiece) {
                 isAnimatingPiece = true;
                 const getCoords = (sq) => {
