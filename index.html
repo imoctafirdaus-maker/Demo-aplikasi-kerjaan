@@ -76,8 +76,7 @@
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
 
-    <!-- AUDIO CATUR & WEBRTC -->
-    <audio id="remoteVoiceAudio" autoplay hidden></audio>
+    <!-- AUDIO CATUR -->
     <audio id="snd-move" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3" preload="auto"></audio>
     <audio id="snd-capture" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3" preload="auto"></audio>
     <audio id="snd-check" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/check.mp3" preload="auto"></audio>
@@ -269,17 +268,17 @@
             </div>
 
             <!-- HALAMAN GAME CATUR (NEW) -->
-            <div id="page-chess-game" class="page bg-[#161512] flex-col pb-20 justify-center">
-                <div class="flex-1 flex flex-col justify-center items-center px-4 max-w-lg mx-auto w-full relative">
+            <!-- DITAMBAHKAN pb-32 dan pt-4 AGAR BISA DI-SCROLL DAN CHAT TERLIHAT UTUH DI ATAS BOTTOM NAV -->
+            <div id="page-chess-game" class="page bg-[#161512] flex-col pb-32 pt-4 overflow-y-auto justify-start">
+                <div class="flex flex-col justify-start items-center px-4 max-w-lg mx-auto w-full relative h-max">
                     
                     <!-- [INJEKSI UI] Profil Lawan -->
-                    <div class="w-full flex justify-between items-center mb-3 mt-4">
+                    <div class="w-full flex justify-between items-center mb-3">
                         <div class="flex items-center gap-3">
                             <img id="chessOpponentAvatar" class="w-10 h-10 rounded bg-gray-700 object-cover">
                             <div class="flex flex-col">
                                 <div class="flex items-center gap-2">
                                     <span id="chessOpponentName" class="font-black text-gray-200 text-sm">Opponent</span>
-                                    <span id="oppVoiceIndicator" class="text-xs text-gray-400 hidden"><i class="fa fa-microphone-slash"></i></span>
                                 </div>
                                 <span id="chessOpponentScore" class="text-[9px] text-yellow-400 font-bold">🏆 Win : 0 ❌ Lose : 0 🤝 Draw : 0</span>
                             </div>
@@ -298,7 +297,6 @@
                             <div class="flex flex-col">
                                 <div class="flex items-center gap-2">
                                     <span class="font-black text-white text-sm" id="myChessNameDisplay">Anda</span>
-                                    <button onclick="toggleVoiceChat()" id="btnVoiceToggle" class="bg-gray-700 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg"><i class="fa fa-microphone-slash text-[10px]"></i></button>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-[9px] text-gray-500 font-bold" id="myChessColorLabel">White</span>
@@ -468,14 +466,11 @@
         let bTime = 10 * 60;
         let lastTimestamp = 0;
 
-        // INJEKSI: VARIABEL GLOBAL CATUR
+        // INJEKSI: VARIABEL GLOBAL CATUR (Tanpa Voice)
         let lastRenderedFen = "start";
         let isAnimatingPiece = false;
         let scoreProcessedForGame = false;
         let chessChatListener = null;
-        let localStream = null;
-        let peerConnection = null;
-        let isVoiceActive = false;
 
         // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
@@ -1415,97 +1410,6 @@
             });
         }
 
-        // INJEKSI FIX: MENCEGAH CRASH WEB-RTC
-        async function toggleVoiceChat() {
-            const btn = document.getElementById('btnVoiceToggle');
-            if(isVoiceActive) {
-                isVoiceActive = false;
-                if(localStream) {
-                    localStream.getTracks().forEach(t => t.stop());
-                    localStream = null;
-                }
-                btn.innerHTML = '<i class="fa fa-microphone-slash text-[10px]"></i>';
-                btn.className = 'bg-gray-700 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg';
-                db.ref(`chess_games/${currentChessGameId}/webrtc_status/${currentUser}`).set('muted');
-                db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${currentUser}`).remove(); // Bersihkan sinyal
-                setupWebRTC(); 
-                return;
-            }
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                isVoiceActive = true;
-                btn.innerHTML = '<i class="fa fa-microphone text-[10px]"></i>';
-                btn.className = 'bg-emerald-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-pulse';
-                db.ref(`chess_games/${currentChessGameId}/webrtc_status/${currentUser}`).set('talking');
-                db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${currentUser}`).remove(); // Bersihkan sinyal
-                setupWebRTC();
-            } catch(e) { alert("Mic error: " + e.message); }
-        }
-        
-        function setupWebRTC() {
-            if(peerConnection) peerConnection.close();
-            peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-            
-            if(isVoiceActive && localStream) {
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            }
-            
-            peerConnection.ontrack = event => {
-                const audioEl = document.getElementById('remoteVoiceAudio');
-                if(audioEl.srcObject !== event.streams[0]) {
-                    audioEl.srcObject = event.streams[0];
-                }
-            };
-            
-            peerConnection.onicecandidate = event => {
-                if(event.candidate) {
-                    db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${currentUser}`).push({
-                        type: 'candidate', candidate: event.candidate.toJSON()
-                    });
-                }
-            };
-            
-            db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${chessOpponent}`).off();
-            db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${chessOpponent}`).on('child_added', async snap => {
-                const data = snap.val();
-                if(!peerConnection) return;
-                try {
-                    if(data.type === 'offer') {
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                        const answer = await peerConnection.createAnswer();
-                        await peerConnection.setLocalDescription(answer);
-                        db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${currentUser}`).push({ type: 'answer', answer: answer });
-                    } else if (data.type === 'answer') {
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    } else if (data.type === 'candidate') {
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-                    }
-                } catch(e) { console.warn("WebRTC Signal error:", e); }
-            });
-            
-            if(isVoiceActive) {
-                peerConnection.createOffer().then(offer => {
-                    peerConnection.setLocalDescription(offer);
-                    db.ref(`chess_games/${currentChessGameId}/webrtc_signals/${currentUser}`).push({ type: 'offer', offer: offer });
-                });
-            }
-        }
-
-        function initVoiceStatusListener() {
-            setupWebRTC(); 
-            db.ref(`chess_games/${currentChessGameId}/webrtc_status/${chessOpponent}`).on('value', snap => {
-                const status = snap.val();
-                const oppInd = document.getElementById('oppVoiceIndicator');
-                if(status === 'talking') {
-                    oppInd.innerHTML = '<i class="fa fa-microphone text-emerald-400"></i>';
-                    oppInd.classList.remove('hidden');
-                } else {
-                    oppInd.innerHTML = '<i class="fa fa-microphone-slash text-gray-500"></i>';
-                    oppInd.classList.remove('hidden');
-                }
-            });
-        }
-
         function renderChessOnlineList() {
             db.ref('presence').once('value', snapshot => {
                 const list = document.getElementById('chessOnlineList');
@@ -1594,8 +1498,6 @@
             scoreProcessedForGame = false;
             updateAndLoadScores();
             initChessChat();
-            db.ref(`chess_games/${gameId}/webrtc_signals/${currentUser}`).remove();
-            initVoiceStatusListener();
             
             if(chessSyncListener) db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener);
             
@@ -1603,7 +1505,6 @@
                 const game = snap.val();
                 if(!game) return;
                 
-                // INJEKSI FIX: Abaikan update yang asalnya cuma dari Chat/WebRTC (mencegah LAG)
                 if (game.status === 'active' && game.lastUpdate === lastTimestamp) {
                     return; 
                 }
@@ -1627,7 +1528,7 @@
                         });
                     }
 
-                    lastTimestamp = game.lastUpdate; // Cegah re-render atau alert ganda saat end
+                    lastTimestamp = game.lastUpdate; 
                     showAlert(`Game Selesai! Pemenang: ${pemenang} (${game.reason || 'Selesai'})`, "blue");
                     return;
                 } else {
@@ -1700,7 +1601,7 @@
                 status: 'ended',
                 winner: loserColor === 'w' ? 'b' : 'w',
                 reason: 'Waktu Habis (Timeout)',
-                lastUpdate: Date.now() // INJEKSI FIX: Update waktu
+                lastUpdate: Date.now() 
             });
         }
 
