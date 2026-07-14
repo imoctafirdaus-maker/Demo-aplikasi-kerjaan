@@ -68,10 +68,39 @@
         .timer-active { background-color: #ffffff !important; color: #16a34a !important; box-shadow: 0 0 15px rgba(22, 163, 74, 0.5); }
         .timer-inactive { background-color: #374151 !important; color: #9ca3af !important; }
 
-        /* INJEKSI: CSS TAMBAHAN CATUR (CHAT & ANIMASI) */
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; }
         .chess-anim-piece { position: absolute; z-index: 999; transition: transform 0.2s ease-in-out; pointer-events: none; }
+
+        /* ==================== CSS KHUSUS LUDO ==================== */
+        .ludo-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); border: 3px solid #1f2937; background-color: #fff; margin: 0 auto; padding: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .ludo-cell { border: 1px solid rgba(0,0,0,0.05); position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .ludo-path { border: 1px solid rgba(0,0,0,0.2); }
+        
+        /* Pewarnaan Board Dasar Ludo */
+        .ludo-red-bg { background-color: #ef4444 !important; }
+        .ludo-green-bg { background-color: #22c55e !important; }
+        .ludo-yellow-bg { background-color: #eab308 !important; }
+        .ludo-blue-bg { background-color: #3b82f6 !important; }
+        .ludo-center-bg { background-image: conic-gradient(#ef4444 0deg 90deg, #3b82f6 90deg 180deg, #eab308 180deg 270deg, #22c55e 270deg 360deg); }
+        
+        /* Bidak Ludo */
+        .ludo-piece { position: absolute; width: 75%; height: 75%; border-radius: 50%; box-shadow: 0 3px 5px rgba(0,0,0,0.5); border: 2px solid #fff; cursor: pointer; z-index: 20; transition: transform 0.2s, top 0.2s, left 0.2s; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 10px; }
+        .ludo-piece:active { transform: scale(0.9); }
+        .ludo-piece.red { background-color: #b91c1c; }
+        .ludo-piece.green { background-color: #15803d; }
+        .ludo-piece.yellow { background-color: #a16207; }
+        .ludo-piece.blue { background-color: #1d4ed8; }
+        .ludo-piece.glow { box-shadow: 0 0 10px 4px #fbbf24; animation: ludo-pulse 1s infinite; z-index: 30; }
+
+        @keyframes ludo-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        
+        .dice-btn { font-size: 2rem; background: white; border: 2px solid #333; border-radius: 12px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.2s; }
+        .dice-btn:active { transform: scale(0.9); }
+        .dice-roll-anim { animation: spin-dice 0.5s ease-in-out; }
+        @keyframes spin-dice { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+        /* ======================================================= */
+
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -181,7 +210,7 @@
                         <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
                     </div>
 
-                    <!-- TAMBAHAN MENU GAME CATUR -->
+                    <!-- MENU CATUR -->
                     <div onclick="showPage('chess-lobby')" class="profile-bubble bg-gray-900 hover:bg-gray-800 transition border-gray-700">
                         <div class="profile-icon bg-emerald-600 text-white shadow-md"><i class="fa fa-chess-knight"></i></div>
                         <div class="flex flex-col flex-1">
@@ -189,6 +218,16 @@
                             <span class="text-[8px] font-bold text-gray-400 uppercase">Multiplayer Engine</span>
                         </div>
                         <i class="fa fa-chevron-right text-gray-500 text-[10px]"></i>
+                    </div>
+
+                    <!-- MENU LUDO JTM -->
+                    <div onclick="showPage('ludo-lobby')" class="profile-bubble bg-red-900 hover:bg-red-800 transition border-red-700">
+                        <div class="profile-icon bg-yellow-400 text-red-900 shadow-md"><i class="fa fa-dice"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-white uppercase italic text-[11px]">Ludo JTM Team</span>
+                            <span class="text-[8px] font-bold text-gray-300 uppercase">4 Player Board Game</span>
+                        </div>
+                        <i class="fa fa-chevron-right text-red-400 text-[10px]"></i>
                     </div>
 
                     <div id="adminPanel" class="hidden space-y-3">
@@ -255,7 +294,7 @@
                 </div>
             </div>
 
-            <!-- HALAMAN LOBBY CATUR (NEW) -->
+            <!-- HALAMAN LOBBY CATUR -->
             <div id="page-chess-lobby" class="page p-6 bg-[#161512] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="showPage('home')" class="text-gray-300 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
@@ -267,12 +306,9 @@
                 </div>
             </div>
 
-            <!-- HALAMAN GAME CATUR (NEW) -->
-            <!-- DITAMBAHKAN pb-32 dan pt-4 AGAR BISA DI-SCROLL DAN CHAT TERLIHAT UTUH DI ATAS BOTTOM NAV -->
+            <!-- HALAMAN GAME CATUR -->
             <div id="page-chess-game" class="page bg-[#161512] flex-col pb-32 pt-4 overflow-y-auto justify-start">
                 <div class="flex flex-col justify-start items-center px-4 max-w-lg mx-auto w-full relative h-max">
-                    
-                    <!-- [INJEKSI UI] Profil Lawan -->
                     <div class="w-full flex justify-between items-center mb-3">
                         <div class="flex items-center gap-3">
                             <img id="chessOpponentAvatar" class="w-10 h-10 rounded bg-gray-700 object-cover">
@@ -290,7 +326,6 @@
 
                     <div id="chessBoard" class="chess-container shadow-2xl"></div>
 
-                    <!-- [INJEKSI UI] Profil Anda -->
                     <div class="w-full flex justify-between items-center mt-3">
                         <div class="flex items-center gap-3">
                             <img id="chessMyAvatar" class="w-10 h-10 rounded bg-emerald-600 object-cover">
@@ -309,12 +344,14 @@
                         </div>
                     </div>
                     
-                    <!-- [INJEKSI UI] Tombol Reset -->
+                    <div id="oktaBotContainer" class="w-full mt-3 hidden flex items-center justify-end bg-purple-900/40 p-3 rounded-xl border border-purple-500 shadow-md">
+                        <input type="checkbox" id="oktaBotToggle" class="checkbox-custom !border-purple-500">
+                    </div>
+
                     <div id="chessResetContainer" class="w-full flex justify-center mt-4 hidden">
-                        <button onclick="resetChessGame()" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full">Reset Game</button>
+                        <button onclick="resetChessGame()" id="btnResetGame" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all">Reset Game</button>
                     </div>
                     
-                    <!-- [INJEKSI UI] Panel Chat -->
                     <div class="w-full max-w-lg mt-4 bg-gray-800 rounded-xl p-3 flex flex-col shadow-xl border border-gray-700" style="height: 150px;">
                         <div id="chessChatHistory" class="flex-1 overflow-y-auto space-y-1 mb-2 pr-1 custom-scrollbar text-[10px]"></div>
                         <div class="flex gap-2">
@@ -322,7 +359,81 @@
                             <button onclick="sendChessChat()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-md"><i class="fa fa-paper-plane text-xs"></i></button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- HALAMAN LOBBY LUDO (NEW) -->
+            <div id="page-ludo-lobby" class="page p-6 bg-yellow-50 overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showPage('home')" class="text-red-900 bg-red-100 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
+                    <h2 class="font-black text-red-900 uppercase italic text-lg tracking-widest">Ludo Lobby</h2>
+                    <div class="w-10"></div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-[2rem] shadow-xl border-4 border-red-900 text-center mb-6">
+                    <i class="fa fa-dice text-5xl text-yellow-500 mb-4 drop-shadow-md"></i>
+                    <h3 class="font-black text-blue-900 uppercase text-lg mb-2">Meja Utama Ludo</h3>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-6">Maksimal 4 Pemain Sekaligus</p>
+                    <button onclick="joinLudoGlobalRoom()" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black uppercase text-sm shadow-lg hover:bg-red-500 active:scale-95 transition">Masuk Ruangan</button>
+                </div>
+            </div>
+
+            <!-- HALAMAN GAME LUDO (NEW) -->
+            <div id="page-ludo-game" class="page bg-gray-100 flex-col pb-32 pt-4 overflow-y-auto justify-start">
+                <div class="flex flex-col justify-start items-center px-4 max-w-lg mx-auto w-full relative h-max">
                     
+                    <div class="flex justify-between w-full mb-4 px-2">
+                        <button onclick="leaveLudoRoom()" class="text-white bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center text-[10px] shadow-md"><i class="fa fa-times"></i></button>
+                        <span id="ludoRoomStatusMsg" class="bg-blue-100 text-blue-900 font-black px-4 py-1 rounded-full text-[10px] uppercase border border-blue-200">Menunggu Pemain...</span>
+                    </div>
+
+                    <!-- Panel Kursi Pemain Ludo -->
+                    <div class="grid grid-cols-4 gap-2 w-full mb-4" id="ludoSeatsContainer">
+                        <!-- Red Seat -->
+                        <div onclick="takeLudoSeat('red')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-red-600 cursor-pointer hover:bg-red-50 transition">
+                            <p class="text-[9px] font-black text-red-600 uppercase mb-1">RED</p>
+                            <p id="ludoSeat-red" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        </div>
+                        <!-- Green Seat -->
+                        <div onclick="takeLudoSeat('green')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-green-600 cursor-pointer hover:bg-green-50 transition">
+                            <p class="text-[9px] font-black text-green-600 uppercase mb-1">GREEN</p>
+                            <p id="ludoSeat-green" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        </div>
+                        <!-- Yellow Seat -->
+                        <div onclick="takeLudoSeat('yellow')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-yellow-500 cursor-pointer hover:bg-yellow-50 transition">
+                            <p class="text-[9px] font-black text-yellow-600 uppercase mb-1">YELLOW</p>
+                            <p id="ludoSeat-yellow" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        </div>
+                        <!-- Blue Seat -->
+                        <div onclick="takeLudoSeat('blue')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-blue-600 cursor-pointer hover:bg-blue-50 transition">
+                            <p class="text-[9px] font-black text-blue-600 uppercase mb-1">BLUE</p>
+                            <p id="ludoSeat-blue" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        </div>
+                    </div>
+
+                    <!-- Papan Ludo 15x15 -->
+                    <div id="ludoBoard" class="ludo-container"></div>
+
+                    <!-- Ludo Controls -->
+                    <div class="flex items-center justify-between w-full mt-6 bg-white p-4 rounded-2xl shadow-md border border-gray-200">
+                        <div class="flex flex-col">
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Giliran Saat Ini</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <div id="ludoTurnColorIndicator" class="w-4 h-4 rounded-full bg-gray-300"></div>
+                                <span id="ludoTurnName" class="font-black text-sm text-gray-800 uppercase">System</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <button onclick="startLudoGame()" id="btnStartLudo" class="hidden bg-emerald-500 text-white px-4 py-2 rounded-xl font-black uppercase text-[10px] shadow-lg">Mulai</button>
+                            <button onclick="rollLudoDice()" id="ludoDiceBtn" class="dice-btn disabled:opacity-50">🎲</button>
+                            <div class="flex flex-col items-center justify-center">
+                                <span class="text-[9px] font-bold text-gray-400 uppercase">Angka</span>
+                                <span id="ludoDiceResult" class="font-black text-xl text-blue-900">-</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -461,16 +572,48 @@
         let selectedSquare = null;
         let chessSyncListener = null;
         let chessTimerInterval = null;
-        
-        let wTime = 10 * 60;
-        let bTime = 10 * 60;
-        let lastTimestamp = 0;
+        let wTime = 10 * 60; let bTime = 10 * 60; let lastTimestamp = 0;
+        let lastRenderedFen = "start"; let isAnimatingPiece = false; let scoreProcessedForGame = false;
+        let chessChatListener = null; let pendingPromotion = null; let audioUnlocked = false; let botIsThinking = false;
 
-        // INJEKSI: VARIABEL GLOBAL CATUR (Tanpa Voice)
-        let lastRenderedFen = "start";
-        let isAnimatingPiece = false;
-        let scoreProcessedForGame = false;
-        let chessChatListener = null;
+        // =====================================
+        // VARIABEL LUDO JTM
+        // =====================================
+        let ludoSyncListener = null;
+        let ludoGameState = null;
+        let myLudoColorGlobal = null; 
+        
+        // Peta Path Grid 15x15 secara berurutan jarum jam (52 kotak utama luar)
+        const LUDO_PATH = [
+            [6,0],[6,1],[6,2],[6,3],[6,4], [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
+            [0,7],[0,8],
+            [1,8],[2,8],[3,8],[4,8],[5,8], [6,10],[6,11],[6,12],[6,13],[6,14],
+            [7,14],[8,14],
+            [8,13],[8,12],[8,11],[8,10],[8,9], [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
+            [14,7],[14,6],
+            [13,6],[12,6],[11,6],[10,6],[9,6], [8,4],[8,3],[8,2],[8,1],[8,0],
+            [7,0]
+        ];
+        
+        // Koordinat Home Stretch (Masuk Rumah)
+        const LUDO_STRETCH = {
+            red: [[7,1],[7,2],[7,3],[7,4],[7,5]],
+            green: [[1,7],[2,7],[3,7],[4,7],[5,7]],
+            yellow: [[7,13],[7,12],[7,11],[7,10],[7,9]],
+            blue: [[13,7],[12,7],[11,7],[10,7],[9,7]]
+        };
+
+        // Koordinat Base Awal
+        const LUDO_BASES = {
+            red: [[2,2],[2,3],[3,2],[3,3]],
+            green: [[2,11],[2,12],[3,11],[3,12]],
+            yellow: [[11,11],[11,12],[12,11],[12,12]],
+            blue: [[11,2],[11,3],[12,2],[12,3]]
+        };
+        
+        const LUDO_START_IDX = { red: 1, green: 14, yellow: 27, blue: 40 };
+        const LUDO_SAFE_IDX = [1, 9, 14, 22, 27, 35, 40, 48]; // Kotak Bintang/Awal
+        const LUDO_COLORS = ['red', 'green', 'yellow', 'blue'];
 
         // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
@@ -498,9 +641,17 @@
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
             checkAndResetIdsAtMidnight();
-
-            // Init listener catur ketika load
             listenToChessChallenges();
+            
+            document.body.addEventListener('click', () => {
+                if(!audioUnlocked) {
+                    ['snd-move', 'snd-capture', 'snd-check', 'snd-end', 'snd-promote', 'snd-castle'].forEach(id => {
+                        const au = document.getElementById(id);
+                        if(au) { au.play().catch(e=>{}); au.pause(); au.currentTime = 0; }
+                    });
+                    audioUnlocked = true;
+                }
+            }, { once: true });
         };
 
         // SKRIP JEMBATAN OTOMATIS PORTAL FEM
@@ -1022,7 +1173,6 @@
             }
         }
 
-        // --- Modifikasi showPage untuk Mendukung Catur ---
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => {
@@ -1031,7 +1181,6 @@
             });
             if(id === 'home') closeCrewManager();
             
-            // Logika Catur tambahan
             if(id === 'chess-lobby') renderChessOnlineList();
             if(id !== 'chess-game' && typeof chessTimerInterval !== 'undefined' && chessTimerInterval) clearInterval(chessTimerInterval);
         }
@@ -1351,18 +1500,13 @@
         // JAVASCRIPT GAME CATUR (INTEGRASI)
         // ==========================================
 
-        // INJEKSI: RESET CHESS GAME
         function resetChessGame() {
-            if(confirm("Apakah Anda yakin ingin mengatur ulang papan catur? (Skor & Chat tidak hilang)")) {
-                db.ref(`chess_games/${currentChessGameId}`).update({
-                    fen: 'start', turn: 'w', lastMove: null, 
-                    wTime: 600, bTime: 600, lastUpdate: Date.now(), 
-                    status: 'active', winner: null, reason: null
-                });
+            const btn = document.getElementById('btnResetGame');
+            if (!btn.disabled) {
+                db.ref(`chess_games/${currentChessGameId}/resetRequest/${currentUser}`).set(true);
             }
         }
 
-        // INJEKSI: SINKRONISASI SKOR
         function updateAndLoadScores() {
             db.ref(`chess_scores/${currentUser}`).on('value', snap => {
                 const s = snap.val() || { win: 0, lose: 0, draw: 0 };
@@ -1374,7 +1518,6 @@
             });
         }
 
-        // INJEKSI: FITUR TEXT CHAT CATUR
         function sendChessChat() {
             const inp = document.getElementById('chessChatInput');
             const msg = inp.value.trim();
@@ -1481,11 +1624,65 @@
                 db.ref(`chess_challenges/${currentUser}`).remove();
             }
         }
+        
+        function playChessSound(moveObj, inCheck) {
+            if(!audioUnlocked || !moveObj) return;
+            let audioId = 'snd-move';
+            if(moveObj.captured) audioId = 'snd-capture';
+            if(moveObj.flags && (moveObj.flags.includes('k') || moveObj.flags.includes('q'))) audioId = 'snd-castle';
+            if(moveObj.promotion) audioId = 'snd-promote';
+            if(inCheck) audioId = 'snd-check';
+            
+            const au = document.getElementById(audioId);
+            if(au) { au.currentTime = 0; au.play().catch(e=>{}); }
+        }
+
+        async function checkAndPlayBot() {
+            if (currentUser !== 'Okta') return;
+            const botToggle = document.getElementById('oktaBotToggle');
+            if (!botToggle || !botToggle.checked) return;
+            
+            if (chess.turn() === myChessColor && !chess.game_over() && !botIsThinking) {
+                botIsThinking = true;
+                try {
+                    const fen = chess.fen();
+                    const res = await fetch('https://chess-api.com/v1', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fen: fen })
+                    });
+                    const data = await res.json();
+                    
+                    if (data && data.move && currentChessGameId) {
+                        const moveStr = data.move; 
+                        const fromSquare = moveStr.substring(0,2);
+                        const toSquare = moveStr.substring(2,4);
+                        const promoType = moveStr.length === 5 ? moveStr[4] : undefined;
+                        
+                        const moveMatches = chess.moves({ verbose: true });
+                        const validatedMove = moveMatches.find(m => 
+                            m.from === fromSquare && 
+                            m.to === toSquare && 
+                            (!promoType || m.promotion === promoType)
+                        );
+                        
+                        if(validatedMove) {
+                            executeChessMove(validatedMove);
+                        }
+                    }
+                } catch(e) {
+                    console.error("GM Bot API Error: ", e);
+                } finally {
+                    botIsThinking = false;
+                }
+            }
+        }
 
         function initChessGame(gameId, color, opponentName) {
             currentChessGameId = gameId; myChessColor = color; chessOpponent = opponentName;
             chess = new Chess();
             selectedSquare = null; wTime = 600; bTime = 600; lastTimestamp = Date.now();
+            botIsThinking = false;
             if (chessTimerInterval) clearInterval(chessTimerInterval);
             
             document.getElementById('myChessNameDisplay').innerText = currentUser;
@@ -1493,6 +1690,13 @@
             document.getElementById('chessOpponentName').innerText = opponentName;
             document.getElementById('chessMyAvatar').src = localStorage.getItem('profile_pic_' + currentUser) || `https://ui-avatars.com/api/?name=${currentUser}&background=16a34a&color=fff`;
             
+            if(currentUser === 'Okta') {
+                document.getElementById('oktaBotContainer').classList.remove('hidden');
+                document.getElementById('oktaBotToggle').checked = false;
+            } else {
+                document.getElementById('oktaBotContainer').classList.add('hidden');
+            }
+
             showPage('chess-game');
 
             scoreProcessedForGame = false;
@@ -1505,13 +1709,48 @@
                 const game = snap.val();
                 if(!game) return;
                 
-                if (game.status === 'active' && game.lastUpdate === lastTimestamp) {
+                myChessColor = (game.white === currentUser) ? 'w' : 'b';
+                chessOpponent = (myChessColor === 'w') ? game.black : game.white;
+                document.getElementById('myChessColorLabel').innerText = myChessColor === 'w' ? 'WHITE' : 'BLACK';
+                document.getElementById('chessOpponentName').innerText = chessOpponent;
+
+                const isNewFen = game.fen !== chess.fen() && (game.fen !== 'start' || chess.fen() !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+                
+                if (game.status === 'active' && game.lastUpdate === lastTimestamp && game.fen !== 'start') {
                     return; 
+                }
+
+                const resetRequests = game.resetRequest || {};
+                const myReset = resetRequests[currentUser];
+                const oppReset = resetRequests[chessOpponent];
+                const btnReset = document.getElementById('btnResetGame');
+
+                if (myReset && oppReset) {
+                    if (game.white === currentUser) {
+                        db.ref(`chess_games/${currentChessGameId}`).update({
+                            fen: 'start', turn: 'w', lastMove: null, wTime: 600, bTime: 600,
+                            lastUpdate: Date.now(), status: 'active', winner: null, reason: null,
+                            resetRequest: null, white: game.black, black: game.white 
+                        });
+                    }
+                } else if (oppReset && !myReset) {
+                    btnReset.innerText = "Terima Reset Game";
+                    btnReset.className = "bg-green-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full animate-pulse";
+                    btnReset.disabled = false;
+                } else if (myReset && !oppReset) {
+                    btnReset.innerText = "Menunggu Lawan...";
+                    btnReset.className = "bg-gray-500 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full cursor-not-allowed";
+                    btnReset.disabled = true;
+                } else {
+                    btnReset.innerText = "Reset Game";
+                    btnReset.className = "bg-blue-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all";
+                    btnReset.disabled = false;
                 }
                 
                 if(game.status === 'ended') {
                     document.getElementById('chessResetContainer').classList.remove('hidden');
                     if (chessTimerInterval) clearInterval(chessTimerInterval);
+                    
                     const pemenang = game.winner ? (game.winner === 'w' ? game.white : game.black) : 'Seri';
                     
                     if(!scoreProcessedForGame) {
@@ -1528,6 +1767,7 @@
                         });
                     }
 
+                    if(game.lastMove) playChessSound('snd-end', false);
                     lastTimestamp = game.lastUpdate; 
                     showAlert(`Game Selesai! Pemenang: ${pemenang} (${game.reason || 'Selesai'})`, "blue");
                     return;
@@ -1536,14 +1776,24 @@
                     scoreProcessedForGame = false;
                 }
 
-                if(game.fen !== 'start' && game.fen !== chess.fen()) {
+                if (game.fen === 'start') {
+                    chess.reset();
+                    selectedSquare = null;
+                    isAnimatingPiece = false;
+                } else if (game.fen !== chess.fen()) {
                     chess.load(game.fen);
+                    playChessSound(game.lastMove, chess.in_check());
                 }
                 
                 wTime = game.wTime; bTime = game.bTime; lastTimestamp = game.lastUpdate;
+                
                 renderChessBoard(game.lastMove);
                 updateTurnIndicators();
                 startLocalTimer(); 
+                
+                if(currentUser === 'Okta' && chess.turn() === myChessColor && isNewFen && !botIsThinking) {
+                    setTimeout(checkAndPlayBot, 800);
+                }
             });
         }
 
@@ -1623,7 +1873,8 @@
                     const start = getCoords(lastMoveObj.from);
                     const end = getCoords(lastMoveObj.to);
                     const animPiece = document.createElement('img');
-                    animPiece.src = pieceIcons[lastMoveObj.color][lastMoveObj.piece];
+                    const displayPiece = lastMoveObj.promotion ? 'p' : lastMoveObj.piece; 
+                    animPiece.src = pieceIcons[lastMoveObj.color][displayPiece];
                     animPiece.className = 'chess-anim-piece';
                     animPiece.style.width = start.size * 0.9 + 'px';
                     animPiece.style.height = start.size * 0.9 + 'px';
@@ -1647,10 +1898,21 @@
             
             boardEl.innerHTML = '';
             const board = chess.board();
+
+            let checkedKingSquare = null;
+            if (chess.in_check()) {
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        if (board[r][c] && board[r][c].type === 'k' && board[r][c].color === chess.turn()) {
+                            checkedKingSquare = String.fromCharCode(97 + c) + (8 - r);
+                            break;
+                        }
+                    }
+                }
+            }
             
             const rows = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
             const cols = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
-            
             const legalMoves = selectedSquare ? chess.moves({ square: selectedSquare, verbose: true }) : [];
 
             rows.forEach((r) => {
@@ -1664,6 +1926,7 @@
                     sqEl.onclick = () => handleSquareClick(sq);
                     
                     if(selectedSquare === sq) sqEl.innerHTML += `<div class="chess-hl"></div>`;
+                    if(sq === checkedKingSquare) sqEl.innerHTML += `<div class="chess-check-hl"></div>`;
                     
                     const moveMatch = legalMoves.find(m => m.to === sq);
                     if(moveMatch) sqEl.innerHTML += `<div class="chess-legal-dot"></div>`;
@@ -1679,48 +1942,66 @@
             });
         }
 
+        function executeChessMove(moveObj) {
+            const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
+            if (chess.turn() === 'w') {
+                wTime = Math.max(0, wTime - elapsed);
+            } else {
+                bTime = Math.max(0, bTime - elapsed);
+            }
+
+            chess.move(moveObj);
+            
+            let gameStatus = 'active'; let winner = null; let reason = null;
+            
+            if (chess.in_checkmate()) {
+                gameStatus = 'ended'; winner = chess.turn() === 'w' ? 'b' : 'w';  reason = 'Skakmat (Checkmate)';
+            } else if (chess.in_draw() || chess.in_stalemate()) {
+                gameStatus = 'ended'; reason = 'Remis (Draw)';
+            }
+
+            db.ref(`chess_games/${currentChessGameId}`).update({
+                fen: chess.fen(), turn: chess.turn(), lastMove: moveObj,
+                wTime: wTime, bTime: bTime, lastUpdate: Date.now(),
+                status: gameStatus, winner: winner, reason: reason
+            });
+            selectedSquare = null;
+        }
+
+        function showPromoModal() {
+            document.getElementById('promoModal').style.display = 'flex';
+            const opts = document.getElementById('promoOptions');
+            opts.innerHTML = '';
+            
+            ['q', 'r', 'b', 'n'].forEach(p => {
+                const img = document.createElement('img');
+                img.src = pieceIcons[myChessColor][p];
+                img.className = 'w-full h-full object-contain cursor-pointer hover:scale-110 transition bg-gray-700 rounded-xl p-2 shadow-lg';
+                img.onclick = () => {
+                    document.getElementById('promoModal').style.display = 'none';
+                    const moves = chess.moves({ square: pendingPromotion.from, verbose: true });
+                    const move = moves.find(m => m.to === pendingPromotion.to && m.promotion === p);
+                    if(move) executeChessMove(move);
+                    pendingPromotion = null;
+                };
+                opts.appendChild(img);
+            });
+        }
+
         function handleSquareClick(sq) {
             if(chess.turn() !== myChessColor) return;
             const piece = chess.get(sq);
-            
             if(piece && piece.color === myChessColor) {
-                selectedSquare = sq;
-                renderChessBoard();
-                return;
+                selectedSquare = sq; renderChessBoard(); return;
             }
-            
             if(selectedSquare) {
                 const moves = chess.moves({ square: selectedSquare, verbose: true });
-                const move = moves.find(m => m.to === sq);
-                if(move) {
-                    const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
-                    if (myChessColor === 'w') {
-                        wTime = Math.max(0, wTime - elapsed);
-                    } else {
-                        bTime = Math.max(0, bTime - elapsed);
-                    }
-
-                    chess.move(move);
-                    
-                    let gameStatus = 'active';
-                    let winner = null;
-                    let reason = null;
-                    
-                    if (chess.in_checkmate()) {
-                        gameStatus = 'ended';
-                        winner = myChessColor;
-                        reason = 'Skakmat (Checkmate)';
-                    } else if (chess.in_draw() || chess.in_stalemate()) {
-                        gameStatus = 'ended';
-                        reason = 'Remis (Draw)';
-                    }
-
-                    db.ref(`chess_games/${currentChessGameId}`).update({
-                        fen: chess.fen(), turn: chess.turn(), lastMove: move,
-                        wTime: wTime, bTime: bTime, lastUpdate: Date.now(),
-                        status: gameStatus, winner: winner, reason: reason
-                    });
-                    selectedSquare = null;
+                const moveMatches = moves.filter(m => m.to === sq); 
+                if(moveMatches.length > 0) {
+                    if(moveMatches[0].promotion) {
+                        pendingPromotion = { from: selectedSquare, to: sq };
+                        showPromoModal();
+                    } else { executeChessMove(moveMatches[0]); }
                 }
             }
         }
@@ -1743,6 +2024,311 @@
             alertBox.innerText = msg;
             alertBox.style.display = 'flex';
             setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+        }
+
+        // ==========================================
+        // JAVASCRIPT GAME LUDO (INTEGRASI MULTIPLAYER)
+        // ==========================================
+        
+        function drawLudoGrid() {
+            const board = document.getElementById('ludoBoard');
+            board.innerHTML = '';
+            
+            for (let r = 0; r < 15; r++) {
+                for (let c = 0; c < 15; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'ludo-cell';
+                    cell.id = `ludo-cell-${r}-${c}`;
+                    
+                    if (r < 6 && c < 6) cell.classList.add('ludo-red-bg');
+                    else if (r < 6 && c > 8) cell.classList.add('ludo-green-bg');
+                    else if (r > 8 && c > 8) cell.classList.add('ludo-yellow-bg');
+                    else if (r > 8 && c < 6) cell.classList.add('ludo-blue-bg');
+                    else if (r > 5 && r < 9 && c > 5 && c < 9) cell.classList.add('ludo-center-bg');
+                    else {
+                        cell.classList.add('ludo-path');
+                        const isRedPath = (r === 7 && c > 0 && c < 6) || (r === 6 && c === 1);
+                        const isGreenPath = (c === 7 && r > 0 && r < 6) || (r === 1 && c === 8);
+                        const isYellowPath = (r === 7 && c > 8 && c < 14) || (r === 8 && c === 13);
+                        const isBluePath = (c === 7 && r > 8 && r < 14) || (r === 13 && c === 6);
+                        
+                        if (isRedPath) cell.classList.add('ludo-red-bg');
+                        else if (isGreenPath) cell.classList.add('ludo-green-bg');
+                        else if (isYellowPath) cell.classList.add('ludo-yellow-bg');
+                        else if (isBluePath) cell.classList.add('ludo-blue-bg');
+                        
+                        const pathIdx = LUDO_PATH.findIndex(p => p[0]===r && p[1]===c);
+                        if (LUDO_SAFE_IDX.includes(pathIdx)) {
+                            cell.innerHTML = '⭐';
+                            cell.style.fontSize = '8px';
+                            if (!cell.className.includes('-bg')) cell.style.backgroundColor = '#f3f4f6';
+                        }
+                    }
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function joinLudoGlobalRoom() {
+            showPage('ludo-game');
+            drawLudoGrid();
+            
+            if (ludoSyncListener) db.ref('ludo_room').off('value', ludoSyncListener);
+            
+            db.ref('ludo_room').once('value', snap => {
+                if (!snap.exists()) {
+                    db.ref('ludo_room').set({
+                        status: 'waiting', turn: 'red', dice: 0, hasRolled: true,
+                        seats: { red: "", green: "", yellow: "", blue: "" },
+                        pieces: { red: [0,0,0,0], green: [0,0,0,0], yellow: [0,0,0,0], blue: [0,0,0,0] }
+                    });
+                }
+            });
+
+            ludoSyncListener = db.ref('ludo_room').on('value', snap => {
+                ludoGameState = snap.val();
+                if (!ludoGameState) return;
+                
+                updateLudoSeatsUI(ludoGameState.seats);
+                renderLudoPieces(ludoGameState.pieces);
+                
+                myLudoColorGlobal = Object.keys(ludoGameState.seats).find(k => ludoGameState.seats[k] === currentUser);
+                
+                const statMsg = document.getElementById('ludoRoomStatusMsg');
+                const btnStart = document.getElementById('btnStartLudo');
+                
+                if (ludoGameState.status === 'waiting') {
+                    const seatedCount = Object.values(ludoGameState.seats).filter(s => s !== "").length;
+                    statMsg.innerText = seatedCount >= 2 ? "Siap Dimulai" : "Menunggu Pemain...";
+                    btnStart.classList.toggle('hidden', seatedCount < 2 || !myLudoColorGlobal);
+                } else if (ludoGameState.status === 'playing') {
+                    statMsg.innerText = "Game Sedang Berlangsung";
+                    btnStart.classList.add('hidden');
+                }
+                
+                updateLudoTurnIndicator();
+                
+                if (ludoGameState.dice > 0) {
+                    const dEl = document.getElementById('ludoDiceResult');
+                    if (dEl.innerText != ludoGameState.dice) {
+                        const btn = document.getElementById('ludoDiceBtn');
+                        btn.classList.add('dice-roll-anim');
+                        setTimeout(() => btn.classList.remove('dice-roll-anim'), 500);
+                        dEl.innerText = ludoGameState.dice;
+                    }
+                } else {
+                    document.getElementById('ludoDiceResult').innerText = "-";
+                }
+                
+                checkLudoAutoTurnPass();
+            });
+        }
+        
+        function checkLudoAutoTurnPass() {
+            if (ludoGameState.status !== 'playing') return;
+            if (ludoGameState.turn === myLudoColorGlobal && !ludoGameState.hasRolled) {
+                document.getElementById('ludoDiceBtn').disabled = false;
+            } else {
+                document.getElementById('ludoDiceBtn').disabled = true;
+            }
+            
+            if (ludoGameState.turn === myLudoColorGlobal && ludoGameState.hasRolled && ludoGameState.dice > 0) {
+                const validMoves = getValidLudoMoves(myLudoColorGlobal, ludoGameState.dice, ludoGameState.pieces);
+                if (validMoves.length === 0) {
+                    setTimeout(() => {
+                        const nextTurn = getNextLudoTurn(myLudoColorGlobal, ludoGameState.seats);
+                        db.ref('ludo_room').update({ turn: nextTurn, dice: 0, hasRolled: false });
+                    }, 1500);
+                }
+            }
+        }
+
+        function getNextLudoTurn(current, seats) {
+            const order = ['red', 'green', 'yellow', 'blue'];
+            let idx = order.indexOf(current);
+            for(let i=1; i<=4; i++) {
+                let nextCol = order[(idx + i) % 4];
+                if(seats[nextCol] && seats[nextCol] !== "") return nextCol;
+            }
+            return current;
+        }
+
+        function updateLudoSeatsUI(seats) {
+            LUDO_COLORS.forEach(c => {
+                const el = document.getElementById(`ludoSeat-${c}`);
+                if (seats[c]) {
+                    el.innerText = seats[c];
+                    el.classList.replace('text-gray-400', 'text-gray-800');
+                } else {
+                    el.innerText = 'Kosong';
+                    el.classList.replace('text-gray-800', 'text-gray-400');
+                }
+            });
+        }
+
+        function takeLudoSeat(color) {
+            if (ludoGameState && ludoGameState.status === 'playing') return alert("Game sudah dimulai!");
+            db.ref('ludo_room/seats').once('value', snap => {
+                let seats = snap.val() || {};
+                
+                LUDO_COLORS.forEach(c => { if(seats[c] === currentUser) seats[c] = ""; });
+                if (seats[color] === "" || !seats[color]) {
+                    seats[color] = currentUser;
+                    db.ref('ludo_room/seats').set(seats);
+                } else {
+                    alert("Kursi sudah terisi!");
+                }
+            });
+        }
+        
+        function leaveLudoRoom() {
+            if (myLudoColorGlobal) {
+                db.ref(`ludo_room/seats/${myLudoColorGlobal}`).set("");
+            }
+            if (ludoSyncListener) db.ref('ludo_room').off('value', ludoSyncListener);
+            showPage('ludo-lobby');
+        }
+
+        function startLudoGame() {
+            const activeSeats = Object.keys(ludoGameState.seats).filter(k => ludoGameState.seats[k] !== "");
+            if(activeSeats.length < 2) return alert("Minimal 2 pemain!");
+            
+            db.ref('ludo_room').update({
+                status: 'playing', turn: activeSeats[0], dice: 0, hasRolled: false,
+                pieces: { red: [0,0,0,0], green: [0,0,0,0], yellow: [0,0,0,0], blue: [0,0,0,0] }
+            });
+        }
+
+        function updateLudoTurnIndicator() {
+            const ind = document.getElementById('ludoTurnColorIndicator');
+            const nm = document.getElementById('ludoTurnName');
+            const turnCol = ludoGameState.turn;
+            
+            ind.className = 'w-4 h-4 rounded-full';
+            if (turnCol === 'red') ind.classList.add('bg-red-600');
+            else if (turnCol === 'green') ind.classList.add('bg-green-600');
+            else if (turnCol === 'yellow') ind.classList.add('bg-yellow-500');
+            else if (turnCol === 'blue') ind.classList.add('bg-blue-600');
+            
+            nm.innerText = ludoGameState.seats[turnCol] || "System";
+        }
+
+        function getValidLudoMoves(color, dice, piecesObj) {
+            let valid = [];
+            piecesObj[color].forEach((state, i) => {
+                if (state === 0 && dice === 6) valid.push(i);
+                else if (state > 0 && state + dice <= 58) valid.push(i);
+            });
+            return valid;
+        }
+
+        function rollLudoDice() {
+            if (!myLudoColorGlobal || ludoGameState.status !== 'playing' || ludoGameState.turn !== myLudoColorGlobal || ludoGameState.hasRolled) return;
+            
+            const roll = Math.floor(Math.random() * 6) + 1;
+            db.ref('ludo_room').update({ dice: roll, hasRolled: true });
+        }
+
+        function renderLudoPieces(piecesObj) {
+            document.querySelectorAll('.ludo-piece').forEach(p => p.remove());
+            
+            const cellCount = {}; 
+            
+            LUDO_COLORS.forEach(color => {
+                piecesObj[color].forEach((state, idx) => {
+                    let r, c;
+                    if (state === 0) {
+                        [r, c] = LUDO_BASES[color][idx];
+                    } else if (state > 0 && state <= 52) {
+                        const globalIdx = (state - 1 + LUDO_START_IDX[color]) % 52;
+                        [r, c] = LUDO_PATH[globalIdx];
+                    } else if (state >= 53 && state <= 57) {
+                        [r, c] = LUDO_STRETCH[color][state - 53];
+                    } else if (state === 58) {
+                        [r, c] = LUDO_HOME[color];
+                    }
+                    
+                    const cellId = `ludo-cell-${r}-${c}`;
+                    if(!cellCount[cellId]) cellCount[cellId] = [];
+                    cellCount[cellId].push({ color, idx, state });
+                });
+            });
+
+            Object.keys(cellCount).forEach(cellId => {
+                const occupants = cellCount[cellId];
+                const cellEl = document.getElementById(cellId);
+                if (!cellEl) return;
+                
+                occupants.forEach((occ, i) => {
+                    const pEl = document.createElement('div');
+                    pEl.className = `ludo-piece ${occ.color}`;
+                    pEl.innerText = occ.idx + 1;
+                    
+                    if (occupants.length > 1) {
+                        pEl.style.transform = `scale(0.7) translate(${(i%2 === 0 ? -10 : 10)}px, ${(i<2 ? -10 : 10)}px)`;
+                    }
+                    
+                    if (ludoGameState && ludoGameState.status === 'playing' && ludoGameState.turn === myLudoColorGlobal && ludoGameState.hasRolled && occ.color === myLudoColorGlobal) {
+                        const validMoves = getValidLudoMoves(myLudoColorGlobal, ludoGameState.dice, ludoGameState.pieces);
+                        if(validMoves.includes(occ.idx)) pEl.classList.add('glow');
+                    }
+                    
+                    pEl.onclick = () => handlePieceClick(occ.color, occ.idx, occ.state);
+                    cellEl.appendChild(pEl);
+                });
+            });
+        }
+
+        function handlePieceClick(color, pIdx, state) {
+            if (!ludoGameState || ludoGameState.status !== 'playing' || color !== myLudoColorGlobal || ludoGameState.turn !== myLudoColorGlobal || !ludoGameState.hasRolled) return;
+            
+            const dice = ludoGameState.dice;
+            const validMoves = getValidLudoMoves(color, dice, ludoGameState.pieces);
+            
+            if (!validMoves.includes(pIdx)) return;
+            
+            let newState = state === 0 && dice === 6 ? 1 : state + dice;
+            let piecesCopy = JSON.parse(JSON.stringify(ludoGameState.pieces));
+            piecesCopy[color][pIdx] = newState;
+            
+            let extraTurn = dice === 6 || newState === 58;
+            
+            // Logika Capture (Makan)
+            if (newState > 0 && newState <= 52) {
+                const targetGlobalIdx = (newState - 1 + LUDO_START_IDX[color]) % 52;
+                
+                if (!LUDO_SAFE_IDX.includes(targetGlobalIdx)) {
+                    LUDO_COLORS.forEach(oppColor => {
+                        if (oppColor !== color) {
+                            piecesCopy[oppColor].forEach((oppState, oIdx) => {
+                                if (oppState > 0 && oppState <= 52) {
+                                    const oppGlobalIdx = (oppState - 1 + LUDO_START_IDX[oppColor]) % 52;
+                                    if (oppGlobalIdx === targetGlobalIdx) {
+                                        piecesCopy[oppColor][oIdx] = 0; // Kembalikan ke base
+                                        extraTurn = true; 
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+            
+            // Cek Menang
+            let isWin = piecesCopy[color].every(s => s === 58);
+            if (isWin) {
+                db.ref('ludo_room').update({ pieces: piecesCopy, status: 'waiting' });
+                alert(`${ludoGameState.seats[color]} MEMENANGKAN GAME LUDO!`);
+                return;
+            }
+
+            const nextTurn = extraTurn ? color : getNextLudoTurn(color, ludoGameState.seats);
+            db.ref('ludo_room').update({
+                pieces: piecesCopy,
+                turn: nextTurn,
+                dice: 0,
+                hasRolled: false
+            });
         }
     </script>
 </body>
