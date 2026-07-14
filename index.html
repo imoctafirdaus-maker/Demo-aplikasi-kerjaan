@@ -73,28 +73,38 @@
         .chess-anim-piece { position: absolute; z-index: 999; transition: transform 0.2s ease-in-out; pointer-events: none; }
 
         /* ==================== CSS KHUSUS LUDO ==================== */
-        .ludo-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); border: 3px solid #1f2937; background-color: #fff; margin: 0 auto; padding: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .ludo-cell { border: 1px solid rgba(0,0,0,0.05); position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-        .ludo-path { border: 1px solid rgba(0,0,0,0.2); }
+        .ludo-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); border: 4px solid #1f2937; background-color: #fff; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; }
+        .ludo-cell { position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .ludo-path { border: 1px solid rgba(0,0,0,0.1); }
         
-        /* Pewarnaan Board Dasar Ludo */
+        /* Warna Dasar & Tampilan Ala Ludo King */
         .ludo-red-bg { background-color: #ef4444 !important; }
         .ludo-green-bg { background-color: #22c55e !important; }
         .ludo-yellow-bg { background-color: #eab308 !important; }
         .ludo-blue-bg { background-color: #3b82f6 !important; }
+        .ludo-white-bg { background-color: #ffffff !important; }
         .ludo-center-bg { background-image: conic-gradient(#ef4444 0deg 90deg, #3b82f6 90deg 180deg, #eab308 180deg 270deg, #22c55e 270deg 360deg); }
         
-        /* Bidak Ludo */
-        .ludo-piece { position: absolute; width: 75%; height: 75%; border-radius: 50%; box-shadow: 0 3px 5px rgba(0,0,0,0.5); border: 2px solid #fff; cursor: pointer; z-index: 20; transition: transform 0.2s, top 0.2s, left 0.2s; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 10px; }
-        .ludo-piece:active { transform: scale(0.9); }
-        .ludo-piece.red { background-color: #b91c1c; }
-        .ludo-piece.green { background-color: #15803d; }
-        .ludo-piece.yellow { background-color: #a16207; }
-        .ludo-piece.blue { background-color: #1d4ed8; }
-        .ludo-piece.glow { box-shadow: 0 0 10px 4px #fbbf24; animation: ludo-pulse 1s infinite; z-index: 30; }
+        .ludo-base-ring { width: 60%; height: 60%; border-radius: 50%; border: 3px solid rgba(0,0,0,0.15); box-shadow: inset 0 3px 5px rgba(0,0,0,0.2); }
+        
+        /* Bidak Ludo - Posisi Absolut dengan Efek Animasi Loncat */
+        .ludo-piece-abs { position: absolute; width: 6.666%; height: 6.666%; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 10px; color: white; cursor: pointer; z-index: 20; transition: top 0.25s linear, left 0.25s linear, transform 0.2s; }
+        .ludo-piece-abs.red { background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b); }
+        .ludo-piece-abs.green { background: radial-gradient(circle at 30% 30%, #22c55e, #14532d); }
+        .ludo-piece-abs.yellow { background: radial-gradient(circle at 30% 30%, #eab308, #713f12); }
+        .ludo-piece-abs.blue { background: radial-gradient(circle at 30% 30%, #3b82f6, #1e3a8a); }
+        .ludo-piece-abs.glow { box-shadow: 0 0 15px 5px #fbbf24; animation: ludo-pulse 1s infinite; z-index: 30; border-color: #fef08a; }
 
         @keyframes ludo-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
         
+        /* KEYFRAME ANIMASI LONCAT LUDO KING */
+        .ludo-jumping { animation: ludo-jump-arc 0.25s cubic-bezier(0.25, 1, 0.5, 1); z-index: 50 !important; }
+        @keyframes ludo-jump-arc {
+            0% { margin-top: 0; transform: scale(1); }
+            50% { margin-top: -15px; transform: scale(1.3); }
+            100% { margin-top: 0; transform: scale(1); }
+        }
+
         .dice-btn { font-size: 2rem; background: white; border: 2px solid #333; border-radius: 12px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.2s; }
         .dice-btn:active { transform: scale(0.9); }
         .dice-roll-anim { animation: spin-dice 0.5s ease-in-out; }
@@ -362,7 +372,7 @@
                 </div>
             </div>
 
-            <!-- HALAMAN LOBBY LUDO (NEW) -->
+            <!-- HALAMAN LOBBY LUDO -->
             <div id="page-ludo-lobby" class="page p-6 bg-yellow-50 overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="showPage('home')" class="text-red-900 bg-red-100 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
@@ -378,7 +388,7 @@
                 </div>
             </div>
 
-            <!-- HALAMAN GAME LUDO (NEW) -->
+            <!-- HALAMAN GAME LUDO -->
             <div id="page-ludo-game" class="page bg-gray-100 flex-col pb-32 pt-4 overflow-y-auto justify-start">
                 <div class="flex flex-col justify-start items-center px-4 max-w-lg mx-auto w-full relative h-max">
                     
@@ -390,24 +400,24 @@
                     <!-- Panel Kursi Pemain Ludo -->
                     <div class="grid grid-cols-4 gap-2 w-full mb-4" id="ludoSeatsContainer">
                         <!-- Red Seat -->
-                        <div onclick="takeLudoSeat('red')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-red-600 cursor-pointer hover:bg-red-50 transition">
-                            <p class="text-[9px] font-black text-red-600 uppercase mb-1">RED</p>
-                            <p id="ludoSeat-red" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        <div onclick="takeLudoSeat('red')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-red-600 cursor-pointer hover:bg-red-50 transition relative overflow-hidden group">
+                            <p id="ludoSeatLabel-red" class="text-[10px] font-black text-red-600 uppercase mb-1 transition-all">RED</p>
+                            <p id="ludoSeat-red" class="text-[11px] font-bold text-gray-400 truncate">Kosong</p>
                         </div>
                         <!-- Green Seat -->
-                        <div onclick="takeLudoSeat('green')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-green-600 cursor-pointer hover:bg-green-50 transition">
-                            <p class="text-[9px] font-black text-green-600 uppercase mb-1">GREEN</p>
-                            <p id="ludoSeat-green" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        <div onclick="takeLudoSeat('green')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-green-600 cursor-pointer hover:bg-green-50 transition relative overflow-hidden group">
+                            <p id="ludoSeatLabel-green" class="text-[10px] font-black text-green-600 uppercase mb-1 transition-all">GREEN</p>
+                            <p id="ludoSeat-green" class="text-[11px] font-bold text-gray-400 truncate">Kosong</p>
                         </div>
                         <!-- Yellow Seat -->
-                        <div onclick="takeLudoSeat('yellow')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-yellow-500 cursor-pointer hover:bg-yellow-50 transition">
-                            <p class="text-[9px] font-black text-yellow-600 uppercase mb-1">YELLOW</p>
-                            <p id="ludoSeat-yellow" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        <div onclick="takeLudoSeat('yellow')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-yellow-500 cursor-pointer hover:bg-yellow-50 transition relative overflow-hidden group">
+                            <p id="ludoSeatLabel-yellow" class="text-[10px] font-black text-yellow-600 uppercase mb-1 transition-all">YELLOW</p>
+                            <p id="ludoSeat-yellow" class="text-[11px] font-bold text-gray-400 truncate">Kosong</p>
                         </div>
                         <!-- Blue Seat -->
-                        <div onclick="takeLudoSeat('blue')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-blue-600 cursor-pointer hover:bg-blue-50 transition">
-                            <p class="text-[9px] font-black text-blue-600 uppercase mb-1">BLUE</p>
-                            <p id="ludoSeat-blue" class="text-[10px] font-bold text-gray-400 truncate">Kosong</p>
+                        <div onclick="takeLudoSeat('blue')" class="bg-white rounded-xl p-2 text-center shadow-sm border-b-4 border-blue-600 cursor-pointer hover:bg-blue-50 transition relative overflow-hidden group">
+                            <p id="ludoSeatLabel-blue" class="text-[10px] font-black text-blue-600 uppercase mb-1 transition-all">BLUE</p>
+                            <p id="ludoSeat-blue" class="text-[11px] font-bold text-gray-400 truncate">Kosong</p>
                         </div>
                     </div>
 
@@ -582,6 +592,8 @@
         let ludoSyncListener = null;
         let ludoGameState = null;
         let myLudoColorGlobal = null; 
+        let localLudoPieces = null;
+        let isLudoAnimating = false;
         
         // Peta Path Grid 15x15 secara berurutan jarum jam (52 kotak utama luar)
         const LUDO_PATH = [
@@ -2027,26 +2039,66 @@
         }
 
         // ==========================================
-        // JAVASCRIPT GAME LUDO (INTEGRASI MULTIPLAYER)
+        // JAVASCRIPT GAME LUDO (INTEGRASI MULTIPLAYER & LUDO KING STYLE)
         // ==========================================
         
         function drawLudoGrid() {
             const board = document.getElementById('ludoBoard');
-            board.innerHTML = '';
+            board.innerHTML = '<div id="ludoPiecesLayer" class="absolute inset-0 z-40 pointer-events-none"></div>';
             
             for (let r = 0; r < 15; r++) {
                 for (let c = 0; c < 15; c++) {
                     const cell = document.createElement('div');
                     cell.className = 'ludo-cell';
-                    cell.id = `ludo-cell-${r}-${c}`;
                     
-                    if (r < 6 && c < 6) cell.classList.add('ludo-red-bg');
-                    else if (r < 6 && c > 8) cell.classList.add('ludo-green-bg');
-                    else if (r > 8 && c > 8) cell.classList.add('ludo-yellow-bg');
-                    else if (r > 8 && c < 6) cell.classList.add('ludo-blue-bg');
-                    else if (r > 5 && r < 9 && c > 5 && c < 9) cell.classList.add('ludo-center-bg');
+                    const inRedBase = (r < 6 && c < 6);
+                    const inGreenBase = (r < 6 && c > 8);
+                    const inYellowBase = (r > 8 && c > 8);
+                    const inBlueBase = (r > 8 && c < 6);
+                    
+                    const isInnerWhite = (r > 0 && r < 5 && c > 0 && c < 5) || 
+                                         (r > 0 && r < 5 && c > 9 && c < 14) || 
+                                         (r > 9 && r < 14 && c > 9 && c < 14) || 
+                                         (r > 9 && r < 14 && c > 0 && c < 5);
+                    
+                    const isBaseSpot = ((r===2||r===3) && (c===2||c===3)) ||
+                                       ((r===2||r===3) && (c===11||c===12)) ||
+                                       ((r===11||r===12) && (c===11||c===12)) ||
+                                       ((r===11||r===12) && (c===2||c===3));
+                    
+                    // Render Base Layout
+                    if (inRedBase || inGreenBase || inYellowBase || inBlueBase) {
+                        if (isInnerWhite) {
+                            cell.classList.add('ludo-white-bg');
+                            if (r===1 && (c===1||c===10)) cell.classList.add('rounded-tl-2xl');
+                            if (r===1 && (c===4||c===13)) cell.classList.add('rounded-tr-2xl');
+                            if (r===4 && (c===1||c===10)) cell.classList.add('rounded-bl-2xl');
+                            if (r===4 && (c===4||c===13)) cell.classList.add('rounded-br-2xl');
+
+                            if (isBaseSpot) {
+                                const ring = document.createElement('div');
+                                ring.className = 'ludo-base-ring';
+                                if(inRedBase) ring.classList.add('ludo-red-bg');
+                                if(inGreenBase) ring.classList.add('ludo-green-bg');
+                                if(inYellowBase) ring.classList.add('ludo-yellow-bg');
+                                if(inBlueBase) ring.classList.add('ludo-blue-bg');
+                                cell.appendChild(ring);
+                            }
+                        } else {
+                            if (inRedBase) cell.classList.add('ludo-red-bg');
+                            if (inGreenBase) cell.classList.add('ludo-green-bg');
+                            if (inYellowBase) cell.classList.add('ludo-yellow-bg');
+                            if (inBlueBase) cell.classList.add('ludo-blue-bg');
+                        }
+                    } 
+                    // Render Center Triangle
+                    else if (r > 5 && r < 9 && c > 5 && c < 9) {
+                        if (r===7 && c===7) cell.classList.add('ludo-center-bg');
+                    } 
+                    // Render Paths
                     else {
-                        cell.classList.add('ludo-path');
+                        cell.classList.add('ludo-path', 'ludo-white-bg');
+                        
                         const isRedPath = (r === 7 && c > 0 && c < 6) || (r === 6 && c === 1);
                         const isGreenPath = (c === 7 && r > 0 && r < 6) || (r === 1 && c === 8);
                         const isYellowPath = (r === 7 && c > 8 && c < 14) || (r === 8 && c === 13);
@@ -2059,14 +2111,42 @@
                         
                         const pathIdx = LUDO_PATH.findIndex(p => p[0]===r && p[1]===c);
                         if (LUDO_SAFE_IDX.includes(pathIdx)) {
-                            cell.innerHTML = '⭐';
-                            cell.style.fontSize = '8px';
-                            if (!cell.className.includes('-bg')) cell.style.backgroundColor = '#f3f4f6';
+                            cell.innerHTML = '<i class="fa fa-star text-white text-[10px] drop-shadow-md"></i>';
+                            if (!cell.className.includes('-bg')) {
+                                cell.style.backgroundColor = '#e5e7eb';
+                                cell.innerHTML = '<i class="fa fa-star text-gray-400 text-[10px]"></i>';
+                            }
                         }
                     }
                     board.appendChild(cell);
                 }
             }
+
+            // Overlay Center Home Area
+            const centerOverlay = document.createElement('div');
+            centerOverlay.className = "absolute top-[40%] left-[40%] w-[20%] h-[20%] ludo-center-bg z-10 border-[2px] border-gray-800 shadow-xl pointer-events-none";
+            board.appendChild(centerOverlay);
+        }
+
+        // Koordinat Absolut Untuk Animasi Smooth CSS
+        function getAbsoluteCoords(color, state, idx) {
+            let r, c;
+            if (state === 0) {
+                [r, c] = LUDO_BASES[color][idx];
+            } else if (state > 0 && state <= 52) {
+                const globalIdx = (state - 1 + LUDO_START_IDX[color]) % 52;
+                [r, c] = LUDO_PATH[globalIdx];
+            } else if (state >= 53 && state <= 57) {
+                [r, c] = LUDO_STRETCH[color][state - 53];
+            } else if (state === 58) {
+                let endR = 7, endC = 7;
+                if(color==='red') endC=6;
+                if(color==='green') endR=6;
+                if(color==='yellow') endC=8;
+                if(color==='blue') endR=8;
+                [r, c] = [endR, endC];
+            }
+            return { top: (r * 100 / 15), left: (c * 100 / 15) };
         }
 
         function joinLudoGlobalRoom() {
@@ -2090,9 +2170,27 @@
                 if (!ludoGameState) return;
                 
                 updateLudoSeatsUI(ludoGameState.seats);
-                renderLudoPieces(ludoGameState.pieces);
-                
                 myLudoColorGlobal = Object.keys(ludoGameState.seats).find(k => ludoGameState.seats[k] === currentUser);
+                
+                if (!localLudoPieces) {
+                    localLudoPieces = JSON.parse(JSON.stringify(ludoGameState.pieces));
+                    renderLudoPiecesAbsolute(localLudoPieces);
+                } else {
+                    const diffs = getLudoDifferences(localLudoPieces, ludoGameState.pieces);
+                    if (diffs.length > 0 && !isLudoAnimating) {
+                        isLudoAnimating = true;
+                        animateLudoPieces(diffs, ludoGameState.pieces).then(() => {
+                            localLudoPieces = JSON.parse(JSON.stringify(ludoGameState.pieces));
+                            renderLudoPiecesAbsolute(localLudoPieces);
+                            isLudoAnimating = false;
+                            checkLudoAutoTurnPass();
+                        });
+                    } else if (!isLudoAnimating) {
+                         localLudoPieces = JSON.parse(JSON.stringify(ludoGameState.pieces));
+                         renderLudoPiecesAbsolute(localLudoPieces);
+                         checkLudoAutoTurnPass();
+                    }
+                }
                 
                 const statMsg = document.getElementById('ludoRoomStatusMsg');
                 const btnStart = document.getElementById('btnStartLudo');
@@ -2119,13 +2217,11 @@
                 } else {
                     document.getElementById('ludoDiceResult').innerText = "-";
                 }
-                
-                checkLudoAutoTurnPass();
             });
         }
         
         function checkLudoAutoTurnPass() {
-            if (ludoGameState.status !== 'playing') return;
+            if (ludoGameState.status !== 'playing' || isLudoAnimating) return;
             if (ludoGameState.turn === myLudoColorGlobal && !ludoGameState.hasRolled) {
                 document.getElementById('ludoDiceBtn').disabled = false;
             } else {
@@ -2143,6 +2239,96 @@
             }
         }
 
+        function getLudoDifferences(oldP, newP) {
+            let diffs = [];
+            LUDO_COLORS.forEach(c => {
+                for(let i=0; i<4; i++) {
+                    if (oldP[c][i] !== newP[c][i]) diffs.push({ color: c, idx: i, oldState: oldP[c][i], newState: newP[c][i] });
+                }
+            });
+            return diffs;
+        }
+
+        async function animateLudoPieces(diffs, finalPieces) {
+            for (let diff of diffs) {
+                const {color, idx, oldState, newState} = diff;
+                const pEl = document.getElementById(`piece-${color}-${idx}`);
+                if (!pEl) continue;
+
+                if (newState === 0) {
+                    // Animasi balik ke Base (Capture)
+                    const coords = getAbsoluteCoords(color, 0, idx);
+                    pEl.style.top = coords.top + '%';
+                    pEl.style.left = coords.left + '%';
+                    await new Promise(r => setTimeout(r, 300));
+                } else {
+                    // Animasi Ludo King Jump Step-by-Step
+                    let steps = [];
+                    if (oldState === 0) steps.push(1);
+                    else for(let s = oldState + 1; s <= newState; s++) steps.push(s);
+
+                    for (let s of steps) {
+                        const coords = getAbsoluteCoords(color, s, idx);
+                        pEl.style.top = coords.top + '%';
+                        pEl.style.left = coords.left + '%';
+                        
+                        pEl.classList.add('ludo-jumping');
+                        await new Promise(r => setTimeout(r, 260)); 
+                        pEl.classList.remove('ludo-jumping');
+                    }
+                }
+            }
+        }
+
+        function renderLudoPiecesAbsolute(piecesObj) {
+            const layer = document.getElementById('ludoPiecesLayer');
+            if (!layer) return;
+            layer.innerHTML = '';
+            
+            const cellCount = {};
+            LUDO_COLORS.forEach(color => {
+                piecesObj[color].forEach((state, idx) => {
+                    const coord = getAbsoluteCoords(color, state, idx);
+                    const key = `${coord.top}-${coord.left}`;
+                    if(!cellCount[key]) cellCount[key] = [];
+                    cellCount[key].push({ color, idx, state, top: coord.top, left: coord.left });
+                });
+            });
+
+            Object.keys(cellCount).forEach(key => {
+                const occupants = cellCount[key];
+                occupants.forEach((occ, i) => {
+                    const pEl = document.createElement('div');
+                    pEl.id = `piece-${occ.color}-${occ.idx}`;
+                    pEl.className = `ludo-piece-abs ${occ.color} pointer-events-auto`;
+                    pEl.innerText = occ.idx + 1;
+                    
+                    pEl.style.top = occ.top + '%';
+                    pEl.style.left = occ.left + '%';
+
+                    let transformStr = '';
+                    if (occupants.length > 1 && occ.state !== 0) {
+                        const offsets = [
+                            {x: -12, y: -12}, {x: 12, y: -12}, 
+                            {x: -12, y: 12}, {x: 12, y: 12},
+                            {x: 0, y: 0}, {x: -20, y: 0}, {x: 20, y: 0}
+                        ];
+                        const off = offsets[i % offsets.length];
+                        transformStr = `scale(0.7) translate(${off.x}px, ${off.y}px)`;
+                    }
+                    
+                    if (ludoGameState && ludoGameState.status === 'playing' && ludoGameState.turn === myLudoColorGlobal && ludoGameState.hasRolled && occ.color === myLudoColorGlobal) {
+                        const validMoves = getValidLudoMoves(myLudoColorGlobal, ludoGameState.dice, piecesObj);
+                        if(validMoves.includes(occ.idx)) pEl.classList.add('glow');
+                    }
+
+                    pEl.style.transform = transformStr;
+                    pEl.onclick = () => handlePieceClick(occ.color, occ.idx, occ.state);
+                    layer.appendChild(pEl);
+                });
+            });
+        }
+
         function getNextLudoTurn(current, seats) {
             const order = ['red', 'green', 'yellow', 'blue'];
             let idx = order.indexOf(current);
@@ -2155,13 +2341,18 @@
 
         function updateLudoSeatsUI(seats) {
             LUDO_COLORS.forEach(c => {
-                const el = document.getElementById(`ludoSeat-${c}`);
+                const labelEl = document.getElementById(`ludoSeatLabel-${c}`);
+                const statusEl = document.getElementById(`ludoSeat-${c}`);
                 if (seats[c]) {
-                    el.innerText = seats[c];
-                    el.classList.replace('text-gray-400', 'text-gray-800');
+                    labelEl.innerText = seats[c]; // UBAH TEXT WARNA JADI NAMA USER
+                    statusEl.innerText = 'SIAP';
+                    statusEl.classList.replace('text-gray-400', 'text-gray-800');
+                    labelEl.classList.add('text-[13px]'); 
                 } else {
-                    el.innerText = 'Kosong';
-                    el.classList.replace('text-gray-800', 'text-gray-400');
+                    labelEl.innerText = c.toUpperCase(); 
+                    statusEl.innerText = 'Kosong';
+                    statusEl.classList.replace('text-gray-800', 'text-gray-400');
+                    labelEl.classList.remove('text-[13px]');
                 }
             });
         }
@@ -2171,12 +2362,14 @@
             db.ref('ludo_room/seats').once('value', snap => {
                 let seats = snap.val() || {};
                 
+                // PENGAMANAN: 1 User Hanya Bisa 1 Kursi
                 LUDO_COLORS.forEach(c => { if(seats[c] === currentUser) seats[c] = ""; });
+                
                 if (seats[color] === "" || !seats[color]) {
                     seats[color] = currentUser;
                     db.ref('ludo_room/seats').set(seats);
                 } else {
-                    alert("Kursi sudah terisi!");
+                    alert("Kursi sudah terisi oleh " + seats[color]);
                 }
             });
         }
@@ -2186,6 +2379,7 @@
                 db.ref(`ludo_room/seats/${myLudoColorGlobal}`).set("");
             }
             if (ludoSyncListener) db.ref('ludo_room').off('value', ludoSyncListener);
+            localLudoPieces = null;
             showPage('ludo-lobby');
         }
 
@@ -2223,64 +2417,13 @@
         }
 
         function rollLudoDice() {
-            if (!myLudoColorGlobal || ludoGameState.status !== 'playing' || ludoGameState.turn !== myLudoColorGlobal || ludoGameState.hasRolled) return;
-            
+            if (!myLudoColorGlobal || ludoGameState.status !== 'playing' || ludoGameState.turn !== myLudoColorGlobal || ludoGameState.hasRolled || isLudoAnimating) return;
             const roll = Math.floor(Math.random() * 6) + 1;
             db.ref('ludo_room').update({ dice: roll, hasRolled: true });
         }
 
-        function renderLudoPieces(piecesObj) {
-            document.querySelectorAll('.ludo-piece').forEach(p => p.remove());
-            
-            const cellCount = {}; 
-            
-            LUDO_COLORS.forEach(color => {
-                piecesObj[color].forEach((state, idx) => {
-                    let r, c;
-                    if (state === 0) {
-                        [r, c] = LUDO_BASES[color][idx];
-                    } else if (state > 0 && state <= 52) {
-                        const globalIdx = (state - 1 + LUDO_START_IDX[color]) % 52;
-                        [r, c] = LUDO_PATH[globalIdx];
-                    } else if (state >= 53 && state <= 57) {
-                        [r, c] = LUDO_STRETCH[color][state - 53];
-                    } else if (state === 58) {
-                        [r, c] = LUDO_HOME[color];
-                    }
-                    
-                    const cellId = `ludo-cell-${r}-${c}`;
-                    if(!cellCount[cellId]) cellCount[cellId] = [];
-                    cellCount[cellId].push({ color, idx, state });
-                });
-            });
-
-            Object.keys(cellCount).forEach(cellId => {
-                const occupants = cellCount[cellId];
-                const cellEl = document.getElementById(cellId);
-                if (!cellEl) return;
-                
-                occupants.forEach((occ, i) => {
-                    const pEl = document.createElement('div');
-                    pEl.className = `ludo-piece ${occ.color}`;
-                    pEl.innerText = occ.idx + 1;
-                    
-                    if (occupants.length > 1) {
-                        pEl.style.transform = `scale(0.7) translate(${(i%2 === 0 ? -10 : 10)}px, ${(i<2 ? -10 : 10)}px)`;
-                    }
-                    
-                    if (ludoGameState && ludoGameState.status === 'playing' && ludoGameState.turn === myLudoColorGlobal && ludoGameState.hasRolled && occ.color === myLudoColorGlobal) {
-                        const validMoves = getValidLudoMoves(myLudoColorGlobal, ludoGameState.dice, ludoGameState.pieces);
-                        if(validMoves.includes(occ.idx)) pEl.classList.add('glow');
-                    }
-                    
-                    pEl.onclick = () => handlePieceClick(occ.color, occ.idx, occ.state);
-                    cellEl.appendChild(pEl);
-                });
-            });
-        }
-
         function handlePieceClick(color, pIdx, state) {
-            if (!ludoGameState || ludoGameState.status !== 'playing' || color !== myLudoColorGlobal || ludoGameState.turn !== myLudoColorGlobal || !ludoGameState.hasRolled) return;
+            if (!ludoGameState || ludoGameState.status !== 'playing' || color !== myLudoColorGlobal || ludoGameState.turn !== myLudoColorGlobal || !ludoGameState.hasRolled || isLudoAnimating) return;
             
             const dice = ludoGameState.dice;
             const validMoves = getValidLudoMoves(color, dice, ludoGameState.pieces);
