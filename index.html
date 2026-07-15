@@ -2,7 +2,14 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-color=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-color=1.0, user-scalable=no, minimal-ui">
+    
+    <!-- Meta Tags untuk Memaksa Mode Fullscreen / App-Like Experience -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#161512">
+    
     <title>Chess Multiplayer - Okta Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,8 +24,9 @@
     <style>
         ::-webkit-scrollbar { width: 0; background: transparent; }
         
-        .page { display: none; height: 100%; flex-direction: column; }
-        .page.active { display: flex; }
+        /* FIX: Mengunci display halaman agar tidak bocor */
+        .page { display: none !important; height: 100%; flex-direction: column; }
+        .page.active { display: flex !important; }
         
         /* CSS KHUSUS GAME CATUR */
         .chess-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); box-sizing: border-box; margin: 0 auto; border: 4px solid #4a2e1b; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); background-color: #4a2e1b; overflow: hidden; position: relative; }
@@ -44,7 +52,7 @@
         .chess-anim-piece { position: absolute; z-index: 999; transition: transform 0.2s ease-in-out; pointer-events: none; }
     </style>
 </head>
-<body class="bg-[#161512] h-screen font-sans text-gray-200 flex flex-col overflow-hidden">
+<body class="bg-[#161512] h-screen w-screen font-sans text-gray-200 flex flex-col overflow-hidden m-0 p-0">
 
     <!-- AUDIO CATUR -->
     <audio id="snd-move" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3" preload="auto"></audio>
@@ -92,7 +100,7 @@
 
     <!-- HALAMAN LOBBY -->
     <div id="page-lobby" class="page p-6 overflow-y-auto">
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex justify-between items-center mb-8 pt-2">
             <div class="flex items-center gap-3">
                 <img id="navUserAvatar" src="" class="w-10 h-10 rounded-full border-2 border-emerald-500 object-cover shadow-lg">
                 <div class="flex flex-col">
@@ -114,7 +122,7 @@
 
     <!-- HALAMAN GAME CATUR -->
     <div id="page-game" class="page flex-col pb-6 pt-4 overflow-y-auto justify-start">
-        <div class="flex flex-col justify-start items-center px-4 max-w-lg mx-auto w-full relative h-max">
+        <div class="flex flex-col justify-start items-center px-4 max-w-lg mx-auto w-full relative h-max mt-2">
             
             <!-- Header Lawan -->
             <div class="w-full flex justify-between items-center mb-3">
@@ -258,23 +266,51 @@
             }
         }
 
-        // FUNGSI UNTUK REQUEST FULLSCREEN
+        // ==========================================
+        // FUNGSI UNTUK FULLSCREEN API
+        // ==========================================
         function requestFullScreen() {
-            const docElm = document.documentElement;
-            if (docElm.requestFullscreen) {
-                docElm.requestFullscreen().catch(err => console.log("Gagal full screen:", err));
-            } else if (docElm.webkitRequestFullscreen) { /* Safari & Chrome iOS */
-                docElm.webkitRequestFullscreen();
-            } else if (docElm.msRequestFullscreen) { /* IE11 */
-                docElm.msRequestFullscreen();
+            try {
+                const doc = window.document;
+                const docEl = doc.documentElement;
+
+                const requestFS = docEl.requestFullscreen || 
+                                  docEl.mozRequestFullScreen || 
+                                  docEl.webkitRequestFullScreen || 
+                                  docEl.msRequestFullscreen;
+
+                if (requestFS) {
+                    requestFS.call(docEl).catch(err => {
+                        console.warn("Fullscreen diabaikan oleh browser bawaan aplikasi (WebView):", err);
+                    });
+                }
+            } catch (e) {
+                console.warn("Fullscreen request error:", e);
             }
         }
 
+        function exitFullScreen() {
+            try {
+                const doc = window.document;
+                const exitFS = doc.exitFullscreen || 
+                               doc.mozCancelFullScreen || 
+                               doc.webkitExitFullscreen || 
+                               doc.msExitFullscreen;
+                
+                if (exitFS && doc.fullscreenElement) {
+                    exitFS.call(doc).catch(err => console.warn(err));
+                }
+            } catch (e) {}
+        }
+
+        // ==========================================
+        // LOGIKA AUTENTIKASI 
+        // ==========================================
         function prosesLogin() {
             const usernameInput = document.getElementById('inputUsername').value.trim();
             if(!usernameInput) return alert("Silakan masukkan nama Anda!");
             
-            // Panggil mode layar penuh saat tombol ditekan
+            // Minta Fullscreen secara sinkron saat tombol ditekan
             requestFullScreen();
 
             // Format kapital di awal huruf
@@ -297,12 +333,8 @@
         function handleLogout() { 
             if(!confirm("Keluar dari lobi?")) return;
             
-            // Keluar dari mode full screen
-            if (document.exitFullscreen) {
-                document.exitFullscreen().catch(err => {});
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            }
+            // Matikan fullscreen jika menyala
+            exitFullScreen();
 
             if(currentUser) { 
                 db.ref('presence/' + currentUser).off(); 
