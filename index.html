@@ -160,19 +160,26 @@
                 </div>
             </div>
             
-            <!-- Bot Toggle (Hanya Muncul Jika Login Sebagai "Okta") -->
-            <div id="oktaBotContainer" class="w-full mt-3 hidden flex justify-between items-center bg-purple-900/30 p-3 rounded-xl border border-purple-500/50 shadow-md">
-                <span class="text-xs font-bold text-purple-300 uppercase tracking-widest"><i class="fa fa-robot mr-2"></i>Aktifkan Bot GM</span>
-                <input type="checkbox" id="oktaBotToggle" class="checkbox-custom !border-purple-500">
+            <!-- Aksi Tambahan & Bot -->
+            <div class="w-full mt-3 flex justify-between items-center">
+                <!-- Tombol Tukar Warna -->
+                <button onclick="requestSwapColor()" id="btnSwapColor" class="bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-md transition-colors border border-gray-600" title="Ajukan Tukar Warna">
+                    <i class="fa fa-exchange-alt"></i>
+                </button>
+                
+                <!-- Bot Toggle (Hanya Muncul Jika Login Sebagai "Okta") -->
+                <div id="oktaBotContainer" class="hidden flex justify-end items-center">
+                    <input type="checkbox" id="oktaBotToggle" class="checkbox-custom !border-purple-500" title="Bot GM">
+                </div>
             </div>
 
             <!-- Reset Game Button -->
-            <div id="chessResetContainer" class="w-full flex justify-center mt-4 hidden">
+            <div id="chessResetContainer" class="w-full flex justify-center mt-3 hidden">
                 <button onclick="resetChessGame()" id="btnResetGame" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all border border-blue-400/50">Reset Game</button>
             </div>
             
             <!-- Chat Box -->
-            <div class="w-full mt-4 bg-gray-800 rounded-xl p-3 flex flex-col shadow-xl border border-gray-700" style="height: 180px;">
+            <div class="w-full mt-3 bg-gray-800 rounded-xl p-3 flex flex-col shadow-xl border border-gray-700" style="height: 180px;">
                 <div id="chessChatHistory" class="flex-1 overflow-y-auto space-y-2 mb-2 pr-1 custom-scrollbar text-[11px]"></div>
                 <div class="flex gap-2">
                     <input type="text" id="chessChatInput" placeholder="Ketik pesan..." class="flex-1 bg-gray-900 text-white px-3 py-2 rounded-lg outline-none text-xs border border-gray-600 font-bold focus:border-emerald-500" onkeypress="if(event.key==='Enter') sendChessChat()">
@@ -467,6 +474,7 @@
             
             setupUIForGame(whiteName, blackName);
             document.getElementById('oktaBotContainer').classList.add('hidden');
+            document.getElementById('btnSwapColor').classList.add('hidden');
             document.getElementById('chessResetContainer').classList.add('hidden');
             
             showPage('game');
@@ -486,6 +494,9 @@
             if (chessTimerInterval) clearInterval(chessTimerInterval);
             
             setupUIForGame(currentUser, opponentName, color);
+
+            // Menampilkan tombol Swap untuk Player yang bermain
+            document.getElementById('btnSwapColor').classList.remove('hidden');
 
             // Tampilkan Bot GM HANYA untuk "Okta"
             if(currentUser.toLowerCase() === 'okta') {
@@ -554,6 +565,34 @@
                         btnReset.className = "bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all border border-blue-400/50";
                         btnReset.disabled = false;
                     }
+
+                    // Logika Tombol Tukar Warna
+                    const swapRequests = game.swapRequest || {};
+                    const mySwap = swapRequests[currentUser];
+                    const oppSwap = swapRequests[chessOpponent];
+                    const btnSwap = document.getElementById('btnSwapColor');
+                    
+                    if (btnSwap) {
+                        if (mySwap && oppSwap) {
+                            btnSwap.disabled = true;
+                            btnSwap.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+                        } else if (oppSwap && !mySwap) {
+                            btnSwap.className = "bg-emerald-600 hover:bg-emerald-500 text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-md transition-colors border border-emerald-500 animate-pulse";
+                            btnSwap.disabled = false;
+                            btnSwap.innerHTML = '<i class="fa fa-check"></i>';
+                            btnSwap.title = "Terima Tukar Warna";
+                        } else if (mySwap && !oppSwap) {
+                            btnSwap.className = "bg-gray-600 text-gray-400 w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-md border border-gray-500 cursor-not-allowed";
+                            btnSwap.disabled = true;
+                            btnSwap.innerHTML = '<i class="fa fa-hourglass-half"></i>';
+                        } else {
+                            btnSwap.className = "bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-md transition-colors border border-gray-600";
+                            btnSwap.disabled = false;
+                            btnSwap.innerHTML = '<i class="fa fa-exchange-alt"></i>';
+                            btnSwap.title = "Ajukan Tukar Warna";
+                        }
+                    }
+
                 } else {
                     myChessColor = 'w'; // Spectator selalu lihat dari view white
                 }
@@ -813,7 +852,7 @@
                             db.ref(`chess_games/${currentChessGameId}`).update({
                                 fen: 'start', turn: 'w', lastMove: null, wTime: 600, bTime: 600,
                                 lastUpdate: Date.now(), status: 'active', winner: null, reason: null,
-                                resetRequest: null, white: game.black, black: game.white // Tukar Warna
+                                resetRequest: null, swapRequest: null // Warna tidak ditukar
                             });
                         } else {
                             db.ref(`chess_games/${currentChessGameId}/resetRequest/${currentUser}`).set(true);
@@ -821,6 +860,32 @@
                     }
                 });
             }
+        }
+
+        function requestSwapColor() {
+            if (isSpectator) return;
+            const btn = document.getElementById('btnSwapColor');
+            btn.disabled = true;
+            
+            db.ref(`chess_games/${currentChessGameId}`).once('value', snap => {
+                const game = snap.val();
+                if (game) {
+                    const oppSwap = game.swapRequest && game.swapRequest[chessOpponent];
+                    if (oppSwap) {
+                        // Lawan juga setuju tukar warna -> Eksekusi Reset dengan Pertukaran Warna
+                        db.ref(`chess_games/${currentChessGameId}`).update({
+                            fen: 'start', turn: 'w', lastMove: null, wTime: 600, bTime: 600,
+                            lastUpdate: Date.now(), status: 'active', winner: null, reason: null,
+                            resetRequest: null, swapRequest: null, white: game.black, black: game.white
+                        });
+                        showAlert("Warna berhasil ditukar!", "green");
+                    } else {
+                        // Mengirimkan permintaan tukar warna
+                        db.ref(`chess_games/${currentChessGameId}/swapRequest/${currentUser}`).set(true);
+                        showAlert("Permintaan tukar warna dikirim...", "blue");
+                    }
+                }
+            });
         }
 
         function playChessSound(moveObj, inCheck) {
