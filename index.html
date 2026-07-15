@@ -258,9 +258,25 @@
             }
         }
 
+        // FUNGSI UNTUK REQUEST FULLSCREEN
+        function requestFullScreen() {
+            const docElm = document.documentElement;
+            if (docElm.requestFullscreen) {
+                docElm.requestFullscreen().catch(err => console.log("Gagal full screen:", err));
+            } else if (docElm.webkitRequestFullscreen) { /* Safari & Chrome iOS */
+                docElm.webkitRequestFullscreen();
+            } else if (docElm.msRequestFullscreen) { /* IE11 */
+                docElm.msRequestFullscreen();
+            }
+        }
+
         function prosesLogin() {
             const usernameInput = document.getElementById('inputUsername').value.trim();
             if(!usernameInput) return alert("Silakan masukkan nama Anda!");
+            
+            // Panggil mode layar penuh saat tombol ditekan
+            requestFullScreen();
+
             // Format kapital di awal huruf
             const formattedName = usernameInput.charAt(0).toUpperCase() + usernameInput.slice(1);
             bukaApp(formattedName);
@@ -280,6 +296,14 @@
 
         function handleLogout() { 
             if(!confirm("Keluar dari lobi?")) return;
+            
+            // Keluar dari mode full screen
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => {});
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+
             if(currentUser) { 
                 db.ref('presence/' + currentUser).off(); 
                 db.ref('presence/' + currentUser).remove(); 
@@ -461,12 +485,6 @@
         function keluarGame() {
             if(!isSpectator && chess.history().length > 0 && !chess.game_over()) {
                 if(!confirm("Game sedang berlangsung. Yakin ingin kembali ke Lobi? (Anda mungkin dianggap forfeit/kalah)")) return;
-                // Jika ingin otomatis menyatakan kalah saat keluar, jalankan kode ini:
-                /*
-                db.ref(`chess_games/${currentChessGameId}`).update({
-                    status: 'ended', winner: myChessColor === 'w' ? 'b' : 'w', reason: 'Lawan Keluar (Forfeit)'
-                });
-                */
             }
             if(chessSyncListener && currentChessGameId) {
                 db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener);
