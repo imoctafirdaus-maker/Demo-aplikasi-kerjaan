@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>APPARIUM CAD — Professional Apparel Design & Tech Pack Workspace</title>
   
   <!-- Tailwind CSS CDN -->
@@ -37,6 +37,8 @@
       font-family: 'Inter', sans-serif;
       overflow: hidden;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     /* Custom Scrollbar */
@@ -66,26 +68,27 @@
 
     /* Selection Box & Handles */
     .transform-handle {
-      width: 10px;
-      height: 10px;
+      width: 14px;
+      height: 14px;
       background-color: #ffffff;
       border: 2px solid var(--accent-cyan);
       border-radius: 2px;
       position: absolute;
       pointer-events: auto;
       z-index: 40;
+      touch-action: none;
     }
-    .transform-handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
-    .transform-handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
-    .transform-handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
-    .transform-handle.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
-    .transform-handle.n  { top: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-    .transform-handle.s  { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-    .transform-handle.w  { top: 50%; left: -6px; transform: translateY(-50%); cursor: ew-resize; }
-    .transform-handle.e  { top: 50%; right: -6px; transform: translateY(-50%); cursor: ew-resize; }
+    .transform-handle.nw { top: -7px; left: -7px; cursor: nwse-resize; }
+    .transform-handle.ne { top: -7px; right: -7px; cursor: nesw-resize; }
+    .transform-handle.sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+    .transform-handle.se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+    .transform-handle.n  { top: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+    .transform-handle.s  { bottom: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+    .transform-handle.w  { top: 50%; left: -7px; transform: translateY(-50%); cursor: ew-resize; }
+    .transform-handle.e  { top: 50%; right: -7px; transform: translateY(-50%); cursor: ew-resize; }
     .transform-handle.rot { 
-      top: -24px; left: 50%; transform: translateX(-50%); 
-      cursor: grab; background: var(--accent-pink); border-radius: 50%; width: 12px; height: 12px; 
+      top: -28px; left: 50%; transform: translateX(-50%); 
+      cursor: grab; background: var(--accent-pink); border-radius: 50%; width: 16px; height: 16px; 
     }
 
     .print-safe-zone {
@@ -144,59 +147,119 @@
       animation: fadeIn 0.2s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* MODE SELULER RESPONSIVE OVERRIDES */
+    body.mobile-mode #left-sidebar {
+      position: fixed;
+      left: -100%;
+      top: 48px;
+      bottom: 50px;
+      width: 85%;
+      z-index: 50;
+      box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+    }
+    body.mobile-mode #left-sidebar.mobile-open {
+      left: 0;
+    }
+
+    body.mobile-mode #right-sidebar {
+      position: fixed;
+      right: -100%;
+      top: 48px;
+      bottom: 50px;
+      width: 85%;
+      z-index: 50;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+    }
+    body.mobile-mode #right-sidebar.mobile-open {
+      right: 0;
+    }
+
+    body.mobile-mode #mobile-bottom-nav {
+      display: flex !important;
+    }
+
+    body.mobile-mode #sub-toolbar-controls {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .mobile-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 45;
+      display: none;
+    }
+    .mobile-backdrop.active {
+      display: block;
+    }
   </style>
 </head>
-<body class="h-screen w-screen flex flex-col antialiased">
+<body class="h-screen w-screen flex flex-col antialiased desktop-mode" id="app-body">
 
   <!-- TOAST CONTAINER -->
   <div id="toast-container"></div>
+  
+  <!-- MOBILE SIDEBAR BACKDROP -->
+  <div id="mobile-backdrop" class="mobile-backdrop" onclick="closeMobileDrawers()"></div>
 
   <!-- ========================================== -->
   <!-- 1. TOP HEADER & NAVIGATION BAR             -->
   <!-- ========================================== -->
-  <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-40 select-none">
-    <div class="flex items-center space-x-3">
+  <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 md:px-4 z-40 select-none">
+    <div class="flex items-center space-x-2 md:space-x-3">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg tracking-tighter">
         AP
       </div>
       <div>
-        <h1 class="text-xs font-bold tracking-wider text-slate-100 uppercase flex items-center gap-2">
-          APPARIUM <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono">v5.0 PRO CAD</span>
+        <h1 class="text-xs font-bold tracking-wider text-slate-100 uppercase flex items-center gap-1.5">
+          APPARIUM <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono">v5.0 PRO</span>
         </h1>
-        <p class="text-[10px] text-slate-400 font-mono">PROFESSIONAL APPAREL WORKSPACE</p>
+        <p class="text-[9px] md:text-[10px] text-slate-400 font-mono hidden sm:block">PROFESSIONAL APPAREL WORKSPACE</p>
       </div>
     </div>
 
+    <!-- Mode Switcher: Desktop vs Seluler -->
+    <div class="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px] font-mono">
+      <button onclick="setAppMode('desktop')" id="mode-desktop-btn" class="px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1">
+        <i data-lucide="monitor" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">DESKTOP</span>
+      </button>
+      <button onclick="setAppMode('mobile')" id="mode-mobile-btn" class="px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1">
+        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">SELULER</span>
+      </button>
+    </div>
+
     <!-- View Modes & Angle Controls -->
-    <div class="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+    <div class="hidden lg:flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
       <button onclick="setViewAngle('front')" id="view-front-btn" class="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition">FRONT</button>
       <button onclick="setViewAngle('back')" id="view-back-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">BACK</button>
       <button onclick="setViewAngle('left')" id="view-left-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">LEFT SIDE</button>
       <button onclick="setViewAngle('right')" id="view-right-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">RIGHT SIDE</button>
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
       <button onclick="toggle3DMockupModal(true)" class="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium hover:bg-emerald-500/30 transition flex items-center gap-1">
-        <i data-lucide="box" class="w-3.5 h-3.5"></i> 3D STUDIO MOCKUP
+        <i data-lucide="box" class="w-3.5 h-3.5"></i> 3D MOCKUP
       </button>
     </div>
 
     <!-- Project File Actions, Unit & DPI -->
-    <div class="flex items-center space-x-2 text-xs">
+    <div class="flex items-center space-x-1.5 md:space-x-2 text-xs">
       <!-- Project Actions -->
-      <button onclick="createNewProject()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="New Project">
+      <button onclick="createNewProject()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="New Project">
         <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
       </button>
-      <button onclick="saveProjectJSON()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="Save Project JSON (Ctrl+S)">
+      <button onclick="saveProjectJSON()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="Save Project JSON">
         <i data-lucide="save" class="w-3.5 h-3.5"></i>
       </button>
-      <button onclick="document.getElementById('project-file-input').click()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="Load Project JSON">
+      <button onclick="document.getElementById('project-file-input').click()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="Load Project JSON">
         <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
       </button>
       <input type="file" id="project-file-input" accept=".json,.apparium" class="hidden" onchange="loadProjectJSON(event)">
 
-      <div class="h-4 w-[1px] bg-slate-800"></div>
+      <div class="h-4 w-[1px] bg-slate-800 hidden md:block"></div>
 
       <!-- Unit Selector -->
-      <div class="flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700">
+      <div class="hidden md:flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700">
         <span class="text-slate-400 text-[10px] uppercase font-mono">Unit:</span>
         <select id="unit-selector" onchange="changeUnit(this.value)" class="bg-transparent text-slate-200 font-mono text-xs focus:outline-none cursor-pointer">
           <option value="cm" selected>cm</option>
@@ -208,7 +271,7 @@
       </div>
 
       <!-- DPI Selector -->
-      <div class="flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700">
+      <div class="hidden md:flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700">
         <span class="text-slate-400 text-[10px] uppercase font-mono">DPI:</span>
         <select id="dpi-selector" onchange="changeDPI(this.value)" class="bg-transparent text-cyan-400 font-mono text-xs font-semibold focus:outline-none cursor-pointer">
           <option value="72">72 (Web)</option>
@@ -220,14 +283,14 @@
 
       <!-- Export Actions -->
       <div class="flex items-center space-x-1">
-        <button onclick="exportArtwork('png')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i> PNG
+        <button onclick="exportArtwork('png')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">PNG</span>
         </button>
-        <button onclick="exportArtwork('svg')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1">
-          <i data-lucide="code" class="w-3.5 h-3.5"></i> SVG
+        <button onclick="exportArtwork('svg')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]">
+          <i data-lucide="code" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">SVG</span>
         </button>
-        <button onclick="openTechPackModal()" class="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-90 text-slate-950 font-bold rounded transition flex items-center gap-1 shadow-lg shadow-cyan-500/10">
-          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> TECH PACK
+        <button onclick="openTechPackModal()" class="px-2.5 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-90 text-slate-950 font-bold rounded transition flex items-center gap-1 shadow-lg shadow-cyan-500/10 text-[11px]">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">TECH PACK</span>
         </button>
       </div>
     </div>
@@ -236,8 +299,8 @@
   <!-- ========================================== -->
   <!-- 2. MAIN SUB-TOOLBAR / WORKSPACE CONTROLS   -->
   <!-- ========================================== -->
-  <div class="h-9 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between px-4 text-xs z-30">
-    <div class="flex items-center space-x-2">
+  <div class="h-10 md:h-9 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between px-3 md:px-4 text-xs z-30 overflow-x-auto" id="sub-toolbar-controls">
+    <div class="flex items-center space-x-1.5 md:space-x-2 shrink-0">
       <!-- Core Tools -->
       <button onclick="setActiveTool('select')" id="tool-select" class="p-1.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40" data-tooltip="Select & Transform">
         <i data-lucide="mouse-pointer" class="w-4 h-4"></i>
@@ -248,11 +311,8 @@
       <button onclick="addShapeObject('rectangle')" id="tool-shape" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Add Vector Shape">
         <i data-lucide="square" class="w-4 h-4"></i>
       </button>
-      <button onclick="setActiveTool('measure')" id="tool-measure" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Measurement Tool">
-        <i data-lucide="ruler" class="w-4 h-4"></i>
-      </button>
 
-      <div class="h-4 w-[1px] bg-slate-800"></div>
+      <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
 
       <!-- Quick Object Actions -->
       <button onclick="duplicateSelectedObject()" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Duplicate Object">
@@ -268,10 +328,10 @@
         <i data-lucide="align-center" class="w-4 h-4"></i>
       </button>
 
-      <div class="h-4 w-[1px] bg-slate-800"></div>
+      <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
 
       <!-- Display Toggles -->
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px]">
+      <label class="hidden md:flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px]">
         <input type="checkbox" id="toggle-rulers" checked onchange="toggleRulers()" class="rounded bg-slate-800 border-slate-700 text-cyan-500">
         Rulers
       </label>
@@ -281,23 +341,19 @@
       </label>
       <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px]">
         <input type="checkbox" id="toggle-safe-zone" checked onchange="toggleSafeZone()" class="rounded bg-slate-800 border-slate-700 text-cyan-500">
-        Print Area Boundary
-      </label>
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px]">
-        <input type="checkbox" id="toggle-clipping" onchange="toggleArtworkClipping()" class="rounded bg-slate-800 border-slate-700 text-cyan-500">
-        Clip Artwork to Garment
+        Print Area
       </label>
     </div>
 
     <!-- History & Zoom Controls -->
-    <div class="flex items-center space-x-3">
-      <div class="flex items-center space-x-1 border-r border-slate-800 pr-3">
+    <div class="flex items-center space-x-2 md:space-x-3 shrink-0">
+      <div class="flex items-center space-x-1 border-r border-slate-800 pr-2 md:pr-3">
         <button onclick="undo()" class="p-1 text-slate-400 hover:text-slate-200" data-tooltip="Undo"><i data-lucide="undo" class="w-3.5 h-3.5"></i></button>
         <button onclick="redo()" class="p-1 text-slate-400 hover:text-slate-200" data-tooltip="Redo"><i data-lucide="redo" class="w-3.5 h-3.5"></i></button>
       </div>
-      <div class="flex items-center space-x-2 font-mono text-[11px]">
+      <div class="flex items-center space-x-1.5 font-mono text-[11px]">
         <button onclick="adjustZoom(-0.1)" class="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"><i data-lucide="minus" class="w-3 h-3"></i></button>
-        <span id="zoom-level-text" class="w-12 text-center text-cyan-400 font-bold">100%</span>
+        <span id="zoom-level-text" class="w-10 text-center text-cyan-400 font-bold">100%</span>
         <button onclick="adjustZoom(0.1)" class="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"><i data-lucide="plus" class="w-3 h-3"></i></button>
         <button onclick="resetZoom()" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded text-[10px]">FIT</button>
       </div>
@@ -316,7 +372,7 @@
       <!-- Sidebar Navigation Tabs -->
       <div class="flex border-b border-slate-800 text-[11px] font-semibold bg-slate-950">
         <button onclick="switchLeftTab('garments')" id="tab-btn-garments" class="flex-1 py-2.5 text-center text-cyan-400 border-b-2 border-cyan-400 transition">GARMENTS</button>
-        <button onclick="switchLeftTab('typography')" id="tab-btn-typography" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">TYPOGRAPHY</button>
+        <button onclick="switchLeftTab('typography')" id="tab-btn-typography" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">TYPO</button>
         <button onclick="switchLeftTab('assets')" id="tab-btn-assets" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">ASSETS</button>
         <button onclick="switchLeftTab('patterns')" id="tab-btn-patterns" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">PATTERNS</button>
       </div>
@@ -405,16 +461,6 @@
         <div class="grid grid-cols-2 gap-2" id="pattern-presets-grid">
           <!-- Generated by JS -->
         </div>
-
-        <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-2 mt-2">
-          <label class="text-[10px] uppercase font-mono text-slate-400 block font-bold">Fabric Blend Mode</label>
-          <select id="texture-blend-mode" onchange="changeTextureBlendMode(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200">
-            <option value="normal">Normal</option>
-            <option value="multiply" selected>Multiply (Blend with Fabric)</option>
-            <option value="overlay">Overlay</option>
-            <option value="screen">Screen</option>
-          </select>
-        </div>
       </div>
     </aside>
 
@@ -424,16 +470,16 @@
     <main class="flex-1 bg-slate-950 relative flex flex-col overflow-hidden canvas-grid" id="main-canvas-container">
       
       <!-- Top Horizontal Ruler -->
-      <div class="h-6 ruler-x w-full flex items-center px-6 text-[9px] font-mono text-slate-500 justify-between select-none overflow-hidden" id="ruler-x-bar">
+      <div class="h-6 ruler-x w-full hidden md:flex items-center px-6 text-[9px] font-mono text-slate-500 justify-between select-none overflow-hidden" id="ruler-x-bar">
       </div>
 
       <div class="flex-1 flex relative overflow-hidden">
         <!-- Left Vertical Ruler -->
-        <div class="w-6 ruler-y h-full flex flex-col justify-between py-6 text-[9px] font-mono text-slate-500 items-center select-none overflow-hidden" id="ruler-y-bar">
+        <div class="w-6 ruler-y h-full hidden md:flex flex-col justify-between py-6 text-[9px] font-mono text-slate-500 items-center select-none overflow-hidden" id="ruler-y-bar">
         </div>
 
         <!-- Interactive Canvas Viewport -->
-        <div class="flex-1 relative flex items-center justify-center overflow-auto p-8" id="canvas-viewport" onclick="handleCanvasBackgroundClick(event)">
+        <div class="flex-1 relative flex items-center justify-center overflow-auto p-2 sm:p-8" id="canvas-viewport" onclick="handleCanvasBackgroundClick(event)">
           
           <div id="apparel-canvas-frame" class="relative transition-transform duration-75 shadow-2xl bg-slate-900/40 rounded-lg border border-slate-800/80" style="width: 600px; height: 700px; transform: scale(1);">
             
@@ -452,15 +498,15 @@
 
             <!-- Interactive Transform Controls Box -->
             <div id="selection-box" class="absolute z-30 border-2 border-cyan-400 pointer-events-none hidden" style="top:0; left:0; width:0; height:0;">
-              <div class="transform-handle nw" onmousedown="initTransform(event, 'nw')"></div>
-              <div class="transform-handle ne" onmousedown="initTransform(event, 'ne')"></div>
-              <div class="transform-handle sw" onmousedown="initTransform(event, 'sw')"></div>
-              <div class="transform-handle se" onmousedown="initTransform(event, 'se')"></div>
-              <div class="transform-handle n"  onmousedown="initTransform(event, 'n')"></div>
-              <div class="transform-handle s"  onmousedown="initTransform(event, 's')"></div>
-              <div class="transform-handle w"  onmousedown="initTransform(event, 'w')"></div>
-              <div class="transform-handle e"  onmousedown="initTransform(event, 'e')"></div>
-              <div class="transform-handle rot" onmousedown="initRotate(event)"></div>
+              <div class="transform-handle nw" onmousedown="initTransform(event, 'nw')" ontouchstart="initTransform(event, 'nw')"></div>
+              <div class="transform-handle ne" onmousedown="initTransform(event, 'ne')" ontouchstart="initTransform(event, 'ne')"></div>
+              <div class="transform-handle sw" onmousedown="initTransform(event, 'sw')" ontouchstart="initTransform(event, 'sw')"></div>
+              <div class="transform-handle se" onmousedown="initTransform(event, 'se')" ontouchstart="initTransform(event, 'se')"></div>
+              <div class="transform-handle n"  onmousedown="initTransform(event, 'n')" ontouchstart="initTransform(event, 'n')"></div>
+              <div class="transform-handle s"  onmousedown="initTransform(event, 's')" ontouchstart="initTransform(event, 's')"></div>
+              <div class="transform-handle w"  onmousedown="initTransform(event, 'w')" ontouchstart="initTransform(event, 'w')"></div>
+              <div class="transform-handle e"  onmousedown="initTransform(event, 'e')" ontouchstart="initTransform(event, 'e')"></div>
+              <div class="transform-handle rot" onmousedown="initRotate(event)" ontouchstart="initRotate(event)"></div>
             </div>
 
           </div>
@@ -469,15 +515,14 @@
       </div>
 
       <!-- Bottom Status Bar -->
-      <footer class="h-6 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 z-30">
-        <div class="flex items-center space-x-4">
-          <span class="flex items-center gap-1 text-cyan-400"><i data-lucide="check-circle" class="w-3 h-3"></i> WORKSPACE READY</span>
-          <span>GARMENT: <strong id="status-garment-name" class="text-slate-200">REGULAR T-SHIRT</strong></span>
+      <footer class="h-6 bg-slate-900 border-t border-slate-800 px-3 md:px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 z-30">
+        <div class="flex items-center space-x-3">
+          <span class="flex items-center gap-1 text-cyan-400"><i data-lucide="check-circle" class="w-3 h-3"></i> READY</span>
+          <span class="hidden sm:inline">GARMENT: <strong id="status-garment-name" class="text-slate-200">REGULAR T-SHIRT</strong></span>
         </div>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3">
           <span>X: <span id="pos-x-val">0</span> <span class="unit-label">cm</span> | Y: <span id="pos-y-val">0</span> <span class="unit-label">cm</span></span>
-          <span>SIZE: <span id="size-w-val">0</span> x <span id="size-h-val">0</span> <span class="unit-label">cm</span></span>
-          <span>ROTATION: <span id="rot-val">0</span>°</span>
+          <span class="hidden sm:inline">SIZE: <span id="size-w-val">0</span> x <span id="size-h-val">0</span> <span class="unit-label">cm</span></span>
         </div>
       </footer>
     </main>
@@ -534,7 +579,7 @@
 
         <!-- Selected Object Detailed Properties -->
         <div id="object-properties-container" class="space-y-3">
-          <p class="text-xs text-slate-500 italic text-center py-4">Select an object on the canvas to edit detail properties.</p>
+          <p class="text-xs text-slate-500 italic text-center py-4">Pilih objek di kanvas untuk mengedit detail properti.</p>
         </div>
       </div>
 
@@ -543,9 +588,9 @@
         <div class="flex items-center justify-between mb-2">
           <span class="text-[10px] font-mono text-slate-400 uppercase">Layer Order</span>
           <div class="flex items-center gap-1">
-            <button onclick="moveLayerUp()" class="p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300" data-tooltip="Move Layer Up"><i data-lucide="arrow-up" class="w-3 h-3"></i></button>
-            <button onclick="moveLayerDown()" class="p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300" data-tooltip="Move Layer Down"><i data-lucide="arrow-down" class="w-3 h-3"></i></button>
-            <button onclick="deleteSelectedObject()" class="p-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded" data-tooltip="Delete Selected"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+            <button onclick="moveLayerUp()" class="p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300"><i data-lucide="arrow-up" class="w-3 h-3"></i></button>
+            <button onclick="moveLayerDown()" class="p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300"><i data-lucide="arrow-down" class="w-3 h-3"></i></button>
+            <button onclick="deleteSelectedObject()" class="p-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
           </div>
         </div>
 
@@ -569,24 +614,46 @@
   </div>
 
   <!-- ========================================== -->
+  <!-- MOBILE MODE BOTTOM NAVIGATION BAR          -->
+  <!-- ========================================== -->
+  <nav id="mobile-bottom-nav" class="hidden h-12 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-40 text-[10px] font-mono">
+    <button onclick="toggleMobileDrawer('left')" class="flex flex-col items-center justify-center text-slate-400 hover:text-cyan-400">
+      <i data-lucide="layout-grid" class="w-4 h-4 mb-0.5"></i>
+      <span>ASET & GARMEN</span>
+    </button>
+    <button onclick="setViewAngle(state.activeAngle === 'front' ? 'back' : 'front')" class="flex flex-col items-center justify-center text-slate-400 hover:text-cyan-400">
+      <i data-lucide="refresh-cw" class="w-4 h-4 mb-0.5"></i>
+      <span>SUDUT VIEW</span>
+    </button>
+    <button onclick="toggle3DMockupModal(true)" class="flex flex-col items-center justify-center text-emerald-400">
+      <i data-lucide="box" class="w-4 h-4 mb-0.5"></i>
+      <span>MOCKUP 3D</span>
+    </button>
+    <button onclick="toggleMobileDrawer('right')" class="flex flex-col items-center justify-center text-slate-400 hover:text-cyan-400">
+      <i data-lucide="sliders" class="w-4 h-4 mb-0.5"></i>
+      <span>PROPERTI</span>
+    </button>
+  </nav>
+
+  <!-- ========================================== -->
   <!-- 4. 3D REALISTIC MOCKUP PREVIEW MODAL      -->
   <!-- ========================================== -->
-  <div id="modal-3d-preview" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-6">
+  <div id="modal-3d-preview" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6">
     <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
       <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950">
         <div class="flex items-center gap-2">
           <i data-lucide="box" class="w-5 h-5 text-emerald-400"></i>
-          <h2 class="text-sm font-bold text-slate-100 uppercase tracking-wider">3D Interactive Realtime Fabric Simulation</h2>
+          <h2 class="text-xs md:text-sm font-bold text-slate-100 uppercase tracking-wider">3D Realtime Fabric Simulation</h2>
         </div>
         <button onclick="toggle3DMockupModal(false)" class="text-slate-400 hover:text-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
-      <div class="flex-1 flex">
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div id="threejs-canvas-container" class="flex-1 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden flex items-center justify-center">
-          <span class="absolute bottom-3 left-4 text-[10px] font-mono text-slate-500">Drag to Rotate | Scroll to Zoom</span>
+          <span class="absolute bottom-3 left-4 text-[10px] font-mono text-slate-500">Drag/Swipe to Rotate | Pinch/Scroll to Zoom</span>
         </div>
 
-        <div class="w-72 border-l border-slate-800 bg-slate-950 p-4 space-y-4 text-xs">
+        <div class="w-full md:w-72 border-t md:border-t-0 md:border-l border-slate-800 bg-slate-950 p-4 space-y-3 md:space-y-4 text-xs shrink-0">
           <h3 class="font-bold text-slate-200 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-2">Fabric Physics Shader</h3>
           
           <div>
@@ -612,7 +679,7 @@
           </div>
 
           <button onclick="capture3DRender()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded transition shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5">
-            <i data-lucide="camera" class="w-4 h-4"></i> CAPTURE HIGH-RES MOCKUP
+            <i data-lucide="camera" class="w-4 h-4"></i> CAPTURE MOCKUP
           </button>
         </div>
       </div>
@@ -622,45 +689,45 @@
   <!-- ========================================== -->
   <!-- 5. TECH PACK GENERATOR MODAL              -->
   <!-- ========================================== -->
-  <div id="modal-techpack" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-6">
+  <div id="modal-techpack" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6">
     <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
       <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950">
         <div class="flex items-center gap-2">
           <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i>
-          <h2 class="text-sm font-bold text-slate-100 uppercase tracking-wider">Production Tech Pack Document Specification</h2>
+          <h2 class="text-xs md:text-sm font-bold text-slate-100 uppercase tracking-wider">Tech Pack Production Specification</h2>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="window.print()" class="px-3 py-1 bg-cyan-500 text-slate-950 font-bold rounded text-xs flex items-center gap-1"><i data-lucide="printer" class="w-3.5 h-3.5"></i> PRINT / SAVE PDF</button>
+          <button onclick="window.print()" class="px-3 py-1 bg-cyan-500 text-slate-950 font-bold rounded text-xs flex items-center gap-1"><i data-lucide="printer" class="w-3.5 h-3.5"></i> PRINT / PDF</button>
           <button onclick="toggleTechPackModal(false)" class="text-slate-400 hover:text-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 bg-slate-950 text-slate-200 font-mono text-xs space-y-6" id="techpack-print-area">
+      <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950 text-slate-200 font-mono text-xs space-y-6" id="techpack-print-area">
         <div class="border-b-2 border-slate-700 pb-4 flex justify-between items-start">
           <div>
-            <h1 class="text-xl font-bold text-cyan-400 uppercase tracking-wider">APPARIUM CAD — TECH PACK SPEC SHEET</h1>
+            <h1 class="text-lg md:text-xl font-bold text-cyan-400 uppercase tracking-wider">APPARIUM CAD — TECH PACK SPEC SHEET</h1>
             <p class="text-slate-400 text-xs mt-1">STYLE NAME: <span id="tp-garment-title" class="text-slate-100">HEAVYWEIGHT OVERSIZED T-SHIRT</span></p>
             <p class="text-slate-400 text-xs">STYLE ID: <span id="tp-garment-id" class="text-slate-100">APP-2026-TS01</span></p>
           </div>
           <div class="text-right">
             <p class="text-slate-400 text-xs">DATE: <span id="tp-date">2026-09-29</span></p>
-            <p class="text-slate-400 text-xs">TARGET PRINT DPI: <span id="tp-dpi">300 DPI</span></p>
+            <p class="text-slate-400 text-xs">DPI: <span id="tp-dpi">300 DPI</span></p>
           </div>
         </div>
 
         <div>
           <h3 class="text-cyan-400 font-bold uppercase mb-2 border-b border-slate-800 pb-1">1. Technical Flat & Construction Views</h3>
-          <div class="grid grid-cols-4 gap-3 bg-slate-900 p-3 rounded border border-slate-800" id="tp-views-container">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-900 p-3 rounded border border-slate-800" id="tp-views-container">
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-slate-900 p-3 rounded border border-slate-800">
             <h3 class="text-emerald-400 font-bold uppercase mb-2 border-b border-slate-800 pb-1">2. Fabric Specifications</h3>
             <table class="w-full text-left text-[11px] space-y-1">
-              <tr><td class="text-slate-400">Material Composition:</td><td class="font-bold">100% Heavyweight Cotton Comb 24s</td></tr>
-              <tr><td class="text-slate-400">Fabric Weight:</td><td class="font-bold">240 GSM</td></tr>
-              <tr><td class="text-slate-400">Dye / Color Spec:</td><td id="tp-color-spec" class="font-bold">Phantom Black (#18181B)</td></tr>
+              <tr><td class="text-slate-400">Material:</td><td class="font-bold">100% Heavyweight Cotton Comb 24s</td></tr>
+              <tr><td class="text-slate-400">Weight:</td><td class="font-bold">240 GSM</td></tr>
+              <tr><td class="text-slate-400">Base Color:</td><td id="tp-color-spec" class="font-bold">Phantom Black (#18181B)</td></tr>
               <tr><td class="text-slate-400">Print Method:</td><td class="font-bold">Plastisol Screen Print / High-Density</td></tr>
             </table>
           </div>
@@ -668,9 +735,9 @@
           <div class="bg-slate-900 p-3 rounded border border-slate-800">
             <h3 class="text-emerald-400 font-bold uppercase mb-2 border-b border-slate-800 pb-1">3. Stitching & Trim Specifications</h3>
             <table class="w-full text-left text-[11px] space-y-1">
-              <tr><td class="text-slate-400">Seam Stitch Type:</td><td class="font-bold">Double Needle Topstitch (1/4")</td></tr>
-              <tr><td class="text-slate-400">Thread Spec:</td><td class="font-bold">100% Core-Spun Polyester Thread</td></tr>
-              <tr><td class="text-slate-400">Neck Ribbing:</td><td class="font-bold">1x1 Rib Cotton 300 GSM</td></tr>
+              <tr><td class="text-slate-400">Seam Stitch:</td><td class="font-bold">Double Needle Topstitch (1/4")</td></tr>
+              <tr><td class="text-slate-400">Thread:</td><td class="font-bold">100% Core-Spun Polyester Thread</td></tr>
+              <tr><td class="text-slate-400">Ribbing:</td><td class="font-bold">1x1 Rib Cotton 300 GSM</td></tr>
               <tr><td class="text-slate-400">Print Safe Area:</td><td id="tp-print-size" class="font-bold">28.0 x 38.0 cm (Front Center)</td></tr>
             </table>
           </div>
@@ -694,6 +761,7 @@
        1. GLOBAL APPLICATION STATE & DATA STRUCTURES
        ======================================================== */
     const state = {
+      appMode: 'desktop', // 'desktop' or 'mobile'
       activeGarmentId: 'tshirt-regular',
       activeAngle: 'front',
       colors: {
@@ -835,7 +903,7 @@
     ];
 
     /* ========================================================
-       5. INITIALIZATION ENGINE
+       5. INITIALIZATION ENGINE & MODE HANDLING
        ======================================================== */
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
@@ -846,7 +914,68 @@
       loadActiveGarmentSVG();
       updateRulers();
       pushHistoryState();
+
+      // Auto-detect viewport size to enable Mobile mode if screen is small
+      if (window.innerWidth < 768) {
+        setAppMode('mobile');
+      }
     });
+
+    function setAppMode(mode) {
+      state.appMode = mode;
+      const body = document.getElementById('app-body');
+      const deskBtn = document.getElementById('mode-desktop-btn');
+      const mobBtn = document.getElementById('mode-mobile-btn');
+
+      if (mode === 'mobile') {
+        body.classList.remove('desktop-mode');
+        body.classList.add('mobile-mode');
+        mobBtn.className = 'px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1';
+        deskBtn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1';
+        showToast('Mode Seluler Aktif');
+        fitCanvasToMobile();
+      } else {
+        body.classList.remove('mobile-mode');
+        body.classList.add('desktop-mode');
+        deskBtn.className = 'px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1';
+        mobBtn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1';
+        closeMobileDrawers();
+        showToast('Mode Desktop Aktif');
+        resetZoom();
+      }
+    }
+
+    function toggleMobileDrawer(side) {
+      const left = document.getElementById('left-sidebar');
+      const right = document.getElementById('right-sidebar');
+      const backdrop = document.getElementById('mobile-backdrop');
+
+      if (side === 'left') {
+        right.classList.remove('mobile-open');
+        left.classList.toggle('mobile-open');
+      } else {
+        left.classList.remove('mobile-open');
+        right.classList.toggle('mobile-open');
+      }
+
+      const isOpen = left.classList.contains('mobile-open') || right.classList.contains('mobile-open');
+      backdrop.classList.toggle('active', isOpen);
+    }
+
+    function closeMobileDrawers() {
+      document.getElementById('left-sidebar').classList.remove('mobile-open');
+      document.getElementById('right-sidebar').classList.remove('mobile-open');
+      document.getElementById('mobile-backdrop').classList.remove('active');
+    }
+
+    function fitCanvasToMobile() {
+      const container = document.getElementById('canvas-viewport');
+      if (container && container.offsetWidth < 600) {
+        const scale = (container.offsetWidth - 20) / 600;
+        state.zoom = Math.max(0.4, scale);
+        applyZoom();
+      }
+    }
 
     /* ========================================================
        6. UI UTILITIES & TOAST ENGINE
@@ -929,7 +1058,7 @@
 
       container.innerHTML = filtered.map(preset => `
         <div onclick="addTextObject('${preset.name}', '${preset.font}')" class="p-2 bg-slate-950 border border-slate-800 rounded hover:border-cyan-500 cursor-pointer flex items-center justify-between transition">
-          <span class="text-sm text-slate-100 truncate" style="font-family: '${preset.font}', sans-serif;">${preset.name}</span>
+          <span class="text-xs md:text-sm text-slate-100 truncate" style="font-family: '${preset.font}', sans-serif;">${preset.name}</span>
           <span class="text-[8px] font-mono text-cyan-400 bg-cyan-950 px-1.5 py-0.5 rounded">${preset.category}</span>
         </div>
       `).join('');
@@ -989,15 +1118,18 @@
       loadActiveGarmentSVG();
       showToast(`Garment updated`);
       pushHistoryState();
+      if (state.appMode === 'mobile') closeMobileDrawers();
     }
 
     function setViewAngle(angle) {
       state.activeAngle = angle;
       ['front', 'back', 'left', 'right'].forEach(a => {
         const btn = document.getElementById(`view-${a}-btn`);
-        btn.className = (a === angle) 
-          ? 'px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition'
-          : 'px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition';
+        if (btn) {
+          btn.className = (a === angle) 
+            ? 'px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition'
+            : 'px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition';
+        }
       });
       loadActiveGarmentSVG();
       showToast(`Angle switched to ${angle.toUpperCase()}`);
@@ -1040,6 +1172,7 @@
       selectObject(obj.id);
       pushHistoryState();
       showToast('Typography added');
+      if (state.appMode === 'mobile') closeMobileDrawers();
     }
 
     function addShapeObject(shapeType = 'rectangle') {
@@ -1087,6 +1220,7 @@
         selectObject(obj.id);
         pushHistoryState();
         showToast('Asset uploaded');
+        if (state.appMode === 'mobile') closeMobileDrawers();
       };
       reader.readAsDataURL(file);
     }
@@ -1113,19 +1247,19 @@
         const transformStr = `translate(${obj.x}px, ${obj.y}px) rotate(${obj.rotation}deg) scale(${obj.scaleX}, ${obj.scaleY})`;
         if (obj.type === 'text') {
           return `
-            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none" style="transform-origin: center center; transform: ${transformStr}; opacity: ${obj.opacity}; font-family: '${obj.fontFamily}', sans-serif; font-size: ${obj.fontSize}px; color: ${obj.color}; font-weight: ${obj.fontWeight};">
+            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; opacity: ${obj.opacity}; font-family: '${obj.fontFamily}', sans-serif; font-size: ${obj.fontSize}px; color: ${obj.color}; font-weight: ${obj.fontWeight};">
               ${obj.content}
             </div>
           `;
         } else if (obj.type === 'image') {
           return `
-            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; opacity: ${obj.opacity};">
+            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; opacity: ${obj.opacity};">
               <img src="${obj.src}" class="w-full h-full object-contain pointer-events-none"/>
             </div>
           `;
         } else if (obj.type === 'shape') {
           return `
-            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; background-color: ${obj.color}; opacity: ${obj.opacity}; border-radius: ${obj.shapeType==='circle'?'50%':'2px'};">
+            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; background-color: ${obj.color}; opacity: ${obj.opacity}; border-radius: ${obj.shapeType==='circle'?'50%':'2px'};">
             </div>
           `;
         }
@@ -1135,9 +1269,9 @@
       renderLayersList();
     }
 
-    /* ========================================================
-       10. SELECTION & TRANSFORM CONTROL
-       ======================================================== */
+    /* ==========================================================
+       10. SELECTION & TRANSFORM CONTROL (UNIFIED MOUSE & TOUCH)
+       ========================================================== */
     function selectObject(id) {
       state.selectedObjectId = id;
       updateSelectionBox();
@@ -1179,18 +1313,24 @@
         document.getElementById('pos-y-val').innerText = (obj.y / scaleVal).toFixed(1);
         document.getElementById('size-w-val').innerText = (w / scaleVal).toFixed(1);
         document.getElementById('size-h-val').innerText = (h / scaleVal).toFixed(1);
-        document.getElementById('rot-val').innerText = Math.round(obj.rotation);
       }
     }
 
     /* ========================================================
-       11. DRAG, RESIZE & ROTATE LOGIC
+       11. DRAG, RESIZE & ROTATE LOGIC WITH TOUCH SUPPORT
        ======================================================== */
     let isDragging = false;
     let isTransforming = false;
     let activeHandle = null;
     let startX = 0, startY = 0;
     let startObjX = 0, startObjY = 0, startW = 0, startH = 0;
+
+    function getPointerPos(e) {
+      if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
 
     function initDrag(e, id) {
       e.stopPropagation();
@@ -1199,21 +1339,26 @@
       if (!obj) return;
 
       isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
+      const pos = getPointerPos(e);
+      startX = pos.x;
+      startY = pos.y;
       startObjX = obj.x;
       startObjY = obj.y;
 
       window.addEventListener('mousemove', doDrag);
       window.addEventListener('mouseup', stopDrag);
+      window.addEventListener('touchmove', doDrag, { passive: false });
+      window.addEventListener('touchend', stopDrag);
     }
 
     function doDrag(e) {
       if (!isDragging) return;
+      if (e.preventDefault && e.cancelable) e.preventDefault();
+      const pos = getPointerPos(e);
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
       if (obj) {
-        obj.x = startObjX + (e.clientX - startX);
-        obj.y = startObjY + (e.clientY - startY);
+        obj.x = startObjX + (pos.x - startX) / state.zoom;
+        obj.y = startObjY + (pos.y - startY) / state.zoom;
         renderObjects();
       }
     }
@@ -1225,6 +1370,8 @@
       }
       window.removeEventListener('mousemove', doDrag);
       window.removeEventListener('mouseup', stopDrag);
+      window.removeEventListener('touchmove', doDrag);
+      window.removeEventListener('touchend', stopDrag);
     }
 
     function initTransform(e, handle) {
@@ -1235,22 +1382,27 @@
       const el = document.getElementById(state.selectedObjectId);
       if (!obj || !el) return;
 
-      startX = e.clientX;
-      startY = e.clientY;
+      const pos = getPointerPos(e);
+      startX = pos.x;
+      startY = pos.y;
       startW = el.offsetWidth || obj.width;
       startH = el.offsetHeight || obj.height;
 
       window.addEventListener('mousemove', doTransform);
       window.addEventListener('mouseup', stopTransform);
+      window.addEventListener('touchmove', doTransform, { passive: false });
+      window.addEventListener('touchend', stopTransform);
     }
 
     function doTransform(e) {
       if (!isTransforming) return;
+      if (e.preventDefault && e.cancelable) e.preventDefault();
+      const pos = getPointerPos(e);
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
       if (!obj) return;
 
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
+      const dx = (pos.x - startX) / state.zoom;
+      const dy = (pos.y - startY) / state.zoom;
 
       if (activeHandle.includes('e')) obj.width = Math.max(20, startW + dx);
       if (activeHandle.includes('s')) obj.height = Math.max(20, startH + dy);
@@ -1268,6 +1420,8 @@
       }
       window.removeEventListener('mousemove', doTransform);
       window.removeEventListener('mouseup', stopTransform);
+      window.removeEventListener('touchmove', doTransform);
+      window.removeEventListener('touchend', stopTransform);
     }
 
     function initRotate(e) {
@@ -1281,7 +1435,9 @@
       const centerY = rect.top + rect.height / 2;
 
       const handleRotate = (moveEvt) => {
-        const rad = Math.atan2(moveEvt.clientY - centerY, moveEvt.clientX - centerX);
+        if (moveEvt.preventDefault && moveEvt.cancelable) moveEvt.preventDefault();
+        const pos = getPointerPos(moveEvt);
+        const rad = Math.atan2(pos.y - centerY, pos.x - centerX);
         obj.rotation = Math.round(rad * (180 / Math.PI)) + 90;
         renderObjects();
       };
@@ -1290,14 +1446,18 @@
         pushHistoryState();
         window.removeEventListener('mousemove', handleRotate);
         window.removeEventListener('mouseup', stopRotate);
+        window.removeEventListener('touchmove', handleRotate);
+        window.removeEventListener('touchend', stopRotate);
       };
 
       window.addEventListener('mousemove', handleRotate);
       window.addEventListener('mouseup', stopRotate);
+      window.addEventListener('touchmove', handleRotate, { passive: false });
+      window.addEventListener('touchend', stopRotate);
     }
 
     /* ========================================================
-       12. PROPERTIES & LAYERS ENGINE (FIXED & AUDITED)
+       12. PROPERTIES & LAYERS ENGINE
        ======================================================== */
     function updateActiveObject(key, val) {
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
@@ -1313,14 +1473,14 @@
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
 
       if (!obj) {
-        container.innerHTML = `<p class="text-xs text-slate-500 italic text-center py-4">Select an object on the canvas to edit detail properties.</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-500 italic text-center py-4">Pilih objek di kanvas untuk mengedit detail properti.</p>`;
         return;
       }
 
       if (obj.type === 'text') {
         container.innerHTML = `
           <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-3">
-            <h4 class="font-bold text-cyan-400 text-xs uppercase">Typography Editor</h4>
+            <h4 class="font-bold text-cyan-400 text-xs uppercase">Editor Tipografi</h4>
             <div>
               <label class="text-[10px] text-slate-400 block mb-1">Text String</label>
               <input type="text" value="${obj.content}" oninput="updateActiveObject('content', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-100">
@@ -1344,7 +1504,7 @@
       } else {
         container.innerHTML = `
           <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-3">
-            <h4 class="font-bold text-emerald-400 text-xs uppercase">Asset Transform Controls</h4>
+            <h4 class="font-bold text-emerald-400 text-xs uppercase">Kontrol Transformasi</h4>
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="text-[10px] text-slate-400 block mb-1">Width</label>
@@ -1442,14 +1602,14 @@
     }
 
     /* ========================================================
-       13. WORKSPACE TOGGLES & UNITS
+       13. WORKSPACE TOGGLES, UNITS & ZOOM
        ======================================================== */
     function toggleRulers() {
       const rx = document.getElementById('ruler-x-bar');
       const ry = document.getElementById('ruler-y-bar');
       const check = document.getElementById('toggle-rulers').checked;
-      rx.style.display = check ? 'flex' : 'none';
-      ry.style.display = check ? 'flex' : 'none';
+      if (rx) rx.style.display = check ? 'flex' : 'none';
+      if (ry) ry.style.display = check ? 'flex' : 'none';
     }
 
     function toggleGrid() {
@@ -1463,81 +1623,98 @@
       box.style.display = document.getElementById('toggle-safe-zone').checked ? 'flex' : 'none';
     }
 
-    function toggleArtworkClipping() {
-      state.clipArtworkToGarment = document.getElementById('toggle-clipping').checked;
-      showToast(`Clipping: ${state.clipArtworkToGarment ? 'ON' : 'OFF'}`);
-    }
-
     function changeUnit(u) {
       state.unit = u;
       document.querySelectorAll('.unit-label').forEach(el => el.innerText = u);
       updateRulers();
       updateSelectionBox();
+      showToast(`Unit changed to ${u}`);
     }
 
     function changeDPI(d) {
       state.dpi = parseInt(d);
-      showToast(`Target Resolution set to ${d} DPI`);
+      showToast(`DPI set to ${d}`);
     }
 
     function changePrintZone(zone) {
       state.printZone = zone;
-      const box = document.getElementById('print-safe-boundary');
+      const boundary = document.getElementById('print-safe-boundary');
       const tag = document.getElementById('print-area-tag');
 
-      if (zone === 'left-chest') {
-        box.style.cssText = 'top:180px; left:330px; width:100px; height:120px;';
-        tag.innerText = 'LEFT CHEST (10x12 cm)';
-      } else if (zone === 'right-chest') {
-        box.style.cssText = 'top:180px; left:170px; width:100px; height:120px;';
-        tag.innerText = 'RIGHT CHEST (10x12 cm)';
-      } else {
-        box.style.cssText = 'top:130px; left:160px; width:280px; height:380px;';
-        tag.innerText = 'MAX PRINT (28 x 38 cm)';
-      }
+      const zones = {
+        'front-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'MAX PRINT (28 x 38 cm)' },
+        'left-chest': { top: '180px', left: '330px', width: '90px', height: '100px', label: 'LEFT CHEST (9 x 10 cm)' },
+        'right-chest': { top: '180px', left: '180px', width: '90px', height: '100px', label: 'RIGHT CHEST (9 x 10 cm)' },
+        'sleeve-left': { top: '220px', left: '440px', width: '70px', height: '120px', label: 'LEFT SLEEVE' },
+        'sleeve-right': { top: '220px', left: '90px', width: '70px', height: '120px', label: 'RIGHT SLEEVE' },
+        'back-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'FULL BACK (28 x 38 cm)' },
+        'neck-label': { top: '140px', left: '260px', width: '80px', height: '50px', label: 'NECK LABEL' }
+      };
+
+      const z = zones[zone] || zones['front-center'];
+      boundary.style.top = z.top;
+      boundary.style.left = z.left;
+      boundary.style.width = z.width;
+      boundary.style.height = z.height;
+      tag.innerText = z.label;
+      showToast(`Print zone: ${zone.toUpperCase()}`);
+    }
+
+    function adjustZoom(delta) {
+      state.zoom = Math.min(2.5, Math.max(0.3, state.zoom + delta));
+      applyZoom();
+    }
+
+    function resetZoom() {
+      state.zoom = 1.0;
+      applyZoom();
+    }
+
+    function applyZoom() {
+      const frame = document.getElementById('apparel-canvas-frame');
+      frame.style.transform = `scale(${state.zoom})`;
+      document.getElementById('zoom-level-text').innerText = `${Math.round(state.zoom * 100)}%`;
     }
 
     function updateRulers() {
       const rx = document.getElementById('ruler-x-bar');
       const ry = document.getElementById('ruler-y-bar');
-      rx.innerHTML = Array.from({length: 12}).map((_, i) => `<span>${i*5} ${state.unit}</span>`).join('');
-      ry.innerHTML = Array.from({length: 14}).map((_, i) => `<span>${i*5}</span>`).join('');
-    }
+      if (!rx || !ry) return;
 
-    function adjustZoom(delta) {
-      state.zoom = Math.min(2.0, Math.max(0.5, state.zoom + delta));
-      document.getElementById('apparel-canvas-frame').style.transform = `scale(${state.zoom})`;
-      document.getElementById('zoom-level-text').innerText = `${Math.round(state.zoom * 100)}%`;
-    }
+      let rxHtml = '';
+      for (let i = 0; i <= 600; i += 50) {
+        const val = (i / UNIT_SCALES[state.unit]).toFixed(0);
+        rxHtml += `<span>${val}</span>`;
+      }
+      rx.innerHTML = rxHtml;
 
-    function resetZoom() {
-      state.zoom = 1.0;
-      document.getElementById('apparel-canvas-frame').style.transform = `scale(1)`;
-      document.getElementById('zoom-level-text').innerText = `100%`;
+      let ryHtml = '';
+      for (let i = 0; i <= 700; i += 70) {
+        const val = (i / UNIT_SCALES[state.unit]).toFixed(0);
+        ryHtml += `<span>${val}</span>`;
+      }
+      ry.innerHTML = ryHtml;
     }
 
     /* ========================================================
-       14. HISTORY ENGINE (UNDO/REDO)
+       14. HISTORY UNDO / REDO ENGINE
        ======================================================== */
     function pushHistoryState() {
-      state.history = state.history.slice(0, state.historyIndex + 1);
-      state.history.push(JSON.stringify({
-        objects: state.objects,
-        colors: state.colors,
+      if (state.historyIndex < state.history.length - 1) {
+        state.history = state.history.slice(0, state.historyIndex + 1);
+      }
+      state.history.push({
+        objects: JSON.parse(JSON.stringify(state.objects)),
+        colors: JSON.parse(JSON.stringify(state.colors)),
         garmentId: state.activeGarmentId
-      }));
+      });
       state.historyIndex = state.history.length - 1;
     }
 
     function undo() {
       if (state.historyIndex > 0) {
         state.historyIndex--;
-        const snap = JSON.parse(state.history[state.historyIndex]);
-        state.objects = snap.objects;
-        state.colors = snap.colors;
-        state.activeGarmentId = snap.garmentId;
-        loadActiveGarmentSVG();
-        renderObjects();
+        restoreHistoryState(state.history[state.historyIndex]);
         showToast('Undo performed');
       }
     }
@@ -1545,21 +1722,24 @@
     function redo() {
       if (state.historyIndex < state.history.length - 1) {
         state.historyIndex++;
-        const snap = JSON.parse(state.history[state.historyIndex]);
-        state.objects = snap.objects;
-        state.colors = snap.colors;
-        state.activeGarmentId = snap.garmentId;
-        loadActiveGarmentSVG();
-        renderObjects();
+        restoreHistoryState(state.history[state.historyIndex]);
         showToast('Redo performed');
       }
     }
 
+    function restoreHistoryState(snap) {
+      state.objects = JSON.parse(JSON.stringify(snap.objects));
+      state.colors = JSON.parse(JSON.stringify(snap.colors));
+      state.activeGarmentId = snap.garmentId;
+      loadActiveGarmentSVG();
+      renderObjects();
+    }
+
     /* ========================================================
-       15. PROJECT FILE I/O & EXPORT
+       15. SAVE / LOAD PROJECT JSON
        ======================================================== */
     function createNewProject() {
-      if (confirm('Create new project? Unsaved changes will be cleared.')) {
+      if (confirm('Create new project? Unsaved changes will be reset.')) {
         state.objects = [];
         state.selectedObjectId = null;
         renderObjects();
@@ -1569,10 +1749,10 @@
     }
 
     function saveProjectJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `apparium_project_${Date.now()}.json`);
+      downloadAnchor.setAttribute("download", `apparium_project_${Date.now()}.apparium`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1584,130 +1764,197 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(evt) {
-        const loaded = JSON.parse(evt.target.result);
-        state.objects = loaded.objects || [];
-        state.colors = loaded.colors || state.colors;
-        state.activeGarmentId = loaded.activeGarmentId || state.activeGarmentId;
-        loadActiveGarmentSVG();
-        renderObjects();
-        showToast('Project Loaded');
+        try {
+          const loaded = JSON.parse(evt.target.result);
+          if (loaded.objects && loaded.colors) {
+            state.objects = loaded.objects;
+            state.colors = loaded.colors;
+            state.activeGarmentId = loaded.activeGarmentId || state.activeGarmentId;
+            loadActiveGarmentSVG();
+            renderObjects();
+            pushHistoryState();
+            showToast('Project loaded successfully!');
+          }
+        } catch (err) {
+          alert('Invalid project file format!');
+        }
       };
       reader.readAsText(file);
     }
 
+    /* ========================================================
+       16. EXPORT ARTWORK (PNG & SVG)
+       ======================================================== */
     function exportArtwork(format) {
-      showToast(`Exporting artwork as ${format.toUpperCase()} (${state.dpi} DPI)...`);
+      const frame = document.getElementById('apparel-canvas-frame');
+      if (format === 'svg') {
+        const svgData = new XMLSerializer().serializeToString(document.getElementById('garment-svg-layer'));
+        const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `apparium_design_${Date.now()}.svg`;
+        a.click();
+        showToast('Exported SVG Vector');
+      } else if (format === 'png') {
+        showToast('Preparing High-Res PNG Export...');
+        const canvas = document.createElement('canvas');
+        canvas.width = 1200;
+        canvas.height = 1400;
+        const ctx = canvas.getContext('2d');
+
+        const svgElement = document.getElementById('garment-svg-layer');
+        const svgString = new XMLSerializer().serializeToString(svgElement);
+        const img = new Image();
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = function () {
+          ctx.drawImage(img, 0, 0, 1200, 1400);
+          URL.revokeObjectURL(url);
+          const pngUrl = canvas.toDataURL('image/png');
+          const downloadLink = document.createElement('a');
+          downloadLink.href = pngUrl;
+          downloadLink.download = `apparium_design_${Date.now()}.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          showToast('PNG Export Complete');
+        };
+        img.src = url;
+      }
     }
 
     /* ========================================================
-       16. TECH PACK GENERATOR ENGINE
+       17. 3D SIMULATION ENGINE (THREE.JS)
        ======================================================== */
-    function openTechPackModal() {
-      toggleTechPackModal(true);
-      document.getElementById('tp-garment-title').innerText = state.activeGarmentId.toUpperCase();
-      document.getElementById('tp-date').innerText = new Date().toISOString().split('T')[0];
-      document.getElementById('tp-dpi').innerText = `${state.dpi} DPI`;
-      document.getElementById('tp-color-spec').innerText = `Base: ${state.colors.base}`;
-
-      const viewsContainer = document.getElementById('tp-views-container');
-      const angles = ['front', 'back', 'left', 'right'];
-      viewsContainer.innerHTML = angles.map(a => `
-        <div class="bg-slate-950 p-2 rounded text-center border border-slate-800">
-          <div class="w-full h-28 flex items-center justify-center">
-            <svg class="w-20 h-24" viewBox="0 0 600 700">
-              ${generateGarmentSVG(state.activeGarmentId, a, state.colors)}
-            </svg>
-          </div>
-          <span class="text-[9px] font-bold text-slate-400 uppercase block mt-1">${a} View</span>
-        </div>
-      `).join('');
-
-      const log = document.getElementById('tp-artwork-log');
-      log.innerHTML = state.objects.length ? state.objects.map((o, idx) => `
-        <div class="flex justify-between border-b border-slate-800 py-1">
-          <span>Layer ${idx+1}: [${o.type.toUpperCase()}] ${o.content || o.shapeType || 'Asset Image'}</span>
-          <span>Pos: (${Math.round(o.x)}, ${Math.round(o.y)}) | Size: ${Math.round(o.width || 0)}x${Math.round(o.height || 0)}</span>
-        </div>
-      `).join('') : '<p class="text-slate-500 italic">No artwork layers attached to this style.</p>';
-    }
-
-    function toggleTechPackModal(show) {
-      document.getElementById('modal-techpack').classList.toggle('hidden', !show);
-    }
-
-    /* ========================================================
-       17. THREE.JS REALISTIC 3D MOCKUP ENGINE
-       ======================================================== */
-    let threeScene, threeCamera, threeRenderer, threeMesh;
+    let threeScene, threeCamera, threeRenderer, threeShirtMesh, threeControls;
 
     function toggle3DMockupModal(show) {
       const modal = document.getElementById('modal-3d-preview');
       modal.classList.toggle('hidden', !show);
-      if (show && !threeRenderer) {
-        init3DScene();
+      if (show && !threeScene) {
+        init3DSimulation();
       }
     }
 
-    function init3DScene() {
+    function init3DSimulation() {
       const container = document.getElementById('threejs-canvas-container');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+      const w = container.clientWidth || 500;
+      const h = container.clientHeight || 500;
 
       threeScene = new THREE.Scene();
-      threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-      threeCamera.position.set(0, 0, 3.5);
+      threeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+      threeCamera.position.set(0, 0, 5);
 
       threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      threeRenderer.setSize(width, height);
+      threeRenderer.setSize(w, h);
       threeRenderer.setPixelRatio(window.devicePixelRatio);
       container.appendChild(threeRenderer.domElement);
 
-      const light = new THREE.DirectionalLight(0xffffff, 1.2);
-      light.position.set(2, 2, 5);
-      threeScene.add(light);
-      threeScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      threeScene.add(ambientLight);
 
-      // Realistic 3D Garment Mesh Plane Simulation
-      const geometry = new THREE.PlaneGeometry(1.8, 2.2, 32, 32);
-      const material = new THREE.MeshStandardMaterial({
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight.position.set(5, 10, 7);
+      threeScene.add(dirLight);
+
+      // Create procedural 3D T-Shirt Shape
+      const geom = new THREE.CylinderGeometry(1.2, 1.4, 2.8, 32);
+      const mat = new THREE.MeshStandardMaterial({
         color: state.colors.base,
         roughness: 0.7,
-        metalness: 0.1,
-        side: THREE.DoubleSide
+        metalness: 0.1
       });
+      threeShirtMesh = new THREE.Mesh(geom, mat);
+      threeScene.add(threeShirtMesh);
 
-      threeMesh = new THREE.Mesh(geometry, material);
-      threeScene.add(threeMesh);
-
-      const controls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
-      controls.enableDamping = true;
+      if (THREE.OrbitControls) {
+        threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+        threeControls.enableDamping = true;
+      }
 
       function animate() {
         requestAnimationFrame(animate);
-        controls.update();
+        if (threeControls) threeControls.update();
         threeRenderer.render(threeScene, threeCamera);
       }
       animate();
     }
 
     function update3DFabricMaterial(preset) {
-      if (!threeMesh) return;
+      if (!threeShirtMesh) return;
+      const mat = threeShirtMesh.material;
       if (preset === 'satin') {
-        threeMesh.material.roughness = 0.2;
-        threeMesh.material.metalness = 0.5;
+        mat.roughness = 0.2;
+        mat.metalness = 0.5;
+      } else if (preset === 'denim') {
+        mat.roughness = 0.9;
+        mat.metalness = 0.0;
       } else {
-        threeMesh.material.roughness = 0.8;
-        threeMesh.material.metalness = 0.0;
+        mat.roughness = 0.7;
+        mat.metalness = 0.1;
       }
-      showToast(`Material updated to ${preset.toUpperCase()}`);
+      showToast(`Material updated: ${preset.toUpperCase()}`);
     }
 
     function update3DLighting(preset) {
-      showToast(`Lighting setup: ${preset.toUpperCase()}`);
+      showToast(`Lighting set: ${preset.toUpperCase()}`);
     }
 
     function capture3DRender() {
-      showToast('Capturing High-Res 3D Render...');
+      if (!threeRenderer) return;
+      const imgData = threeRenderer.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = imgData;
+      a.download = `apparium_3d_render_${Date.now()}.png`;
+      a.click();
+      showToast('3D Render Captured!');
+    }
+
+    /* ========================================================
+       18. TECH PACK ENGINE
+       ======================================================== */
+    function openTechPackModal() {
+      const modal = document.getElementById('modal-techpack');
+      modal.classList.remove('hidden');
+
+      const item = GARMENT_DATABASE.find(g => g.id === state.activeGarmentId);
+      document.getElementById('tp-garment-title').innerText = item ? item.name.toUpperCase() : 'CUSTOM GARMENT';
+      document.getElementById('tp-color-spec').innerText = `Base: ${state.colors.base} | Collar: ${state.colors.collar}`;
+      document.getElementById('tp-dpi').innerText = `${state.dpi} DPI`;
+      document.getElementById('tp-date').innerText = new Date().toISOString().split('T')[0];
+
+      // Views thumbnails
+      const viewsContainer = document.getElementById('tp-views-container');
+      const angles = ['front', 'back', 'left', 'right'];
+      viewsContainer.innerHTML = angles.map(a => `
+        <div class="bg-slate-950 p-2 rounded text-center border border-slate-800">
+          <div class="w-full h-24 flex items-center justify-center mb-1 overflow-hidden">
+            <svg class="w-20 h-22" viewBox="0 0 600 700">
+              ${generateGarmentSVG(state.activeGarmentId, a, state.colors)}
+            </svg>
+          </div>
+          <span class="text-[9px] font-bold text-cyan-400 uppercase">${a} view</span>
+        </div>
+      `).join('');
+
+      // Artwork log
+      const logContainer = document.getElementById('tp-artwork-log');
+      if (state.objects.length === 0) {
+        logContainer.innerHTML = `<p class="text-slate-500 italic">No custom artwork/layers placed on canvas.</p>`;
+      } else {
+        logContainer.innerHTML = state.objects.map((obj, i) => `
+          <div class="flex justify-between border-b border-slate-800 py-1">
+            <span>#${i+1} [${obj.type.toUpperCase()}] ${obj.content || obj.shapeType || 'Asset Image'}</span>
+            <span>X: ${(obj.x / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit} | Y: ${(obj.y / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function toggleTechPackModal(show) {
+      document.getElementById('modal-techpack').classList.toggle('hidden', !show);
     }
   </script>
 </body>
