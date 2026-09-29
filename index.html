@@ -9,14 +9,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Three.js & OrbitControls CDN untuk Simulasi 3D Realistis (Bisa diputar 360) -->
+  <!-- Three.js & OrbitControls CDN untuk Simulasi 3D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-  <!-- Google Fonts untuk Mesin Tipografi -->
+  <!-- Google Fonts Diperbanyak (Termasuk font baru yang diminta) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Cinzel:wght@600;800&family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@400;700;900&family=Oswald:wght@500;700&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:ital,wght@0,600;1,400&family=Press+Start+2P&family=Syne:wght@700;800&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Cinzel:wght@600;800&family=Dancing+Script:wght@700&family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Lobster&family=Montserrat:wght@400;700;900&family=Oswald:wght@500;700&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:ital,wght@0,600;1,400&family=Press+Start+2P&family=Righteous&family=Rubik+Glitch&family=Syne:wght@700;800&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -31,54 +31,20 @@
       --text-muted: #9ca3af;
     }
 
-    body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      overflow: hidden;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-    }
-
-    /* Kustomisasi Scrollbar Ala Editor Pro */
+    body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
 
-    /* Gaya Kisi Kanvas (Grid) */
     .canvas-grid {
       background-size: 20px 20px;
-      background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     }
+    .ruler-x { background: #0f172a; border-bottom: 1px solid var(--border-color); box-shadow: inset 0 -1px 3px rgba(0,0,0,0.5); }
+    .ruler-y { background: #0f172a; border-right: 1px solid var(--border-color); box-shadow: inset -1px 0 3px rgba(0,0,0,0.5); }
 
-    .ruler-x {
-      background: #0f172a;
-      border-bottom: 1px solid var(--border-color);
-      box-shadow: inset 0 -1px 3px rgba(0,0,0,0.5);
-    }
-    .ruler-y {
-      background: #0f172a;
-      border-right: 1px solid var(--border-color);
-      box-shadow: inset -1px 0 3px rgba(0,0,0,0.5);
-    }
-
-    /* Kotak Pilihan & Titik Transformasi */
-    .transform-handle {
-      width: 12px;
-      height: 12px;
-      background-color: #ffffff;
-      border: 2px solid var(--accent-cyan);
-      border-radius: 2px;
-      position: absolute;
-      pointer-events: auto;
-      z-index: 40;
-      touch-action: none;
-      box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    }
+    .transform-handle { width: 12px; height: 12px; background-color: #ffffff; border: 2px solid var(--accent-cyan); border-radius: 2px; position: absolute; pointer-events: auto; z-index: 40; touch-action: none; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
     .transform-handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
     .transform-handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
     .transform-handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
@@ -87,248 +53,90 @@
     .transform-handle.s  { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
     .transform-handle.w  { top: 50%; left: -6px; transform: translateY(-50%); cursor: ew-resize; }
     .transform-handle.e  { top: 50%; right: -6px; transform: translateY(-50%); cursor: ew-resize; }
-    .transform-handle.rot { 
-      top: -30px; left: 50%; transform: translateX(-50%); 
-      cursor: grab; background: var(--accent-pink); border: 2px solid #fff; border-radius: 50%; width: 14px; height: 14px; 
-    }
+    .transform-handle.rot { top: -30px; left: 50%; transform: translateX(-50%); cursor: grab; background: var(--accent-pink); border: 2px solid #fff; border-radius: 50%; width: 14px; height: 14px; }
+    .print-safe-zone { border: 1.5px dashed var(--accent-cyan); pointer-events: none; background: rgba(6, 182, 212, 0.02); }
+    .layer-item.active { background-color: rgba(6, 182, 212, 0.15); border-left: 3px solid var(--accent-cyan); }
+    [data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 5px 10px; font-size: 11px; border-radius: 4px; white-space: nowrap; z-index: 100; border: 1px solid #334155; pointer-events: none; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .modal-backdrop { background: rgba(5, 8, 15, 0.9); backdrop-filter: blur(10px); }
 
-    .print-safe-zone {
-      border: 1.5px dashed var(--accent-cyan);
-      pointer-events: none;
-      background: rgba(6, 182, 212, 0.02);
-    }
-
-    .layer-item.active {
-      background-color: rgba(6, 182, 212, 0.15);
-      border-left: 3px solid var(--accent-cyan);
-    }
-
-    /* Tooltip Cantik */
-    [data-tooltip]:hover::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: -32px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #0f172a;
-      color: #fff;
-      padding: 5px 10px;
-      font-size: 11px;
-      border-radius: 4px;
-      white-space: nowrap;
-      z-index: 100;
-      border: 1px solid #334155;
-      pointer-events: none;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-
-    .modal-backdrop {
-      background: rgba(5, 8, 15, 0.9);
-      backdrop-filter: blur(10px);
-    }
-
-    /* Notifikasi (Toast) */
-    #toast-container {
-      position: fixed;
-      bottom: 28px;
-      right: 20px;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .toast-msg {
-      background: #0f172a;
-      color: #f3f4f6;
-      border-left: 4px solid var(--accent-cyan);
-      border: 1px solid #334155;
-      border-left-width: 4px;
-      padding: 10px 16px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-      animation: fadeIn 0.2s ease-out;
-    }
+    #toast-container { position: fixed; bottom: 28px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast-msg { background: #0f172a; color: #f3f4f6; border-left: 4px solid var(--accent-cyan); border: 1px solid #334155; border-left-width: 4px; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.6); animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     /* OVERRIDE MODE SELULER RESPONSIVE */
-    body.mobile-mode #left-sidebar {
-      position: fixed;
-      left: -100%;
-      top: 48px;
-      bottom: 50px;
-      width: 85%;
-      z-index: 50;
-      box-shadow: 10px 0 30px rgba(0,0,0,0.8);
-    }
+    body.mobile-mode #left-sidebar { position: fixed; left: -100%; top: 48px; bottom: 50px; width: 85%; z-index: 50; box-shadow: 10px 0 30px rgba(0,0,0,0.8); }
     body.mobile-mode #left-sidebar.mobile-open { left: 0; }
-    body.mobile-mode #right-sidebar {
-      position: fixed;
-      right: -100%;
-      top: 48px;
-      bottom: 50px;
-      width: 85%;
-      z-index: 50;
-      box-shadow: -10px 0 30px rgba(0,0,0,0.8);
-    }
+    body.mobile-mode #right-sidebar { position: fixed; right: -100%; top: 48px; bottom: 50px; width: 85%; z-index: 50; box-shadow: -10px 0 30px rgba(0,0,0,0.8); }
     body.mobile-mode #right-sidebar.mobile-open { right: 0; }
     body.mobile-mode #mobile-bottom-nav { display: flex !important; }
     body.mobile-mode #sub-toolbar-controls { overflow-x: auto; white-space: nowrap; }
-
-    .mobile-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 45;
-      display: none;
-    }
+    .mobile-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 45; display: none; }
     .mobile-backdrop.active { display: block; }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col antialiased desktop-mode" id="app-body">
 
-  <!-- WADAH NOTIFIKASI -->
   <div id="toast-container"></div>
-  
-  <!-- BACKDROP SIDEBAR SELULER -->
   <div id="mobile-backdrop" class="mobile-backdrop" onclick="closeMobileDrawers()"></div>
 
-  <!-- ========================================== -->
-  <!-- 1. HEADER ATAS & BAR NAVIGASI              -->
-  <!-- ========================================== -->
+  <!-- HEADER -->
   <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 md:px-4 z-40 select-none">
     <div class="flex items-center space-x-2 md:space-x-3">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg tracking-tighter shadow-md">
-        AP
-      </div>
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg tracking-tighter shadow-md">AP</div>
       <div>
-        <h1 class="text-xs font-bold tracking-wider text-slate-100 uppercase flex items-center gap-1.5">
-          APPARIUM <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono">v5.0 PRO</span>
-        </h1>
+        <h1 class="text-xs font-bold tracking-wider text-slate-100 uppercase flex items-center gap-1.5">APPARIUM <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono">v5.1 PRO</span></h1>
         <p class="text-[9px] md:text-[10px] text-slate-400 font-mono hidden sm:block">RUANG KERJA PAKAIAN PROFESIONAL</p>
       </div>
     </div>
-
-    <!-- Pengalih Mode: Desktop vs Seluler -->
     <div class="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px] font-mono">
-      <button onclick="setAppMode('desktop')" id="mode-desktop-btn" class="px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1">
-        <i data-lucide="monitor" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">DESKTOP</span>
-      </button>
-      <button onclick="setAppMode('mobile')" id="mode-mobile-btn" class="px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1">
-        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">SELULER</span>
-      </button>
+      <button onclick="setAppMode('desktop')" id="mode-desktop-btn" class="px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1"><i data-lucide="monitor" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">DESKTOP</span></button>
+      <button onclick="setAppMode('mobile')" id="mode-mobile-btn" class="px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">SELULER</span></button>
     </div>
-
-    <!-- Mode Tampilan & Kontrol Sudut -->
     <div class="hidden lg:flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs shadow-inner">
       <button onclick="setViewAngle('front')" id="view-front-btn" class="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition">DEPAN</button>
       <button onclick="setViewAngle('back')" id="view-back-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">BELAKANG</button>
       <button onclick="setViewAngle('left')" id="view-left-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">SAMPING KIRI</button>
       <button onclick="setViewAngle('right')" id="view-right-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">SAMPING KANAN</button>
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
-      <button onclick="toggle3DMockupModal(true)" class="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium hover:bg-emerald-500/30 transition flex items-center gap-1">
-        <i data-lucide="box" class="w-3.5 h-3.5"></i> MOCKUP 3D
-      </button>
+      <button onclick="toggle3DMockupModal(true)" class="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium hover:bg-emerald-500/30 transition flex items-center gap-1"><i data-lucide="box" class="w-3.5 h-3.5"></i> MOCKUP 3D</button>
     </div>
-
-    <!-- Tindakan File Proyek, Satuan & DPI -->
     <div class="flex items-center space-x-1.5 md:space-x-2 text-xs">
-      <button onclick="createNewProject()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Proyek Baru">
-        <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
-      </button>
-      <button onclick="saveProjectJSON()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Simpan Proyek JSON">
-        <i data-lucide="save" class="w-3.5 h-3.5"></i>
-      </button>
-      <button onclick="document.getElementById('project-file-input').click()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Muat Proyek JSON">
-        <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
-      </button>
+      <button onclick="createNewProject()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Proyek Baru"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
+      <button onclick="saveProjectJSON()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Simpan Proyek JSON"><i data-lucide="save" class="w-3.5 h-3.5"></i></button>
+      <button onclick="document.getElementById('project-file-input').click()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Muat Proyek JSON"><i data-lucide="folder-open" class="w-3.5 h-3.5"></i></button>
       <input type="file" id="project-file-input" accept=".json,.apparium" class="hidden" onchange="loadProjectJSON(event)">
-
       <div class="h-4 w-[1px] bg-slate-800 hidden md:block"></div>
-
-      <!-- Pemilih Satuan -->
       <div class="hidden md:flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700">
         <span class="text-slate-400 text-[10px] uppercase font-mono">Satuan:</span>
         <select id="unit-selector" onchange="changeUnit(this.value)" class="bg-transparent text-slate-200 font-mono text-xs focus:outline-none cursor-pointer">
-          <option value="cm" selected>cm</option>
-          <option value="mm">mm</option>
-          <option value="in">inci</option>
-          <option value="px">px</option>
-          <option value="pt">pt</option>
+          <option value="cm" selected>cm</option> <option value="mm">mm</option> <option value="in">inci</option> <option value="px">px</option> <option value="pt">pt</option>
         </select>
       </div>
-
-      <!-- Aksi Ekspor -->
       <div class="flex items-center space-x-1">
-        <button onclick="exportArtwork('png')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]" data-tooltip="Ekspor Gambar">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">PNG</span>
-        </button>
-        <button onclick="exportArtwork('svg')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]" data-tooltip="Ekspor Vektor">
-          <i data-lucide="code" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">SVG</span>
-        </button>
-        <button onclick="openTechPackModal()" class="px-2.5 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-90 text-slate-950 font-bold rounded transition flex items-center gap-1 shadow-lg shadow-cyan-500/20 text-[11px]">
-          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">TECH PACK</span>
-        </button>
+        <button onclick="exportArtwork('png')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]" data-tooltip="Ekspor Gambar"><i data-lucide="download" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">PNG</span></button>
+        <button onclick="exportArtwork('svg')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]" data-tooltip="Ekspor Vektor"><i data-lucide="code" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">SVG</span></button>
+        <button onclick="openTechPackModal()" class="px-2.5 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-90 text-slate-950 font-bold rounded transition flex items-center gap-1 shadow-lg shadow-cyan-500/20 text-[11px]"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">TECH PACK</span></button>
       </div>
     </div>
   </header>
 
-  <!-- ========================================== -->
-  <!-- 2. SUB-TOOLBAR UTAMA / KONTROL RUANG KERJA -->
-  <!-- ========================================== -->
+  <!-- SUB-TOOLBAR -->
   <div class="h-10 md:h-9 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 md:px-4 text-xs z-30 overflow-x-auto shadow-sm" id="sub-toolbar-controls">
     <div class="flex items-center space-x-1.5 md:space-x-2 shrink-0">
-      <!-- Alat Inti -->
-      <button onclick="setActiveTool('select')" id="tool-select" class="p-1.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 transition" data-tooltip="Pilih & Transformasi">
-        <i data-lucide="mouse-pointer" class="w-4 h-4"></i>
-      </button>
-      <button onclick="addTextObject('MEREK ANDA', 'Bebas Neue')" id="tool-text" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tambah Tipografi">
-        <i data-lucide="type" class="w-4 h-4"></i>
-      </button>
-      <button onclick="addShapeObject('rectangle')" id="tool-shape" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tambah Bentuk Vektor">
-        <i data-lucide="square" class="w-4 h-4"></i>
-      </button>
-      
-      <!-- TOMBOL BERSIHKAN KANVAS (BARU DITAMBAHKAN) -->
-      <button onclick="clearCanvas()" class="p-1.5 rounded hover:bg-rose-500/20 text-rose-400 transition" data-tooltip="Bersihkan Kanvas">
-        <i data-lucide="trash-2" class="w-4 h-4"></i>
-      </button>
-
+      <button onclick="setActiveTool('select')" id="tool-select" class="p-1.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 transition" data-tooltip="Pilih & Transformasi"><i data-lucide="mouse-pointer" class="w-4 h-4"></i></button>
+      <button onclick="addTextObject('MEREK ANDA', 'Bebas Neue')" id="tool-text" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tambah Tipografi"><i data-lucide="type" class="w-4 h-4"></i></button>
+      <button onclick="addShapeObject('rectangle')" id="tool-shape" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tambah Bentuk Vektor"><i data-lucide="square" class="w-4 h-4"></i></button>
+      <button onclick="clearCanvas()" class="p-1.5 rounded hover:bg-rose-500/20 text-rose-400 transition" data-tooltip="Bersihkan Kanvas"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
-
-      <!-- Tindakan Objek Cepat -->
-      <button onclick="duplicateSelectedObject()" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Duplikat Objek">
-        <i data-lucide="copy" class="w-4 h-4"></i>
-      </button>
-      <button onclick="flipSelectedObject('h')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Balik Horizontal">
-        <i data-lucide="flip-horizontal" class="w-4 h-4"></i>
-      </button>
-      <button onclick="flipSelectedObject('v')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Balik Vertikal">
-        <i data-lucide="flip-vertical" class="w-4 h-4"></i>
-      </button>
-      <button onclick="alignSelectedObject('center')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tengahkan di Pakaian">
-        <i data-lucide="align-center" class="w-4 h-4"></i>
-      </button>
-
+      <button onclick="duplicateSelectedObject()" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Duplikat Objek"><i data-lucide="copy" class="w-4 h-4"></i></button>
+      <button onclick="flipSelectedObject('h')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Balik Horizontal"><i data-lucide="flip-horizontal" class="w-4 h-4"></i></button>
+      <button onclick="flipSelectedObject('v')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Balik Vertikal"><i data-lucide="flip-vertical" class="w-4 h-4"></i></button>
+      <button onclick="alignSelectedObject('center')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tengahkan di Pakaian"><i data-lucide="align-center" class="w-4 h-4"></i></button>
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
-
-      <!-- Tampilan Pengalih -->
-      <label class="hidden md:flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition">
-        <input type="checkbox" id="toggle-rulers" checked onchange="toggleRulers()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer">
-        Penggaris
-      </label>
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition">
-        <input type="checkbox" id="toggle-grid" checked onchange="toggleGrid()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer">
-        Kisi
-      </label>
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition">
-        <input type="checkbox" id="toggle-safe-zone" checked onchange="toggleSafeZone()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer">
-        Area Cetak
-      </label>
+      <label class="hidden md:flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition"><input type="checkbox" id="toggle-rulers" checked onchange="toggleRulers()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer"> Penggaris</label>
+      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition"><input type="checkbox" id="toggle-grid" checked onchange="toggleGrid()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer"> Kisi</label>
+      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition"><input type="checkbox" id="toggle-safe-zone" checked onchange="toggleSafeZone()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer"> Area Cetak</label>
     </div>
-
-    <!-- Riwayat & Kontrol Zoom -->
     <div class="flex items-center space-x-2 md:space-x-3 shrink-0">
       <div class="flex items-center space-x-1 border-r border-slate-800 pr-2 md:pr-3">
         <button onclick="undo()" class="p-1 text-slate-400 hover:text-slate-200 transition" data-tooltip="Batal"><i data-lucide="undo" class="w-3.5 h-3.5"></i></button>
@@ -343,14 +151,8 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 3. AREA KONTEN RUANG KERJA UTAMA           -->
-  <!-- ========================================== -->
   <div class="flex-1 flex overflow-hidden relative">
-
-    <!-- ---------------------------------------- -->
-    <!-- SIDEBAR KIRI: PUSTAKA & PUSAT ASET       -->
-    <!-- ---------------------------------------- -->
+    <!-- SIDEBAR KIRI -->
     <aside id="left-sidebar" class="w-80 bg-slate-900 border-r border-slate-800 flex flex-col z-20 select-none transition-all duration-200">
       <div class="flex border-b border-slate-800 text-[11px] font-semibold bg-slate-950">
         <button onclick="switchLeftTab('garments')" id="tab-btn-garments" class="flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition">PAKAIAN</button>
@@ -371,7 +173,7 @@
             <option value="tshirts">Kaos & Atasan</option>
             <option value="hoodies">Jaket Hoodie & Sweatshirt</option>
             <option value="jackets">Jaket & Pakaian Luar</option>
-            <option value="jerseys">Jersey</option>
+            <option value="jerseys">Jersey & Olahraga</option>
             <option value="pants">Celana & Bawahan</option>
             <option value="shorts">Celana Pendek</option>
           </select>
@@ -392,13 +194,12 @@
             <option value="Script">Script</option>
             <option value="Gothic">Gothic / Blackletter</option>
             <option value="Streetwear">Streetwear</option>
-            <option value="Y2K">Y2K Cyber</option>
+            <option value="Y2K">Y2K / Cyber</option>
             <option value="Athletic">Athletic / Varsity</option>
             <option value="Vintage">Vintage / Retro</option>
             <option value="Monospace">Monospace</option>
           </select>
         </div>
-
         <div class="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center bg-slate-950/50 hover:border-cyan-500 transition cursor-pointer" onclick="document.getElementById('font-file-input').click()">
           <i data-lucide="upload-cloud" class="w-6 h-6 text-cyan-400 mx-auto mb-2"></i>
           <p class="text-xs font-semibold text-slate-200">Impor File Font Kustom</p>
@@ -406,14 +207,13 @@
           <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" class="hidden" onchange="handleFontUpload(event)">
           <span class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-cyan-400 rounded-md font-medium border border-slate-700 transition block w-max mx-auto">Pilih File Font</span>
         </div>
-
         <div>
           <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-2">Klik untuk Menyisipkan Tipografi</label>
           <div class="space-y-2" id="font-presets-container"></div>
         </div>
       </div>
 
-      <!-- TAB 3: PUSAT ASET GRAFIS & EKSTERNAL -->
+      <!-- TAB 3 & 4 (Assets & Patterns) -->
       <div id="tab-content-assets" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
         <div class="border-2 border-dashed border-cyan-500/40 rounded-lg p-5 text-center bg-cyan-950/20 hover:border-cyan-500 transition cursor-pointer" onclick="document.getElementById('asset-file-input').click()">
           <i data-lucide="image-plus" class="w-8 h-8 text-cyan-400 mx-auto mb-2"></i>
@@ -427,47 +227,24 @@
           <div class="grid grid-cols-3 gap-2" id="stock-assets-grid"></div>
         </div>
       </div>
-
-      <!-- TAB 4: MESIN POLA & TEKSTUR -->
       <div id="tab-content-patterns" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
         <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-2">Pustaka Pola Pakaian</label>
         <div class="grid grid-cols-2 gap-3" id="pattern-presets-grid"></div>
       </div>
     </aside>
 
-    <!-- ---------------------------------------- -->
-    <!-- RUANG KERJA PENGEDITAN KANVAS TENGAH      -->
-    <!-- ---------------------------------------- -->
+    <!-- KANVAS TENGAH -->
     <main class="flex-1 bg-slate-950 relative flex flex-col overflow-hidden canvas-grid" id="main-canvas-container">
-      
-      <!-- Penggaris Horizontal Atas -->
-      <div class="h-6 ruler-x w-full hidden md:flex items-center px-6 text-[9px] font-mono text-slate-500 justify-between select-none overflow-hidden" id="ruler-x-bar">
-      </div>
-
+      <div class="h-6 ruler-x w-full hidden md:flex items-center px-6 text-[9px] font-mono text-slate-500 justify-between select-none overflow-hidden" id="ruler-x-bar"></div>
       <div class="flex-1 flex relative overflow-hidden">
-        <!-- Penggaris Vertikal Kiri -->
-        <div class="w-6 ruler-y h-full hidden md:flex flex-col justify-between py-6 text-[9px] font-mono text-slate-500 items-center select-none overflow-hidden" id="ruler-y-bar">
-        </div>
-
-        <!-- Viewport Kanvas Interaktif -->
+        <div class="w-6 ruler-y h-full hidden md:flex flex-col justify-between py-6 text-[9px] font-mono text-slate-500 items-center select-none overflow-hidden" id="ruler-y-bar"></div>
         <div class="flex-1 relative flex items-center justify-center overflow-auto p-2 sm:p-8" id="canvas-viewport" onclick="handleCanvasBackgroundClick(event)">
-          
           <div id="apparel-canvas-frame" class="relative transition-transform duration-75 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-slate-900/40 rounded-lg border border-slate-800/80" style="width: 600px; height: 700px; transform: scale(1);">
-            
-            <!-- Overlay Kanvas Vektor Pakaian -->
-            <svg id="garment-svg-layer" class="w-full h-full absolute inset-0 z-0 pointer-events-none filter drop-shadow-2xl" viewBox="0 0 600 700">
-            </svg>
-
-            <!-- Kotak Overlay Zona Aman Cetak -->
+            <svg id="garment-svg-layer" class="w-full h-full absolute inset-0 z-0 pointer-events-none filter drop-shadow-2xl" viewBox="0 0 600 700"></svg>
             <div id="print-safe-boundary" class="print-safe-zone absolute z-10 flex items-start justify-end p-1 rounded-sm" style="top: 130px; left: 160px; width: 280px; height: 380px;">
               <span id="print-area-tag" class="text-[9px] font-mono text-cyan-400 bg-slate-900/95 px-1.5 py-0.5 rounded border border-cyan-500/30">CETAK MAKS (28 x 38 cm)</span>
             </div>
-
-            <!-- Lapisan Karya Seni & Objek Dinamis -->
-            <div id="artwork-objects-container" class="absolute inset-0 z-20 pointer-events-auto">
-            </div>
-
-            <!-- Kotak Kontrol Transformasi Interaktif -->
+            <div id="artwork-objects-container" class="absolute inset-0 z-20 pointer-events-auto"></div>
             <div id="selection-box" class="absolute z-30 border-2 border-cyan-400 pointer-events-none hidden shadow-[0_0_10px_rgba(6,182,212,0.5)]" style="top:0; left:0; width:0; height:0;">
               <div class="transform-handle nw" onmousedown="initTransform(event, 'nw')" ontouchstart="initTransform(event, 'nw')"></div>
               <div class="transform-handle ne" onmousedown="initTransform(event, 'ne')" ontouchstart="initTransform(event, 'ne')"></div>
@@ -479,13 +256,9 @@
               <div class="transform-handle e"  onmousedown="initTransform(event, 'e')" ontouchstart="initTransform(event, 'e')"></div>
               <div class="transform-handle rot flex items-center justify-center text-white" onmousedown="initRotate(event)" ontouchstart="initRotate(event)"><i data-lucide="rotate-cw" style="width: 8px; height: 8px;"></i></div>
             </div>
-
           </div>
-
         </div>
       </div>
-
-      <!-- Bilah Status Bawah -->
       <footer class="h-7 bg-slate-900 border-t border-slate-800 px-3 md:px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 z-30 shadow-inner">
         <div class="flex items-center space-x-4">
           <span class="flex items-center gap-1.5 text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded font-bold"><i data-lucide="check-circle" class="w-3 h-3"></i> SIAP</span>
@@ -498,9 +271,7 @@
       </footer>
     </main>
 
-    <!-- ---------------------------------------- -->
-    <!-- SIDEBAR KANAN: PANEL PROPERTI & LAPISAN  -->
-    <!-- ---------------------------------------- -->
+    <!-- SIDEBAR KANAN -->
     <aside id="right-sidebar" class="w-80 bg-slate-900 border-l border-slate-800 flex flex-col z-20 select-none transition-all duration-200">
       <div class="flex border-b border-slate-800 text-[11px] font-semibold bg-slate-950">
         <button onclick="switchRightTab('properties')" id="tab-btn-properties" class="flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition">PROPERTI</button>
@@ -510,26 +281,13 @@
 
       <!-- TAB 1: PANEL PROPERTI -->
       <div id="tab-content-properties" class="flex-1 overflow-y-auto p-4 space-y-4">
-        <!-- Kontrol Blok Warna Pakaian -->
         <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-3 shadow-inner">
           <label class="text-[10px] uppercase font-mono text-slate-400 block font-bold border-b border-slate-800 pb-1">Blok Warna Pakaian</label>
           <div class="grid grid-cols-2 gap-3 text-xs">
-            <div>
-              <label class="text-[9px] text-slate-400 block mb-1">Kain Dasar</label>
-              <input type="color" id="garment-color-picker" value="#18181b" onchange="changeGarmentColor('base', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
-            </div>
-            <div>
-              <label class="text-[9px] text-slate-400 block mb-1">Kerah / Rib</label>
-              <input type="color" id="collar-color-picker" value="#0f172a" onchange="changeGarmentColor('collar', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
-            </div>
-            <div>
-              <label class="text-[9px] text-slate-400 block mb-1">Lengan</label>
-              <input type="color" id="sleeve-color-picker" value="#18181b" onchange="changeGarmentColor('sleeves', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
-            </div>
-            <div>
-              <label class="text-[9px] text-slate-400 block mb-1">Jahitan</label>
-              <input type="color" id="stitch-color-picker" value="#475569" onchange="changeGarmentColor('stitching', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
-            </div>
+            <div><label class="text-[9px] text-slate-400 block mb-1">Kain Dasar</label><input type="color" id="garment-color-picker" value="#18181b" onchange="changeGarmentColor('base', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700"></div>
+            <div><label class="text-[9px] text-slate-400 block mb-1">Kerah / Rib</label><input type="color" id="collar-color-picker" value="#0f172a" onchange="changeGarmentColor('collar', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700"></div>
+            <div><label class="text-[9px] text-slate-400 block mb-1">Lengan</label><input type="color" id="sleeve-color-picker" value="#18181b" onchange="changeGarmentColor('sleeves', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700"></div>
+            <div><label class="text-[9px] text-slate-400 block mb-1">Jahitan</label><input type="color" id="stitch-color-picker" value="#475569" onchange="changeGarmentColor('stitching', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700"></div>
           </div>
         </div>
 
@@ -546,13 +304,13 @@
           </select>
         </div>
 
-        <!-- Properti Detail Objek Terpilih -->
+        <!-- Properti Detail Objek Terpilih (Tempat D-Pad berada) -->
         <div id="object-properties-container" class="space-y-3">
           <p class="text-xs text-slate-500 italic text-center py-6">Pilih objek di kanvas untuk mengedit detail properti.</p>
         </div>
       </div>
 
-      <!-- TAB 2: SISTEM MANAJEMEN LAPISAN -->
+      <!-- TAB 2: LAPISAN -->
       <div id="tab-content-layers" class="hidden flex-1 overflow-y-auto p-4 space-y-3">
         <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
           <span class="text-[10px] font-mono text-slate-400 uppercase font-bold">Urutan Lapisan</span>
@@ -565,7 +323,7 @@
         <div id="layers-list-container" class="space-y-2"></div>
       </div>
 
-      <!-- TAB 3: PANTONE® TCX & PALET WARNA -->
+      <!-- TAB 3: PALET WARNA -->
       <div id="tab-content-colors" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
         <div>
           <label class="text-[10px] uppercase font-mono text-slate-400 block mb-2 font-bold">Referensi Palet Warna Fashion TCX</label>
@@ -575,268 +333,165 @@
     </aside>
   </div>
 
-  <!-- ========================================== -->
-  <!-- BAR NAVIGASI BAWAH MODE SELULER            -->
-  <!-- ========================================== -->
   <nav id="mobile-bottom-nav" class="hidden h-14 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-40 text-[10px] font-mono shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
-    <button onclick="toggleMobileDrawer('left')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition">
-      <i data-lucide="layout-grid" class="w-5 h-5 mb-1"></i>
-      <span>ASET & PAKAIAN</span>
-    </button>
-    <button onclick="setViewAngle(state.activeAngle === 'front' ? 'back' : 'front')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition border-l border-r border-slate-800">
-      <i data-lucide="refresh-cw" class="w-5 h-5 mb-1"></i>
-      <span>SUDUT PANDANG</span>
-    </button>
-    <button onclick="toggle3DMockupModal(true)" class="flex flex-col items-center justify-center w-full h-full text-emerald-400 hover:bg-emerald-900/30 transition border-r border-slate-800 bg-emerald-950/20">
-      <i data-lucide="box" class="w-5 h-5 mb-1"></i>
-      <span class="font-bold">MOCKUP 3D</span>
-    </button>
-    <button onclick="toggleMobileDrawer('right')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition">
-      <i data-lucide="sliders" class="w-5 h-5 mb-1"></i>
-      <span>PROPERTI</span>
-    </button>
+    <button onclick="toggleMobileDrawer('left')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition"><i data-lucide="layout-grid" class="w-5 h-5 mb-1"></i><span>ASET & PAKAIAN</span></button>
+    <button onclick="setViewAngle(state.activeAngle === 'front' ? 'back' : 'front')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition border-l border-r border-slate-800"><i data-lucide="refresh-cw" class="w-5 h-5 mb-1"></i><span>SUDUT PANDANG</span></button>
+    <button onclick="toggle3DMockupModal(true)" class="flex flex-col items-center justify-center w-full h-full text-emerald-400 hover:bg-emerald-900/30 transition border-r border-slate-800 bg-emerald-950/20"><i data-lucide="box" class="w-5 h-5 mb-1"></i><span class="font-bold">MOCKUP 3D</span></button>
+    <button onclick="toggleMobileDrawer('right')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition"><i data-lucide="sliders" class="w-5 h-5 mb-1"></i><span>PROPERTI</span></button>
   </nav>
 
-  <!-- ========================================== -->
-  <!-- 4. MODAL PRATINJAU MOCKUP 3D REALISTIS (360) -->
-  <!-- ========================================== -->
+  <!-- MODAL 3D -->
   <div id="modal-3d-preview" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6 transition-opacity">
     <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden shadow-2xl">
       <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-        <div class="flex items-center gap-3">
-          <div class="p-1.5 bg-emerald-500/20 rounded">
-            <i data-lucide="box" class="w-5 h-5 text-emerald-400"></i>
-          </div>
-          <div>
-            <h2 class="text-sm md:text-base font-bold text-slate-100 uppercase tracking-wider">Simulasi Kain Real-time 3D</h2>
-            <p class="text-[10px] text-slate-400 font-mono">Bisa Diputar 360 Derajat</p>
-          </div>
-        </div>
+        <div class="flex items-center gap-3"><div class="p-1.5 bg-emerald-500/20 rounded"><i data-lucide="box" class="w-5 h-5 text-emerald-400"></i></div><div><h2 class="text-sm md:text-base font-bold text-slate-100 uppercase tracking-wider">Simulasi Kain Real-time 3D</h2><p class="text-[10px] text-slate-400 font-mono">Bisa Diputar 360 Derajat</p></div></div>
         <button onclick="toggle3DMockupModal(false)" class="text-slate-400 hover:text-slate-100 p-1 hover:bg-slate-800 rounded transition"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
-
       <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div id="threejs-canvas-container" class="flex-1 bg-gradient-to-b from-slate-950 via-slate-800/50 to-slate-950 relative overflow-hidden flex items-center justify-center cursor-move">
-          <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-2 rounded text-[10px] font-mono text-slate-300 pointer-events-none z-10 shadow-lg">
-            <p class="font-bold text-cyan-400 mb-1"><i data-lucide="mouse" class="w-3 h-3 inline"></i> KONTROL 3D</p>
-            <p>• Seret untuk Memutar (360°)</p>
-            <p>• Gulir / Cubit untuk Memperbesar</p>
-            <p>• Klik Kanan & Seret untuk Geser</p>
-          </div>
+          <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-2 rounded text-[10px] font-mono text-slate-300 pointer-events-none z-10 shadow-lg"><p class="font-bold text-cyan-400 mb-1"><i data-lucide="mouse" class="w-3 h-3 inline"></i> KONTROL 3D</p><p>• Seret untuk Memutar (360°)</p><p>• Gulir / Cubit untuk Memperbesar</p><p>• Klik Kanan & Seret untuk Geser</p></div>
         </div>
-
         <div class="w-full md:w-80 border-t md:border-t-0 md:border-l border-slate-800 bg-slate-950 p-5 space-y-4 md:space-y-6 text-xs shrink-0 overflow-y-auto">
           <h3 class="font-bold text-slate-200 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-2">Shader Fisika Kain</h3>
-          
-          <div>
-            <label class="text-[10px] text-slate-400 block mb-1.5 font-bold">Preset Material Kain</label>
+          <div><label class="text-[10px] text-slate-400 block mb-1.5 font-bold">Preset Material Kain</label>
             <select id="fabric-preset-selector" onchange="update3DFabricMaterial(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-md p-2.5 text-slate-200 cursor-pointer focus:border-emerald-500 focus:outline-none transition">
-              <option value="cotton">Katun Combed 24s (200 GSM)</option>
-              <option value="heavy-cotton">Katun Kelas Berat (280 GSM)</option>
-              <option value="french-terry">French Terry Loopback</option>
-              <option value="fleece">Fleece Musim Dingin 330 GSM</option>
-              <option value="polyester">Jaring Olahraga Poliester</option>
-              <option value="denim">Denim Mentah 14 oz</option>
-              <option value="satin">Kilau Satin / Sutra</option>
+              <option value="cotton">Katun Combed 24s (200 GSM)</option> <option value="heavy-cotton">Katun Kelas Berat (280 GSM)</option> <option value="french-terry">French Terry Loopback</option> <option value="fleece">Fleece Musim Dingin 330 GSM</option> <option value="polyester">Jaring Olahraga Poliester</option> <option value="denim">Denim Mentah 14 oz</option> <option value="satin">Kilau Satin / Sutra</option>
             </select>
           </div>
-
-          <div>
-            <label class="text-[10px] text-slate-400 block mb-1.5 font-bold">Lingkungan Pencahayaan Studio</label>
+          <div><label class="text-[10px] text-slate-400 block mb-1.5 font-bold">Lingkungan Pencahayaan Studio</label>
             <select id="lighting-preset-selector" onchange="update3DLighting(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-md p-2.5 text-slate-200 cursor-pointer focus:border-emerald-500 focus:outline-none transition">
-              <option value="studio">Lampu Studio Softbox</option>
-              <option value="dramatic">Lampu Sorot Atas Dramatis</option>
-              <option value="cyberpunk">Neon Cyberpunk Cyan/Pink</option>
+              <option value="studio">Lampu Studio Softbox</option> <option value="dramatic">Lampu Sorot Atas Dramatis</option> <option value="cyberpunk">Neon Cyberpunk Cyan/Pink</option>
             </select>
           </div>
-
-          <div class="pt-4 border-t border-slate-800">
-            <button onclick="capture3DRender()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-md transition shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2">
-              <i data-lucide="camera" class="w-4 h-4"></i> AMBIL GAMBAR MOCKUP
-            </button>
-          </div>
+          <div class="pt-4 border-t border-slate-800"><button onclick="capture3DRender()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-md transition shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2"><i data-lucide="camera" class="w-4 h-4"></i> AMBIL GAMBAR MOCKUP</button></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 5. MODAL GENERATOR TECH PACK              -->
-  <!-- ========================================== -->
+  <!-- MODAL TECH PACK -->
   <div id="modal-techpack" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6 transition-opacity">
     <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
       <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-        <div class="flex items-center gap-3">
-          <div class="p-1.5 bg-cyan-500/20 rounded">
-            <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i>
-          </div>
-          <h2 class="text-sm md:text-base font-bold text-slate-100 uppercase tracking-wider">Spesifikasi Produksi Tech Pack</h2>
-        </div>
-        <div class="flex items-center gap-3">
-          <button onclick="window.print()" class="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 transition text-slate-950 font-bold rounded text-xs flex items-center gap-2 shadow"><i data-lucide="printer" class="w-4 h-4"></i> CETAK / PDF</button>
-          <button onclick="toggleTechPackModal(false)" class="text-slate-400 hover:text-slate-100 p-1 hover:bg-slate-800 rounded transition"><i data-lucide="x" class="w-6 h-6"></i></button>
-        </div>
+        <div class="flex items-center gap-3"><div class="p-1.5 bg-cyan-500/20 rounded"><i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i></div><h2 class="text-sm md:text-base font-bold text-slate-100 uppercase tracking-wider">Spesifikasi Produksi Tech Pack</h2></div>
+        <div class="flex items-center gap-3"><button onclick="window.print()" class="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 transition text-slate-950 font-bold rounded text-xs flex items-center gap-2 shadow"><i data-lucide="printer" class="w-4 h-4"></i> CETAK / PDF</button><button onclick="toggleTechPackModal(false)" class="text-slate-400 hover:text-slate-100 p-1 hover:bg-slate-800 rounded transition"><i data-lucide="x" class="w-6 h-6"></i></button></div>
       </div>
-
       <div class="flex-1 overflow-y-auto p-5 md:p-8 bg-slate-950 text-slate-200 font-mono text-xs space-y-8" id="techpack-print-area">
         <div class="border-b-2 border-slate-700 pb-5 flex justify-between items-start">
-          <div>
-            <h1 class="text-lg md:text-2xl font-black text-cyan-400 uppercase tracking-widest mb-1">APPARIUM CAD — LEMBAR SPESIFIKASI TECH PACK</h1>
-            <p class="text-slate-400 text-xs mt-2">NAMA GAYA: <strong id="tp-garment-title" class="text-slate-100">KAOS KELAS BERAT OVERSIZE</strong></p>
-            <p class="text-slate-400 text-xs mt-1">ID GAYA: <strong id="tp-garment-id" class="text-slate-100">APP-2026-TS01</strong></p>
-          </div>
-          <div class="text-right bg-slate-900 p-3 rounded border border-slate-800">
-            <p class="text-slate-400 text-xs mb-1">TANGGAL: <strong id="tp-date" class="text-slate-100">2026-09-29</strong></p>
-            <p class="text-slate-400 text-xs">DPI CETAK: <strong id="tp-dpi" class="text-slate-100 text-cyan-400">300 DPI</strong></p>
-          </div>
+          <div><h1 class="text-lg md:text-2xl font-black text-cyan-400 uppercase tracking-widest mb-1">APPARIUM CAD — LEMBAR SPESIFIKASI TECH PACK</h1><p class="text-slate-400 text-xs mt-2">NAMA GAYA: <strong id="tp-garment-title" class="text-slate-100">KAOS KELAS BERAT OVERSIZE</strong></p><p class="text-slate-400 text-xs mt-1">ID GAYA: <strong id="tp-garment-id" class="text-slate-100">APP-2026-TS01</strong></p></div>
+          <div class="text-right bg-slate-900 p-3 rounded border border-slate-800"><p class="text-slate-400 text-xs mb-1">TANGGAL: <strong id="tp-date" class="text-slate-100">2026-09-29</strong></p><p class="text-slate-400 text-xs">DPI CETAK: <strong id="tp-dpi" class="text-slate-100 text-cyan-400">300 DPI</strong></p></div>
         </div>
-
-        <div>
-          <h3 class="text-cyan-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 text-sm tracking-wide">1. Tampilan Datar Teknis & Konstruksi</h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="tp-views-container"></div>
-        </div>
-
+        <div><h3 class="text-cyan-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 text-sm tracking-wide">1. Tampilan Datar Teknis & Konstruksi</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="tp-views-container"></div></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div class="bg-slate-900 p-4 rounded border border-slate-800">
-            <h3 class="text-emerald-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">2. Spesifikasi Kain</h3>
-            <table class="w-full text-left text-[11px] space-y-2">
-              <tr><td class="text-slate-400 py-1">Bahan:</td><td class="font-bold py-1 text-slate-100">100% Katun Combed Kelas Berat 24s</td></tr>
-              <tr><td class="text-slate-400 py-1">Berat:</td><td class="font-bold py-1 text-slate-100">240 GSM</td></tr>
-              <tr><td class="text-slate-400 py-1">Warna Dasar:</td><td id="tp-color-spec" class="font-bold py-1 text-slate-100">Hitam Siluman (#18181B)</td></tr>
-              <tr><td class="text-slate-400 py-1">Metode Cetak:</td><td class="font-bold py-1 text-slate-100">Cetak Sablon Plastisol / Kepadatan Tinggi</td></tr>
-            </table>
+          <div class="bg-slate-900 p-4 rounded border border-slate-800"><h3 class="text-emerald-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">2. Spesifikasi Kain</h3>
+            <table class="w-full text-left text-[11px] space-y-2"><tr><td class="text-slate-400 py-1">Bahan:</td><td class="font-bold py-1 text-slate-100">100% Katun Combed Kelas Berat 24s</td></tr><tr><td class="text-slate-400 py-1">Berat:</td><td class="font-bold py-1 text-slate-100">240 GSM</td></tr><tr><td class="text-slate-400 py-1">Warna Dasar:</td><td id="tp-color-spec" class="font-bold py-1 text-slate-100">Hitam Siluman (#18181B)</td></tr><tr><td class="text-slate-400 py-1">Metode Cetak:</td><td class="font-bold py-1 text-slate-100">Cetak Sablon Plastisol / Kepadatan Tinggi</td></tr></table>
           </div>
-
-          <div class="bg-slate-900 p-4 rounded border border-slate-800">
-            <h3 class="text-emerald-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">3. Spesifikasi Jahitan & Ornamen</h3>
-            <table class="w-full text-left text-[11px] space-y-2">
-              <tr><td class="text-slate-400 py-1">Jahitan Kelim:</td><td class="font-bold py-1 text-slate-100">Jahitan Atas Jarum Ganda (1/4")</td></tr>
-              <tr><td class="text-slate-400 py-1">Benang:</td><td class="font-bold py-1 text-slate-100">100% Benang Poliester Inti-Pintal</td></tr>
-              <tr><td class="text-slate-400 py-1">Rib:</td><td class="font-bold py-1 text-slate-100">Rib Katun 1x1 300 GSM</td></tr>
-              <tr><td class="text-slate-400 py-1">Area Aman Cetak:</td><td id="tp-print-size" class="font-bold py-1 text-slate-100">28.0 x 38.0 cm (Tengah Depan)</td></tr>
-            </table>
+          <div class="bg-slate-900 p-4 rounded border border-slate-800"><h3 class="text-emerald-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">3. Spesifikasi Jahitan & Ornamen</h3>
+            <table class="w-full text-left text-[11px] space-y-2"><tr><td class="text-slate-400 py-1">Jahitan Kelim:</td><td class="font-bold py-1 text-slate-100">Jahitan Atas Jarum Ganda (1/4")</td></tr><tr><td class="text-slate-400 py-1">Benang:</td><td class="font-bold py-1 text-slate-100">100% Benang Poliester Inti-Pintal</td></tr><tr><td class="text-slate-400 py-1">Rib:</td><td class="font-bold py-1 text-slate-100">Rib Katun 1x1 300 GSM</td></tr><tr><td class="text-slate-400 py-1">Area Aman Cetak:</td><td id="tp-print-size" class="font-bold py-1 text-slate-100">28.0 x 38.0 cm (Tengah Depan)</td></tr></table>
           </div>
         </div>
-
-        <div class="bg-slate-900 p-4 rounded border border-slate-800">
-          <h3 class="text-cyan-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">4. Log Penempatan Karya Seni & Lapisan</h3>
-          <div id="tp-artwork-log" class="space-y-2 text-[11px]"></div>
-        </div>
+        <div class="bg-slate-900 p-4 rounded border border-slate-800"><h3 class="text-cyan-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">4. Log Penempatan Karya Seni & Lapisan</h3><div id="tp-artwork-log" class="space-y-2 text-[11px]"></div></div>
       </div>
     </div>
   </div>
 
-
-  <!-- ========================================== -->
-  <!-- 6. MESIN RUANG KERJA CAD JAVASCRIPT LENGKAP -->
-  <!-- ========================================== -->
   <script>
-    /* ========================================================
-       1. STATUS APLIKASI GLOBAL & STRUKTUR DATA
-       ======================================================== */
     const state = {
-      appMode: 'desktop', 
-      activeGarmentId: 'tshirt-regular',
-      activeAngle: 'front',
+      appMode: 'desktop', activeGarmentId: 'tshirt-regular', activeAngle: 'front',
       colors: { base: '#18181b', collar: '#0f172a', sleeves: '#18181b', stitching: '#475569' },
-      zoom: 1.0,
-      unit: 'cm',
-      dpi: 300,
-      activeTool: 'select',
-      objects: [],
-      selectedObjectId: null,
-      history: [],
-      historyIndex: -1,
-      printZone: 'front-center'
+      zoom: 1.0, unit: 'cm', dpi: 300, activeTool: 'select', objects: [], selectedObjectId: null, history: [], historyIndex: -1, printZone: 'front-center'
     };
-
     const UNIT_SCALES = { px: 1.0, mm: 3.7795, cm: 37.795, in: 96.0, pt: 1.3333 };
 
-    /* ========================================================
-       2. DATABASE PAKAIAN
-       ======================================================== */
+    // --- DATABASE PAKAIAN DIPERBANYAK ---
     const GARMENT_DATABASE = [
       { id: 'tshirt-regular', name: 'Kaos Reguler', cat: 'tshirts' },
       { id: 'tshirt-oversized', name: 'Kaos Oversize', cat: 'tshirts' },
       { id: 'tshirt-heavyweight', name: 'Kaos Kelas Berat', cat: 'tshirts' },
       { id: 'tshirt-longsleeve', name: 'Kaos Lengan Panjang', cat: 'tshirts' },
+      { id: 'tank-top', name: 'Singlet / Tank Top', cat: 'tshirts' },
+      { id: 'polo-shirt', name: 'Kaos Polo', cat: 'tshirts' },
+      { id: 'crop-top', name: 'Crop Top Wanita', cat: 'tshirts' },
       { id: 'pullover-hoodie', name: 'Jaket Hoodie Pullover', cat: 'hoodies' },
       { id: 'zip-hoodie', name: 'Jaket Hoodie Ritsleting', cat: 'hoodies' },
       { id: 'crewneck-sweatshirt', name: 'Sweatshirt Crewneck', cat: 'hoodies' },
       { id: 'bomber-jacket', name: 'Jaket Bomber', cat: 'jackets' },
       { id: 'varsity-jacket', name: 'Jaket Varsity', cat: 'jackets' },
       { id: 'coach-jacket', name: 'Jaket Pelatih', cat: 'jackets' },
+      { id: 'denim-jacket', name: 'Jaket Denim', cat: 'jackets' },
       { id: 'football-jersey', name: 'Jersey Sepak Bola', cat: 'jerseys' },
+      { id: 'track-jacket', name: 'Track Jacket Olahraga', cat: 'jerseys' },
       { id: 'cargo-pants', name: 'Celana Kargo', cat: 'pants' },
       { id: 'sweatpants', name: 'Celana Olahraga', cat: 'pants' },
       { id: 'regular-shorts', name: 'Celana Pendek', cat: 'shorts' }
     ];
 
-    /* ========================================================
-       3. MESIN DATAR TEKNIS SVG PROSEDURAL
-       ======================================================== */
     function generateGarmentSVG(id, angle, colors) {
       const cBase = colors.base, cCollar = colors.collar, cSleeves = colors.sleeves, cStitch = colors.stitching;
       const item = GARMENT_DATABASE.find(g => g.id === id) || GARMENT_DATABASE[0];
       const cat = item.cat;
+      const isTankTop = id === 'tank-top';
+      const isCropTop = id === 'crop-top';
+      const bottomY = isCropTop ? 380 : 540; // Crop top lebih pendek
 
       if (cat === 'pants' || cat === 'shorts') {
         const legLength = cat === 'shorts' ? 380 : 580;
-        if (angle === 'front') {
-          return `<g id="garment-flat">
-              <path d="M210,160 L390,160 L410,${legLength} L320,${legLength} L300,280 L280,${legLength} L190,${legLength} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
-              <rect x="210" y="160" width="180" height="30" fill="${cCollar}" stroke="#475569" stroke-width="1.5"/>
-              <path d="M210,190 L260,240 M390,190 L340,240" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/>
-              <line x1="300" y1="190" x2="300" y2="280" stroke="#475569" stroke-width="1.5"/>
-            </g>`;
-        } else if (angle === 'back') {
-          return `<g id="garment-flat">
-              <path d="M210,160 L390,160 L410,${legLength} L320,${legLength} L300,280 L280,${legLength} L190,${legLength} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
-              <rect x="210" y="160" width="180" height="30" fill="${cCollar}" stroke="#475569"/>
-              <rect x="230" y="210" width="45" height="50" fill="none" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/>
-              <rect x="325" y="210" width="45" height="50" fill="none" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/>
-            </g>`;
-        } else {
-          return `<g id="garment-flat">
-              <path d="M260,160 L340,160 L350,${legLength} L250,${legLength} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
-              <rect x="260" y="160" width="80" height="30" fill="${cCollar}" stroke="#475569"/>
-              <line x1="300" y1="190" x2="300" y2="${legLength}" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/>
-            </g>`;
-        }
+        if (angle === 'front') return `<g><path d="M210,160 L390,160 L410,${legLength} L320,${legLength} L300,280 L280,${legLength} L190,${legLength} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/><rect x="210" y="160" width="180" height="30" fill="${cCollar}" stroke="#475569" stroke-width="1.5"/><path d="M210,190 L260,240 M390,190 L340,240" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/><line x1="300" y1="190" x2="300" y2="280" stroke="#475569" stroke-width="1.5"/></g>`;
+        else if (angle === 'back') return `<g><path d="M210,160 L390,160 L410,${legLength} L320,${legLength} L300,280 L280,${legLength} L190,${legLength} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/><rect x="210" y="160" width="180" height="30" fill="${cCollar}" stroke="#475569"/><rect x="230" y="210" width="45" height="50" fill="none" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/><rect x="325" y="210" width="45" height="50" fill="none" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/></g>`;
+        else return `<g><path d="M260,160 L340,160 L350,${legLength} L250,${legLength} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/><rect x="260" y="160" width="80" height="30" fill="${cCollar}" stroke="#475569"/><line x1="300" y1="190" x2="300" y2="${legLength}" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="3,3"/></g>`;
       }
 
       const isHoodie = id.includes('hoodie');
-      const isJacket = cat === 'jackets';
+      const isJacket = cat === 'jackets' || id === 'track-jacket';
       const isLongSleeve = id.includes('longsleeve') || id.includes('sweatshirt') || isHoodie || isJacket;
+      const isPolo = id === 'polo-shirt';
+
+      let sleevePaths = '';
+      if (!isTankTop) {
+        sleevePaths = `
+          <path d="M160,150 L${isLongSleeve ? '100,380 L140,390' : '110,240 L160,250'} L190,260 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>
+          <path d="M440,150 L${isLongSleeve ? '500,380 L460,390' : '490,240 L440,250'} L410,260 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>
+        `;
+      }
+
+      let collarPath = isHoodie ? `<path d="M220,150 Q300,70 380,150 Q300,190 220,150 Z" fill="${cCollar}" stroke="#475569" stroke-width="2"/>` : `<path d="M230,150 Q300,190 370,150 Q300,168 230,150 Z" fill="${cCollar}" stroke="#475569" stroke-width="2"/>`;
+      if (isTankTop) collarPath = `<path d="M230,150 Q300,250 370,150 Q300,168 230,150 Z" fill="${cCollar}" stroke="#475569" stroke-width="2"/>`;
+      if (isPolo && angle === 'front') collarPath += `<rect x="290" y="180" width="20" height="80" fill="${cCollar}" stroke="#475569" stroke-width="1.5"/>`; // Placket kancing polo
 
       if (angle === 'front') {
-        return `<g id="garment-flat">
-            <path d="M160,150 L${isLongSleeve ? '100,380 L140,390' : '110,240 L160,250'} L190,260 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>
-            <path d="M440,150 L${isLongSleeve ? '500,380 L460,390' : '490,240 L440,250'} L410,260 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>
-            <path id="fabric-main-path" d="M160,150 Q300,170 440,150 L410,540 Q300,550 190,540 Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
-            ${isHoodie ? `<path d="M220,150 Q300,70 380,150 Q300,190 220,150 Z" fill="${cCollar}" stroke="#475569" stroke-width="2"/>` : `<path d="M230,150 Q300,190 370,150 Q300,168 230,150 Z" fill="${cCollar}" stroke="#475569" stroke-width="2"/>`}
-            ${isJacket ? `<line x1="300" y1="170" x2="300" y2="540" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6,2"/>` : ''}
-            <path d="M190,525 Q300,535 410,525" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="4,3" fill="none"/>
+        return `<g>
+            ${sleevePaths}
+            <path d="M160,150 Q300,170 440,150 L410,${bottomY} Q300,${bottomY+10} 190,${bottomY} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
+            ${collarPath}
+            ${isJacket ? `<line x1="300" y1="170" x2="300" y2="${bottomY}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6,2"/>` : ''}
+            <path d="M190,${bottomY-15} Q300,${bottomY-5} 410,${bottomY-15}" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="4,3" fill="none"/>
           </g>`;
       } else if (angle === 'back') {
-        return `<g id="garment-flat">
-            <path d="M160,150 L${isLongSleeve ? '100,380 L140,390' : '110,240 L160,250'} L190,260 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>
-            <path d="M440,150 L${isLongSleeve ? '500,380 L460,390' : '490,240 L440,250'} L410,260 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>
-            <path id="fabric-main-path" d="M160,150 Q300,160 440,150 L410,540 Q300,550 190,540 Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
+        return `<g>
+            ${sleevePaths}
+            <path d="M160,150 Q300,160 440,150 L410,${bottomY} Q300,${bottomY+10} 190,${bottomY} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
             <path d="M230,150 Q300,160 370,150 Z" fill="${cCollar}" stroke="#475569" stroke-width="2"/>
             <path d="M180,210 Q300,220 420,210" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="4,3" fill="none"/>
           </g>`;
       } else {
-        return `<g id="garment-flat">
-            <path d="M230,150 L370,150 L360,540 L240,540 Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
-            <path d="M270,150 L${angle==='left'?'220':'380'},380 L${angle==='left'?'250':'350'},390 L330,220 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>
-            <line x1="300" y1="150" x2="300" y2="540" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="4,3"/>
+        return `<g>
+            <path d="M230,150 L370,150 L360,${bottomY} L240,${bottomY} Z" fill="${cBase}" stroke="#334155" stroke-width="2"/>
+            ${!isTankTop ? `<path d="M270,150 L${angle==='left'?'220':'380'},380 L${angle==='left'?'250':'350'},390 L330,220 Z" fill="${cSleeves}" stroke="#334155" stroke-width="2"/>` : ''}
+            <line x1="300" y1="150" x2="300" y2="${bottomY}" stroke="${cStitch}" stroke-width="1.5" stroke-dasharray="4,3"/>
           </g>`;
       }
     }
 
+    // --- FONT DIPERBANYAK ---
     const FONT_PRESETS = [
       { name: 'STREETWEAR BOLD', font: 'Bebas Neue', category: 'Streetwear' },
+      { name: 'MODERN SANS', font: 'Montserrat', category: 'Sans Serif' },
+      { name: 'SPORTY TALL', font: 'Oswald', category: 'Athletic' },
+      { name: 'CLASSIC ROMAN', font: 'Cinzel', category: 'Serif' },
+      { name: 'ELEGANT CURVES', font: 'Dancing Script', category: 'Script' },
+      { name: 'CYBER GLITCH', font: 'Rubik Glitch', category: 'Y2K' },
+      { name: 'RETRO POP', font: 'Righteous', category: 'Vintage' },
+      { name: 'VINTAGE BRUSH', font: 'Lobster', category: 'Script' },
       { name: 'CYBER TECH 2077', font: 'Fira Code', category: 'Y2K' },
       { name: 'GOTHIC BLACKLETTER', font: 'UnifrakturMaguntia', category: 'Gothic' },
       { name: 'VINTAGE ATHLETIC', font: 'Permanent Marker', category: 'Athletic' },
@@ -849,75 +504,21 @@
     ];
 
     window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      renderGarmentGrid(); renderFontPresets(); renderPantoneSwatches(); renderPatternGrid();
-      loadActiveGarmentSVG(); updateRulers(); pushHistoryState();
-
+      lucide.createIcons(); renderGarmentGrid(); renderFontPresets(); renderPantoneSwatches(); renderPatternGrid(); loadActiveGarmentSVG(); updateRulers(); pushHistoryState();
       if (window.innerWidth < 768) setAppMode('mobile');
     });
 
     function setAppMode(mode) {
-      state.appMode = mode;
-      const body = document.getElementById('app-body');
-      const deskBtn = document.getElementById('mode-desktop-btn'), mobBtn = document.getElementById('mode-mobile-btn');
-
-      if (mode === 'mobile') {
-        body.classList.remove('desktop-mode'); body.classList.add('mobile-mode');
-        mobBtn.className = 'px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1';
-        deskBtn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1';
-        showToast('Mode Seluler Aktif'); fitCanvasToMobile();
-      } else {
-        body.classList.remove('mobile-mode'); body.classList.add('desktop-mode');
-        deskBtn.className = 'px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1';
-        mobBtn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1';
-        closeMobileDrawers(); showToast('Mode Desktop Aktif'); resetZoom();
-      }
+      state.appMode = mode; const body = document.getElementById('app-body'), deskBtn = document.getElementById('mode-desktop-btn'), mobBtn = document.getElementById('mode-mobile-btn');
+      if (mode === 'mobile') { body.classList.remove('desktop-mode'); body.classList.add('mobile-mode'); mobBtn.className = 'px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1'; deskBtn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1'; showToast('Mode Seluler Aktif'); fitCanvasToMobile(); } 
+      else { body.classList.remove('mobile-mode'); body.classList.add('desktop-mode'); deskBtn.className = 'px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1'; mobBtn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200 transition flex items-center gap-1'; closeMobileDrawers(); showToast('Mode Desktop Aktif'); resetZoom(); }
     }
-
-    function toggleMobileDrawer(side) {
-      const left = document.getElementById('left-sidebar'), right = document.getElementById('right-sidebar'), backdrop = document.getElementById('mobile-backdrop');
-      if (side === 'left') { right.classList.remove('mobile-open'); left.classList.toggle('mobile-open'); } 
-      else { left.classList.remove('mobile-open'); right.classList.toggle('mobile-open'); }
-      backdrop.classList.toggle('active', left.classList.contains('mobile-open') || right.classList.contains('mobile-open'));
-    }
-
-    function closeMobileDrawers() {
-      document.getElementById('left-sidebar').classList.remove('mobile-open');
-      document.getElementById('right-sidebar').classList.remove('mobile-open');
-      document.getElementById('mobile-backdrop').classList.remove('active');
-    }
-
-    function fitCanvasToMobile() {
-      const container = document.getElementById('canvas-viewport');
-      if (container && container.offsetWidth < 600) {
-        state.zoom = Math.max(0.4, (container.offsetWidth - 20) / 600); applyZoom();
-      }
-    }
-
-    function showToast(msg) {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = 'toast-msg flex items-center gap-2';
-      toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-cyan-400"></i> ${msg}`;
-      container.appendChild(toast); lucide.createIcons();
-      setTimeout(() => toast.remove(), 2500);
-    }
-
-    function switchLeftTab(tab) {
-      ['garments', 'typography', 'assets', 'patterns'].forEach(t => {
-        const btn = document.getElementById(`tab-btn-${t}`), content = document.getElementById(`tab-content-${t}`);
-        if (t === tab) { btn.className = 'flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition'; content.classList.remove('hidden'); } 
-        else { btn.className = 'flex-1 py-3 text-center text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition'; content.classList.add('hidden'); }
-      });
-    }
-
-    function switchRightTab(tab) {
-      ['properties', 'layers', 'colors'].forEach(t => {
-        const btn = document.getElementById(`tab-btn-${t}`), content = document.getElementById(`tab-content-${t}`);
-        if (t === tab) { btn.className = 'flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition'; content.classList.remove('hidden'); } 
-        else { btn.className = 'flex-1 py-3 text-center text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition'; content.classList.add('hidden'); }
-      });
-    }
+    function toggleMobileDrawer(side) { const left = document.getElementById('left-sidebar'), right = document.getElementById('right-sidebar'), backdrop = document.getElementById('mobile-backdrop'); if (side === 'left') { right.classList.remove('mobile-open'); left.classList.toggle('mobile-open'); } else { left.classList.remove('mobile-open'); right.classList.toggle('mobile-open'); } backdrop.classList.toggle('active', left.classList.contains('mobile-open') || right.classList.contains('mobile-open')); }
+    function closeMobileDrawers() { document.getElementById('left-sidebar').classList.remove('mobile-open'); document.getElementById('right-sidebar').classList.remove('mobile-open'); document.getElementById('mobile-backdrop').classList.remove('active'); }
+    function fitCanvasToMobile() { const container = document.getElementById('canvas-viewport'); if (container && container.offsetWidth < 600) { state.zoom = Math.max(0.4, (container.offsetWidth - 20) / 600); applyZoom(); } }
+    function showToast(msg) { const container = document.getElementById('toast-container'), toast = document.createElement('div'); toast.className = 'toast-msg flex items-center gap-2'; toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-cyan-400"></i> ${msg}`; container.appendChild(toast); lucide.createIcons(); setTimeout(() => toast.remove(), 2500); }
+    function switchLeftTab(tab) { ['garments', 'typography', 'assets', 'patterns'].forEach(t => { const btn = document.getElementById(`tab-btn-${t}`), content = document.getElementById(`tab-content-${t}`); if (t === tab) { btn.className = 'flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition'; content.classList.remove('hidden'); } else { btn.className = 'flex-1 py-3 text-center text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition'; content.classList.add('hidden'); } }); }
+    function switchRightTab(tab) { ['properties', 'layers', 'colors'].forEach(t => { const btn = document.getElementById(`tab-btn-${t}`), content = document.getElementById(`tab-content-${t}`); if (t === tab) { btn.className = 'flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition'; content.classList.remove('hidden'); } else { btn.className = 'flex-1 py-3 text-center text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition'; content.classList.add('hidden'); } }); }
 
     function renderGarmentGrid() {
       const container = document.getElementById('garment-items-grid'), cat = document.getElementById('garment-category-filter').value, search = document.getElementById('garment-search-input').value.toLowerCase();
@@ -925,14 +526,11 @@
       container.innerHTML = filtered.map(item => `
         <div onclick="selectGarment('${item.id}')" class="bg-slate-950 border border-slate-700 rounded-lg p-2 text-center hover:border-cyan-500 cursor-pointer transition group shadow-sm">
           <div class="w-full h-20 bg-slate-900 rounded flex items-center justify-center mb-1.5 group-hover:scale-[1.02] transition overflow-hidden">
-            <svg class="w-14 h-16 drop-shadow-md" viewBox="0 0 600 700">
-              ${generateGarmentSVG(item.id, 'front', {base: '#06b6d4', collar: '#0f172a', sleeves: '#06b6d4', stitching: '#94a3b8'})}
-            </svg>
+            <svg class="w-14 h-16 drop-shadow-md" viewBox="0 0 600 700">${generateGarmentSVG(item.id, 'front', {base: '#06b6d4', collar: '#0f172a', sleeves: '#06b6d4', stitching: '#94a3b8'})}</svg>
           </div>
           <span class="text-[10px] font-bold text-slate-300 group-hover:text-cyan-400 block truncate">${item.name}</span>
         </div>`).join('');
     }
-
     function filterGarments() { renderGarmentGrid(); }
 
     function renderFontPresets() {
@@ -944,189 +542,110 @@
           <span class="text-[8px] font-bold text-slate-950 bg-cyan-500 px-2 py-0.5 rounded-full">${preset.category}</span>
         </div>`).join('');
     }
-
     function filterFontCategory() { renderFontPresets(); }
 
     function renderPantoneSwatches() {
-      const PANTONE_COLORS = [
-        { name: 'Hitam Siluman', hex: '#18181b' }, { name: 'Putih Terang', hex: '#f8fafc' }, { name: 'Kuning Siber', hex: '#facc15' }, { name: 'Merah Inframerah', hex: '#ef4444' },
-        { name: 'Jeruk Nipis Beracun', hex: '#84cc16' }, { name: 'Sian Elektrik', hex: '#06b6d4' }, { name: 'Biru Kobalt', hex: '#1d4ed8' }, { name: 'Ungu Vintage', hex: '#7e22ce' }
-      ];
+      const PANTONE_COLORS = [{ name: 'Hitam Siluman', hex: '#18181b' }, { name: 'Putih Terang', hex: '#f8fafc' }, { name: 'Kuning Siber', hex: '#facc15' }, { name: 'Merah Inframerah', hex: '#ef4444' }, { name: 'Jeruk Nipis Beracun', hex: '#84cc16' }, { name: 'Sian Elektrik', hex: '#06b6d4' }, { name: 'Biru Kobalt', hex: '#1d4ed8' }, { name: 'Ungu Vintage', hex: '#7e22ce' }];
       document.getElementById('pantone-swatches-grid').innerHTML = PANTONE_COLORS.map(c => `
         <div onclick="changeGarmentColor('base', '${c.hex}')" class="bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-center cursor-pointer hover:border-cyan-400 transition group shadow-sm">
           <div class="w-full h-8 rounded mb-1 border border-slate-600 shadow-inner group-hover:scale-105 transition" style="background-color: ${c.hex};"></div>
           <span class="text-[8px] font-mono text-slate-300 block truncate group-hover:text-cyan-400">${c.name}</span>
         </div>`).join('');
     }
-
     function renderPatternGrid() {
       const patterns = ['Garis-garis', 'Papan Catur', 'Kamuflase', 'Bintik Noise'];
       document.getElementById('pattern-presets-grid').innerHTML = patterns.map(p => `
         <div onclick="applyPattern('${p}')" class="bg-slate-950 border border-slate-700 rounded-lg p-4 text-center cursor-pointer hover:border-cyan-500 hover:text-cyan-400 transition group shadow-sm">
-          <i data-lucide="grid" class="w-6 h-6 text-slate-500 group-hover:text-cyan-400 mx-auto mb-2 transition"></i>
-          <span class="text-[10px] font-bold text-slate-300 group-hover:text-cyan-400 block">${p}</span>
-        </div>`).join('');
-      lucide.createIcons();
+          <i data-lucide="grid" class="w-6 h-6 text-slate-500 group-hover:text-cyan-400 mx-auto mb-2 transition"></i><span class="text-[10px] font-bold text-slate-300 group-hover:text-cyan-400 block">${p}</span>
+        </div>`).join(''); lucide.createIcons();
     }
     function applyPattern(p) { showToast(`Overlay pola ${p} diterapkan`); }
 
-    function loadActiveGarmentSVG() {
-      document.getElementById('garment-svg-layer').innerHTML = generateGarmentSVG(state.activeGarmentId, state.activeAngle, state.colors);
-      const item = GARMENT_DATABASE.find(g => g.id === state.activeGarmentId);
-      if (item) document.getElementById('status-garment-name').innerText = item.name.toUpperCase();
-    }
-
+    function loadActiveGarmentSVG() { document.getElementById('garment-svg-layer').innerHTML = generateGarmentSVG(state.activeGarmentId, state.activeAngle, state.colors); const item = GARMENT_DATABASE.find(g => g.id === state.activeGarmentId); if (item) document.getElementById('status-garment-name').innerText = item.name.toUpperCase(); }
     function selectGarment(id) { state.activeGarmentId = id; loadActiveGarmentSVG(); showToast(`Pakaian diperbarui`); pushHistoryState(); if (state.appMode === 'mobile') closeMobileDrawers(); }
-
     function setViewAngle(angle) {
-      state.activeAngle = angle;
-      const angleIds = { 'front': 'DEPAN', 'back': 'BELAKANG', 'left': 'SAMPING KIRI', 'right': 'SAMPING KANAN' };
-      ['front', 'back', 'left', 'right'].forEach(a => {
-        const btn = document.getElementById(`view-${a}-btn`);
-        if (btn) btn.className = (a === angle) ? 'px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition' : 'px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition';
-      });
+      state.activeAngle = angle; const angleIds = { 'front': 'DEPAN', 'back': 'BELAKANG', 'left': 'SAMPING KIRI', 'right': 'SAMPING KANAN' };
+      ['front', 'back', 'left', 'right'].forEach(a => { const btn = document.getElementById(`view-${a}-btn`); if (btn) btn.className = (a === angle) ? 'px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition' : 'px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition'; });
       loadActiveGarmentSVG(); showToast(`Sudut pandang diubah ke ${angleIds[angle]}`);
     }
-
     function changeGarmentColor(part, hex) { state.colors[part] = hex; loadActiveGarmentSVG(); pushHistoryState(); }
     function setActiveTool(tool) { state.activeTool = tool; showToast(`Alat aktif: ${tool.toUpperCase()}`); }
-
     function addTextObject(content = 'MEREK ANDA', fontFamily = 'Bebas Neue') {
       const obj = { id: 'obj_' + Date.now(), type: 'text', content: content, fontFamily: fontFamily, fontSize: 50, fontWeight: 'bold', color: '#ffffff', x: 210, y: 220, width: 220, height: 60, rotation: 0, opacity: 1.0, scaleX: 1, scaleY: 1 };
-      state.objects.push(obj); renderObjects(); selectObject(obj.id); pushHistoryState(); showToast('Tipografi ditambahkan. Klik Ganda untuk mengedit.');
-      if (state.appMode === 'mobile') closeMobileDrawers();
+      state.objects.push(obj); renderObjects(); selectObject(obj.id); pushHistoryState(); showToast('Tipografi ditambahkan. Klik Ganda untuk mengedit.'); if (state.appMode === 'mobile') closeMobileDrawers();
     }
-
-    function addShapeObject(shapeType = 'rectangle') {
-      const obj = { id: 'obj_' + Date.now(), type: 'shape', shapeType: shapeType, color: '#06b6d4', x: 230, y: 260, width: 140, height: 100, rotation: 0, opacity: 1.0, scaleX: 1, scaleY: 1 };
-      state.objects.push(obj); renderObjects(); selectObject(obj.id); pushHistoryState(); showToast('Bentuk ditambahkan');
-    }
-
+    function addShapeObject(shapeType = 'rectangle') { const obj = { id: 'obj_' + Date.now(), type: 'shape', shapeType: shapeType, color: '#06b6d4', x: 230, y: 260, width: 140, height: 100, rotation: 0, opacity: 1.0, scaleX: 1, scaleY: 1 }; state.objects.push(obj); renderObjects(); selectObject(obj.id); pushHistoryState(); showToast('Bentuk ditambahkan'); }
     function handleAssetUpload(e) {
-      const file = e.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const obj = { id: 'obj_' + Date.now(), type: 'image', src: evt.target.result, x: 220, y: 200, width: 160, height: 160, rotation: 0, opacity: 1.0, scaleX: 1, scaleY: 1 };
-        state.objects.push(obj); renderObjects(); selectObject(obj.id); pushHistoryState(); showToast('Aset diunggah');
-        if (state.appMode === 'mobile') closeMobileDrawers();
-      }; reader.readAsDataURL(file);
+      const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
+      reader.onload = function(evt) { const obj = { id: 'obj_' + Date.now(), type: 'image', src: evt.target.result, x: 220, y: 200, width: 160, height: 160, rotation: 0, opacity: 1.0, scaleX: 1, scaleY: 1 }; state.objects.push(obj); renderObjects(); selectObject(obj.id); pushHistoryState(); showToast('Aset diunggah'); if (state.appMode === 'mobile') closeMobileDrawers(); }; reader.readAsDataURL(file);
     }
-
     function handleFontUpload(e) {
-      const file = e.target.files[0]; if (!file) return;
-      const fontName = file.name.split('.')[0]; const reader = new FileReader();
-      reader.onload = function(evt) {
-        const font = new FontFace(fontName, evt.target.result);
-        font.load().then(loadedFont => { document.fonts.add(loadedFont); showToast(`Font "${fontName}" diimpor!`); addTextObject(fontName.toUpperCase(), fontName); });
-      }; reader.readAsArrayBuffer(file);
+      const file = e.target.files[0]; if (!file) return; const fontName = file.name.split('.')[0]; const reader = new FileReader();
+      reader.onload = function(evt) { const font = new FontFace(fontName, evt.target.result); font.load().then(loadedFont => { document.fonts.add(loadedFont); showToast(`Font "${fontName}" diimpor!`); addTextObject(fontName.toUpperCase(), fontName); }); }; reader.readAsArrayBuffer(file);
     }
-
-    // FITUR BARU: Edit Text Langsung dengan Klik Ganda / Tap Ganda
     function editTextDirectly(id) {
       const obj = state.objects.find(o => o.id === id);
-      if (obj && obj.type === 'text') {
-        const newText = prompt("Ubah teks tipografi Anda:", obj.content);
-        if (newText !== null && newText.trim() !== "") {
-          obj.content = newText;
-          renderObjects(); renderPropertiesPanel(); pushHistoryState();
-          showToast('Teks berhasil diubah');
-        }
-      }
+      if (obj && obj.type === 'text') { const newText = prompt("Ubah teks tipografi Anda:", obj.content); if (newText !== null && newText.trim() !== "") { obj.content = newText; renderObjects(); renderPropertiesPanel(); pushHistoryState(); showToast('Teks berhasil diubah'); } }
     }
-
     function renderObjects() {
       const container = document.getElementById('artwork-objects-container');
       container.innerHTML = state.objects.map(obj => {
         const transformStr = `translate(${obj.x}px, ${obj.y}px) rotate(${obj.rotation}deg) scale(${obj.scaleX}, ${obj.scaleY})`;
-        if (obj.type === 'text') {
-          return `<div id="${obj.id}" ondblclick="editTextDirectly('${obj.id}')" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; opacity: ${obj.opacity}; font-family: '${obj.fontFamily}', sans-serif; font-size: ${obj.fontSize}px; color: ${obj.color}; font-weight: ${obj.fontWeight}; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${obj.content}</div>`;
-        } else if (obj.type === 'image') {
-          return `<div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none drop-shadow-md" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; opacity: ${obj.opacity};"><img src="${obj.src}" class="w-full h-full object-contain pointer-events-none"/></div>`;
-        } else if (obj.type === 'shape') {
-          return `<div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none shadow-md" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; background-color: ${obj.color}; opacity: ${obj.opacity}; border-radius: ${obj.shapeType==='circle'?'50%':'2px'};"></div>`;
-        }
+        if (obj.type === 'text') { return `<div id="${obj.id}" ondblclick="editTextDirectly('${obj.id}')" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; opacity: ${obj.opacity}; font-family: '${obj.fontFamily}', sans-serif; font-size: ${obj.fontSize}px; color: ${obj.color}; font-weight: ${obj.fontWeight}; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${obj.content}</div>`; }
+        else if (obj.type === 'image') { return `<div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none drop-shadow-md" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; opacity: ${obj.opacity};"><img src="${obj.src}" class="w-full h-full object-contain pointer-events-none"/></div>`; }
+        else if (obj.type === 'shape') { return `<div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none shadow-md" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; background-color: ${obj.color}; opacity: ${obj.opacity}; border-radius: ${obj.shapeType==='circle'?'50%':'2px'};"></div>`; }
       }).join('');
       updateSelectionBox(); renderLayersList();
     }
-
     function selectObject(id) { state.selectedObjectId = id; updateSelectionBox(); renderPropertiesPanel(); renderLayersList(); }
-
-    function handleCanvasBackgroundClick(e) {
-      if (e.target.id === 'canvas-viewport' || e.target.id === 'apparel-canvas-frame') { state.selectedObjectId = null; updateSelectionBox(); renderPropertiesPanel(); renderLayersList(); }
-    }
-
+    function handleCanvasBackgroundClick(e) { if (e.target.id === 'canvas-viewport' || e.target.id === 'apparel-canvas-frame') { state.selectedObjectId = null; updateSelectionBox(); renderPropertiesPanel(); renderLayersList(); } }
     function updateSelectionBox() {
       const box = document.getElementById('selection-box');
       if (!state.selectedObjectId) { box.classList.add('hidden'); return; }
       const obj = state.objects.find(o => o.id === state.selectedObjectId), el = document.getElementById(state.selectedObjectId);
       if (obj && el) {
-        box.classList.remove('hidden');
-        const w = el.offsetWidth || obj.width, h = el.offsetHeight || obj.height;
+        box.classList.remove('hidden'); const w = el.offsetWidth || obj.width, h = el.offsetHeight || obj.height;
         box.style.left = obj.x + 'px'; box.style.top = obj.y + 'px'; box.style.width = w + 'px'; box.style.height = h + 'px'; box.style.transform = `rotate(${obj.rotation}deg)`;
-        const scaleVal = UNIT_SCALES[state.unit];
-        document.getElementById('pos-x-val').innerText = (obj.x / scaleVal).toFixed(1); document.getElementById('pos-y-val').innerText = (obj.y / scaleVal).toFixed(1);
-        document.getElementById('size-w-val').innerText = (w / scaleVal).toFixed(1); document.getElementById('size-h-val').innerText = (h / scaleVal).toFixed(1);
+        const scaleVal = UNIT_SCALES[state.unit]; document.getElementById('pos-x-val').innerText = (obj.x / scaleVal).toFixed(1); document.getElementById('pos-y-val').innerText = (obj.y / scaleVal).toFixed(1); document.getElementById('size-w-val').innerText = (w / scaleVal).toFixed(1); document.getElementById('size-h-val').innerText = (h / scaleVal).toFixed(1);
       }
     }
 
     let isDragging = false, isTransforming = false, activeHandle = null, startX = 0, startY = 0, startObjX = 0, startObjY = 0, startW = 0, startH = 0;
     function getPointerPos(e) { return (e.touches && e.touches.length > 0) ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY }; }
+    function initDrag(e, id) { e.stopPropagation(); selectObject(id); const obj = state.objects.find(o => o.id === id); if (!obj) return; isDragging = true; const pos = getPointerPos(e); startX = pos.x; startY = pos.y; startObjX = obj.x; startObjY = obj.y; window.addEventListener('mousemove', doDrag); window.addEventListener('mouseup', stopDrag); window.addEventListener('touchmove', doDrag, { passive: false }); window.addEventListener('touchend', stopDrag); }
+    function doDrag(e) { if (!isDragging) return; if (e.preventDefault && e.cancelable) e.preventDefault(); const pos = getPointerPos(e), obj = state.objects.find(o => o.id === state.selectedObjectId); if (obj) { obj.x = startObjX + (pos.x - startX) / state.zoom; obj.y = startObjY + (pos.y - startY) / state.zoom; renderObjects(); } }
+    function stopDrag() { if (isDragging) { isDragging = false; pushHistoryState(); } window.removeEventListener('mousemove', doDrag); window.removeEventListener('mouseup', stopDrag); window.removeEventListener('touchmove', doDrag); window.removeEventListener('touchend', stopDrag); }
+    function initTransform(e, handle) { e.stopPropagation(); isTransforming = true; activeHandle = handle; const obj = state.objects.find(o => o.id === state.selectedObjectId), el = document.getElementById(state.selectedObjectId); if (!obj || !el) return; const pos = getPointerPos(e); startX = pos.x; startY = pos.y; startW = el.offsetWidth || obj.width; startH = el.offsetHeight || obj.height; window.addEventListener('mousemove', doTransform); window.addEventListener('mouseup', stopTransform); window.addEventListener('touchmove', doTransform, { passive: false }); window.addEventListener('touchend', stopTransform); }
+    function doTransform(e) { if (!isTransforming) return; if (e.preventDefault && e.cancelable) e.preventDefault(); const pos = getPointerPos(e), obj = state.objects.find(o => o.id === state.selectedObjectId); if (!obj) return; const dx = (pos.x - startX) / state.zoom, dy = (pos.y - startY) / state.zoom; if (activeHandle.includes('e')) obj.width = Math.max(20, startW + dx); if (activeHandle.includes('s')) obj.height = Math.max(20, startH + dy); if (obj.type === 'text') obj.fontSize = Math.max(10, Math.round(startH + dy / 2)); renderObjects(); }
+    function stopTransform() { if (isTransforming) { isTransforming = false; pushHistoryState(); } window.removeEventListener('mousemove', doTransform); window.removeEventListener('mouseup', stopTransform); window.removeEventListener('touchmove', doTransform); window.removeEventListener('touchend', stopTransform); }
+    function initRotate(e) { e.stopPropagation(); const obj = state.objects.find(o => o.id === state.selectedObjectId); if (!obj) return; const box = document.getElementById('selection-box'), rect = box.getBoundingClientRect(), centerX = rect.left + rect.width / 2, centerY = rect.top + rect.height / 2; const handleRotate = (moveEvt) => { if (moveEvt.preventDefault && moveEvt.cancelable) moveEvt.preventDefault(); const pos = getPointerPos(moveEvt), rad = Math.atan2(pos.y - centerY, pos.x - centerX); obj.rotation = Math.round(rad * (180 / Math.PI)) + 90; renderObjects(); }; const stopRotate = () => { pushHistoryState(); window.removeEventListener('mousemove', handleRotate); window.removeEventListener('mouseup', stopRotate); window.removeEventListener('touchmove', handleRotate); window.removeEventListener('touchend', stopRotate); }; window.addEventListener('mousemove', handleRotate); window.addEventListener('mouseup', stopRotate); window.addEventListener('touchmove', handleRotate, { passive: false }); window.addEventListener('touchend', stopRotate); }
 
-    function initDrag(e, id) {
-      e.stopPropagation(); selectObject(id); const obj = state.objects.find(o => o.id === id); if (!obj) return;
-      isDragging = true; const pos = getPointerPos(e);
-      startX = pos.x; startY = pos.y; startObjX = obj.x; startObjY = obj.y;
-      window.addEventListener('mousemove', doDrag); window.addEventListener('mouseup', stopDrag); window.addEventListener('touchmove', doDrag, { passive: false }); window.addEventListener('touchend', stopDrag);
-    }
-    function doDrag(e) {
-      if (!isDragging) return; if (e.preventDefault && e.cancelable) e.preventDefault();
-      const pos = getPointerPos(e), obj = state.objects.find(o => o.id === state.selectedObjectId);
-      if (obj) { obj.x = startObjX + (pos.x - startX) / state.zoom; obj.y = startObjY + (pos.y - startY) / state.zoom; renderObjects(); }
-    }
-    function stopDrag() {
-      if (isDragging) { isDragging = false; pushHistoryState(); }
-      window.removeEventListener('mousemove', doDrag); window.removeEventListener('mouseup', stopDrag); window.removeEventListener('touchmove', doDrag); window.removeEventListener('touchend', stopDrag);
-    }
-
-    function initTransform(e, handle) {
-      e.stopPropagation(); isTransforming = true; activeHandle = handle;
-      const obj = state.objects.find(o => o.id === state.selectedObjectId), el = document.getElementById(state.selectedObjectId); if (!obj || !el) return;
-      const pos = getPointerPos(e); startX = pos.x; startY = pos.y; startW = el.offsetWidth || obj.width; startH = el.offsetHeight || obj.height;
-      window.addEventListener('mousemove', doTransform); window.addEventListener('mouseup', stopTransform); window.addEventListener('touchmove', doTransform, { passive: false }); window.addEventListener('touchend', stopTransform);
-    }
-    function doTransform(e) {
-      if (!isTransforming) return; if (e.preventDefault && e.cancelable) e.preventDefault();
-      const pos = getPointerPos(e), obj = state.objects.find(o => o.id === state.selectedObjectId); if (!obj) return;
-      const dx = (pos.x - startX) / state.zoom, dy = (pos.y - startY) / state.zoom;
-      if (activeHandle.includes('e')) obj.width = Math.max(20, startW + dx); if (activeHandle.includes('s')) obj.height = Math.max(20, startH + dy);
-      if (obj.type === 'text') obj.fontSize = Math.max(10, Math.round(startH + dy / 2));
-      renderObjects();
-    }
-    function stopTransform() {
-      if (isTransforming) { isTransforming = false; pushHistoryState(); }
-      window.removeEventListener('mousemove', doTransform); window.removeEventListener('mouseup', stopTransform); window.removeEventListener('touchmove', doTransform); window.removeEventListener('touchend', stopTransform);
-    }
-
-    function initRotate(e) {
-      e.stopPropagation(); const obj = state.objects.find(o => o.id === state.selectedObjectId); if (!obj) return;
-      const box = document.getElementById('selection-box'), rect = box.getBoundingClientRect(), centerX = rect.left + rect.width / 2, centerY = rect.top + rect.height / 2;
-      const handleRotate = (moveEvt) => {
-        if (moveEvt.preventDefault && moveEvt.cancelable) moveEvt.preventDefault();
-        const pos = getPointerPos(moveEvt), rad = Math.atan2(pos.y - centerY, pos.x - centerX);
-        obj.rotation = Math.round(rad * (180 / Math.PI)) + 90; renderObjects();
-      };
-      const stopRotate = () => { pushHistoryState(); window.removeEventListener('mousemove', handleRotate); window.removeEventListener('mouseup', stopRotate); window.removeEventListener('touchmove', handleRotate); window.removeEventListener('touchend', stopRotate); };
-      window.addEventListener('mousemove', handleRotate); window.addEventListener('mouseup', stopRotate); window.addEventListener('touchmove', handleRotate, { passive: false }); window.addEventListener('touchend', stopRotate);
-    }
-
-    function updateActiveObject(key, val) {
+    function updateActiveObject(key, val) { const obj = state.objects.find(o => o.id === state.selectedObjectId); if (obj) { obj[key] = val; renderObjects(); pushHistoryState(); } }
+    
+    // FITUR BARU: Nudge (Geser Objek dengan Panah)
+    function nudgeObject(dx, dy) {
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
-      if (obj) { obj[key] = val; renderObjects(); pushHistoryState(); }
+      if (obj) { obj.x += dx; obj.y += dy; renderObjects(); pushHistoryState(); }
     }
 
     function renderPropertiesPanel() {
       const container = document.getElementById('object-properties-container'), obj = state.objects.find(o => o.id === state.selectedObjectId);
       if (!obj) { container.innerHTML = `<p class="text-xs text-slate-500 italic text-center py-6">Pilih objek di kanvas untuk mengedit detail properti.</p>`; return; }
+      
+      // Template UI Nudge D-PAD Presisi (Ditambahkan ke semua tipe objek)
+      const nudgeControlsHTML = `
+        <div class="mt-4 bg-slate-900 p-2 rounded-lg border border-slate-800 shadow-inner">
+          <label class="text-[9px] text-slate-400 block mb-2 font-bold text-center tracking-wider">GESER PRESISI D-PAD (HP)</label>
+          <div class="flex flex-col items-center gap-1">
+            <button onclick="nudgeObject(0, -2)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-md text-cyan-400 border border-slate-700 active:bg-cyan-900"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+            <div class="flex gap-1">
+              <button onclick="nudgeObject(-2, 0)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-md text-cyan-400 border border-slate-700 active:bg-cyan-900"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+              <button onclick="nudgeObject(0, 2)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-md text-cyan-400 border border-slate-700 active:bg-cyan-900"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+              <button onclick="nudgeObject(2, 0)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-md text-cyan-400 border border-slate-700 active:bg-cyan-900"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        </div>`;
+
       if (obj.type === 'text') {
         container.innerHTML = `
           <div class="bg-slate-950 p-4 rounded-lg border border-slate-700 space-y-3 shadow-inner">
@@ -1143,12 +662,22 @@
               <div>
                 <label class="text-[10px] text-slate-400 block mb-1 font-bold">Warna Font</label>
                 <input type="color" value="${obj.color}" onchange="updateActiveObject('color', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-600">
+                <!-- FITUR BARU: Warna Instan -->
+                <div class="flex flex-wrap gap-1 mt-1.5">
+                  <div onclick="updateActiveObject('color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500 cursor-pointer hover:scale-110"></div>
+                  <div onclick="updateActiveObject('color', '#000000')" class="w-4 h-4 rounded-full bg-black border border-slate-500 cursor-pointer hover:scale-110"></div>
+                  <div onclick="updateActiveObject('color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-slate-500 cursor-pointer hover:scale-110"></div>
+                  <div onclick="updateActiveObject('color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-slate-500 cursor-pointer hover:scale-110"></div>
+                  <div onclick="updateActiveObject('color', '#facc15')" class="w-4 h-4 rounded-full bg-yellow-400 border border-slate-500 cursor-pointer hover:scale-110"></div>
+                  <div onclick="updateActiveObject('color', '#22c55e')" class="w-4 h-4 rounded-full bg-green-500 border border-slate-500 cursor-pointer hover:scale-110"></div>
+                </div>
               </div>
             </div>
             <div>
               <label class="text-[10px] text-slate-400 block mb-1 font-bold">Transparansi (Opacity)</label>
               <input type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="updateActiveObject('opacity', parseFloat(this.value))" class="w-full accent-cyan-500">
             </div>
+            ${nudgeControlsHTML}
           </div>`;
       } else {
         container.innerHTML = `
@@ -1168,315 +697,77 @@
               <label class="text-[10px] text-slate-400 block mb-1 font-bold">Transparansi (Opacity)</label>
               <input type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="updateActiveObject('opacity', parseFloat(this.value))" class="w-full accent-emerald-500">
             </div>
+            ${nudgeControlsHTML}
           </div>`;
       }
+      setTimeout(() => lucide.createIcons(), 10);
     }
 
-    function renderLayersList() {
-      document.getElementById('layers-list-container').innerHTML = state.objects.map((obj, i) => `
-        <div onclick="selectObject('${obj.id}')" class="layer-item p-2.5 bg-slate-950 rounded-md border border-slate-800 flex items-center justify-between text-xs cursor-pointer hover:border-cyan-500 transition group shadow-sm ${obj.id === state.selectedObjectId ? 'active border-cyan-500' : ''}">
-          <span class="truncate font-mono text-slate-200 group-hover:text-cyan-400 transition">${i+1}. ${obj.type.toUpperCase()} (${obj.content || obj.shapeType || 'Gambar Aset'})</span>
-          <i data-lucide="layers" class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition"></i>
-        </div>`).reverse().join('');
-      lucide.createIcons();
-    }
-
+    function renderLayersList() { document.getElementById('layers-list-container').innerHTML = state.objects.map((obj, i) => `<div onclick="selectObject('${obj.id}')" class="layer-item p-2.5 bg-slate-950 rounded-md border border-slate-800 flex items-center justify-between text-xs cursor-pointer hover:border-cyan-500 transition group shadow-sm ${obj.id === state.selectedObjectId ? 'active border-cyan-500' : ''}"><span class="truncate font-mono text-slate-200 group-hover:text-cyan-400 transition">${i+1}. ${obj.type.toUpperCase()} (${obj.content || obj.shapeType || 'Gambar Aset'})</span><i data-lucide="layers" class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition"></i></div>`).reverse().join(''); lucide.createIcons(); }
     function moveLayerUp() { const idx = state.objects.findIndex(o => o.id === state.selectedObjectId); if (idx < state.objects.length - 1 && idx !== -1) { const temp = state.objects[idx]; state.objects[idx] = state.objects[idx + 1]; state.objects[idx + 1] = temp; renderObjects(); pushHistoryState(); } }
     function moveLayerDown() { const idx = state.objects.findIndex(o => o.id === state.selectedObjectId); if (idx > 0) { const temp = state.objects[idx]; state.objects[idx] = state.objects[idx - 1]; state.objects[idx - 1] = temp; renderObjects(); pushHistoryState(); } }
     function deleteSelectedObject() { if (!state.selectedObjectId) return; state.objects = state.objects.filter(o => o.id !== state.selectedObjectId); state.selectedObjectId = null; renderObjects(); renderPropertiesPanel(); pushHistoryState(); showToast('Objek dihapus'); }
     function duplicateSelectedObject() { const obj = state.objects.find(o => o.id === state.selectedObjectId); if (!obj) return; const clone = JSON.parse(JSON.stringify(obj)); clone.id = 'obj_' + Date.now(); clone.x += 20; clone.y += 20; state.objects.push(clone); renderObjects(); selectObject(clone.id); pushHistoryState(); showToast('Objek diduplikat'); }
     function flipSelectedObject(dir) { const obj = state.objects.find(o => o.id === state.selectedObjectId); if (!obj) return; if (dir === 'h') obj.scaleX = (obj.scaleX || 1) * -1; if (dir === 'v') obj.scaleY = (obj.scaleY || 1) * -1; renderObjects(); pushHistoryState(); }
     function alignSelectedObject(pos) { const obj = state.objects.find(o => o.id === state.selectedObjectId); if (!obj) return; if (pos === 'center') { obj.x = 300 - (obj.width || 100) / 2; obj.y = 350 - (obj.height || 40) / 2; } renderObjects(); pushHistoryState(); }
-
-    // FITUR BARU: Hapus Semua Objek Kanvas
-    function clearCanvas() {
-      if (confirm('Anda yakin ingin menghapus semua objek dan karya seni di kanvas?')) {
-        state.objects = [];
-        state.selectedObjectId = null;
-        renderObjects();
-        renderPropertiesPanel();
-        pushHistoryState();
-        showToast('Kanvas telah dibersihkan');
-      }
-    }
+    function clearCanvas() { if (confirm('Anda yakin ingin menghapus semua objek dan karya seni di kanvas?')) { state.objects = []; state.selectedObjectId = null; renderObjects(); renderPropertiesPanel(); pushHistoryState(); showToast('Kanvas telah dibersihkan'); } }
 
     function toggleRulers() { const rx = document.getElementById('ruler-x-bar'), ry = document.getElementById('ruler-y-bar'), check = document.getElementById('toggle-rulers').checked; if (rx) rx.style.display = check ? 'flex' : 'none'; if (ry) ry.style.display = check ? 'flex' : 'none'; }
     function toggleGrid() { document.getElementById('main-canvas-container').classList.toggle('canvas-grid', document.getElementById('toggle-grid').checked); }
     function toggleSafeZone() { document.getElementById('print-safe-boundary').style.display = document.getElementById('toggle-safe-zone').checked ? 'flex' : 'none'; }
     function changeUnit(u) { state.unit = u; document.querySelectorAll('.unit-label').forEach(el => el.innerText = u); updateRulers(); updateSelectionBox(); showToast(`Satuan diubah ke ${u}`); }
-    function changeDPI(d) { state.dpi = parseInt(d); showToast(`DPI diatur ke ${d}`); }
-    
     function changePrintZone(zone) {
       state.printZone = zone; const boundary = document.getElementById('print-safe-boundary'), tag = document.getElementById('print-area-tag');
-      const zones = {
-        'front-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'CETAK MAKS (28 x 38 cm)' },
-        'left-chest': { top: '180px', left: '330px', width: '90px', height: '100px', label: 'DADA KIRI (9 x 10 cm)' },
-        'right-chest': { top: '180px', left: '180px', width: '90px', height: '100px', label: 'DADA KANAN (9 x 10 cm)' },
-        'sleeve-left': { top: '220px', left: '440px', width: '70px', height: '120px', label: 'LENGAN KIRI' },
-        'sleeve-right': { top: '220px', left: '90px', width: '70px', height: '120px', label: 'LENGAN KANAN' },
-        'back-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'BELAKANG PENUH (28 x 38 cm)' },
-        'neck-label': { top: '140px', left: '260px', width: '80px', height: '50px', label: 'LABEL LEHER' }
-      };
-      const z = zones[zone] || zones['front-center'];
-      boundary.style.top = z.top; boundary.style.left = z.left; boundary.style.width = z.width; boundary.style.height = z.height; tag.innerText = z.label;
-      showToast(`Zona cetak: ${zone.toUpperCase()}`);
+      const zones = { 'front-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'CETAK MAKS (28 x 38 cm)' }, 'left-chest': { top: '180px', left: '330px', width: '90px', height: '100px', label: 'DADA KIRI (9 x 10 cm)' }, 'right-chest': { top: '180px', left: '180px', width: '90px', height: '100px', label: 'DADA KANAN (9 x 10 cm)' }, 'sleeve-left': { top: '220px', left: '440px', width: '70px', height: '120px', label: 'LENGAN KIRI' }, 'sleeve-right': { top: '220px', left: '90px', width: '70px', height: '120px', label: 'LENGAN KANAN' }, 'back-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'BELAKANG PENUH (28 x 38 cm)' }, 'neck-label': { top: '140px', left: '260px', width: '80px', height: '50px', label: 'LABEL LEHER' } };
+      const z = zones[zone] || zones['front-center']; boundary.style.top = z.top; boundary.style.left = z.left; boundary.style.width = z.width; boundary.style.height = z.height; tag.innerText = z.label; showToast(`Zona cetak: ${zone.toUpperCase()}`);
     }
-
     function adjustZoom(delta) { state.zoom = Math.min(2.5, Math.max(0.3, state.zoom + delta)); applyZoom(); }
     function resetZoom() { state.zoom = 1.0; applyZoom(); }
     function applyZoom() { document.getElementById('apparel-canvas-frame').style.transform = `scale(${state.zoom})`; document.getElementById('zoom-level-text').innerText = `${Math.round(state.zoom * 100)}%`; }
-
     function updateRulers() {
       const rx = document.getElementById('ruler-x-bar'), ry = document.getElementById('ruler-y-bar'); if (!rx || !ry) return;
       let rxHtml = ''; for (let i = 0; i <= 600; i += 50) { rxHtml += `<span>${(i / UNIT_SCALES[state.unit]).toFixed(0)}</span>`; } rx.innerHTML = rxHtml;
       let ryHtml = ''; for (let i = 0; i <= 700; i += 70) { ryHtml += `<span>${(i / UNIT_SCALES[state.unit]).toFixed(0)}</span>`; } ry.innerHTML = ryHtml;
     }
-
-    function pushHistoryState() {
-      if (state.historyIndex < state.history.length - 1) state.history = state.history.slice(0, state.historyIndex + 1);
-      state.history.push({ objects: JSON.parse(JSON.stringify(state.objects)), colors: JSON.parse(JSON.stringify(state.colors)), garmentId: state.activeGarmentId });
-      state.historyIndex = state.history.length - 1;
-    }
+    function pushHistoryState() { if (state.historyIndex < state.history.length - 1) state.history = state.history.slice(0, state.historyIndex + 1); state.history.push({ objects: JSON.parse(JSON.stringify(state.objects)), colors: JSON.parse(JSON.stringify(state.colors)), garmentId: state.activeGarmentId }); state.historyIndex = state.history.length - 1; }
     function undo() { if (state.historyIndex > 0) { state.historyIndex--; restoreHistoryState(state.history[state.historyIndex]); showToast('Batal dilakukan'); } }
     function redo() { if (state.historyIndex < state.history.length - 1) { state.historyIndex++; restoreHistoryState(state.history[state.historyIndex]); showToast('Ulangi dilakukan'); } }
     function restoreHistoryState(snap) { state.objects = JSON.parse(JSON.stringify(snap.objects)); state.colors = JSON.parse(JSON.stringify(snap.colors)); state.activeGarmentId = snap.garmentId; loadActiveGarmentSVG(); renderObjects(); }
-
     function createNewProject() { if (confirm('Buat proyek baru? Perubahan yang belum disimpan akan hilang.')) { state.objects = []; state.selectedObjectId = null; renderObjects(); pushHistoryState(); showToast('Proyek baru dibuat'); } }
-    function saveProjectJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2)), downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr); downloadAnchor.setAttribute("download", `apparium_project_${Date.now()}.apparium`); document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove(); showToast('Proyek JSON Disimpan');
-    }
-    function loadProjectJSON(e) {
-      const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          const loaded = JSON.parse(evt.target.result);
-          if (loaded.objects && loaded.colors) { state.objects = loaded.objects; state.colors = loaded.colors; state.activeGarmentId = loaded.activeGarmentId || state.activeGarmentId; loadActiveGarmentSVG(); renderObjects(); pushHistoryState(); showToast('Proyek berhasil dimuat!'); }
-        } catch (err) { alert('Format file proyek tidak valid!'); }
-      }; reader.readAsText(file);
-    }
-
+    function saveProjectJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2)), downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr); downloadAnchor.setAttribute("download", `apparium_project_${Date.now()}.apparium`); document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove(); showToast('Proyek JSON Disimpan'); }
+    function loadProjectJSON(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(evt) { try { const loaded = JSON.parse(evt.target.result); if (loaded.objects && loaded.colors) { state.objects = loaded.objects; state.colors = loaded.colors; state.activeGarmentId = loaded.activeGarmentId || state.activeGarmentId; loadActiveGarmentSVG(); renderObjects(); pushHistoryState(); showToast('Proyek berhasil dimuat!'); } } catch (err) { alert('Format file proyek tidak valid!'); } }; reader.readAsText(file); }
     function exportArtwork(format) {
-      if (format === 'svg') {
-        const svgData = new XMLSerializer().serializeToString(document.getElementById('garment-svg-layer')), blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" }), url = URL.createObjectURL(blob), a = document.createElement('a');
-        a.href = url; a.download = `apparium_design_${Date.now()}.svg`; a.click(); showToast('Vektor SVG Diekspor');
-      } else if (format === 'png') {
-        showToast('Menyiapkan Ekspor PNG Resolusi Tinggi...');
-        const canvas = document.createElement('canvas'); canvas.width = 1200; canvas.height = 1400; const ctx = canvas.getContext('2d'), svgElement = document.getElementById('garment-svg-layer'), svgString = new XMLSerializer().serializeToString(svgElement), img = new Image(), svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' }), url = URL.createObjectURL(svgBlob);
-        img.onload = function () { ctx.drawImage(img, 0, 0, 1200, 1400); URL.revokeObjectURL(url); const pngUrl = canvas.toDataURL('image/png'), downloadLink = document.createElement('a'); downloadLink.href = pngUrl; downloadLink.download = `apparium_design_${Date.now()}.png`; document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); showToast('Ekspor PNG Selesai'); }; img.src = url;
-      }
+      if (format === 'svg') { const svgData = new XMLSerializer().serializeToString(document.getElementById('garment-svg-layer')), blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `apparium_design_${Date.now()}.svg`; a.click(); showToast('Vektor SVG Diekspor'); } 
+      else if (format === 'png') { showToast('Menyiapkan Ekspor PNG Resolusi Tinggi...'); const canvas = document.createElement('canvas'); canvas.width = 1200; canvas.height = 1400; const ctx = canvas.getContext('2d'), svgElement = document.getElementById('garment-svg-layer'), svgString = new XMLSerializer().serializeToString(svgElement), img = new Image(), svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' }), url = URL.createObjectURL(svgBlob); img.onload = function () { ctx.drawImage(img, 0, 0, 1200, 1400); URL.revokeObjectURL(url); const pngUrl = canvas.toDataURL('image/png'), downloadLink = document.createElement('a'); downloadLink.href = pngUrl; downloadLink.download = `apparium_design_${Date.now()}.png`; document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); showToast('Ekspor PNG Selesai'); }; img.src = url; }
     }
 
-    /* ========================================================
-       17. MESIN SIMULASI 3D (THREE.JS) - DIPERBAIKI
-       ======================================================== */
+    // SIMULASI 3D
     let threeScene, threeCamera, threeRenderer, threeShirtGroup, threeControls, dirLight, spotLight;
-
-    function toggle3DMockupModal(show) {
-      const modal = document.getElementById('modal-3d-preview');
-      modal.classList.toggle('hidden', !show);
-      if (show && !threeScene) {
-        // PERBAIKAN: Menunggu modal merender ukuran sebelum menjalankan ukuran WebGL
-        setTimeout(() => {
-          init3DSimulation();
-        }, 150);
-      } else if (show && threeScene) {
-        update3DModelColors();
-      }
-    }
-
+    function toggle3DMockupModal(show) { const modal = document.getElementById('modal-3d-preview'); modal.classList.toggle('hidden', !show); if (show && !threeScene) { setTimeout(() => { init3DSimulation(); }, 150); } else if (show && threeScene) { update3DModelColors(); } }
     function init3DSimulation() {
-      const container = document.getElementById('threejs-canvas-container');
-      const w = container.clientWidth || 600;
-      const h = container.clientHeight || 500;
-
-      threeScene = new THREE.Scene();
-      
-      // Setup Kamera Pro
-      threeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-      threeCamera.position.set(0, 1.5, 6);
-
-      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      threeRenderer.setSize(w, h);
-      threeRenderer.setPixelRatio(window.devicePixelRatio);
-      threeRenderer.shadowMap.enabled = true;
-      threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      container.appendChild(threeRenderer.domElement);
-
-      // Pencahayaan Studio
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-      threeScene.add(ambientLight);
-
-      dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      dirLight.position.set(5, 10, 7);
-      dirLight.castShadow = true;
-      threeScene.add(dirLight);
-
-      spotLight = new THREE.SpotLight(0x06b6d4, 1.5);
-      spotLight.position.set(-5, 5, 5);
-      spotLight.angle = Math.PI / 4;
-      spotLight.penumbra = 0.5;
-      threeScene.add(spotLight);
-
-      // Tambahkan Lantai Studio / Grid Helper
-      const gridHelper = new THREE.GridHelper(10, 20, 0x06b6d4, 0x1e293b);
-      gridHelper.position.y = -2;
-      threeScene.add(gridHelper);
-
-      // Pembuatan Kaos 3D Prosedural 
+      const container = document.getElementById('threejs-canvas-container'), w = container.clientWidth || 600, h = container.clientHeight || 500;
+      threeScene = new THREE.Scene(); threeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000); threeCamera.position.set(0, 1.5, 6);
+      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); threeRenderer.setSize(w, h); threeRenderer.setPixelRatio(window.devicePixelRatio); threeRenderer.shadowMap.enabled = true; threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap; container.appendChild(threeRenderer.domElement);
+      threeScene.add(new THREE.AmbientLight(0xffffff, 0.7)); dirLight = new THREE.DirectionalLight(0xffffff, 0.8); dirLight.position.set(5, 10, 7); dirLight.castShadow = true; threeScene.add(dirLight); spotLight = new THREE.SpotLight(0x06b6d4, 1.5); spotLight.position.set(-5, 5, 5); spotLight.angle = Math.PI / 4; spotLight.penumbra = 0.5; threeScene.add(spotLight);
+      const gridHelper = new THREE.GridHelper(10, 20, 0x06b6d4, 0x1e293b); gridHelper.position.y = -2; threeScene.add(gridHelper);
       threeShirtGroup = new THREE.Group();
-
-      const matBase = new THREE.MeshStandardMaterial({ color: state.colors.base, roughness: 0.8, metalness: 0.1 });
-      const matCollar = new THREE.MeshStandardMaterial({ color: state.colors.collar, roughness: 0.9, metalness: 0.0 });
-
-      // Torso (Silinder dipipihkan)
-      const geomTorso = new THREE.CylinderGeometry(1.4, 1.3, 3.5, 32);
-      geomTorso.scale(1, 1, 0.4); 
-      const meshTorso = new THREE.Mesh(geomTorso, matBase);
-      meshTorso.castShadow = true;
-      threeShirtGroup.add(meshTorso);
-
-      // Lengan Kiri
-      const geomSleeveL = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 32);
-      geomSleeveL.scale(1, 1, 0.4);
-      const meshSleeveL = new THREE.Mesh(geomSleeveL, matBase);
-      meshSleeveL.position.set(-1.6, 1.0, 0);
-      meshSleeveL.rotation.z = Math.PI / 4;
-      meshSleeveL.castShadow = true;
-      threeShirtGroup.add(meshSleeveL);
-
-      // Lengan Kanan
-      const geomSleeveR = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 32);
-      geomSleeveR.scale(1, 1, 0.4);
-      const meshSleeveR = new THREE.Mesh(geomSleeveR, matBase);
-      meshSleeveR.position.set(1.6, 1.0, 0);
-      meshSleeveR.rotation.z = -Math.PI / 4;
-      meshSleeveR.castShadow = true;
-      threeShirtGroup.add(meshSleeveR);
-
-      // Kerah / Lubang Leher
-      const geomNeck = new THREE.TorusGeometry(0.65, 0.12, 16, 32);
-      geomNeck.scale(1, 1, 0.4);
-      const meshNeck = new THREE.Mesh(geomNeck, matCollar);
-      meshNeck.position.set(0, 1.75, 0);
-      meshNeck.rotation.x = Math.PI / 2;
-      threeShirtGroup.add(meshNeck);
-
+      const matBase = new THREE.MeshStandardMaterial({ color: state.colors.base, roughness: 0.8, metalness: 0.1 }), matCollar = new THREE.MeshStandardMaterial({ color: state.colors.collar, roughness: 0.9, metalness: 0.0 });
+      const geomTorso = new THREE.CylinderGeometry(1.4, 1.3, 3.5, 32); geomTorso.scale(1, 1, 0.4); const meshTorso = new THREE.Mesh(geomTorso, matBase); meshTorso.castShadow = true; threeShirtGroup.add(meshTorso);
+      const geomSleeveL = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 32); geomSleeveL.scale(1, 1, 0.4); const meshSleeveL = new THREE.Mesh(geomSleeveL, matBase); meshSleeveL.position.set(-1.6, 1.0, 0); meshSleeveL.rotation.z = Math.PI / 4; meshSleeveL.castShadow = true; threeShirtGroup.add(meshSleeveL);
+      const geomSleeveR = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 32); geomSleeveR.scale(1, 1, 0.4); const meshSleeveR = new THREE.Mesh(geomSleeveR, matBase); meshSleeveR.position.set(1.6, 1.0, 0); meshSleeveR.rotation.z = -Math.PI / 4; meshSleeveR.castShadow = true; threeShirtGroup.add(meshSleeveR);
+      const geomNeck = new THREE.TorusGeometry(0.65, 0.12, 16, 32); geomNeck.scale(1, 1, 0.4); const meshNeck = new THREE.Mesh(geomNeck, matCollar); meshNeck.position.set(0, 1.75, 0); meshNeck.rotation.x = Math.PI / 2; threeShirtGroup.add(meshNeck);
       threeScene.add(threeShirtGroup);
-
-      // Kontrol Orbit 360
-      if (THREE.OrbitControls) {
-        threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
-        threeControls.enableDamping = true;
-        threeControls.dampingFactor = 0.05;
-        threeControls.minDistance = 2;
-        threeControls.maxDistance = 10;
-        threeControls.maxPolarAngle = Math.PI / 2 + 0.1; // Batas di bawah lantai
-      }
-
-      function animate() {
-        requestAnimationFrame(animate);
-        if (threeControls) threeControls.update();
-        threeRenderer.render(threeScene, threeCamera);
-      }
-      animate();
-
-      // Penyesuaian Resize untuk 3D
-      window.addEventListener('resize', () => {
-        if (threeCamera && threeRenderer && document.getElementById('modal-3d-preview').classList.contains('hidden') === false) {
-           const nw = container.clientWidth;
-           const nh = container.clientHeight;
-           threeCamera.aspect = nw / nh;
-           threeCamera.updateProjectionMatrix();
-           threeRenderer.setSize(nw, nh);
-        }
-      });
+      if (THREE.OrbitControls) { threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement); threeControls.enableDamping = true; threeControls.dampingFactor = 0.05; threeControls.minDistance = 2; threeControls.maxDistance = 10; threeControls.maxPolarAngle = Math.PI / 2 + 0.1; }
+      function animate() { requestAnimationFrame(animate); if (threeControls) threeControls.update(); threeRenderer.render(threeScene, threeCamera); } animate();
+      window.addEventListener('resize', () => { if (threeCamera && threeRenderer && document.getElementById('modal-3d-preview').classList.contains('hidden') === false) { const nw = container.clientWidth, nh = container.clientHeight; threeCamera.aspect = nw / nh; threeCamera.updateProjectionMatrix(); threeRenderer.setSize(nw, nh); } });
     }
+    function update3DModelColors() { if(!threeShirtGroup) return; threeShirtGroup.children.forEach((child, index) => { if(index === 3) child.material.color.set(state.colors.collar); else child.material.color.set(state.colors.base); }); }
+    function update3DFabricMaterial(preset) { if (!threeShirtGroup) return; threeShirtGroup.children.forEach(child => { const mat = child.material; if (preset === 'satin') { mat.roughness = 0.2; mat.metalness = 0.6; } else if (preset === 'denim') { mat.roughness = 0.95; mat.metalness = 0.0; } else if (preset === 'polyester') { mat.roughness = 0.5; mat.metalness = 0.3; } else { mat.roughness = 0.8; mat.metalness = 0.1; } }); showToast(`Material diperbarui: ${preset.toUpperCase()}`); }
+    function update3DLighting(preset) { if(preset === 'dramatic') { dirLight.intensity = 1.5; spotLight.intensity = 0.5; spotLight.color.setHex(0xffffff); } else if(preset === 'cyberpunk') { dirLight.intensity = 0.5; dirLight.color.setHex(0xec4899); spotLight.intensity = 2.0; spotLight.color.setHex(0x06b6d4); } else { dirLight.intensity = 0.8; dirLight.color.setHex(0xffffff); spotLight.intensity = 1.5; spotLight.color.setHex(0x06b6d4); } showToast(`Pencahayaan diatur: ${preset.toUpperCase()}`); }
+    function capture3DRender() { if (!threeRenderer) return; const imgData = threeRenderer.domElement.toDataURL('image/png'), a = document.createElement('a'); a.href = imgData; a.download = `apparium_3d_render_${Date.now()}.png`; a.click(); showToast('Render 3D Ditangkap!'); }
 
-    function update3DModelColors() {
-      if(!threeShirtGroup) return;
-      threeShirtGroup.children.forEach((child, index) => {
-        if(index === 3) child.material.color.set(state.colors.collar); // Leher
-        else child.material.color.set(state.colors.base); // Torso & Lengan
-      });
-    }
-
-    function update3DFabricMaterial(preset) {
-      if (!threeShirtGroup) return;
-      
-      threeShirtGroup.children.forEach(child => {
-        const mat = child.material;
-        if (preset === 'satin') {
-          mat.roughness = 0.2; mat.metalness = 0.6;
-        } else if (preset === 'denim') {
-          mat.roughness = 0.95; mat.metalness = 0.0;
-        } else if (preset === 'polyester') {
-          mat.roughness = 0.5; mat.metalness = 0.3;
-        } else {
-          mat.roughness = 0.8; mat.metalness = 0.1;
-        }
-      });
-      showToast(`Material diperbarui: ${preset.toUpperCase()}`);
-    }
-
-    function update3DLighting(preset) {
-      if(preset === 'dramatic') {
-        dirLight.intensity = 1.5; spotLight.intensity = 0.5; spotLight.color.setHex(0xffffff);
-      } else if(preset === 'cyberpunk') {
-        dirLight.intensity = 0.5; dirLight.color.setHex(0xec4899); 
-        spotLight.intensity = 2.0; spotLight.color.setHex(0x06b6d4);
-      } else {
-        dirLight.intensity = 0.8; dirLight.color.setHex(0xffffff); 
-        spotLight.intensity = 1.5; spotLight.color.setHex(0x06b6d4);
-      }
-      showToast(`Pencahayaan diatur: ${preset.toUpperCase()}`);
-    }
-
-    function capture3DRender() {
-      if (!threeRenderer) return;
-      const imgData = threeRenderer.domElement.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = imgData; a.download = `apparium_3d_render_${Date.now()}.png`; a.click();
-      showToast('Render 3D Ditangkap!');
-    }
-
-    /* ========================================================
-       18. MESIN TECH PACK
-       ======================================================== */
-    function openTechPackModal() {
-      const modal = document.getElementById('modal-techpack');
-      modal.classList.remove('hidden');
-
-      const item = GARMENT_DATABASE.find(g => g.id === state.activeGarmentId);
-      document.getElementById('tp-garment-title').innerText = item ? item.name.toUpperCase() : 'PAKAIAN KUSTOM';
-      document.getElementById('tp-color-spec').innerText = `Dasar: ${state.colors.base} | Kerah: ${state.colors.collar}`;
-      document.getElementById('tp-dpi').innerText = `${state.dpi} DPI`;
-      document.getElementById('tp-date').innerText = new Date().toISOString().split('T')[0];
-
-      const viewsContainer = document.getElementById('tp-views-container');
-      const angles = ['front', 'back', 'left', 'right'], angleLabels = ['Depan', 'Belakang', 'Samping Kiri', 'Samping Kanan'];
-      viewsContainer.innerHTML = angles.map((a, i) => `
-        <div class="bg-slate-950 p-2 rounded text-center border border-slate-700 shadow-sm">
-          <div class="w-full h-24 flex items-center justify-center mb-2 overflow-hidden">
-            <svg class="w-20 h-22" viewBox="0 0 600 700">
-              ${generateGarmentSVG(state.activeGarmentId, a, state.colors)}
-            </svg>
-          </div>
-          <span class="text-[9px] font-bold text-cyan-400 uppercase tracking-wide">Tampilan ${angleLabels[i]}</span>
-        </div>`).join('');
-
-      const logContainer = document.getElementById('tp-artwork-log');
-      if (state.objects.length === 0) {
-        logContainer.innerHTML = `<p class="text-slate-500 italic">Tidak ada karya seni/lapisan kustom yang ditempatkan pada kanvas.</p>`;
-      } else {
-        logContainer.innerHTML = state.objects.map((obj, i) => `
-          <div class="flex justify-between border-b border-slate-800 py-2 hover:bg-slate-800/50 px-2 rounded transition">
-            <span class="font-semibold text-slate-300">#${i+1} [${obj.type.toUpperCase()}] ${obj.content || obj.shapeType || 'Gambar Aset'}</span>
-            <span class="text-cyan-400">X: ${(obj.x / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit} | Y: ${(obj.y / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit}</span>
-          </div>`).join('');
-      }
-    }
-
+    // TECH PACK
+    function openTechPackModal() { const modal = document.getElementById('modal-techpack'); modal.classList.remove('hidden'); const item = GARMENT_DATABASE.find(g => g.id === state.activeGarmentId); document.getElementById('tp-garment-title').innerText = item ? item.name.toUpperCase() : 'PAKAIAN KUSTOM'; document.getElementById('tp-color-spec').innerText = `Dasar: ${state.colors.base} | Kerah: ${state.colors.collar}`; document.getElementById('tp-dpi').innerText = `${state.dpi} DPI`; document.getElementById('tp-date').innerText = new Date().toISOString().split('T')[0]; const viewsContainer = document.getElementById('tp-views-container'); const angles = ['front', 'back', 'left', 'right'], angleLabels = ['Depan', 'Belakang', 'Samping Kiri', 'Samping Kanan']; viewsContainer.innerHTML = angles.map((a, i) => `<div class="bg-slate-950 p-2 rounded text-center border border-slate-700 shadow-sm"><div class="w-full h-24 flex items-center justify-center mb-2 overflow-hidden"><svg class="w-20 h-22" viewBox="0 0 600 700">${generateGarmentSVG(state.activeGarmentId, a, state.colors)}</svg></div><span class="text-[9px] font-bold text-cyan-400 uppercase tracking-wide">Tampilan ${angleLabels[i]}</span></div>`).join(''); const logContainer = document.getElementById('tp-artwork-log'); if (state.objects.length === 0) { logContainer.innerHTML = `<p class="text-slate-500 italic">Tidak ada karya seni/lapisan kustom yang ditempatkan pada kanvas.</p>`; } else { logContainer.innerHTML = state.objects.map((obj, i) => `<div class="flex justify-between border-b border-slate-800 py-2 hover:bg-slate-800/50 px-2 rounded transition"><span class="font-semibold text-slate-300">#${i+1} [${obj.type.toUpperCase()}] ${obj.content || obj.shapeType || 'Gambar Aset'}</span><span class="text-cyan-400">X: ${(obj.x / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit} | Y: ${(obj.y / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit}</span></div>`).join(''); } }
     function toggleTechPackModal(show) { document.getElementById('modal-techpack').classList.toggle('hidden', !show); }
   </script>
 </body>
