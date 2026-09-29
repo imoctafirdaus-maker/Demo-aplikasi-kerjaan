@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#111827">
   <title>KREAVIO - Desain Apapun, Langsung dari HP</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -23,79 +22,95 @@
     }
   </script>
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Dancing+Script:wght@700&family=Inter:wght@400;500;600;700&family=Lobster&family=Montserrat:wght@400;700;900&family=Oswald:wght@500;700&family=Playfair+Display:ital,wght@0,600;1,400&family=Righteous&display=swap" rel="stylesheet">
-
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <!-- html2canvas for Exporting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
-    /* Base Mobile Optimizations */
+    :root {
+      --sat: env(safe-area-inset-top);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+      --sar: env(safe-area-inset-right);
+    }
     body {
       overscroll-behavior-y: none;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: pan-x pan-y;
+      touch-action: none; 
     }
+    .scrollable { touch-action: pan-y; }
+    .scrollable-x { touch-action: pan-x; }
     
-    /* Hide Scrollbar but keep functionality */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Canvas Area Pattern */
     .canvas-bg {
       background-color: #1f2937;
       background-image: radial-gradient(#374151 1px, transparent 1px);
       background-size: 20px 20px;
     }
 
-    /* Object & Selection Styles */
     .canvas-object {
       position: absolute;
-      transform-origin: top left;
-      will-change: transform;
+      transform-origin: center;
+      will-change: transform, width, height;
       cursor: pointer;
       pointer-events: auto;
     }
     .canvas-object.locked { pointer-events: none; }
     
+    #artboard {
+      transform-origin: 0 0;
+      background-color: #ffffff;
+      position: absolute;
+      left: 0; top: 0;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    
     .selection-box {
       position: absolute;
       border: 2px solid #0ea5e9;
       pointer-events: none;
-      z-index: 50;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+      z-index: 9999;
+      transform-origin: center;
     }
+    
     .handle {
       position: absolute;
-      width: 14px; height: 14px;
+      width: 24px; height: 24px;
       background: #fff;
       border: 2px solid #0ea5e9;
       border-radius: 50%;
       pointer-events: auto;
-      z-index: 51;
+      z-index: 10000;
       transform: translate(-50%, -50%);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
+    
+    /* Invariant visual size for handles regardless of canvas zoom */
     .handle-tl { top: 0; left: 0; cursor: nwse-resize; }
     .handle-tr { top: 0; left: 100%; cursor: nesw-resize; }
     .handle-bl { top: 100%; left: 0; cursor: nesw-resize; }
     .handle-br { top: 100%; left: 100%; cursor: nwse-resize; }
-    .handle-rot { top: -30px; left: 50%; cursor: grab; background: #0ea5e9; border: 2px solid #fff;}
+    
+    .handle-rot { 
+      top: -40px; left: 50%; 
+      cursor: grab; background: #0ea5e9; border: 2px solid #fff; 
+      display: flex; align-items: center; justify-content: center;
+    }
     .rot-line {
-      position: absolute; top: -30px; left: 50%; width: 2px; height: 30px;
+      position: absolute; top: -40px; left: 50%; width: 2px; height: 40px;
       background: #0ea5e9; transform: translateX(-50%);
     }
 
-    /* Bottom Sheet Animation */
     .bottom-sheet {
       transform: translateY(100%);
       transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      padding-bottom: var(--sab);
     }
     .bottom-sheet.open { transform: translateY(0); }
     .sheet-backdrop {
@@ -104,65 +119,76 @@
     }
     .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
     
-    /* Toast Animation */
     @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px) translateX(-50%); } to { opacity: 1; transform: translateY(0) translateX(-50%); } }
     .toast-anim { animation: slideUpFade 0.3s ease-out forwards; }
+    
+    .screen-view { padding-top: var(--sat); }
+    .nav-bottom { padding-bottom: calc(var(--sab) + 0.5rem); }
+
+    /* Snap Guidelines */
+    .guideline {
+      position: absolute;
+      background: #f43f5e;
+      z-index: 9998;
+      pointer-events: none;
+      display: none;
+    }
+    .guideline.v { width: 1px; height: 100%; top: 0; }
+    .guideline.h { height: 1px; width: 100%; left: 0; }
   </style>
 </head>
 <body class="bg-gray-950 text-white h-[100dvh] w-full overflow-hidden flex flex-col font-sans relative">
 
-  <!-- ==================== TOAST NOTIFICATION ==================== -->
+  <!-- ==================== TOAST & INDICATORS ==================== -->
   <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium z-[100] hidden flex items-center gap-2">
     <i data-lucide="info" class="w-4 h-4 text-brand-400"></i> <span id="toast-msg">Notifikasi</span>
   </div>
 
+  <div id="rotation-toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-brand-500 text-white px-3 py-1 rounded-full text-xs font-bold z-[110] hidden shadow-lg">0°</div>
+
   <!-- ==================== SCREEN: HOME ==================== -->
-  <div id="screen-home" class="flex-1 flex flex-col h-full w-full absolute inset-0 z-10 bg-gray-950 transition-opacity duration-300">
-    <!-- Header -->
-    <header class="pt-10 pb-4 px-5 bg-gray-900 border-b border-gray-800 flex justify-between items-center shrink-0">
+  <div id="screen-home" class="screen-view flex-1 flex flex-col h-full w-full absolute inset-0 z-10 bg-gray-950 transition-opacity duration-300">
+    <header class="pt-6 pb-4 px-5 bg-gray-900 border-b border-gray-800 flex justify-between items-center shrink-0">
       <div>
         <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
           <span class="bg-brand-500 text-white rounded-lg p-1.5"><i data-lucide="layers" class="w-5 h-5"></i></span>KREAVIO
         </h1>
         <p class="text-gray-400 text-sm mt-1">Halo! Apa yang ingin kamu desain?</p>
       </div>
-      <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center border border-gray-700">
+      <button onclick="navigateTo('profile')" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center border border-gray-700 active:scale-95 transition" aria-label="Profil">
         <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
-      </div>
+      </button>
     </header>
 
-    <!-- Content -->
-    <main class="flex-1 overflow-y-auto no-scrollbar pb-24">
-      <!-- Search -->
+    <main class="flex-1 overflow-y-auto no-scrollbar pb-24 scrollable">
       <div class="px-5 py-4">
         <div class="relative">
           <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
-          <input type="text" placeholder="Cari template, mockup, font..." class="w-full bg-gray-900 border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 transition text-white placeholder-gray-500">
+          <input type="text" id="global-search-input" placeholder="Cari proyek, template..." class="w-full bg-gray-900 border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 transition text-white placeholder-gray-500 scrollable" oninput="handleGlobalSearch(this.value)">
         </div>
       </div>
 
-      <!-- Quick Actions -->
       <div class="px-5 mb-6">
         <div class="grid grid-cols-4 gap-3">
-          <button onclick="openNewProjectModal()" class="flex flex-col items-center gap-2 group">
+          <button onclick="openNewProjectModal()" class="flex flex-col items-center gap-2 group" aria-label="Desain Baru">
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg group-active:scale-95 transition">
               <i data-lucide="plus" class="w-6 h-6 text-white"></i>
             </div>
-            <span class="text-[10px] font-medium text-gray-300">Desain Baru</span>
+            <span class="text-[10px] font-medium text-gray-300">Desain</span>
           </button>
-          <button onclick="showToast('Segera Hadir: Pusat Mockup')" class="flex flex-col items-center gap-2 group">
+          <button onclick="navigateTo('mockups')" class="flex flex-col items-center gap-2 group" aria-label="Mockup">
             <div class="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center border border-gray-700 group-active:scale-95 transition">
               <i data-lucide="shirt" class="w-6 h-6 text-gray-300"></i>
             </div>
             <span class="text-[10px] font-medium text-gray-300">Mockup</span>
           </button>
-          <button onclick="showToast('Segera Hadir: Template')" class="flex flex-col items-center gap-2 group">
+          <button onclick="navigateTo('templates')" class="flex flex-col items-center gap-2 group" aria-label="Template">
             <div class="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center border border-gray-700 group-active:scale-95 transition">
               <i data-lucide="layout-template" class="w-6 h-6 text-gray-300"></i>
             </div>
             <span class="text-[10px] font-medium text-gray-300">Template</span>
           </button>
-          <button onclick="showToast('Segera Hadir: AI Studio')" class="flex flex-col items-center gap-2 group">
+          <button onclick="showToast('AI Studio aktif dalam pembaruan berikutnya')" class="flex flex-col items-center gap-2 group" aria-label="AI Studio">
             <div class="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center border border-gray-700 group-active:scale-95 transition">
               <i data-lucide="sparkles" class="w-6 h-6 text-purple-400"></i>
             </div>
@@ -171,64 +197,135 @@
         </div>
       </div>
 
-      <!-- Recent Projects -->
       <div class="px-5 mb-6">
         <div class="flex justify-between items-end mb-3">
           <h2 class="text-sm font-bold text-white">Proyek Terakhir</h2>
-          <button class="text-[10px] text-brand-400 font-medium">Lihat Semua</button>
+          <button onclick="navigateTo('projects')" class="text-[10px] text-brand-400 font-medium">Lihat Semua</button>
         </div>
-        <div id="empty-state-projects" class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
-          <div class="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
-            <i data-lucide="folder-open" class="w-5 h-5 text-gray-500"></i>
-          </div>
-          <h3 class="text-sm font-semibold text-gray-200 mb-1">Belum ada proyek</h3>
-          <p class="text-xs text-gray-500 mb-4">Mulai desain pertamamu sekarang.</p>
-          <button onclick="openNewProjectModal()" class="bg-white text-gray-950 px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition">+ Buat Desain</button>
+        <div id="projects-container" class="space-y-3">
+          <!-- Populated dynamically -->
         </div>
       </div>
     </main>
 
-    <!-- Bottom Nav -->
-    <nav class="absolute bottom-0 w-full bg-gray-900 border-t border-gray-800 pb-safe pt-2 px-6 flex justify-between items-center h-16 shrink-0 z-20">
-      <button class="flex flex-col items-center gap-1 text-brand-400">
+    <nav class="absolute bottom-0 w-full bg-gray-900 border-t border-gray-800 nav-bottom pt-2 px-6 flex justify-between items-center h-[72px] shrink-0 z-20">
+      <button onclick="navigateTo('home')" class="nav-btn-home flex flex-col items-center gap-1 text-brand-400" aria-label="Beranda">
         <i data-lucide="home" class="w-5 h-5"></i><span class="text-[9px] font-semibold">Beranda</span>
       </button>
-      <button onclick="showToast('Menu Proyek')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition">
+      <button onclick="navigateTo('projects')" class="nav-btn-projects flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition" aria-label="Proyek">
         <i data-lucide="folder" class="w-5 h-5"></i><span class="text-[9px] font-medium">Proyek</span>
       </button>
-      <button onclick="openNewProjectModal()" class="flex flex-col items-center justify-center w-12 h-12 bg-brand-500 text-white rounded-full shadow-lg -translate-y-3 active:scale-95 transition">
+      <button onclick="openNewProjectModal()" class="flex flex-col items-center justify-center w-12 h-12 bg-brand-500 text-white rounded-full shadow-lg -translate-y-4 active:scale-95 transition" aria-label="Buat Desain Baru">
         <i data-lucide="plus" class="w-6 h-6"></i>
       </button>
-      <button onclick="showToast('Menu Template')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition">
+      <button onclick="navigateTo('templates')" class="nav-btn-templates flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition" aria-label="Template">
         <i data-lucide="layout" class="w-5 h-5"></i><span class="text-[9px] font-medium">Template</span>
       </button>
-      <button onclick="showToast('Menu Profil')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition">
+      <button onclick="navigateTo('profile')" class="nav-btn-profile flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition" aria-label="Profil">
         <i data-lucide="user" class="w-5 h-5"></i><span class="text-[9px] font-medium">Profil</span>
       </button>
     </nav>
   </div>
 
-  <!-- MODAL: BUAT DESAIN BARU -->
+  <!-- ==================== SCREEN: PROJECTS ==================== -->
+  <div id="screen-projects" class="screen-view flex-1 flex flex-col h-full w-full absolute inset-0 z-10 bg-gray-950 hidden opacity-0 transition-opacity duration-300">
+    <header class="pt-6 pb-4 px-5 bg-gray-900 border-b border-gray-800 flex justify-between items-center shrink-0">
+      <h1 class="text-xl font-bold">Semua Proyek</h1>
+      <button onclick="openNewProjectModal()" class="bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">+ Proyek</button>
+    </header>
+    <main class="flex-1 overflow-y-auto scrollable p-5 pb-24 space-y-3" id="all-projects-list"></main>
+  </div>
+
+  <!-- ==================== SCREEN: TEMPLATES ==================== -->
+  <div id="screen-templates" class="screen-view flex-1 flex flex-col h-full w-full absolute inset-0 z-10 bg-gray-950 hidden opacity-0 transition-opacity duration-300">
+    <header class="pt-6 pb-4 px-5 bg-gray-900 border-b border-gray-800 shrink-0">
+      <h1 class="text-xl font-bold mb-3">Pusat Template</h1>
+      <div class="flex gap-2 overflow-x-auto no-scrollbar scrollable-x pb-1" id="template-categories">
+        <button onclick="filterTemplates('Semua')" class="cat-btn px-3 py-1 bg-brand-500 text-white rounded-full text-xs font-medium flex-none">Semua</button>
+        <button onclick="filterTemplates('Instagram')" class="cat-btn px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-xs font-medium flex-none">Instagram</button>
+        <button onclick="filterTemplates('Poster')" class="cat-btn px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-xs font-medium flex-none">Poster</button>
+        <button onclick="filterTemplates('Fashion')" class="cat-btn px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-xs font-medium flex-none">Fashion</button>
+        <button onclick="filterTemplates('Business')" class="cat-btn px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-xs font-medium flex-none">Business</button>
+      </div>
+    </header>
+    <main class="flex-1 overflow-y-auto scrollable p-5 pb-24 grid grid-cols-2 gap-4" id="templates-grid"></main>
+  </div>
+
+  <!-- ==================== SCREEN: MOCKUPS ==================== -->
+  <div id="screen-mockups" class="screen-view flex-1 flex flex-col h-full w-full absolute inset-0 z-10 bg-gray-950 hidden opacity-0 transition-opacity duration-300">
+    <header class="pt-6 pb-4 px-5 bg-gray-900 border-b border-gray-800 shrink-0">
+      <h1 class="text-xl font-bold">Pusat Mockup</h1>
+      <p class="text-xs text-gray-400 mt-1">Pilih media untuk pratinjau desain produk Anda.</p>
+    </header>
+    <main class="flex-1 overflow-y-auto scrollable p-5 pb-24 grid grid-cols-2 gap-4" id="mockups-grid"></main>
+  </div>
+
+  <!-- ==================== SCREEN: PROFILE ==================== -->
+  <div id="screen-profile" class="screen-view flex-1 flex flex-col h-full w-full absolute inset-0 z-10 bg-gray-950 hidden opacity-0 transition-opacity duration-300">
+    <header class="pt-6 pb-4 px-5 bg-gray-900 border-b border-gray-800 shrink-0">
+      <h1 class="text-xl font-bold">Profil & Pengaturan</h1>
+    </header>
+    <main class="flex-1 overflow-y-auto scrollable p-5 pb-24 space-y-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center gap-4">
+        <div class="w-16 h-16 bg-brand-500 rounded-full flex items-center justify-center text-2xl font-bold text-white">K</div>
+        <div>
+          <h2 class="font-bold text-base">Kreator Kreavio</h2>
+          <p class="text-xs text-gray-400">kreator@kreavio.app</p>
+          <span class="inline-block bg-brand-500/20 text-brand-400 text-[10px] px-2 py-0.5 rounded mt-1 font-semibold">Akun Pro</span>
+        </div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Pengaturan Aplikasi</h3>
+        <div class="flex justify-between items-center py-2 border-b border-gray-800">
+          <span class="text-sm">Simpan Otomatis</span>
+          <input type="checkbox" id="setting-autosave" checked class="accent-brand-500 w-4 h-4" onchange="appConfig.autosave = this.checked">
+        </div>
+        <div class="flex justify-between items-center py-2 border-b border-gray-800">
+          <span class="text-sm">Kualitas Ekspor</span>
+          <select id="setting-quality" class="bg-gray-950 border border-gray-700 text-xs rounded px-2 py-1 outline-none" onchange="appConfig.quality = parseInt(this.value)">
+            <option value="1">Standar (1x)</option>
+            <option value="2" selected>Tinggi (2x)</option>
+            <option value="3">Maksimal (3x)</option>
+          </select>
+        </div>
+        <div class="flex justify-between items-center py-2 border-b border-gray-800">
+          <span class="text-sm">Tema</span>
+          <span class="text-xs text-gray-400 font-medium">Gelap</span>
+        </div>
+        <div class="flex justify-between items-center py-2">
+          <span class="text-sm">Bahasa</span>
+          <span class="text-xs text-gray-400 font-medium">Bahasa Indonesia</span>
+        </div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-2">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Tentang KREAVIO</h3>
+        <p class="text-xs text-gray-400 leading-relaxed">Platform desain grafis mobile-first dengan arsitektur canvas presisi tinggi.</p>
+        <p class="text-[10px] text-gray-500 pt-2">Versi 3.0.0 Pro (Stable Release)</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== MODAL: NEW PROJECT ==================== -->
   <div id="modal-new-project" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col justify-end backdrop-blur-sm transition-opacity">
-    <div class="bg-gray-900 w-full rounded-t-3xl p-5 border-t border-gray-800 transform transition-transform translate-y-full" id="modal-new-project-content">
+    <div class="bg-gray-900 w-full rounded-t-3xl p-5 border-t border-gray-800 transform transition-transform translate-y-full nav-bottom scrollable" id="modal-new-project-content">
       <div class="flex justify-between items-center mb-5">
-        <h3 class="font-bold text-lg">Pilih Ukuran</h3>
-        <button onclick="closeNewProjectModal()" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <h3 class="font-bold text-lg">Pilih Ukuran Kanvas</h3>
+        <button onclick="closeNewProjectModal()" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div class="grid grid-cols-2 gap-3 mb-5">
-        <button onclick="startProject(1080, 1080, 'Instagram Post')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
+        <button onclick="initNewProject(1080, 1080, 'Instagram Post')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
           <i data-lucide="instagram" class="w-5 h-5 text-pink-500 mb-2"></i>
           <h4 class="text-sm font-bold">Instagram Post</h4><p class="text-[10px] text-gray-400">1080 x 1080 px</p>
         </button>
-        <button onclick="startProject(1080, 1920, 'Instagram Story')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
+        <button onclick="initNewProject(1080, 1920, 'Instagram Story')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
           <i data-lucide="smartphone" class="w-5 h-5 text-purple-400 mb-2"></i>
           <h4 class="text-sm font-bold">IG Story / TikTok</h4><p class="text-[10px] text-gray-400">1080 x 1920 px</p>
         </button>
-        <button onclick="startProject(2480, 3508, 'Poster A4')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
+        <button onclick="initNewProject(2480, 3508, 'Poster A4')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
           <i data-lucide="file-text" class="w-5 h-5 text-blue-400 mb-2"></i>
           <h4 class="text-sm font-bold">Poster A4</h4><p class="text-[10px] text-gray-400">2480 x 3508 px</p>
         </button>
-        <button onclick="startProject(2000, 2000, 'Desain Kaos')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
+        <button onclick="initNewProject(2000, 2000, 'Desain Kaos')" class="bg-gray-800 border border-gray-700 p-3 rounded-xl text-left active:bg-gray-700 transition">
           <i data-lucide="shirt" class="w-5 h-5 text-green-400 mb-2"></i>
           <h4 class="text-sm font-bold">Desain Apparel</h4><p class="text-[10px] text-gray-400">2000 x 2000 px</p>
         </button>
@@ -236,9 +333,9 @@
       <div class="border-t border-gray-800 pt-4">
         <p class="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wider">Ukuran Kustom (Px)</p>
         <div class="flex gap-3">
-          <input type="number" id="custom-w" placeholder="Lebar" value="1080" class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-center focus:border-brand-500 outline-none">
+          <input type="number" id="custom-w" placeholder="Lebar" value="1080" class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-center focus:border-brand-500 outline-none scrollable">
           <div class="flex items-center justify-center text-gray-500"><i data-lucide="x" class="w-3 h-3"></i></div>
-          <input type="number" id="custom-h" placeholder="Tinggi" value="1080" class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-center focus:border-brand-500 outline-none">
+          <input type="number" id="custom-h" placeholder="Tinggi" value="1080" class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-center focus:border-brand-500 outline-none scrollable">
           <button onclick="startCustomProject()" class="bg-white text-gray-900 px-4 py-2 rounded-lg font-bold text-sm shadow">Buat</button>
         </div>
       </div>
@@ -246,83 +343,76 @@
   </div>
 
   <!-- ==================== SCREEN: EDITOR ==================== -->
-  <div id="screen-editor" class="flex-1 flex flex-col h-full w-full absolute inset-0 z-20 bg-gray-950 hidden opacity-0 transition-opacity duration-300">
+  <div id="screen-editor" class="screen-view flex-1 flex flex-col h-full w-full absolute inset-0 z-20 bg-gray-950 hidden opacity-0 transition-opacity duration-300">
     
-    <!-- Top Bar -->
-    <header class="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2 sm:px-4 z-40 shrink-0 pt-safe">
+    <header class="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2 sm:px-4 z-40 shrink-0">
       <div class="flex items-center gap-1">
-        <button onclick="closeEditor()" class="p-2 text-gray-400 hover:text-white rounded-lg"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+        <button onclick="closeEditor()" class="p-2 text-gray-400 hover:text-white rounded-lg" aria-label="Keluar"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
         <div class="flex flex-col">
           <span id="project-title" class="text-xs font-bold truncate max-w-[100px] sm:max-w-[150px]">Desain Baru</span>
           <span class="text-[9px] text-gray-500" id="project-size-label">1080 x 1080</span>
         </div>
       </div>
       <div class="flex items-center gap-1">
-        <button onclick="undo()" class="p-2 text-gray-400 hover:text-white rounded-lg disabled:opacity-30"><i data-lucide="undo-2" class="w-4 h-4"></i></button>
-        <button onclick="redo()" class="p-2 text-gray-400 hover:text-white rounded-lg disabled:opacity-30"><i data-lucide="redo-2" class="w-4 h-4"></i></button>
+        <button id="btn-undo" onclick="undo()" class="p-2 text-gray-400 hover:text-white rounded-lg opacity-30" aria-label="Undo" disabled><i data-lucide="undo-2" class="w-4 h-4"></i></button>
+        <button id="btn-redo" onclick="redo()" class="p-2 text-gray-400 hover:text-white rounded-lg opacity-30" aria-label="Redo" disabled><i data-lucide="redo-2" class="w-4 h-4"></i></button>
         <div class="w-[1px] h-4 bg-gray-700 mx-1"></div>
-        <button onclick="exportDesign()" class="ml-1 bg-brand-500 hover:bg-brand-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow">
+        <button onclick="exportDesign()" class="ml-1 bg-brand-500 hover:bg-brand-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow" aria-label="Ekspor">
           <i data-lucide="download" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Ekspor</span>
         </button>
       </div>
     </header>
 
-    <!-- Canvas Area -->
-    <main id="canvas-container" class="flex-1 relative overflow-hidden canvas-bg flex items-center justify-center touch-none">
-      <!-- Scale Wrapper for Zoom/Pan -->
-      <div id="canvas-workspace" class="relative" style="transform: scale(1) translate(0px, 0px); transform-origin: center;">
-        <!-- The actual Artboard -->
-        <div id="artboard" class="bg-white shadow-2xl relative overflow-hidden ring-1 ring-gray-800" style="width: 1080px; height: 1080px;">
-          <!-- Objects injected here -->
-        </div>
-        <!-- Selection/Transform Overlay -->
-        <div id="selection-overlay" class="selection-box hidden">
-          <div class="handle handle-tl" data-dir="tl"></div>
-          <div class="handle handle-tr" data-dir="tr"></div>
-          <div class="handle handle-bl" data-dir="bl"></div>
-          <div class="handle handle-br" data-dir="br"></div>
-          <div class="rot-line"></div>
-          <div class="handle handle-rot" data-dir="rot"><i data-lucide="rotate-cw" class="w-2.5 h-2.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i></div>
+    <main id="canvas-container" class="flex-1 relative overflow-hidden canvas-bg flex items-center justify-center">
+      <div id="canvas-workspace" class="absolute left-0 top-0 w-full h-full pointer-events-none" style="transform-origin: 0 0;">
+        <div id="artboard">
+          <!-- Guidelines -->
+          <div id="guide-v" class="guideline v"></div>
+          <div id="guide-h" class="guideline h"></div>
         </div>
       </div>
       
-      <!-- Zoom Indicator -->
-      <div class="absolute top-4 right-4 bg-gray-900/80 backdrop-blur rounded-full px-3 py-1 border border-gray-800 text-[10px] font-medium text-gray-300 z-30 flex gap-3 items-center shadow-lg">
-        <button onclick="adjustCanvasZoom(-0.1)" class="p-1"><i data-lucide="minus" class="w-3 h-3"></i></button>
-        <span id="zoom-label">100%</span>
-        <button onclick="adjustCanvasZoom(0.1)" class="p-1"><i data-lucide="plus" class="w-3 h-3"></i></button>
+      <!-- Zoom UI -->
+      <div class="absolute top-4 right-4 bg-gray-900/90 backdrop-blur rounded-full px-3 py-1 border border-gray-800 text-[10px] font-medium text-gray-300 z-30 flex gap-2 items-center shadow-lg">
+        <button onclick="adjustCanvasZoom(-0.1)" class="p-1 hover:text-white" aria-label="Zoom Out"><i data-lucide="minus" class="w-3 h-3"></i></button>
+        <span id="zoom-label" class="cursor-pointer font-mono w-10 text-center" onclick="resetZoom()">100%</span>
+        <button onclick="adjustCanvasZoom(0.1)" class="p-1 hover:text-white" aria-label="Zoom In"><i data-lucide="plus" class="w-3 h-3"></i></button>
+        <button onclick="fitCanvas()" class="text-[9px] text-brand-400 font-bold ml-1 px-1.5 py-0.5 bg-brand-500/10 rounded">Fit</button>
       </div>
     </main>
 
     <!-- Contextual Bottom Toolbar -->
-    <footer class="bg-gray-900 border-t border-gray-800 pb-safe z-40 shrink-0">
-      <div id="toolbar-default" class="flex overflow-x-auto no-scrollbar items-center px-2 py-3 gap-1">
-        <button onclick="addText()" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition">
+    <footer class="bg-gray-900 border-t border-gray-800 nav-bottom z-40 shrink-0">
+      <div id="toolbar-default" class="flex overflow-x-auto no-scrollbar scrollable-x items-center px-2 py-3 gap-1">
+        <button onclick="addText()" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition" aria-label="Teks">
           <i data-lucide="type" class="w-5 h-5 text-white mb-1"></i><span class="text-[9px] font-medium text-gray-300">Teks</span>
         </button>
-        <button onclick="document.getElementById('image-upload').click()" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition">
+        <button onclick="document.getElementById('image-upload').click()" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition" aria-label="Gambar">
           <i data-lucide="image" class="w-5 h-5 text-white mb-1"></i><span class="text-[9px] font-medium text-gray-300">Gambar</span>
           <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="addImage(event)">
         </button>
-        <button onclick="openSheet('sheet-shape')" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition">
+        <button onclick="openSheet('sheet-shape')" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition" aria-label="Bentuk">
           <i data-lucide="square" class="w-5 h-5 text-white mb-1"></i><span class="text-[9px] font-medium text-gray-300">Bentuk</span>
         </button>
-        <button onclick="openSheet('sheet-bg')" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition">
+        <button onclick="openSheet('sheet-bg')" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition" aria-label="Latar">
           <i data-lucide="droplet" class="w-5 h-5 text-white mb-1"></i><span class="text-[9px] font-medium text-gray-300">Latar</span>
         </button>
         <div class="w-[1px] h-8 bg-gray-700 mx-1 flex-none"></div>
-        <button onclick="openSheet('sheet-layers')" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition">
+        <button onclick="openSheet('sheet-layers')" class="flex-none flex flex-col items-center justify-center w-[72px] h-14 bg-gray-800 rounded-xl hover:bg-gray-700 transition" aria-label="Lapisan">
           <i data-lucide="layers" class="w-5 h-5 text-white mb-1"></i><span class="text-[9px] font-medium text-gray-300">Lapisan</span>
         </button>
       </div>
 
       <!-- Toolbar for Selected Object -->
-      <div id="toolbar-selected" class="flex overflow-x-auto no-scrollbar items-center px-2 py-3 gap-1 hidden bg-brand-900/20">
-        <button onclick="deleteSelected()" class="flex-none flex flex-col items-center justify-center w-14 h-14 bg-red-500/20 rounded-xl text-red-400">
-          <i data-lucide="trash-2" class="w-5 h-5 mb-1"></i><span class="text-[9px] font-medium">Hapus</span>
+      <div id="toolbar-selected" class="flex overflow-x-auto no-scrollbar scrollable-x items-center px-2 py-3 gap-1 hidden bg-brand-900/20">
+        <button onclick="deleteSelected()" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-red-500/20 rounded-xl text-red-400" aria-label="Hapus">
+          <i data-lucide="trash-2" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Hapus</span>
         </button>
-        <button onclick="duplicateSelected()" class="flex-none flex flex-col items-center justify-center w-14 h-14 bg-gray-800 rounded-xl text-gray-300">
-          <i data-lucide="copy" class="w-5 h-5 mb-1"></i><span class="text-[9px] font-medium">Duplikat</span>
+        <button onclick="duplicateSelected()" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-gray-800 rounded-xl text-gray-300" aria-label="Duplikat">
+          <i data-lucide="copy" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Duplikat</span>
+        </button>
+        <button onclick="openSheet('sheet-align')" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-gray-800 rounded-xl text-gray-300" aria-label="Ratakan">
+          <i data-lucide="align-center" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Ratakan</span>
         </button>
         <div class="w-[1px] h-8 bg-gray-700 mx-1 flex-none"></div>
         
@@ -330,11 +420,11 @@
         <div id="tool-options-dynamic" class="flex gap-1 items-center flex-nowrap"></div>
         
         <div class="w-[1px] h-8 bg-gray-700 mx-1 flex-none"></div>
-        <button onclick="openSheet('sheet-opacity')" class="flex-none flex flex-col items-center justify-center w-16 h-14 bg-gray-800 rounded-xl text-gray-300">
-          <i data-lucide="blend" class="w-5 h-5 mb-1"></i><span class="text-[9px] font-medium">Kejelasan</span>
+        <button onclick="openSheet('sheet-opacity')" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-gray-800 rounded-xl text-gray-300" aria-label="Kejelasan">
+          <i data-lucide="blend" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Opasitas</span>
         </button>
-        <button onclick="openSheet('sheet-layers')" class="flex-none flex flex-col items-center justify-center w-16 h-14 bg-gray-800 rounded-xl text-gray-300">
-          <i data-lucide="layers" class="w-5 h-5 mb-1"></i><span class="text-[9px] font-medium">Lapisan</span>
+        <button onclick="openSheet('sheet-layers')" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-gray-800 rounded-xl text-gray-300" aria-label="Lapisan">
+          <i data-lucide="layers" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Lapisan</span>
         </button>
       </div>
     </footer>
@@ -344,127 +434,232 @@
   <div id="global-backdrop" class="fixed inset-0 bg-black/60 z-50 sheet-backdrop" onclick="closeAllSheets()"></div>
 
   <!-- Sheet: Edit Text -->
-  <div id="sheet-text-edit" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet pb-safe flex flex-col max-h-[80vh]">
+  <div id="sheet-text-edit" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet flex flex-col max-h-[85vh]">
     <div class="p-4 border-b border-gray-800 flex justify-between items-center shrink-0">
-      <h3 class="font-bold text-sm">Edit Teks</h3>
-      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <h3 class="font-bold text-sm">Edit Teks & Properti</h3>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
-    <div class="p-5 overflow-y-auto space-y-4">
+    <div class="p-5 overflow-y-auto scrollable space-y-4">
       <div>
         <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Isi Teks</label>
-        <textarea id="inp-text-content" rows="2" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brand-500" oninput="updateSelected('text', this.value)"></textarea>
+        <textarea id="inp-text-content" rows="2" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brand-500 scrollable" oninput="updateProp('text', this.value, true)"></textarea>
       </div>
       <div>
         <label class="text-[10px] text-gray-400 uppercase font-bold mb-2 block">Pilih Font</label>
-        <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1" id="font-list-container">
-          <!-- Populated by JS -->
+        <div class="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto scrollable pr-1" id="font-list-container"></div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-1">
+          <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Warna Teks</label>
+          <input type="color" id="inp-text-color" class="w-full h-10 rounded-lg cursor-pointer bg-transparent border border-gray-700 p-1" onchange="updateProp('color', this.value)">
+        </div>
+        <div class="flex items-end gap-2 pb-1">
+          <button id="btn-bold" onclick="toggleFormat('fontWeight', 'bold', 'normal')" class="w-10 h-10 bg-gray-800 border border-gray-700 rounded-lg font-bold flex items-center justify-center text-sm">B</button>
+          <button id="btn-italic" onclick="toggleFormat('fontStyle', 'italic', 'normal')" class="w-10 h-10 bg-gray-800 border border-gray-700 rounded-lg italic flex items-center justify-center text-sm">I</button>
         </div>
       </div>
       <div>
-        <label class="text-[10px] text-gray-400 uppercase font-bold mb-2 block">Warna Teks</label>
-        <div class="flex gap-3">
-          <input type="color" id="inp-text-color" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0 p-0" onchange="updateSelected('color', this.value)">
-          <div class="flex-1 flex gap-2 overflow-x-auto no-scrollbar items-center">
-            <button onclick="updateSelected('color', '#ffffff')" class="w-8 h-8 rounded-full bg-white border border-gray-600 flex-none"></button>
-            <button onclick="updateSelected('color', '#000000')" class="w-8 h-8 rounded-full bg-black border border-gray-600 flex-none"></button>
-            <button onclick="updateSelected('color', '#ef4444')" class="w-8 h-8 rounded-full bg-red-500 flex-none"></button>
-            <button onclick="updateSelected('color', '#3b82f6')" class="w-8 h-8 rounded-full bg-blue-500 flex-none"></button>
-            <button onclick="updateSelected('color', '#10b981')" class="w-8 h-8 rounded-full bg-emerald-500 flex-none"></button>
-            <button onclick="updateSelected('color', '#f59e0b')" class="w-8 h-8 rounded-full bg-amber-500 flex-none"></button>
+        <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Perataan Teks</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="updateProp('textAlign', 'left')" class="py-2 bg-gray-800 border border-gray-700 rounded-lg text-xs flex justify-center"><i data-lucide="align-left" class="w-4 h-4"></i></button>
+          <button onclick="updateProp('textAlign', 'center')" class="py-2 bg-gray-800 border border-gray-700 rounded-lg text-xs flex justify-center"><i data-lucide="align-center" class="w-4 h-4"></i></button>
+          <button onclick="updateProp('textAlign', 'right')" class="py-2 bg-gray-800 border border-gray-700 rounded-lg text-xs flex justify-center"><i data-lucide="align-right" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Spasi Huruf</label>
+          <input type="range" id="inp-text-ls" min="-5" max="20" value="0" class="w-full accent-brand-500" oninput="updateProp('letterSpacing', parseInt(this.value), true)">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Tinggi Baris</label>
+          <input type="range" id="inp-text-lh" min="0.5" max="3" step="0.1" value="1.2" class="w-full accent-brand-500" oninput="updateProp('lineHeight', parseFloat(this.value), true)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet: Align -->
+  <div id="sheet-align" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet">
+    <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+      <h3 class="font-bold text-sm">Ratakan ke Kanvas</h3>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="p-5 grid grid-cols-3 gap-3">
+      <button onclick="alignObject('left')" class="py-3 bg-gray-800 rounded-xl text-xs font-semibold flex flex-col items-center gap-1"><i data-lucide="align-horizontal-justify-start" class="w-5 h-5 text-gray-400"></i>Kiri</button>
+      <button onclick="alignObject('center')" class="py-3 bg-gray-800 rounded-xl text-xs font-semibold flex flex-col items-center gap-1"><i data-lucide="align-horizontal-justify-center" class="w-5 h-5 text-gray-400"></i>Tengah X</button>
+      <button onclick="alignObject('right')" class="py-3 bg-gray-800 rounded-xl text-xs font-semibold flex flex-col items-center gap-1"><i data-lucide="align-horizontal-justify-end" class="w-5 h-5 text-gray-400"></i>Kanan</button>
+      <button onclick="alignObject('top')" class="py-3 bg-gray-800 rounded-xl text-xs font-semibold flex flex-col items-center gap-1"><i data-lucide="align-vertical-justify-start" class="w-5 h-5 text-gray-400"></i>Atas</button>
+      <button onclick="alignObject('middle')" class="py-3 bg-gray-800 rounded-xl text-xs font-semibold flex flex-col items-center gap-1"><i data-lucide="align-vertical-justify-center" class="w-5 h-5 text-gray-400"></i>Tengah Y</button>
+      <button onclick="alignObject('bottom')" class="py-3 bg-gray-800 rounded-xl text-xs font-semibold flex flex-col items-center gap-1"><i data-lucide="align-vertical-justify-end" class="w-5 h-5 text-gray-400"></i>Bawah</button>
+    </div>
+  </div>
+
+  <!-- Sheet: Shape Color -->
+  <div id="sheet-shape-edit" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet">
+    <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+      <h3 class="font-bold text-sm">Properti Bentuk</h3>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase font-bold mb-2 block">Warna Isi (Fill)</label>
+        <div class="flex gap-3 items-center">
+          <input type="color" id="inp-shape-color" class="w-12 h-12 rounded-lg cursor-pointer bg-transparent border border-gray-700 p-1" onchange="updateProp('color', this.value)">
+          <div class="flex-1 grid grid-cols-6 gap-2">
+            <button onclick="updateProp('color', '#ffffff')" class="h-10 rounded-lg bg-white border border-gray-600"></button>
+            <button onclick="updateProp('color', '#000000')" class="h-10 rounded-lg bg-black border border-gray-600"></button>
+            <button onclick="updateProp('color', '#ef4444')" class="h-10 rounded-lg bg-red-500"></button>
+            <button onclick="updateProp('color', '#3b82f6')" class="h-10 rounded-lg bg-blue-500"></button>
+            <button onclick="updateProp('color', '#10b981')" class="h-10 rounded-lg bg-emerald-500"></button>
+            <button onclick="updateProp('color', 'transparent')" class="h-10 rounded-lg bg-gray-800 flex items-center justify-center"><i data-lucide="ban" class="w-4 h-4 text-gray-500"></i></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase font-bold mb-2 block">Warna Garis (Stroke)</label>
+        <div class="flex gap-3 items-center">
+          <input type="color" id="inp-shape-stroke" class="w-12 h-12 rounded-lg cursor-pointer bg-transparent border border-gray-700 p-1" onchange="updateProp('stroke', this.value)">
+          <div class="flex-1">
+             <input type="range" id="inp-shape-strokeW" min="0" max="50" value="0" class="w-full accent-brand-500" oninput="updateProp('strokeWidth', parseInt(this.value), true)">
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Sheet: Shape Color -->
-  <div id="sheet-shape-edit" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet pb-safe">
+  <!-- Sheet: Image Adjustments -->
+  <div id="sheet-image-edit" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet">
     <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-      <h3 class="font-bold text-sm">Warna Bentuk</h3>
-      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <h3 class="font-bold text-sm">Penyesuaian & Filter Gambar</h3>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
-    <div class="p-5">
-      <div class="flex gap-3 mb-4">
-        <input type="color" id="inp-shape-color" class="w-12 h-12 rounded-lg cursor-pointer bg-transparent border-0 p-0" onchange="updateSelected('color', this.value)">
-        <div class="flex-1 grid grid-cols-6 gap-2">
-          <button onclick="updateSelected('color', '#ffffff')" class="h-12 rounded-lg bg-white border border-gray-600"></button>
-          <button onclick="updateSelected('color', '#000000')" class="h-12 rounded-lg bg-black border border-gray-600"></button>
-          <button onclick="updateSelected('color', '#ef4444')" class="h-12 rounded-lg bg-red-500"></button>
-          <button onclick="updateSelected('color', '#3b82f6')" class="h-12 rounded-lg bg-blue-500"></button>
-          <button onclick="updateSelected('color', '#10b981')" class="h-12 rounded-lg bg-emerald-500"></button>
-          <button onclick="updateSelected('color', '#f59e0b')" class="h-12 rounded-lg bg-amber-500"></button>
-        </div>
+    <div class="p-5 overflow-y-auto scrollable max-h-[60vh] space-y-4">
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block flex justify-between">Kecerahan <span id="lbl-brightness">100%</span></label>
+        <input type="range" min="0" max="200" value="100" class="w-full accent-brand-500" oninput="updateFilter('brightness', this.value)">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block flex justify-between">Kontras <span id="lbl-contrast">100%</span></label>
+        <input type="range" min="0" max="200" value="100" class="w-full accent-brand-500" oninput="updateFilter('contrast', this.value)">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block flex justify-between">Saturasi <span id="lbl-saturation">100%</span></label>
+        <input type="range" min="0" max="200" value="100" class="w-full accent-brand-500" oninput="updateFilter('saturation', this.value)">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block flex justify-between">Blur <span id="lbl-blur">0px</span></label>
+        <input type="range" min="0" max="20" value="0" class="w-full accent-brand-500" oninput="updateFilter('blur', this.value)">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="toggleProp('flipH')" class="flex-1 py-2 bg-gray-800 rounded-xl text-xs font-semibold border border-gray-700 active:bg-brand-500">Flip Horisontal</button>
+        <button onclick="toggleProp('flipV')" class="flex-1 py-2 bg-gray-800 rounded-xl text-xs font-semibold border border-gray-700 active:bg-brand-500">Flip Vertikal</button>
       </div>
     </div>
   </div>
 
-  <!-- Sheet: Opacity / Kejelasan -->
-  <div id="sheet-opacity" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet pb-safe">
+  <!-- Sheet: Opacity -->
+  <div id="sheet-opacity" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet">
     <div class="p-4 border-b border-gray-800 flex justify-between items-center">
       <h3 class="font-bold text-sm">Kejelasan (Opacity)</h3>
-      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div class="p-6">
       <div class="flex items-center gap-4">
         <i data-lucide="moon" class="w-5 h-5 text-gray-500"></i>
-        <input type="range" id="inp-opacity" min="0" max="1" step="0.05" class="flex-1 accent-brand-500 h-2 bg-gray-700 rounded-lg appearance-none" oninput="updateSelected('opacity', this.value)">
-        <span id="val-opacity" class="text-xs font-bold w-8 text-right">100%</span>
+        <input type="range" id="inp-opacity" min="0" max="1" step="0.05" class="flex-1 accent-brand-500" oninput="updateProp('opacity', parseFloat(this.value), true)">
+        <span id="val-opacity" class="text-xs font-bold w-10 text-right">100%</span>
       </div>
     </div>
   </div>
 
-  <!-- Sheet: Lapisan (Layers) -->
-  <div id="sheet-layers" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet pb-safe flex flex-col max-h-[70vh]">
+  <!-- Sheet: Layers -->
+  <div id="sheet-layers" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet flex flex-col max-h-[75vh]">
     <div class="p-4 border-b border-gray-800 flex justify-between items-center shrink-0">
-      <h3 class="font-bold text-sm">Panel Lapisan</h3>
-      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <h3 class="font-bold text-sm">Panel Lapisan (Layers)</h3>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
-    <div class="p-4 overflow-y-auto space-y-2" id="layers-list-container">
-      <!-- Populated by JS -->
-    </div>
+    <div class="p-4 overflow-y-auto scrollable space-y-2 flex-1" id="layers-list-container"></div>
   </div>
 
-  <!-- Sheet: Add Shape -->
-  <div id="sheet-shape" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet pb-safe">
+  <!-- Sheet: Shape Add -->
+  <div id="sheet-shape" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet">
     <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-      <h3 class="font-bold text-sm">Pilih Bentuk</h3>
-      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <h3 class="font-bold text-sm">Pilih Bentuk Geometris</h3>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
-    <div class="p-5 grid grid-cols-4 gap-4">
+    <div class="p-5 grid grid-cols-4 gap-3 scrollable max-h-[50vh] overflow-y-auto">
       <button onclick="addShape('rect')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><div class="w-8 h-8 bg-white rounded-sm"></div></button>
+      <button onclick="addShape('roundrect')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><div class="w-8 h-8 bg-white rounded-xl"></div></button>
       <button onclick="addShape('circle')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><div class="w-8 h-8 bg-white rounded-full"></div></button>
-      <button onclick="addShape('triangle')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><div class="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-b-[28px] border-b-white"></div></button>
+      <button onclick="addShape('triangle')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><div class="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-b-[24px] border-b-white"></div></button>
+      <button onclick="addShape('star')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><i data-lucide="star" class="w-8 h-8 text-white fill-white"></i></button>
+      <button onclick="addShape('line')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><div class="w-10 h-1 bg-white"></div></button>
+      <button onclick="addShape('arrow')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><i data-lucide="arrow-right" class="w-8 h-8 text-white"></i></button>
+      <button onclick="addShape('heart')" class="aspect-square bg-gray-800 rounded-xl flex items-center justify-center hover:bg-brand-600 transition"><i data-lucide="heart" class="w-8 h-8 text-white fill-white"></i></button>
     </div>
   </div>
 
-  <!-- Sheet: Background Edit -->
-  <div id="sheet-bg" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet pb-safe">
+  <!-- Sheet: Background -->
+  <div id="sheet-bg" class="fixed inset-x-0 bottom-0 bg-gray-900 border-t border-gray-800 rounded-t-3xl z-50 bottom-sheet">
     <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-      <h3 class="font-bold text-sm">Latar Belakang</h3>
-      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <h3 class="font-bold text-sm">Latar Belakang Kanvas</h3>
+      <button onclick="closeAllSheets()" class="p-1 bg-gray-800 rounded-full" aria-label="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
-    <div class="p-5">
-      <label class="text-[10px] text-gray-400 uppercase font-bold mb-2 block">Warna Solid</label>
-      <div class="flex gap-3 mb-4">
-        <input type="color" id="inp-bg-color" value="#ffffff" class="w-12 h-12 rounded-lg cursor-pointer bg-transparent border-0 p-0" onchange="updateBackground(this.value)">
+    <div class="p-5 space-y-4">
+      <label class="text-[10px] text-gray-400 uppercase font-bold block">Warna Solid</label>
+      <div class="flex gap-3">
+        <input type="color" id="inp-bg-color" value="#ffffff" class="w-12 h-12 rounded-lg cursor-pointer bg-transparent border border-gray-700 p-1" onchange="updateBackground(this.value, 'solid')">
         <div class="flex-1 grid grid-cols-6 gap-2">
-          <button onclick="updateBackground('#ffffff')" class="h-12 rounded-lg bg-white border border-gray-600"></button>
-          <button onclick="updateBackground('#000000')" class="h-12 rounded-lg bg-black border border-gray-600"></button>
-          <button onclick="updateBackground('#f3f4f6')" class="h-12 rounded-lg bg-gray-100"></button>
-          <button onclick="updateBackground('#fca5a5')" class="h-12 rounded-lg bg-red-300"></button>
-          <button onclick="updateBackground('#93c5fd')" class="h-12 rounded-lg bg-blue-300"></button>
-          <button onclick="updateBackground('transparent')" class="h-12 rounded-lg bg-gray-800 flex items-center justify-center"><i data-lucide="ban" class="w-5 h-5 text-gray-500"></i></button>
+          <button onclick="updateBackground('#ffffff', 'solid')" class="h-12 rounded-lg bg-white border border-gray-600"></button>
+          <button onclick="updateBackground('#000000', 'solid')" class="h-12 rounded-lg bg-black border border-gray-600"></button>
+          <button onclick="updateBackground('#f3f4f6', 'solid')" class="h-12 rounded-lg bg-gray-100"></button>
+          <button onclick="updateBackground('#fca5a5', 'solid')" class="h-12 rounded-lg bg-red-300"></button>
+          <button onclick="updateBackground('#93c5fd', 'solid')" class="h-12 rounded-lg bg-blue-300"></button>
+          <button onclick="updateBackground('transparent', 'transparent')" class="h-12 rounded-lg bg-gray-800 flex items-center justify-center relative overflow-hidden">
+            <div class="absolute inset-0 canvas-bg opacity-50"></div><i data-lucide="ban" class="w-5 h-5 text-gray-400 relative z-10"></i>
+          </button>
         </div>
       </div>
+      <label class="text-[10px] text-gray-400 uppercase font-bold block pt-2">Gradien</label>
+      <div class="grid grid-cols-4 gap-2">
+         <button onclick="updateBackground('linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)', 'gradient')" class="h-12 rounded-lg border border-gray-600" style="background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)"></button>
+         <button onclick="updateBackground('linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)', 'gradient')" class="h-12 rounded-lg border border-gray-600" style="background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)"></button>
+         <button onclick="updateBackground('linear-gradient(to right, #434343 0%, black 100%)', 'gradient')" class="h-12 rounded-lg border border-gray-600" style="background: linear-gradient(to right, #434343 0%, black 100%)"></button>
+         <button onclick="updateBackground('radial-gradient(circle, #5c0067 0%, #00d4ff 100%)', 'gradient')" class="h-12 rounded-lg border border-gray-600" style="background: radial-gradient(circle, #5c0067 0%, #00d4ff 100%)"></button>
+      </div>
     </div>
   </div>
 
-  <!-- SCRIPT -->
   <script>
-    /* ================= APP STATE ================= */
-    const state = {
-      project: { w: 1080, h: 1080, name: 'Desain Baru', bg: '#ffffff' },
-      objects: [], // { id, type, x, y, w, h, rotation, opacity, color, text, font, src }
+    /* ================= ARCHITECTURE & STATE ================= */
+    const FONTS = [
+      { name: 'Inter', type: 'Sans Serif' }, { name: 'Montserrat', type: 'Sans Serif' },
+      { name: 'Bebas Neue', type: 'Display' }, { name: 'Anton', type: 'Display' },
+      { name: 'Playfair Display', type: 'Serif' }, { name: 'Righteous', type: 'Display' },
+      { name: 'Dancing Script', type: 'Script' }, { name: 'Oswald', type: 'Sans Serif' },
+      { name: 'Lobster', type: 'Script' }
+    ];
+    
+    const MOCKUP_LIST = [
+      { id: 'm1', name: 'Kaos Gelap', cat: 'Apparel', svg: '<svg viewBox="0 0 200 200" class="w-full h-full fill-gray-800"><path d="M60,30 L30,50 L50,80 L70,70 L70,170 L130,170 L130,70 L150,80 L170,50 L140,30 C120,45 80,45 60,30 Z"/></svg>' },
+      { id: 'm2', name: 'Hoodie', cat: 'Apparel', svg: '<svg viewBox="0 0 200 200" class="w-full h-full fill-gray-700"><path d="M70,20 Q100,5 130,20 L160,50 L140,70 L140,170 L60,170 L60,70 L40,50 Z"/></svg>' },
+      { id: 'm3', name: 'Smartphone', cat: 'Digital', svg: '<svg viewBox="0 0 200 200" class="w-full h-full fill-gray-800"><rect x="55" y="20" width="90" height="160" rx="15" fill="#1f2937" stroke="#4b5563" stroke-width="4"/><rect x="65" y="30" width="70" height="140" fill="#ffffff"/></svg>' },
+      { id: 'm4', name: 'Tote Bag', cat: 'Merch', svg: '<svg viewBox="0 0 200 200" class="w-full h-full fill-amber-100"><path d="M70,40 Q100,10 130,40 L150,180 L50,180 Z" stroke="#d1d5db" stroke-width="2"/><path d="M80,40 Q100,25 120,40" fill="none" stroke="#9ca3af" stroke-width="4"/></svg>' }
+    ];
+
+    const TEMPLATE_LIST = [
+      { id: 't1', name: 'Promo Instagram', cat: 'Instagram', w: 1080, h: 1080, bg: '#0ea5e9', bgType: 'solid', objects: [{ id:'to1', type: 'text', text: 'DISKON SPESIAL', font: 'Bebas Neue', color: '#ffffff', fontSize: 120, x: 540, y: 540, w: 800, h: 180, rotation: 0, opacity: 1, visible: true, locked: false, textAlign: 'center', fontWeight: 'normal', fontStyle: 'normal' }] },
+      { id: 't2', name: 'Poster Event', cat: 'Poster', w: 1080, h: 1527, bg: '#111827', bgType: 'solid', objects: [{ id:'to2', type: 'text', text: 'KONSER', font: 'Anton', color: '#38bdf8', fontSize: 200, x: 540, y: 400, w: 880, h: 250, rotation: 0, opacity: 1, visible: true, locked: false, textAlign: 'center', fontWeight: 'normal', fontStyle: 'normal' }] },
+      { id: 't3', name: 'Streetwear', cat: 'Fashion', w: 1080, h: 1080, bg: '#ffffff', bgType: 'solid', objects: [{ id:'to3', type: 'text', text: 'KREAVIO', font: 'Righteous', color: '#000000', fontSize: 100, x: 540, y: 540, w: 700, h: 150, rotation: 0, opacity: 1, visible: true, locked: false, textAlign: 'center', fontWeight: 'normal', fontStyle: 'normal' }] }
+    ];
+
+    const appConfig = { autosave: true, quality: 2 };
+
+    const appState = {
+      activeScreen: 'home',
+      project: { id: null, name: 'Desain Baru', w: 1080, h: 1080, bg: '#ffffff', bgType: 'solid', updatedAt: 0 },
+      objects: [],
       selectedId: null,
       history: [],
       historyIndex: -1,
@@ -472,155 +667,589 @@
       pan: { x: 0, y: 0 }
     };
 
-    const FONTS = [
-      { name: 'Inter', type: 'Sans Serif' }, { name: 'Montserrat', type: 'Modern' },
-      { name: 'Bebas Neue', type: 'Display' }, { name: 'Anton', type: 'Heavy' },
-      { name: 'Playfair Display', type: 'Serif' }, { name: 'Righteous', type: 'Retro' },
-      { name: 'Dancing Script', type: 'Script' }, { name: 'Oswald', type: 'Tall' },
-      { name: 'Lobster', type: 'Brush' }
-    ];
+    let projects = [];
+    const pointers = new Map();
+    let interaction = null;
+    let renderRequested = false;
+    let saveTimeout = null;
+    let lastTapTime = 0;
 
-    /* ================= INITIALIZATION ================= */
+    /* ================= LIFECYCLE & CORE ================= */
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       initFontList();
-      setupTouchGestures();
+      loadData();
+      renderHomeProjects();
+      renderTemplates();
+      renderMockups();
+      setupPointerEvents();
+      setupGesturePrevention();
+      
+      window.addEventListener('resize', () => {
+        if (appState.activeScreen === 'editor') fitCanvas();
+      });
     });
+
+    function generateId() { return 'obj_' + Math.random().toString(36).substr(2, 9); }
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
       document.getElementById('toast-msg').innerText = msg;
       toast.classList.remove('hidden', 'toast-anim');
-      void toast.offsetWidth; // trigger reflow
+      void toast.offsetWidth;
       toast.classList.add('toast-anim');
       setTimeout(() => toast.classList.add('hidden'), 3000);
     }
 
+    function setupGesturePrevention() {
+      // Prevent browser default pull-to-refresh & pinch-zoom
+      document.body.addEventListener('touchmove', (e) => {
+        if (!e.target.closest('.scrollable, .scrollable-x')) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
+
     /* ================= NAVIGATION ================= */
+    function navigateTo(screenId) {
+      document.querySelectorAll('.screen-view').forEach(s => s.classList.add('hidden', 'opacity-0'));
+      const target = document.getElementById(`screen-${screenId}`);
+      if (target) {
+        target.classList.remove('hidden');
+        setTimeout(() => target.classList.remove('opacity-0'), 20);
+        appState.activeScreen = screenId;
+      }
+      
+      if (['home', 'projects', 'templates', 'profile'].includes(screenId)) {
+        document.querySelectorAll('nav button').forEach(b => b.classList.replace('text-brand-400', 'text-gray-500'));
+        const btn = document.querySelector(`.nav-btn-${screenId}`);
+        if (btn) btn.classList.replace('text-gray-500', 'text-brand-400');
+        if (screenId === 'projects') renderAllProjects();
+      }
+    }
+
+    /* ================= DATA & STORAGE ================= */
+    function loadData() {
+      try {
+        const p = localStorage.getItem('kr_projects');
+        if (p) projects = JSON.parse(p);
+        
+        if (appConfig.autosave) {
+          const draft = localStorage.getItem('kr_draft');
+          if (draft) {
+            const data = JSON.parse(draft);
+            if (data && data.project && data.project.id) {
+               // Auto resume draft? Let's just keep it simple and start fresh unless explicitly opened, 
+               // but we will sync it if it matches the last opened project.
+            }
+          }
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function saveProjects() {
+      try { localStorage.setItem('kr_projects', JSON.stringify(projects)); } catch (e) { console.warn(e); }
+    }
+
+    function queueAutosave() {
+      if (!appConfig.autosave) return;
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        const draft = { project: appState.project, objects: appState.objects };
+        try { localStorage.setItem('kr_draft', JSON.stringify(draft)); } catch(e){}
+      }, 1000);
+    }
+
+    function generateThumbnail(callback) {
+      selectObject(null);
+      const el = document.getElementById('artboard');
+      html2canvas(el, { scale: 0.25, useCORS: true, backgroundColor: appState.project.bgType === 'transparent' ? null : appState.project.bg })
+        .then(canvas => callback(canvas.toDataURL('image/jpeg', 0.6)))
+        .catch(() => callback(''));
+    }
+
+    function saveProjectToCollection() {
+      generateThumbnail(thumb => {
+        appState.project.thumbnail = thumb;
+        appState.project.updatedAt = Date.now();
+        const idx = projects.findIndex(p => p.id === appState.project.id);
+        const data = { ...appState.project, objects: JSON.parse(JSON.stringify(appState.objects)) };
+        if (idx >= 0) projects[idx] = data;
+        else projects.unshift(data);
+        saveProjects();
+        renderHomeProjects();
+      });
+    }
+
+    /* ================= PROJECT INITIALIZATION ================= */
     function openNewProjectModal() {
       document.getElementById('modal-new-project').classList.remove('hidden');
-      setTimeout(() => {
-        document.getElementById('modal-new-project-content').classList.remove('translate-y-full');
-      }, 10);
+      setTimeout(() => document.getElementById('modal-new-project-content').classList.remove('translate-y-full'), 10);
     }
-
     function closeNewProjectModal() {
       document.getElementById('modal-new-project-content').classList.add('translate-y-full');
-      setTimeout(() => {
-        document.getElementById('modal-new-project').classList.add('hidden');
-      }, 300);
+      setTimeout(() => document.getElementById('modal-new-project').classList.add('hidden'), 300);
     }
 
-    function startProject(w, h, name) {
-      state.project = { w, h, name, bg: '#ffffff' };
-      state.objects = [];
-      state.selectedId = null;
-      state.history = [];
-      state.historyIndex = -1;
+    function initNewProject(w, h, name, customObjects = null, bg = '#ffffff', bgType = 'solid') {
+      appState.project = { id: 'p_' + Date.now(), w, h, name, bg, bgType, updatedAt: Date.now() };
+      appState.objects = customObjects ? JSON.parse(JSON.stringify(customObjects)) : [];
+      appState.selectedId = null;
+      appState.history = [];
+      appState.historyIndex = -1;
       
       closeNewProjectModal();
-      document.getElementById('screen-home').classList.add('opacity-0', 'pointer-events-none');
-      
-      const editor = document.getElementById('screen-editor');
-      editor.classList.remove('hidden');
-      setTimeout(() => {
-        editor.classList.remove('opacity-0');
-        initEditor();
-      }, 50);
+      navigateTo('editor');
+      setupEditor();
     }
-
+    
     function startCustomProject() {
       const w = parseInt(document.getElementById('custom-w').value) || 1080;
       const h = parseInt(document.getElementById('custom-h').value) || 1080;
-      startProject(w, h, 'Kustom');
+      initNewProject(w, h, 'Kustom');
+    }
+
+    function loadProject(id) {
+      const p = projects.find(item => item.id === id);
+      if (p) {
+        appState.project = { id: p.id, w: p.w, h: p.h, name: p.name, bg: p.bg, bgType: p.bgType || 'solid', updatedAt: p.updatedAt };
+        appState.objects = JSON.parse(JSON.stringify(p.objects || []));
+        appState.selectedId = null;
+        appState.history = [];
+        appState.historyIndex = -1;
+        navigateTo('editor');
+        setupEditor();
+      }
+    }
+
+    function deleteProject(id) {
+      projects = projects.filter(p => p.id !== id);
+      saveProjects();
+      renderHomeProjects();
+      if(appState.activeScreen === 'projects') renderAllProjects();
+      showToast('Proyek dihapus');
     }
 
     function closeEditor() {
-      document.getElementById('screen-editor').classList.add('opacity-0');
-      setTimeout(() => {
-        document.getElementById('screen-editor').classList.add('hidden');
-        document.getElementById('screen-home').classList.remove('opacity-0', 'pointer-events-none');
-      }, 300);
+      saveProjectToCollection();
+      navigateTo('home');
     }
 
-    /* ================= EDITOR CORE ================= */
-    function initEditor() {
-      document.getElementById('project-title').innerText = state.project.name;
-      document.getElementById('project-size-label').innerText = `${state.project.w} x ${state.project.h} px`;
+    /* ================= CANVAS ENGINE ================= */
+    function setupEditor() {
+      document.getElementById('project-title').innerText = appState.project.name;
+      document.getElementById('project-size-label').innerText = `${appState.project.w} x ${appState.project.h} px`;
       
-      const artboard = document.getElementById('artboard');
-      artboard.style.width = `${state.project.w}px`;
-      artboard.style.height = `${state.project.h}px`;
-      updateBackground(state.project.bg);
+      const ab = document.getElementById('artboard');
+      ab.style.width = `${appState.project.w}px`;
+      ab.style.height = `${appState.project.h}px`;
+      updateBackground(appState.project.bg, appState.project.bgType, false);
       
       fitCanvas();
-      saveHistory();
-      renderCanvas();
+      pushHistory();
+      requestRender();
+    }
+
+    function screenToCanvas(x, y) {
+      const rect = document.getElementById('canvas-workspace').getBoundingClientRect();
+      return { x: (x - rect.left) / appState.zoom, y: (y - rect.top) / appState.zoom };
     }
 
     function fitCanvas() {
-      const container = document.getElementById('canvas-container');
-      const cw = container.clientWidth - 40;
-      const ch = container.clientHeight - 40;
-      const scaleX = cw / state.project.w;
-      const scaleY = ch / state.project.h;
-      state.zoom = Math.min(scaleX, scaleY, 1);
-      state.pan = { x: 0, y: 0 };
-      applyCanvasTransform();
+      const cont = document.getElementById('canvas-container');
+      const pad = 40;
+      const scale = Math.min((cont.clientWidth - pad) / appState.project.w, (cont.clientHeight - pad) / appState.project.h);
+      appState.zoom = Math.min(Math.max(scale, 0.1), 3);
+      appState.pan.x = (cont.clientWidth - (appState.project.w * appState.zoom)) / 2;
+      appState.pan.y = (cont.clientHeight - (appState.project.h * appState.zoom)) / 2;
+      applyTransform();
     }
+    
+    function resetZoom() { fitCanvas(); }
 
     function adjustCanvasZoom(delta) {
-      state.zoom = Math.max(0.1, Math.min(3, state.zoom + delta));
-      applyCanvasTransform();
+      const oldZoom = appState.zoom;
+      appState.zoom = Math.min(Math.max(appState.zoom + delta, 0.1), 3);
+      
+      // Center zoom if using buttons
+      const cont = document.getElementById('canvas-container');
+      const cx = cont.clientWidth / 2;
+      const cy = cont.clientHeight / 2;
+      const ratio = appState.zoom / oldZoom;
+      appState.pan.x = cx - (cx - appState.pan.x) * ratio;
+      appState.pan.y = cy - (cy - appState.pan.y) * ratio;
+      
+      applyTransform();
     }
 
-    function applyCanvasTransform() {
-      const workspace = document.getElementById('canvas-workspace');
-      workspace.style.transform = `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`;
-      document.getElementById('zoom-label').innerText = `${Math.round(state.zoom * 100)}%`;
+    function applyTransform() {
+      const ws = document.getElementById('canvas-workspace');
+      ws.style.transform = `translate(${appState.pan.x}px, ${appState.pan.y}px) scale(${appState.zoom})`;
+      document.getElementById('zoom-label').innerText = Math.round(appState.zoom * 100) + '%';
+      
+      // Update handle visuals to negate zoom
+      const scaleInverse = 1 / appState.zoom;
+      document.querySelectorAll('.handle').forEach(h => {
+        if(h.classList.contains('handle-rot')) {
+           h.style.transform = `translate(-50%, -50%) scale(${scaleInverse})`;
+           h.previousElementSibling.style.transform = `translateX(-50%) scaleY(${scaleInverse})`; // line
+        } else {
+           h.style.transform = `translate(-50%, -50%) scale(${scaleInverse})`;
+        }
+      });
     }
 
-    function updateBackground(color) {
-      state.project.bg = color;
-      document.getElementById('artboard').style.backgroundColor = color === 'transparent' ? '' : color;
-      if (color === 'transparent') {
-        document.getElementById('artboard').style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(135deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(135deg, transparent 75%, #ccc 75%)';
-        document.getElementById('artboard').style.backgroundSize = '20px 20px';
-        document.getElementById('artboard').style.backgroundPosition = '0 0, 10px 0, 10px -10px, 0px 10px';
-      } else {
-        document.getElementById('artboard').style.backgroundImage = 'none';
+    /* ================= POINTER & GESTURE MANAGEMENT ================= */
+    function setupPointerEvents() {
+      const cont = document.getElementById('canvas-container');
+      
+      cont.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.guideline') || e.target.closest('.bottom-sheet') || e.target.closest('header') || e.target.closest('footer')) return;
+        
+        pointers.set(e.pointerId, e);
+        cont.setPointerCapture(e.pointerId);
+
+        if (pointers.size === 2) {
+          // Init Canvas Pan/Zoom
+          interaction = { type: 'canvas' };
+          const pts = Array.from(pointers.values());
+          interaction.startDist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
+          interaction.startZoom = appState.zoom;
+          interaction.startPan = { ...appState.pan };
+          interaction.center = { x: (pts[0].clientX + pts[1].clientX)/2, y: (pts[0].clientY + pts[1].clientY)/2 };
+        } 
+        else if (pointers.size === 1) {
+          // Check target
+          const target = e.target;
+          if (target.classList.contains('handle')) {
+            initTransform(e, target.dataset.dir);
+          } else {
+            const objEl = target.closest('.canvas-object');
+            if (objEl && !objEl.classList.contains('locked')) {
+              const id = objEl.id.replace('el_', '');
+              
+              // Double tap check for text
+              const now = Date.now();
+              if (now - lastTapTime < 300 && appState.selectedId === id) {
+                 const obj = appState.objects.find(o => o.id === id);
+                 if (obj && obj.type === 'text') openSheet('sheet-text-edit');
+              }
+              lastTapTime = now;
+              
+              selectObject(id);
+              initDrag(e, id);
+            } else if (target.id === 'canvas-container' || target.id === 'canvas-workspace' || target.id === 'artboard') {
+              selectObject(null);
+              interaction = { type: 'pan_canvas_single', startX: e.clientX, startY: e.clientY, panX: appState.pan.x, panY: appState.pan.y };
+            }
+          }
+        }
+      });
+
+      cont.addEventListener('pointermove', (e) => {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, e);
+        
+        if (pointers.size === 2 && interaction && interaction.type === 'canvas') {
+          const pts = Array.from(pointers.values());
+          const dist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
+          const cx = (pts[0].clientX + pts[1].clientX) / 2;
+          const cy = (pts[0].clientY + pts[1].clientY) / 2;
+          
+          const scale = dist / interaction.startDist;
+          appState.zoom = Math.min(Math.max(interaction.startZoom * scale, 0.1), 3);
+          
+          const ratio = appState.zoom / interaction.startZoom;
+          appState.pan.x = cx - (interaction.center.x - interaction.startPan.x) * ratio;
+          appState.pan.y = cy - (interaction.center.y - interaction.startPan.y) * ratio;
+          
+          applyTransform();
+          updateSelectionUI();
+        } 
+        else if (pointers.size === 1 && interaction) {
+          handleSinglePointerMove(e);
+        }
+      });
+
+      const endPointer = (e) => {
+        pointers.delete(e.pointerId);
+        if (pointers.size === 0) {
+          if (interaction && ['drag', 'resize', 'rotate'].includes(interaction.type)) {
+             pushHistory();
+             queueAutosave();
+          }
+          interaction = null;
+          document.getElementById('rotation-toast').classList.add('hidden');
+          hideGuidelines();
+        } else if (pointers.size === 1 && interaction && interaction.type === 'canvas') {
+          // Fallback to pan single gracefully
+          interaction = null; 
+        }
+      };
+
+      cont.addEventListener('pointerup', endPointer);
+      cont.addEventListener('pointercancel', endPointer);
+    }
+
+    function initDrag(e, id) {
+      const obj = appState.objects.find(o => o.id === id);
+      if (!obj) return;
+      const pt = screenToCanvas(e.clientX, e.clientY);
+      interaction = { type: 'drag', obj, startX: pt.x, startY: pt.y, origX: obj.x, origY: obj.y };
+    }
+
+    function initTransform(e, dir) {
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
+      if (!obj) return;
+      
+      const pt = screenToCanvas(e.clientX, e.clientY);
+      interaction = { 
+        type: dir === 'rot' ? 'rotate' : 'resize', dir, obj,
+        startX: pt.x, startY: pt.y,
+        origW: obj.w, origH: obj.h, origX: obj.x, origY: obj.y, origRot: obj.rotation
+      };
+    }
+
+    function handleSinglePointerMove(e) {
+      if (interaction.type === 'pan_canvas_single') {
+        appState.pan.x = interaction.panX + (e.clientX - interaction.startX);
+        appState.pan.y = interaction.panY + (e.clientY - interaction.startY);
+        applyTransform();
+        return;
       }
-      document.getElementById('inp-bg-color').value = color !== 'transparent' ? color : '#ffffff';
-      saveHistory();
+
+      const pt = screenToCanvas(e.clientX, e.clientY);
+      const dx = pt.x - interaction.startX;
+      const dy = pt.y - interaction.startY;
+      const obj = interaction.obj;
+
+      if (interaction.type === 'drag') {
+        let nx = interaction.origX + dx;
+        let ny = interaction.origY + dy;
+        
+        // Snapping (Center Artboard)
+        hideGuidelines();
+        const snapThreshold = 10 / appState.zoom;
+        if (Math.abs(nx - appState.project.w/2) < snapThreshold) { nx = appState.project.w/2; showGuideline('v', nx); }
+        if (Math.abs(ny - appState.project.h/2) < snapThreshold) { ny = appState.project.h/2; showGuideline('h', ny); }
+
+        obj.x = nx;
+        obj.y = ny;
+        requestRender();
+      } 
+      else if (interaction.type === 'resize') {
+        // Advanced Resize maintaining opposite corner via center origin
+        const rad = interaction.origRot * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        // Local delta
+        const ldx = dx * cos + dy * sin;
+        const ldy = -dx * sin + dy * cos;
+
+        let nw = interaction.origW, nh = interaction.origH;
+        let shiftX = 0, shiftY = 0;
+        const dir = interaction.dir;
+
+        if (dir.includes('r')) { nw = Math.max(20, interaction.origW + ldx); shiftX = nw - interaction.origW; }
+        if (dir.includes('b')) { nh = Math.max(20, interaction.origH + ldy); shiftY = nh - interaction.origH; }
+        if (dir.includes('l')) { nw = Math.max(20, interaction.origW - ldx); shiftX = interaction.origW - nw; }
+        if (dir.includes('t')) { nh = Math.max(20, interaction.origH - ldy); shiftY = interaction.origH - nh; }
+
+        // Keep Ratio for images or specific shapes
+        if (obj.type === 'image' || obj.type === 'shape' && ['circle','star'].includes(obj.shapeType)) {
+          const ratio = interaction.origW / interaction.origH;
+          if (nw / ratio > nh) nh = nw / ratio; else nw = nh * ratio;
+          if (dir.includes('l')) shiftX = interaction.origW - nw;
+          if (dir.includes('t')) shiftY = interaction.origH - nh;
+        }
+
+        obj.w = nw; obj.h = nh;
+        
+        // Shift global center to keep opposite corner fixed
+        const gdx = (shiftX/2) * cos - (shiftY/2) * sin;
+        const gdy = (shiftX/2) * sin + (shiftY/2) * cos;
+        
+        // Apply directional adjustments
+        let finalDx = gdx, finalDy = gdy;
+        if(dir === 'tl') { finalDx = -gdx; finalDy = -gdy; }
+        if(dir === 'tr') { finalDy = -gdy; }
+        if(dir === 'bl') { finalDx = -gdx; }
+
+        obj.x = interaction.origX + finalDx;
+        obj.y = interaction.origY + finalDy;
+        
+        requestRender();
+      } 
+      else if (interaction.type === 'rotate') {
+        // Rotation around center
+        const rad = Math.atan2(pt.y - interaction.origY, pt.x - interaction.origX);
+        let deg = rad * (180 / Math.PI) + 90;
+        
+        // Snapping
+        const snaps = [0, 15, 30, 45, 90, 135, 180, 225, 270, 315, 360, -90, -180, -270];
+        for (let s of snaps) {
+           if (Math.abs(deg - s) < 5) { deg = s; break; }
+        }
+        obj.rotation = Math.round(deg);
+        
+        const rt = document.getElementById('rotation-toast');
+        rt.innerText = obj.rotation + '°';
+        rt.classList.remove('hidden');
+        requestRender();
+      }
     }
 
-    /* ================= OBJECT MANAGEMENT ================= */
-    function generateId() { return 'obj_' + Math.random().toString(36).substr(2, 9); }
+    function showGuideline(type, pos) {
+      const g = document.getElementById(`guide-${type}`);
+      g.style.display = 'block';
+      if (type === 'v') g.style.left = pos + 'px';
+      if (type === 'h') g.style.top = pos + 'px';
+    }
+    function hideGuidelines() {
+      document.getElementById('guide-v').style.display = 'none';
+      document.getElementById('guide-h').style.display = 'none';
+    }
 
+    /* ================= RENDERING ENGINE ================= */
+    function requestRender() {
+      if (!renderRequested) {
+        renderRequested = true;
+        requestAnimationFrame(() => {
+          renderCanvasCore();
+          updateSelectionUI();
+          renderRequested = false;
+        });
+      }
+    }
+
+    function renderCanvasCore() {
+      const ab = document.getElementById('artboard');
+      const currentIds = new Set();
+
+      appState.objects.forEach((obj, index) => {
+        currentIds.add(obj.id);
+        let el = document.getElementById(`el_${obj.id}`);
+        
+        if (!obj.visible) {
+          if (el) el.style.display = 'none';
+          return;
+        }
+
+        if (!el) {
+          el = document.createElement('div');
+          el.id = `el_${obj.id}`;
+          el.className = 'canvas-object';
+          ab.appendChild(el);
+        }
+
+        el.style.display = 'flex';
+        el.className = `canvas-object ${obj.locked ? 'locked' : ''}`;
+        el.style.zIndex = index + 10;
+        el.style.width = `${obj.w}px`;
+        el.style.height = `${obj.h}px`;
+        // Transform uses translate(-50%, -50%) implicitly because x,y is center
+        el.style.transform = `translate(${obj.x - obj.w/2}px, ${obj.y - obj.h/2}px) rotate(${obj.rotation}deg)`;
+        el.style.opacity = obj.opacity;
+
+        if (obj.type === 'text') {
+          el.innerText = obj.text;
+          el.style.fontFamily = `'${obj.font}', sans-serif`;
+          el.style.color = obj.color;
+          el.style.fontSize = `${obj.fontSize || (obj.h * 0.8)}px`;
+          el.style.fontWeight = obj.fontWeight || 'normal';
+          el.style.fontStyle = obj.fontStyle || 'normal';
+          el.style.textAlign = obj.textAlign || 'center';
+          el.style.letterSpacing = `${obj.letterSpacing || 0}px`;
+          el.style.lineHeight = obj.lineHeight || 1.2;
+          
+          el.style.alignItems = 'center';
+          el.style.justifyContent = obj.textAlign === 'left' ? 'flex-start' : (obj.textAlign === 'right' ? 'flex-end' : 'center');
+        } 
+        else if (obj.type === 'shape') {
+          const sw = obj.strokeWidth || 0;
+          const strokeCSS = sw > 0 ? `border: ${sw}px solid ${obj.stroke};` : '';
+          
+          if (obj.shapeType === 'rect') {
+            el.innerHTML = `<div style="width:100%; height:100%; background:${obj.color}; ${strokeCSS}"></div>`;
+          } else if (obj.shapeType === 'roundrect') {
+             el.innerHTML = `<div style="width:100%; height:100%; background:${obj.color}; border-radius:16px; ${strokeCSS}"></div>`;
+          } else if (obj.shapeType === 'circle') {
+            el.innerHTML = `<div style="width:100%; height:100%; background:${obj.color}; border-radius:50%; ${strokeCSS}"></div>`;
+          } else if (obj.shapeType === 'triangle') {
+            el.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="50,0 100,100 0,100" fill="${obj.color}" stroke="${obj.stroke}" stroke-width="${sw}"/></svg>`;
+          } else if (obj.shapeType === 'star') {
+            el.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="${obj.color}" stroke="${obj.stroke}" stroke-width="${sw/5}"/></svg>`;
+          } else if (obj.shapeType === 'heart') {
+            el.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="${obj.color}" stroke="${obj.stroke}" stroke-width="${sw/5}"/></svg>`;
+          } else if (obj.shapeType === 'arrow') {
+             el.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="${obj.color}" stroke-width="${Math.max(2, sw/2)}" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
+          } else if (obj.shapeType === 'line') {
+             el.innerHTML = `<div style="width:100%; height:${Math.max(2, sw)}px; background:${obj.color}; margin-top:${obj.h/2}px;"></div>`;
+          }
+        }
+        else if (obj.type === 'image') {
+          const filterStr = obj.filters ? `brightness(${obj.filters.brightness}%) contrast(${obj.filters.contrast}%) saturate(${obj.filters.saturation}%) blur(${obj.filters.blur}px)` : '';
+          const transformStr = `${obj.flipH ? 'scaleX(-1)' : ''} ${obj.flipV ? 'scaleY(-1)' : ''}`;
+          el.innerHTML = `<img src="${obj.src}" style="width:100%; height:100%; object-fit:contain; filter:${filterStr}; transform:${transformStr}; pointer-events:none;">`;
+        }
+      });
+
+      // Cleanup
+      Array.from(ab.children).forEach(child => {
+        if (child.id.startsWith('el_') && !currentIds.has(child.id.replace('el_', ''))) {
+          ab.removeChild(child);
+        }
+      });
+    }
+
+    function selectObject(id) {
+      appState.selectedId = id;
+      updateSelectionUI();
+      updateToolbar();
+      if (id) syncSheetInputs(id);
+    }
+
+    function updateSelectionUI() {
+      const selBox = document.getElementById('selection-overlay');
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
+      
+      if (obj && obj.visible && !obj.locked) {
+        selBox.classList.remove('hidden');
+        selBox.style.width = `${obj.w}px`;
+        selBox.style.height = `${obj.h}px`;
+        selBox.style.transform = `translate(${obj.x - obj.w/2}px, ${obj.y - obj.h/2}px) rotate(${obj.rotation}deg)`;
+        selBox.style.zIndex = 9999;
+        document.getElementById('artboard').appendChild(selBox);
+      } else {
+        selBox.classList.add('hidden');
+      }
+    }
+
+    /* ================= ACTIONS ================= */
     function addText() {
       const obj = {
-        id: generateId(), type: 'text',
-        text: 'KETIK DISINI', font: 'Bebas Neue', color: '#000000',
-        x: state.project.w/2 - 150, y: state.project.h/2 - 50,
-        w: 300, h: 100, rotation: 0, opacity: 1
+        id: generateId(), type: 'text', name: 'Teks', text: 'KREAVIO', font: 'Bebas Neue', color: '#000000',
+        x: appState.project.w/2, y: appState.project.h/2, w: 400, h: 120, fontSize: 100, rotation: 0, opacity: 1, visible: true, locked: false,
+        textAlign: 'center', fontWeight: 'normal', fontStyle: 'normal', letterSpacing: 0, lineHeight: 1.2
       };
-      state.objects.push(obj);
+      appState.objects.push(obj);
       selectObject(obj.id);
-      renderCanvas();
-      saveHistory();
+      pushHistory();
+      requestRender();
       openSheet('sheet-text-edit');
     }
 
-    function addShape(shapeType) {
+    function addShape(type) {
       const obj = {
-        id: generateId(), type: 'shape', shapeType: shapeType,
-        color: '#0ea5e9', x: state.project.w/2 - 100, y: state.project.h/2 - 100,
-        w: 200, h: 200, rotation: 0, opacity: 1
+        id: generateId(), type: 'shape', name: `Bentuk`, shapeType: type, color: '#0ea5e9', stroke: '#000000', strokeWidth: 0,
+        x: appState.project.w/2, y: appState.project.h/2, w: 200, h: 200, rotation: 0, opacity: 1, visible: true, locked: false
       };
-      state.objects.push(obj);
+      if (type === 'line') obj.h = 20;
+      appState.objects.push(obj);
       selectObject(obj.id);
-      renderCanvas();
-      saveHistory();
+      pushHistory();
+      requestRender();
       closeAllSheets();
     }
 
@@ -632,170 +1261,138 @@
         const img = new Image();
         img.onload = () => {
           let w = img.width, h = img.height;
-          const max = 800; // auto downscale for canvas fit
-          if (w > max || h > max) {
-            const ratio = Math.min(max/w, max/h);
-            w *= ratio; h *= ratio;
-          }
+          const max = 1200;
+          if (w > max || h > max) { const r = Math.min(max/w, max/h); w *= r; h *= r; }
           const obj = {
-            id: generateId(), type: 'image', src: ev.target.result,
-            x: state.project.w/2 - w/2, y: state.project.h/2 - h/2,
-            w: w, h: h, rotation: 0, opacity: 1
+            id: generateId(), type: 'image', name: 'Gambar', src: ev.target.result,
+            x: appState.project.w/2, y: appState.project.h/2, w, h, rotation: 0, opacity: 1, visible: true, locked: false,
+            filters: { brightness: 100, contrast: 100, saturation: 100, blur: 0 }, flipH: false, flipV: false
           };
-          state.objects.push(obj);
+          appState.objects.push(obj);
           selectObject(obj.id);
-          renderCanvas();
-          saveHistory();
+          pushHistory();
+          requestRender();
         };
         img.src = ev.target.result;
       };
       reader.readAsDataURL(file);
-      e.target.value = ''; // reset
+      e.target.value = '';
     }
 
     function deleteSelected() {
-      if (!state.selectedId) return;
-      state.objects = state.objects.filter(o => o.id !== state.selectedId);
+      if (!appState.selectedId) return;
+      appState.objects = appState.objects.filter(o => o.id !== appState.selectedId);
       selectObject(null);
-      renderCanvas();
-      saveHistory();
+      pushHistory();
+      requestRender();
       showToast("Objek dihapus");
     }
 
     function duplicateSelected() {
-      if (!state.selectedId) return;
-      const obj = state.objects.find(o => o.id === state.selectedId);
+      if (!appState.selectedId) return;
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
+      if (!obj) return;
       const clone = JSON.parse(JSON.stringify(obj));
       clone.id = generateId();
       clone.x += 40; clone.y += 40;
-      state.objects.push(clone);
+      appState.objects.push(clone);
       selectObject(clone.id);
-      renderCanvas();
-      saveHistory();
-      showToast("Objek diduplikat");
+      pushHistory();
+      requestRender();
     }
 
-    function updateSelected(key, val) {
-      if (!state.selectedId) return;
-      const obj = state.objects.find(o => o.id === state.selectedId);
+    function updateProp(key, val, textProp = false) {
+      if (!appState.selectedId) return;
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
       if (obj) {
         obj[key] = val;
-        renderCanvas();
-        // Debounce history save for sliders/inputs
-        clearTimeout(window.saveTimer);
-        window.saveTimer = setTimeout(saveHistory, 500);
+        // auto-adjust text width/height minimally if needed, skipping complex measurement for now
+        requestRender();
+        clearTimeout(window.propTimeout);
+        window.propTimeout = setTimeout(pushHistory, 500);
       }
     }
 
-    /* ================= RENDERING ================= */
-    function renderCanvas() {
-      const artboard = document.getElementById('artboard');
-      // Keep only selection box, remove old objects
-      Array.from(artboard.children).forEach(child => {
-        if (child.id !== 'selection-overlay') artboard.removeChild(child);
-      });
-
-      state.objects.forEach(obj => {
-        const el = document.createElement('div');
-        el.className = 'canvas-object';
-        el.id = `el_${obj.id}`;
-        el.style.width = `${obj.w}px`;
-        el.style.height = `${obj.h}px`;
-        el.style.transform = `translate(${obj.x}px, ${obj.y}px) rotate(${obj.rotation}deg)`;
-        el.style.opacity = obj.opacity;
-        
-        // Touch events for selection/dragging
-        el.addEventListener('pointerdown', (e) => initObjectDrag(e, obj.id));
-
-        if (obj.type === 'text') {
-          el.innerText = obj.text;
-          el.style.fontFamily = `'${obj.font}', sans-serif`;
-          el.style.color = obj.color;
-          el.style.fontSize = `${obj.h * 0.8}px`; // simple scale
-          el.style.lineHeight = '1';
-          el.style.display = 'flex';
-          el.style.alignItems = 'center';
-          el.style.justifyContent = 'center';
-          el.style.textAlign = 'center';
-        } 
-        else if (obj.type === 'shape') {
-          if (obj.shapeType === 'rect') {
-            el.style.backgroundColor = obj.color;
-          } else if (obj.shapeType === 'circle') {
-            el.style.backgroundColor = obj.color;
-            el.style.borderRadius = '50%';
-          } else if (obj.shapeType === 'triangle') {
-            el.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="50,0 100,100 0,100" fill="${obj.color}"/></svg>`;
-          }
-        }
-        else if (obj.type === 'image') {
-          el.innerHTML = `<img src="${obj.src}" style="width:100%; height:100%; object-fit:contain; pointer-events:none;">`;
-        }
-        
-        artboard.appendChild(el);
-      });
-      
-      updateSelectionUI();
-    }
-
-    function selectObject(id) {
-      state.selectedId = id;
-      updateSelectionUI();
-      updateToolbar();
-      if (id) syncSheetInputs(id);
-    }
-
-    function updateSelectionUI() {
-      const selBox = document.getElementById('selection-overlay');
-      if (!state.selectedId) {
-        selBox.classList.add('hidden');
-        return;
-      }
-      
-      const obj = state.objects.find(o => o.id === state.selectedId);
+    function toggleFormat(key, val, defaultVal) {
+      if (!appState.selectedId) return;
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
       if (obj) {
-        selBox.classList.remove('hidden');
-        selBox.style.width = `${obj.w}px`;
-        selBox.style.height = `${obj.h}px`;
-        selBox.style.transform = `translate(${obj.x}px, ${obj.y}px) rotate(${obj.rotation}deg)`;
-        
-        // Move selection box to end of DOM so handles are on top
-        document.getElementById('artboard').appendChild(selBox);
+        obj[key] = obj[key] === val ? defaultVal : val;
+        requestRender();
+        pushHistory();
+        syncSheetInputs(obj.id);
       }
     }
 
+    function updateFilter(key, val) {
+      if (!appState.selectedId) return;
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
+      if (obj && obj.type === 'image') {
+        obj.filters[key] = val;
+        document.getElementById(`lbl-${key}`).innerText = val + (key==='blur'?'px':'%');
+        requestRender();
+        clearTimeout(window.propTimeout);
+        window.propTimeout = setTimeout(pushHistory, 500);
+      }
+    }
+
+    function toggleProp(key) {
+      if (!appState.selectedId) return;
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
+      if (obj) { obj[key] = !obj[key]; requestRender(); pushHistory(); }
+    }
+
+    function updateBackground(val, type) {
+      appState.project.bg = val;
+      appState.project.bgType = type;
+      const ab = document.getElementById('artboard');
+      ab.style.background = val;
+      if (type === 'transparent') {
+        ab.style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(135deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(135deg, transparent 75%, #ccc 75%)';
+        ab.style.backgroundSize = '20px 20px';
+        ab.style.backgroundPosition = '0 0, 10px 0, 10px -10px, 0px 10px';
+      }
+      document.getElementById('inp-bg-color').value = type === 'solid' ? val : '#ffffff';
+      clearTimeout(window.propTimeout);
+      window.propTimeout = setTimeout(pushHistory, 500);
+    }
+    
+    function alignObject(pos) {
+      if (!appState.selectedId) return;
+      const obj = appState.objects.find(o => o.id === appState.selectedId);
+      if (!obj) return;
+      if (pos === 'left') obj.x = obj.w/2;
+      if (pos === 'center') obj.x = appState.project.w/2;
+      if (pos === 'right') obj.x = appState.project.w - obj.w/2;
+      if (pos === 'top') obj.y = obj.h/2;
+      if (pos === 'middle') obj.y = appState.project.h/2;
+      if (pos === 'bottom') obj.y = appState.project.h - obj.h/2;
+      requestRender();
+      pushHistory();
+    }
+
+    /* ================= UI UPDATES ================= */
     function updateToolbar() {
-      const tbDefault = document.getElementById('toolbar-default');
-      const tbSelected = document.getElementById('toolbar-selected');
-      const tbDynamic = document.getElementById('tool-options-dynamic');
+      const tbDef = document.getElementById('toolbar-default');
+      const tbSel = document.getElementById('toolbar-selected');
+      const tbDyn = document.getElementById('tool-options-dynamic');
       
-      if (!state.selectedId) {
-        tbDefault.classList.remove('hidden');
-        tbSelected.classList.add('hidden');
+      if (!appState.selectedId) {
+        tbDef.classList.remove('hidden'); tbSel.classList.add('hidden');
       } else {
-        tbDefault.classList.add('hidden');
-        tbSelected.classList.remove('hidden');
-        
-        const obj = state.objects.find(o => o.id === state.selectedId);
-        let dynHTML = '';
-        if (obj.type === 'text') {
-          dynHTML = `
-            <button onclick="openSheet('sheet-text-edit')" class="flex-none flex flex-col items-center justify-center w-16 h-14 bg-gray-800 rounded-xl text-brand-400">
-              <i data-lucide="edit-2" class="w-5 h-5 mb-1"></i><span class="text-[9px] font-medium">Edit Teks</span>
-            </button>`;
-        } else if (obj.type === 'shape') {
-          dynHTML = `
-            <button onclick="openSheet('sheet-shape-edit')" class="flex-none flex flex-col items-center justify-center w-16 h-14 bg-gray-800 rounded-xl text-brand-400">
-              <i data-lucide="palette" class="w-5 h-5 mb-1"></i><span class="text-[9px] font-medium">Warna</span>
-            </button>`;
-        }
-        tbDynamic.innerHTML = dynHTML;
+        tbDef.classList.add('hidden'); tbSel.classList.remove('hidden');
+        const obj = appState.objects.find(o => o.id === appState.selectedId);
+        let html = '';
+        if (obj.type === 'text') html = `<button onclick="openSheet('sheet-text-edit')" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-gray-800 rounded-xl text-brand-400"><i data-lucide="edit-3" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Edit</span></button>`;
+        else if (obj.type === 'shape') html = `<button onclick="openSheet('sheet-shape-edit')" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-gray-800 rounded-xl text-brand-400"><i data-lucide="palette" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Warna</span></button>`;
+        else if (obj.type === 'image') html = `<button onclick="openSheet('sheet-image-edit')" class="flex-none flex flex-col items-center justify-center w-[60px] h-14 bg-gray-800 rounded-xl text-brand-400"><i data-lucide="sliders" class="w-4 h-4 mb-1"></i><span class="text-[9px] font-medium">Filter</span></button>`;
+        tbDyn.innerHTML = html;
         lucide.createIcons();
       }
     }
 
     function syncSheetInputs(id) {
-      const obj = state.objects.find(o => o.id === id);
+      const obj = appState.objects.find(o => o.id === id);
       if (!obj) return;
       document.getElementById('inp-opacity').value = obj.opacity;
       document.getElementById('val-opacity').innerText = Math.round(obj.opacity * 100) + '%';
@@ -803,157 +1400,65 @@
       if (obj.type === 'text') {
         document.getElementById('inp-text-content').value = obj.text;
         document.getElementById('inp-text-color').value = obj.color;
+        document.getElementById('btn-bold').classList.toggle('bg-brand-500', obj.fontWeight === 'bold');
+        document.getElementById('btn-italic').classList.toggle('bg-brand-500', obj.fontStyle === 'italic');
+        document.getElementById('inp-text-ls').value = obj.letterSpacing || 0;
+        document.getElementById('inp-text-lh').value = obj.lineHeight || 1.2;
       } else if (obj.type === 'shape') {
         document.getElementById('inp-shape-color').value = obj.color;
-      }
-    }
-
-    /* ================= TOUCH & GESTURES ================= */
-    let dragData = null;
-
-    function getPos(e) {
-      if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      return { x: e.clientX, y: e.clientY };
-    }
-
-    function setupTouchGestures() {
-      const workspace = document.getElementById('canvas-workspace');
-      
-      // Tap on empty space to deselect
-      document.getElementById('canvas-container').addEventListener('pointerdown', (e) => {
-        if (e.target.id === 'canvas-container' || e.target.id === 'canvas-workspace' || e.target.id === 'artboard') {
-          selectObject(null);
+        document.getElementById('inp-shape-stroke').value = obj.stroke || '#000000';
+        document.getElementById('inp-shape-strokeW').value = obj.strokeWidth || 0;
+      } else if (obj.type === 'image') {
+        if (obj.filters) {
+          ['brightness', 'contrast', 'saturation', 'blur'].forEach(k => {
+             const el = document.querySelector(`#sheet-image-edit input[oninput*="${k}"]`);
+             if(el) { el.value = obj.filters[k]; document.getElementById(`lbl-${k}`).innerText = obj.filters[k] + (k==='blur'?'px':'%'); }
+          });
         }
-      });
-
-      // Handle Transform/Resize points
-      document.querySelectorAll('.handle').forEach(handle => {
-        handle.addEventListener('pointerdown', initTransform);
-      });
-    }
-
-    function initObjectDrag(e, id) {
-      e.stopPropagation();
-      selectObject(id);
-      const obj = state.objects.find(o => o.id === id);
-      const startPos = getPos(e);
-      dragData = { type: 'move', obj, startX: startPos.x, startY: startPos.y, origX: obj.x, origY: obj.y };
-      
-      window.addEventListener('pointermove', doDrag);
-      window.addEventListener('pointerup', stopDrag);
-    }
-
-    function initTransform(e) {
-      e.stopPropagation();
-      const dir = e.target.dataset.dir;
-      const obj = state.objects.find(o => o.id === state.selectedId);
-      if(!obj) return;
-      
-      const startPos = getPos(e);
-      
-      // Calculate center for rotation
-      const selBox = document.getElementById('selection-overlay').getBoundingClientRect();
-      const centerX = selBox.left + selBox.width / 2;
-      const centerY = selBox.top + selBox.height / 2;
-
-      dragData = { 
-        type: dir === 'rot' ? 'rotate' : 'resize', dir, obj, 
-        startX: startPos.x, startY: startPos.y, 
-        origX: obj.x, origY: obj.y, origW: obj.w, origH: obj.h, origRot: obj.rotation,
-        centerX, centerY
-      };
-      
-      window.addEventListener('pointermove', doDrag);
-      window.addEventListener('pointerup', stopDrag);
-    }
-
-    function doDrag(e) {
-      if (!dragData) return;
-      e.preventDefault();
-      const pos = getPos(e);
-      const dx = (pos.x - dragData.startX) / state.zoom;
-      const dy = (pos.y - dragData.startY) / state.zoom;
-      
-      if (dragData.type === 'move') {
-        dragData.obj.x = dragData.origX + dx;
-        dragData.obj.y = dragData.origY + dy;
-      } 
-      else if (dragData.type === 'resize') {
-        // Simple uniform scale based on dx for touch friendliness (can be improved)
-        let scaleDelta = dx; 
-        if (dragData.dir.includes('l')) scaleDelta = -dx;
-        
-        const aspect = dragData.origH / dragData.origW;
-        const newW = Math.max(20, dragData.origW + scaleDelta);
-        const newH = dragData.obj.type === 'text' ? newW * aspect : Math.max(20, dragData.origH + (scaleDelta * aspect));
-        
-        dragData.obj.w = newW;
-        dragData.obj.h = newH;
-        
-        // Adjust X/Y so it scales from opposite corner (simplified for v1)
       }
-      else if (dragData.type === 'rotate') {
-        const rad = Math.atan2(pos.y - dragData.centerY, pos.x - dragData.centerX);
-        let deg = rad * (180 / Math.PI) + 90; // +90 because handle is at top
-        dragData.obj.rotation = Math.round(deg);
-      }
-      
-      renderCanvas();
     }
 
-    function stopDrag() {
-      if (dragData) saveHistory();
-      dragData = null;
-      window.removeEventListener('pointermove', doDrag);
-      window.removeEventListener('pointerup', stopDrag);
-    }
-
-    /* ================= BOTTOM SHEETS ================= */
     function openSheet(id) {
       closeAllSheets();
       document.getElementById('global-backdrop').classList.add('open');
       document.getElementById(id).classList.add('open');
-      
       if (id === 'sheet-layers') buildLayersList();
     }
-
     function closeAllSheets() {
       document.getElementById('global-backdrop').classList.remove('open');
       document.querySelectorAll('.bottom-sheet').forEach(el => el.classList.remove('open'));
     }
 
-    /* ================= FONTS & LAYERS ================= */
+    /* ================= LAYERS & FONTS ================= */
     function initFontList() {
-      const container = document.getElementById('font-list-container');
-      container.innerHTML = FONTS.map(f => `
-        <button onclick="updateSelected('font', '${f.name}')" class="p-3 bg-gray-800 rounded-xl text-left border border-gray-700 hover:border-brand-500 transition focus:border-brand-500">
-          <span style="font-family: '${f.name}', sans-serif;" class="text-sm text-white block mb-1">${f.name}</span>
-          <span class="text-[9px] text-gray-500 uppercase tracking-widest">${f.type}</span>
+      const cont = document.getElementById('font-list-container');
+      cont.innerHTML = FONTS.map(f => `
+        <button onclick="updateProp('font', '${f.name}')" class="p-2.5 bg-gray-950 rounded-xl text-left border border-gray-800 hover:border-brand-500 transition">
+          <span style="font-family: '${f.name}', sans-serif;" class="text-sm text-white block truncate">${f.name}</span>
+          <span class="text-[8px] text-gray-500 uppercase">${f.type}</span>
         </button>
       `).join('');
     }
 
     function buildLayersList() {
-      const container = document.getElementById('layers-list-container');
-      if (state.objects.length === 0) {
-        container.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Belum ada objek.</p>`;
-        return;
-      }
+      const cont = document.getElementById('layers-list-container');
+      if (appState.objects.length === 0) { cont.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Belum ada lapisan.</p>`; return; }
       
-      container.innerHTML = [...state.objects].reverse().map((obj, i) => {
-        const trueIndex = state.objects.length - 1 - i;
-        const isSel = obj.id === state.selectedId;
+      cont.innerHTML = [...appState.objects].reverse().map((obj, i) => {
+        const realIdx = appState.objects.length - 1 - i;
+        const isSel = obj.id === appState.selectedId;
         const icon = obj.type === 'text' ? 'type' : (obj.type === 'image' ? 'image' : 'square');
-        const label = obj.type === 'text' ? obj.text.substring(0,10) : obj.type;
         return `
           <div class="flex items-center justify-between bg-gray-800 p-3 rounded-xl border ${isSel ? 'border-brand-500' : 'border-gray-700'}">
-            <div class="flex items-center gap-3 cursor-pointer flex-1" onclick="selectObject('${obj.id}')">
-              <i data-lucide="${icon}" class="w-4 h-4 text-gray-400"></i>
-              <span class="text-xs font-medium">${label}</span>
+            <div class="flex items-center gap-3 cursor-pointer flex-1 overflow-hidden" onclick="selectObject('${obj.id}')">
+              <i data-lucide="${icon}" class="w-4 h-4 text-gray-400 shrink-0"></i>
+              <span class="text-xs font-medium truncate">${obj.name || obj.type}</span>
             </div>
-            <div class="flex items-center gap-1">
-              <button onclick="moveLayer(${trueIndex}, 1)" class="p-1.5 text-gray-400 hover:text-white" ${trueIndex === state.objects.length-1 ? 'disabled opacity-30' : ''}><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
-              <button onclick="moveLayer(${trueIndex}, -1)" class="p-1.5 text-gray-400 hover:text-white" ${trueIndex === 0 ? 'disabled opacity-30' : ''}><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="togglePropById('${obj.id}', 'visible')" class="p-1.5 text-gray-400 hover:text-white"><i data-lucide="${obj.visible ? 'eye' : 'eye-off'}" class="w-4 h-4"></i></button>
+              <button onclick="togglePropById('${obj.id}', 'locked')" class="p-1.5 text-gray-400 hover:text-white"><i data-lucide="${obj.locked ? 'lock' : 'unlock'}" class="w-4 h-4"></i></button>
+              <button onclick="moveLayer(${realIdx}, 1)" class="p-1.5 text-gray-400 hover:text-white" ${realIdx === appState.objects.length - 1 ? 'disabled opacity-30' : ''}><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+              <button onclick="moveLayer(${realIdx}, -1)" class="p-1.5 text-gray-400 hover:text-white" ${realIdx === 0 ? 'disabled opacity-30' : ''}><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
             </div>
           </div>
         `;
@@ -961,89 +1466,167 @@
       lucide.createIcons();
     }
 
-    function moveLayer(index, dir) {
-      if (index + dir < 0 || index + dir >= state.objects.length) return;
-      const temp = state.objects[index];
-      state.objects[index] = state.objects[index + dir];
-      state.objects[index + dir] = temp;
-      renderCanvas();
-      saveHistory();
-      buildLayersList(); // refresh sheet
+    function togglePropById(id, key) {
+      const obj = appState.objects.find(o => o.id === id);
+      if (obj) { obj[key] = !obj[key]; requestRender(); buildLayersList(); pushHistory(); }
     }
 
-    /* ================= HISTORY & EXPORT ================= */
-    function saveHistory() {
-      // Basic immutability using stringify
-      const snap = {
-        objects: JSON.parse(JSON.stringify(state.objects)),
-        bg: state.project.bg
-      };
-      // Trim future history if we're in middle of undo tree
-      if (state.historyIndex < state.history.length - 1) {
-        state.history = state.history.slice(0, state.historyIndex + 1);
-      }
-      state.history.push(snap);
-      state.historyIndex = state.history.length - 1;
-      
-      // Limit history size for mobile memory
-      if (state.history.length > 30) {
-        state.history.shift();
-        state.historyIndex--;
-      }
+    function moveLayer(idx, dir) {
+      if (idx + dir < 0 || idx + dir >= appState.objects.length) return;
+      const tmp = appState.objects[idx];
+      appState.objects[idx] = appState.objects[idx + dir];
+      appState.objects[idx + dir] = tmp;
+      requestRender(); pushHistory(); buildLayersList();
+    }
+
+    /* ================= HISTORY (UNDO/REDO) ================= */
+    function pushHistory() {
+      const snap = { objects: JSON.parse(JSON.stringify(appState.objects)), bg: appState.project.bg, bgType: appState.project.bgType };
+      if (appState.historyIndex < appState.history.length - 1) appState.history = appState.history.slice(0, appState.historyIndex + 1);
+      appState.history.push(snap);
+      if (appState.history.length > 50) appState.history.shift();
+      else appState.historyIndex++;
+      updateHistoryUI();
+      queueAutosave();
     }
 
     function undo() {
-      if (state.historyIndex > 0) {
-        state.historyIndex--;
-        restoreState(state.history[state.historyIndex]);
-      } else {
-        showToast("Tidak bisa batalkan lagi");
+      if (appState.historyIndex > 0) {
+        appState.historyIndex--;
+        restoreState(appState.history[appState.historyIndex]);
       }
     }
 
     function redo() {
-      if (state.historyIndex < state.history.length - 1) {
-        state.historyIndex++;
-        restoreState(state.history[state.historyIndex]);
+      if (appState.historyIndex < appState.history.length - 1) {
+        appState.historyIndex++;
+        restoreState(appState.history[appState.historyIndex]);
       }
     }
 
     function restoreState(snap) {
-      state.objects = JSON.parse(JSON.stringify(snap.objects));
+      appState.objects = JSON.parse(JSON.stringify(snap.objects));
       selectObject(null);
-      updateBackground(snap.bg);
-      renderCanvas();
+      updateBackground(snap.bg, snap.bgType || 'solid');
+      requestRender();
+      updateHistoryUI();
+    }
+    
+    function updateHistoryUI() {
+      const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
+      u.disabled = appState.historyIndex <= 0;
+      u.classList.toggle('opacity-30', u.disabled);
+      r.disabled = appState.historyIndex >= appState.history.length - 1;
+      r.classList.toggle('opacity-30', r.disabled);
     }
 
+    /* ================= EXPORT ================= */
     function exportDesign() {
       showToast("Menyiapkan ekspor...");
-      selectObject(null); // Hide selection box
+      selectObject(null);
       
-      const artboard = document.getElementById('artboard');
+      const ab = document.getElementById('artboard');
+      const ws = document.getElementById('canvas-workspace');
+      const oldTransform = ws.style.transform;
+      ws.style.transform = `scale(1) translate(0,0)`;
       
-      // Temporarily reset transform for clean export
-      const workspace = document.getElementById('canvas-workspace');
-      const oldTransform = workspace.style.transform;
-      workspace.style.transform = `scale(1) translate(0,0)`;
-      
-      html2canvas(artboard, {
-        scale: 2, // High quality
+      html2canvas(ab, {
+        scale: appConfig.quality,
         useCORS: true,
-        backgroundColor: state.project.bg === 'transparent' ? null : state.project.bg
+        backgroundColor: appState.project.bgType === 'transparent' ? null : appState.project.bg
       }).then(canvas => {
-        // Restore transform
-        workspace.style.transform = oldTransform;
-        
+        ws.style.transform = oldTransform;
         const link = document.createElement('a');
-        link.download = `KREAVIO_${Date.now()}.png`;
+        link.download = `KREAVIO_${appState.project.name.replace(/\s+/g,'_')}_${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
         showToast("Berhasil diekspor!");
       }).catch(err => {
-        workspace.style.transform = oldTransform;
+        ws.style.transform = oldTransform;
         showToast("Gagal mengekspor.");
         console.error(err);
       });
+    }
+
+    /* ================= SCREENS ================= */
+    function renderHomeProjects() {
+      const cont = document.getElementById('projects-container');
+      if (projects.length === 0) {
+        cont.innerHTML = `<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center"><div class="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="folder-open" class="w-5 h-5 text-gray-500"></i></div><h3 class="text-sm font-semibold text-gray-200 mb-1">Belum ada proyek</h3><button onclick="openNewProjectModal()" class="bg-white text-gray-950 px-4 py-2 rounded-lg text-xs font-bold shadow-md mt-2">+ Buat Desain</button></div>`;
+      } else {
+        cont.innerHTML = projects.slice(0,3).map(p => projCard(p)).join('');
+      }
+      lucide.createIcons();
+    }
+    
+    function renderAllProjects() {
+      const cont = document.getElementById('all-projects-list');
+      if (projects.length === 0) cont.innerHTML = `<p class="text-sm text-gray-500 text-center mt-10">Belum ada proyek</p>`;
+      else cont.innerHTML = projects.map(p => projCard(p)).join('');
+      lucide.createIcons();
+    }
+    
+    function projCard(p) {
+      return `
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
+          <div class="flex items-center gap-3 cursor-pointer flex-1" onclick="loadProject('${p.id}')">
+            <div class="w-12 h-12 bg-gray-950 rounded-lg overflow-hidden border border-gray-800 flex items-center justify-center shrink-0">
+              ${p.thumbnail ? `<img src="${p.thumbnail}" class="w-full h-full object-cover">` : '<i data-lucide="image" class="w-5 h-5 text-gray-600"></i>'}
+            </div>
+            <div class="overflow-hidden">
+              <h4 class="text-sm font-bold text-white truncate">${p.name}</h4>
+              <p class="text-[10px] text-gray-400">${p.w} x ${p.h} px</p>
+            </div>
+          </div>
+          <button onclick="deleteProject('${p.id}')" class="p-2 text-gray-500 hover:text-red-400 shrink-0"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>`;
+    }
+
+    function renderTemplates(filter = 'Semua') {
+      const cont = document.getElementById('templates-grid');
+      if(!cont) return;
+      const list = filter === 'Semua' ? TEMPLATE_LIST : TEMPLATE_LIST.filter(t => t.cat === filter);
+      cont.innerHTML = list.map(t => `
+        <div onclick="useTemplate('${t.id}')" class="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col items-center cursor-pointer hover:border-brand-500 transition">
+          <div class="w-full aspect-square bg-gray-950 rounded-xl mb-3 flex items-center justify-center border border-gray-800 relative overflow-hidden" style="background:${t.bg}">
+             <span class="text-xs font-black" style="color:${t.objects[0].color}; font-family:'${t.objects[0].font}', sans-serif">${t.objects[0].text.substring(0,8)}</span>
+          </div>
+          <h4 class="text-xs font-bold text-white text-center">${t.name}</h4>
+          <span class="text-[9px] text-brand-400 mt-1">${t.cat}</span>
+        </div>
+      `).join('');
+    }
+    
+    function filterTemplates(cat) {
+      document.querySelectorAll('.cat-btn').forEach(b => {
+         b.classList.toggle('bg-brand-500', b.innerText === cat);
+         b.classList.toggle('text-white', b.innerText === cat);
+         b.classList.toggle('bg-gray-800', b.innerText !== cat);
+         b.classList.toggle('text-gray-300', b.innerText !== cat);
+      });
+      renderTemplates(cat);
+    }
+    
+    function useTemplate(id) {
+      const t = TEMPLATE_LIST.find(x => x.id === id);
+      if(t) initNewProject(t.w, t.h, t.name, t.objects, t.bg, t.bgType);
+    }
+
+    function renderMockups() {
+      const cont = document.getElementById('mockups-grid');
+      if(!cont) return;
+      cont.innerHTML = MOCKUP_LIST.map(m => `
+        <div onclick="showToast('Mockup ${m.name} dipilih. (Segera hadir di Editor)')" class="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col items-center cursor-pointer hover:border-brand-500 transition">
+          <div class="w-full aspect-square bg-gray-950 rounded-xl mb-3 flex items-center justify-center border border-gray-800 p-4">${m.svg}</div>
+          <h4 class="text-xs font-bold text-white text-center">${m.name}</h4>
+          <span class="text-[9px] text-gray-500 mt-1">${m.cat}</span>
+        </div>
+      `).join('');
+    }
+
+    function handleGlobalSearch(v) {
+       // Simple visual feedback implementation for search
+       if(v.length > 2) showToast(`Mencari "${v}"...`);
     }
 
   </script>
