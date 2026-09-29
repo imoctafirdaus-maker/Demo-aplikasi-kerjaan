@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>APPARIUM CAD — Professional Apparel Design & Tech Pack Workspace</title>
+  <title>APPARIUM CAD — Ruang Kerja Desain Pakaian & Tech Pack Profesional</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Three.js & OrbitControls CDN for Real 3D Interactive Simulation -->
+  <!-- Three.js & OrbitControls CDN untuk Simulasi 3D Realistis (Bisa diputar 360) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-  <!-- Google Fonts for Typography Engine -->
+  <!-- Google Fonts untuk Mesin Tipografi -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Cinzel:wght@600;800&family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@400;700;900&family=Oswald:wght@500;700&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:ital,wght@0,600;1,400&family=Press+Start+2P&family=Syne:wght@700;800&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
@@ -41,35 +41,35 @@
       touch-action: manipulation;
     }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    /* Kustomisasi Scrollbar Ala Editor Pro */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
 
-    /* Grid & Canvas Styles */
+    /* Gaya Kisi Kanvas (Grid) */
     .canvas-grid {
       background-size: 20px 20px;
       background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     }
 
     .ruler-x {
-      background: #111827;
+      background: #0f172a;
       border-bottom: 1px solid var(--border-color);
-      box-shadow: inset 0 -1px 2px rgba(0,0,0,0.5);
+      box-shadow: inset 0 -1px 3px rgba(0,0,0,0.5);
     }
     .ruler-y {
-      background: #111827;
+      background: #0f172a;
       border-right: 1px solid var(--border-color);
-      box-shadow: inset -1px 0 2px rgba(0,0,0,0.5);
+      box-shadow: inset -1px 0 3px rgba(0,0,0,0.5);
     }
 
-    /* Selection Box & Handles */
+    /* Kotak Pilihan & Titik Transformasi */
     .transform-handle {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       background-color: #ffffff;
       border: 2px solid var(--accent-cyan);
       border-radius: 2px;
@@ -77,23 +77,25 @@
       pointer-events: auto;
       z-index: 40;
       touch-action: none;
+      box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
-    .transform-handle.nw { top: -7px; left: -7px; cursor: nwse-resize; }
-    .transform-handle.ne { top: -7px; right: -7px; cursor: nesw-resize; }
-    .transform-handle.sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
-    .transform-handle.se { bottom: -7px; right: -7px; cursor: nwse-resize; }
-    .transform-handle.n  { top: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-    .transform-handle.s  { bottom: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-    .transform-handle.w  { top: 50%; left: -7px; transform: translateY(-50%); cursor: ew-resize; }
-    .transform-handle.e  { top: 50%; right: -7px; transform: translateY(-50%); cursor: ew-resize; }
+    .transform-handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
+    .transform-handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
+    .transform-handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+    .transform-handle.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+    .transform-handle.n  { top: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+    .transform-handle.s  { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+    .transform-handle.w  { top: 50%; left: -6px; transform: translateY(-50%); cursor: ew-resize; }
+    .transform-handle.e  { top: 50%; right: -6px; transform: translateY(-50%); cursor: ew-resize; }
     .transform-handle.rot { 
-      top: -28px; left: 50%; transform: translateX(-50%); 
-      cursor: grab; background: var(--accent-pink); border-radius: 50%; width: 16px; height: 16px; 
+      top: -30px; left: 50%; transform: translateX(-50%); 
+      cursor: grab; background: var(--accent-pink); border: 2px solid #fff; border-radius: 50%; width: 14px; height: 14px; 
     }
 
     .print-safe-zone {
       border: 1.5px dashed var(--accent-cyan);
       pointer-events: none;
+      background: rgba(6, 182, 212, 0.02);
     }
 
     .layer-item.active {
@@ -101,6 +103,7 @@
       border-left: 3px solid var(--accent-cyan);
     }
 
+    /* Tooltip Cantik */
     [data-tooltip]:hover::after {
       content: attr(data-tooltip);
       position: absolute;
@@ -109,21 +112,22 @@
       transform: translateX(-50%);
       background: #0f172a;
       color: #fff;
-      padding: 4px 8px;
+      padding: 5px 10px;
       font-size: 11px;
       border-radius: 4px;
       white-space: nowrap;
       z-index: 100;
       border: 1px solid #334155;
       pointer-events: none;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
 
     .modal-backdrop {
-      background: rgba(5, 8, 15, 0.88);
-      backdrop-filter: blur(8px);
+      background: rgba(5, 8, 15, 0.9);
+      backdrop-filter: blur(10px);
     }
 
-    /* Toast Notification */
+    /* Notifikasi (Toast) */
     #toast-container {
       position: fixed;
       bottom: 28px;
@@ -137,18 +141,18 @@
       background: #0f172a;
       color: #f3f4f6;
       border-left: 4px solid var(--accent-cyan);
-      border-top: 1px solid #334155;
-      border-right: 1px solid #334155;
-      border-bottom: 1px solid #334155;
+      border: 1px solid #334155;
+      border-left-width: 4px;
       padding: 10px 16px;
       border-radius: 6px;
       font-size: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
       animation: fadeIn 0.2s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* MODE SELULER RESPONSIVE OVERRIDES */
+    /* OVERRIDE MODE SELULER RESPONSIVE */
     body.mobile-mode #left-sidebar {
       position: fixed;
       left: -100%;
@@ -158,10 +162,7 @@
       z-index: 50;
       box-shadow: 10px 0 30px rgba(0,0,0,0.8);
     }
-    body.mobile-mode #left-sidebar.mobile-open {
-      left: 0;
-    }
-
+    body.mobile-mode #left-sidebar.mobile-open { left: 0; }
     body.mobile-mode #right-sidebar {
       position: fixed;
       right: -100%;
@@ -171,18 +172,9 @@
       z-index: 50;
       box-shadow: -10px 0 30px rgba(0,0,0,0.8);
     }
-    body.mobile-mode #right-sidebar.mobile-open {
-      right: 0;
-    }
-
-    body.mobile-mode #mobile-bottom-nav {
-      display: flex !important;
-    }
-
-    body.mobile-mode #sub-toolbar-controls {
-      overflow-x: auto;
-      white-space: nowrap;
-    }
+    body.mobile-mode #right-sidebar.mobile-open { right: 0; }
+    body.mobile-mode #mobile-bottom-nav { display: flex !important; }
+    body.mobile-mode #sub-toolbar-controls { overflow-x: auto; white-space: nowrap; }
 
     .mobile-backdrop {
       position: fixed;
@@ -191,36 +183,34 @@
       z-index: 45;
       display: none;
     }
-    .mobile-backdrop.active {
-      display: block;
-    }
+    .mobile-backdrop.active { display: block; }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col antialiased desktop-mode" id="app-body">
 
-  <!-- TOAST CONTAINER -->
+  <!-- WADAH NOTIFIKASI -->
   <div id="toast-container"></div>
   
-  <!-- MOBILE SIDEBAR BACKDROP -->
+  <!-- BACKDROP SIDEBAR SELULER -->
   <div id="mobile-backdrop" class="mobile-backdrop" onclick="closeMobileDrawers()"></div>
 
   <!-- ========================================== -->
-  <!-- 1. TOP HEADER & NAVIGATION BAR             -->
+  <!-- 1. HEADER ATAS & BAR NAVIGASI              -->
   <!-- ========================================== -->
   <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 md:px-4 z-40 select-none">
     <div class="flex items-center space-x-2 md:space-x-3">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg tracking-tighter">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg tracking-tighter shadow-md">
         AP
       </div>
       <div>
         <h1 class="text-xs font-bold tracking-wider text-slate-100 uppercase flex items-center gap-1.5">
           APPARIUM <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono">v5.0 PRO</span>
         </h1>
-        <p class="text-[9px] md:text-[10px] text-slate-400 font-mono hidden sm:block">PROFESSIONAL APPAREL WORKSPACE</p>
+        <p class="text-[9px] md:text-[10px] text-slate-400 font-mono hidden sm:block">RUANG KERJA PAKAIAN PROFESIONAL</p>
       </div>
     </div>
 
-    <!-- Mode Switcher: Desktop vs Seluler -->
+    <!-- Pengalih Mode: Desktop vs Seluler -->
     <div class="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px] font-mono">
       <button onclick="setAppMode('desktop')" id="mode-desktop-btn" class="px-2.5 py-1 rounded bg-cyan-500 text-slate-950 font-bold transition flex items-center gap-1">
         <i data-lucide="monitor" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">DESKTOP</span>
@@ -230,66 +220,66 @@
       </button>
     </div>
 
-    <!-- View Modes & Angle Controls -->
-    <div class="hidden lg:flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
-      <button onclick="setViewAngle('front')" id="view-front-btn" class="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition">FRONT</button>
-      <button onclick="setViewAngle('back')" id="view-back-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">BACK</button>
-      <button onclick="setViewAngle('left')" id="view-left-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">LEFT SIDE</button>
-      <button onclick="setViewAngle('right')" id="view-right-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">RIGHT SIDE</button>
+    <!-- Mode Tampilan & Kontrol Sudut -->
+    <div class="hidden lg:flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs shadow-inner">
+      <button onclick="setViewAngle('front')" id="view-front-btn" class="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-semibold transition">DEPAN</button>
+      <button onclick="setViewAngle('back')" id="view-back-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">BELAKANG</button>
+      <button onclick="setViewAngle('left')" id="view-left-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">SAMPING KIRI</button>
+      <button onclick="setViewAngle('right')" id="view-right-btn" class="px-3 py-1 rounded text-slate-400 hover:text-slate-200 transition">SAMPING KANAN</button>
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
       <button onclick="toggle3DMockupModal(true)" class="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium hover:bg-emerald-500/30 transition flex items-center gap-1">
-        <i data-lucide="box" class="w-3.5 h-3.5"></i> 3D MOCKUP
+        <i data-lucide="box" class="w-3.5 h-3.5"></i> MOCKUP 3D
       </button>
     </div>
 
-    <!-- Project File Actions, Unit & DPI -->
+    <!-- Tindakan File Proyek, Satuan & DPI -->
     <div class="flex items-center space-x-1.5 md:space-x-2 text-xs">
-      <!-- Project Actions -->
-      <button onclick="createNewProject()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="New Project">
+      <!-- Aksi Proyek -->
+      <button onclick="createNewProject()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Proyek Baru">
         <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
       </button>
-      <button onclick="saveProjectJSON()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="Save Project JSON">
+      <button onclick="saveProjectJSON()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Simpan Proyek JSON">
         <i data-lucide="save" class="w-3.5 h-3.5"></i>
       </button>
-      <button onclick="document.getElementById('project-file-input').click()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-tooltip="Load Project JSON">
+      <button onclick="document.getElementById('project-file-input').click()" class="p-1.5 md:px-2 md:py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition" data-tooltip="Muat Proyek JSON">
         <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
       </button>
       <input type="file" id="project-file-input" accept=".json,.apparium" class="hidden" onchange="loadProjectJSON(event)">
 
       <div class="h-4 w-[1px] bg-slate-800 hidden md:block"></div>
 
-      <!-- Unit Selector -->
+      <!-- Pemilih Satuan -->
       <div class="hidden md:flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700">
-        <span class="text-slate-400 text-[10px] uppercase font-mono">Unit:</span>
+        <span class="text-slate-400 text-[10px] uppercase font-mono">Satuan:</span>
         <select id="unit-selector" onchange="changeUnit(this.value)" class="bg-transparent text-slate-200 font-mono text-xs focus:outline-none cursor-pointer">
           <option value="cm" selected>cm</option>
           <option value="mm">mm</option>
-          <option value="in">inch</option>
+          <option value="in">inci</option>
           <option value="px">px</option>
           <option value="pt">pt</option>
         </select>
       </div>
 
-      <!-- DPI Selector -->
+      <!-- Pemilih DPI -->
       <div class="hidden md:flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700">
         <span class="text-slate-400 text-[10px] uppercase font-mono">DPI:</span>
         <select id="dpi-selector" onchange="changeDPI(this.value)" class="bg-transparent text-cyan-400 font-mono text-xs font-semibold focus:outline-none cursor-pointer">
           <option value="72">72 (Web)</option>
-          <option value="150">150 (Draft)</option>
-          <option value="300" selected>300 (Print Pro)</option>
+          <option value="150">150 (Draf)</option>
+          <option value="300" selected>300 (Cetak Pro)</option>
           <option value="600">600 (Ultra HD)</option>
         </select>
       </div>
 
-      <!-- Export Actions -->
+      <!-- Aksi Ekspor -->
       <div class="flex items-center space-x-1">
-        <button onclick="exportArtwork('png')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]">
+        <button onclick="exportArtwork('png')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]" data-tooltip="Ekspor Gambar">
           <i data-lucide="download" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">PNG</span>
         </button>
-        <button onclick="exportArtwork('svg')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]">
+        <button onclick="exportArtwork('svg')" class="px-2 py-1 md:px-2.5 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1 text-[11px]" data-tooltip="Ekspor Vektor">
           <i data-lucide="code" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">SVG</span>
         </button>
-        <button onclick="openTechPackModal()" class="px-2.5 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-90 text-slate-950 font-bold rounded transition flex items-center gap-1 shadow-lg shadow-cyan-500/10 text-[11px]">
+        <button onclick="openTechPackModal()" class="px-2.5 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-90 text-slate-950 font-bold rounded transition flex items-center gap-1 shadow-lg shadow-cyan-500/20 text-[11px]">
           <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">TECH PACK</span>
         </button>
       </div>
@@ -297,116 +287,116 @@
   </header>
 
   <!-- ========================================== -->
-  <!-- 2. MAIN SUB-TOOLBAR / WORKSPACE CONTROLS   -->
+  <!-- 2. SUB-TOOLBAR UTAMA / KONTROL RUANG KERJA -->
   <!-- ========================================== -->
-  <div class="h-10 md:h-9 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between px-3 md:px-4 text-xs z-30 overflow-x-auto" id="sub-toolbar-controls">
+  <div class="h-10 md:h-9 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 md:px-4 text-xs z-30 overflow-x-auto shadow-sm" id="sub-toolbar-controls">
     <div class="flex items-center space-x-1.5 md:space-x-2 shrink-0">
-      <!-- Core Tools -->
-      <button onclick="setActiveTool('select')" id="tool-select" class="p-1.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40" data-tooltip="Select & Transform">
+      <!-- Alat Inti -->
+      <button onclick="setActiveTool('select')" id="tool-select" class="p-1.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 transition" data-tooltip="Pilih & Transformasi">
         <i data-lucide="mouse-pointer" class="w-4 h-4"></i>
       </button>
-      <button onclick="addTextObject('YOUR BRAND', 'Bebas Neue')" id="tool-text" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Add Typography">
+      <button onclick="addTextObject('MEREK ANDA', 'Bebas Neue')" id="tool-text" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tambah Tipografi">
         <i data-lucide="type" class="w-4 h-4"></i>
       </button>
-      <button onclick="addShapeObject('rectangle')" id="tool-shape" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Add Vector Shape">
+      <button onclick="addShapeObject('rectangle')" id="tool-shape" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tambah Bentuk Vektor">
         <i data-lucide="square" class="w-4 h-4"></i>
       </button>
 
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
 
-      <!-- Quick Object Actions -->
-      <button onclick="duplicateSelectedObject()" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Duplicate Object">
+      <!-- Tindakan Objek Cepat -->
+      <button onclick="duplicateSelectedObject()" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Duplikat Objek">
         <i data-lucide="copy" class="w-4 h-4"></i>
       </button>
-      <button onclick="flipSelectedObject('h')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Flip Horizontal">
+      <button onclick="flipSelectedObject('h')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Balik Horizontal">
         <i data-lucide="flip-horizontal" class="w-4 h-4"></i>
       </button>
-      <button onclick="flipSelectedObject('v')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Flip Vertical">
+      <button onclick="flipSelectedObject('v')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Balik Vertikal">
         <i data-lucide="flip-vertical" class="w-4 h-4"></i>
       </button>
-      <button onclick="alignSelectedObject('center')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300" data-tooltip="Center on Garment">
+      <button onclick="alignSelectedObject('center')" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" data-tooltip="Tengahkan di Pakaian">
         <i data-lucide="align-center" class="w-4 h-4"></i>
       </button>
 
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
 
-      <!-- Display Toggles -->
-      <label class="hidden md:flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px]">
-        <input type="checkbox" id="toggle-rulers" checked onchange="toggleRulers()" class="rounded bg-slate-800 border-slate-700 text-cyan-500">
-        Rulers
+      <!-- Tampilan Pengalih -->
+      <label class="hidden md:flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition">
+        <input type="checkbox" id="toggle-rulers" checked onchange="toggleRulers()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer">
+        Penggaris
       </label>
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px]">
-        <input type="checkbox" id="toggle-grid" checked onchange="toggleGrid()" class="rounded bg-slate-800 border-slate-700 text-cyan-500">
-        Grid
+      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition">
+        <input type="checkbox" id="toggle-grid" checked onchange="toggleGrid()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer">
+        Kisi
       </label>
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px]">
-        <input type="checkbox" id="toggle-safe-zone" checked onchange="toggleSafeZone()" class="rounded bg-slate-800 border-slate-700 text-cyan-500">
-        Print Area
+      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-slate-100 text-[11px] transition">
+        <input type="checkbox" id="toggle-safe-zone" checked onchange="toggleSafeZone()" class="rounded bg-slate-800 border-slate-700 text-cyan-500 cursor-pointer">
+        Area Cetak
       </label>
     </div>
 
-    <!-- History & Zoom Controls -->
+    <!-- Riwayat & Kontrol Zoom -->
     <div class="flex items-center space-x-2 md:space-x-3 shrink-0">
       <div class="flex items-center space-x-1 border-r border-slate-800 pr-2 md:pr-3">
-        <button onclick="undo()" class="p-1 text-slate-400 hover:text-slate-200" data-tooltip="Undo"><i data-lucide="undo" class="w-3.5 h-3.5"></i></button>
-        <button onclick="redo()" class="p-1 text-slate-400 hover:text-slate-200" data-tooltip="Redo"><i data-lucide="redo" class="w-3.5 h-3.5"></i></button>
+        <button onclick="undo()" class="p-1 text-slate-400 hover:text-slate-200 transition" data-tooltip="Batal"><i data-lucide="undo" class="w-3.5 h-3.5"></i></button>
+        <button onclick="redo()" class="p-1 text-slate-400 hover:text-slate-200 transition" data-tooltip="Ulangi"><i data-lucide="redo" class="w-3.5 h-3.5"></i></button>
       </div>
       <div class="flex items-center space-x-1.5 font-mono text-[11px]">
-        <button onclick="adjustZoom(-0.1)" class="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"><i data-lucide="minus" class="w-3 h-3"></i></button>
+        <button onclick="adjustZoom(-0.1)" class="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition"><i data-lucide="minus" class="w-3 h-3"></i></button>
         <span id="zoom-level-text" class="w-10 text-center text-cyan-400 font-bold">100%</span>
-        <button onclick="adjustZoom(0.1)" class="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"><i data-lucide="plus" class="w-3 h-3"></i></button>
-        <button onclick="resetZoom()" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded text-[10px]">FIT</button>
+        <button onclick="adjustZoom(0.1)" class="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition"><i data-lucide="plus" class="w-3 h-3"></i></button>
+        <button onclick="resetZoom()" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded text-[10px] transition font-bold">PAS</button>
       </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 3. MAIN WORKSPACE CONTENT AREA             -->
+  <!-- 3. AREA KONTEN RUANG KERJA UTAMA           -->
   <!-- ========================================== -->
   <div class="flex-1 flex overflow-hidden relative">
 
     <!-- ---------------------------------------- -->
-    <!-- LEFT SIDEBAR: LIBRARIES & ASSET HUBS     -->
+    <!-- SIDEBAR KIRI: PUSTAKA & PUSAT ASET       -->
     <!-- ---------------------------------------- -->
     <aside id="left-sidebar" class="w-80 bg-slate-900 border-r border-slate-800 flex flex-col z-20 select-none transition-all duration-200">
-      <!-- Sidebar Navigation Tabs -->
+      <!-- Tab Navigasi Sidebar -->
       <div class="flex border-b border-slate-800 text-[11px] font-semibold bg-slate-950">
-        <button onclick="switchLeftTab('garments')" id="tab-btn-garments" class="flex-1 py-2.5 text-center text-cyan-400 border-b-2 border-cyan-400 transition">GARMENTS</button>
-        <button onclick="switchLeftTab('typography')" id="tab-btn-typography" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">TYPO</button>
-        <button onclick="switchLeftTab('assets')" id="tab-btn-assets" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">ASSETS</button>
-        <button onclick="switchLeftTab('patterns')" id="tab-btn-patterns" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">PATTERNS</button>
+        <button onclick="switchLeftTab('garments')" id="tab-btn-garments" class="flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition">PAKAIAN</button>
+        <button onclick="switchLeftTab('typography')" id="tab-btn-typography" class="flex-1 py-3 text-center text-slate-400 hover:text-slate-200 transition">TEKS</button>
+        <button onclick="switchLeftTab('assets')" id="tab-btn-assets" class="flex-1 py-3 text-center text-slate-400 hover:text-slate-200 transition">ASET</button>
+        <button onclick="switchLeftTab('patterns')" id="tab-btn-patterns" class="flex-1 py-3 text-center text-slate-400 hover:text-slate-200 transition">POLA</button>
       </div>
 
-      <!-- TAB 1: GARMENT LIBRARY -->
-      <div id="tab-content-garments" class="flex-1 overflow-y-auto p-3 space-y-3">
+      <!-- TAB 1: PUSTAKA PAKAIAN -->
+      <div id="tab-content-garments" class="flex-1 overflow-y-auto p-4 space-y-4">
         <div>
           <div class="relative mb-2">
-            <input type="text" id="garment-search-input" onkeyup="filterGarments()" placeholder="Search garments..." class="w-full bg-slate-950 border border-slate-800 rounded pl-8 pr-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
-            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5"></i>
+            <input type="text" id="garment-search-input" onkeyup="filterGarments()" placeholder="Cari pakaian..." class="w-full bg-slate-950 border border-slate-700 rounded-md pl-8 pr-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition shadow-inner">
+            <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5"></i>
           </div>
-          <select id="garment-category-filter" onchange="filterGarments()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
-            <option value="all">All Garments Super Library</option>
-            <option value="tshirts">T-Shirts & Tops</option>
-            <option value="hoodies">Hoodies & Sweatshirts</option>
-            <option value="jackets">Jackets & Outerwear</option>
-            <option value="jerseys">Jerseys</option>
-            <option value="pants">Pants & Bottoms</option>
-            <option value="shorts">Shorts</option>
+          <select id="garment-category-filter" onchange="filterGarments()" class="w-full bg-slate-950 border border-slate-700 rounded-md px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition cursor-pointer">
+            <option value="all">Semua Pustaka Pakaian</option>
+            <option value="tshirts">Kaos & Atasan</option>
+            <option value="hoodies">Jaket Hoodie & Sweatshirt</option>
+            <option value="jackets">Jaket & Pakaian Luar</option>
+            <option value="jerseys">Jersey</option>
+            <option value="pants">Celana & Bawahan</option>
+            <option value="shorts">Celana Pendek</option>
           </select>
         </div>
 
-        <div class="grid grid-cols-2 gap-2" id="garment-items-grid">
-          <!-- Dynamically populated -->
+        <div class="grid grid-cols-2 gap-3" id="garment-items-grid">
+          <!-- Diisi secara dinamis -->
         </div>
       </div>
 
-      <!-- TAB 2: TYPOGRAPHY SYSTEM -->
-      <div id="tab-content-typography" class="hidden flex-1 overflow-y-auto p-3 space-y-3">
+      <!-- TAB 2: SISTEM TIPOGRAFI -->
+      <div id="tab-content-typography" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
         <div>
-          <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-1">Font Search & Category</label>
-          <input type="text" id="font-search-input" onkeyup="filterFontCategory()" placeholder="Search font name..." class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 mb-2 focus:outline-none focus:border-cyan-500">
-          <select id="font-category-select" onchange="filterFontCategory()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
-            <option value="all">All Font Categories</option>
+          <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-1">Cari Font & Kategori</label>
+          <input type="text" id="font-search-input" onkeyup="filterFontCategory()" placeholder="Cari nama font..." class="w-full bg-slate-950 border border-slate-700 rounded-md px-3 py-2 text-xs text-slate-200 mb-2 focus:outline-none focus:border-cyan-500 transition">
+          <select id="font-category-select" onchange="filterFontCategory()" class="w-full bg-slate-950 border border-slate-700 rounded-md px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition cursor-pointer">
+            <option value="all">Semua Kategori Font</option>
             <option value="Sans Serif">Sans Serif</option>
             <option value="Serif">Serif</option>
             <option value="Display">Display</option>
@@ -420,84 +410,84 @@
           </select>
         </div>
 
-        <!-- Font Face Import Engine -->
-        <div class="border border-dashed border-slate-700 rounded-lg p-3 text-center bg-slate-950/50 hover:border-cyan-500 transition">
-          <i data-lucide="upload-cloud" class="w-5 h-5 text-cyan-400 mx-auto mb-1"></i>
-          <p class="text-xs font-semibold text-slate-200">Import Custom Font File</p>
+        <!-- Mesin Impor Wajah Font -->
+        <div class="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center bg-slate-950/50 hover:border-cyan-500 transition cursor-pointer" onclick="document.getElementById('font-file-input').click()">
+          <i data-lucide="upload-cloud" class="w-6 h-6 text-cyan-400 mx-auto mb-2"></i>
+          <p class="text-xs font-semibold text-slate-200">Impor File Font Kustom</p>
           <p class="text-[10px] text-slate-400 mb-2">TTF, OTF, WOFF, WOFF2</p>
           <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" class="hidden" onchange="handleFontUpload(event)">
-          <button onclick="document.getElementById('font-file-input').click()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs text-cyan-400 rounded font-medium border border-slate-700 transition">Browse Font File</button>
+          <span class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-cyan-400 rounded-md font-medium border border-slate-700 transition block w-max mx-auto">Pilih File Font</span>
         </div>
 
         <div>
-          <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-1.5">Click to Insert Typography</label>
-          <div class="space-y-1.5" id="font-presets-container">
-            <!-- Dynamically populated -->
+          <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-2">Klik untuk Menyisipkan Tipografi</label>
+          <div class="space-y-2" id="font-presets-container">
+            <!-- Diisi secara dinamis -->
           </div>
         </div>
       </div>
 
-      <!-- TAB 3: EXTERNAL ASSET & GRAPHICS HUB -->
-      <div id="tab-content-assets" class="hidden flex-1 overflow-y-auto p-3 space-y-3">
-        <div class="border-2 border-dashed border-cyan-500/30 rounded-lg p-4 text-center bg-cyan-950/10 hover:border-cyan-500 transition cursor-pointer" onclick="document.getElementById('asset-file-input').click()">
-          <i data-lucide="image-plus" class="w-7 h-7 text-cyan-400 mx-auto mb-1"></i>
-          <p class="text-xs font-bold text-slate-200">Import Custom Artwork / Logo</p>
-          <p class="text-[10px] text-slate-400 mb-2">PNG, JPG, WEBP, SVG</p>
+      <!-- TAB 3: PUSAT ASET GRAFIS & EKSTERNAL -->
+      <div id="tab-content-assets" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="border-2 border-dashed border-cyan-500/40 rounded-lg p-5 text-center bg-cyan-950/20 hover:border-cyan-500 transition cursor-pointer" onclick="document.getElementById('asset-file-input').click()">
+          <i data-lucide="image-plus" class="w-8 h-8 text-cyan-400 mx-auto mb-2"></i>
+          <p class="text-xs font-bold text-slate-200">Impor Karya Seni / Logo Kustom</p>
+          <p class="text-[10px] text-slate-400 mb-3">PNG, JPG, WEBP, SVG</p>
           <input type="file" id="asset-file-input" accept="image/*,.svg" class="hidden" onchange="handleAssetUpload(event)">
-          <span class="px-3 py-1 bg-cyan-500 text-slate-950 text-xs font-bold rounded shadow hover:bg-cyan-400 transition">Select Artwork</span>
+          <span class="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-md shadow transition">Pilih Karya Seni</span>
         </div>
 
         <div>
-          <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-1.5">Vector Badges & Brands</label>
+          <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-2">Lencana & Merek Vektor</label>
           <div class="grid grid-cols-3 gap-2" id="stock-assets-grid">
-            <!-- Stock assets injected -->
+            <!-- Aset stok disuntikkan -->
           </div>
         </div>
       </div>
 
-      <!-- TAB 4: PATTERN & TEXTURE ENGINE -->
-      <div id="tab-content-patterns" class="hidden flex-1 overflow-y-auto p-3 space-y-3">
-        <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-1.5">Apparel Pattern Library</label>
-        <div class="grid grid-cols-2 gap-2" id="pattern-presets-grid">
-          <!-- Generated by JS -->
+      <!-- TAB 4: MESIN POLA & TEKSTUR -->
+      <div id="tab-content-patterns" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
+        <label class="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-2">Pustaka Pola Pakaian</label>
+        <div class="grid grid-cols-2 gap-3" id="pattern-presets-grid">
+          <!-- Dibuat oleh JS -->
         </div>
       </div>
     </aside>
 
     <!-- ---------------------------------------- -->
-    <!-- CENTER CANVAS EDITING WORKSPACE           -->
+    <!-- RUANG KERJA PENGEDITAN KANVAS TENGAH      -->
     <!-- ---------------------------------------- -->
     <main class="flex-1 bg-slate-950 relative flex flex-col overflow-hidden canvas-grid" id="main-canvas-container">
       
-      <!-- Top Horizontal Ruler -->
+      <!-- Penggaris Horizontal Atas -->
       <div class="h-6 ruler-x w-full hidden md:flex items-center px-6 text-[9px] font-mono text-slate-500 justify-between select-none overflow-hidden" id="ruler-x-bar">
       </div>
 
       <div class="flex-1 flex relative overflow-hidden">
-        <!-- Left Vertical Ruler -->
+        <!-- Penggaris Vertikal Kiri -->
         <div class="w-6 ruler-y h-full hidden md:flex flex-col justify-between py-6 text-[9px] font-mono text-slate-500 items-center select-none overflow-hidden" id="ruler-y-bar">
         </div>
 
-        <!-- Interactive Canvas Viewport -->
+        <!-- Viewport Kanvas Interaktif -->
         <div class="flex-1 relative flex items-center justify-center overflow-auto p-2 sm:p-8" id="canvas-viewport" onclick="handleCanvasBackgroundClick(event)">
           
-          <div id="apparel-canvas-frame" class="relative transition-transform duration-75 shadow-2xl bg-slate-900/40 rounded-lg border border-slate-800/80" style="width: 600px; height: 700px; transform: scale(1);">
+          <div id="apparel-canvas-frame" class="relative transition-transform duration-75 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-slate-900/40 rounded-lg border border-slate-800/80" style="width: 600px; height: 700px; transform: scale(1);">
             
-            <!-- Garment Vector Canvas Overlay -->
+            <!-- Overlay Kanvas Vektor Pakaian -->
             <svg id="garment-svg-layer" class="w-full h-full absolute inset-0 z-0 pointer-events-none filter drop-shadow-2xl" viewBox="0 0 600 700">
             </svg>
 
-            <!-- Printable Safe Zone Overlay Box -->
-            <div id="print-safe-boundary" class="print-safe-zone absolute z-10 flex items-start justify-end p-1" style="top: 130px; left: 160px; width: 280px; height: 380px;">
-              <span id="print-area-tag" class="text-[9px] font-mono text-cyan-400 bg-slate-900/90 px-1 rounded border border-cyan-500/30">MAX PRINT (28 x 38 cm)</span>
+            <!-- Kotak Overlay Zona Aman Cetak -->
+            <div id="print-safe-boundary" class="print-safe-zone absolute z-10 flex items-start justify-end p-1 rounded-sm" style="top: 130px; left: 160px; width: 280px; height: 380px;">
+              <span id="print-area-tag" class="text-[9px] font-mono text-cyan-400 bg-slate-900/95 px-1.5 py-0.5 rounded border border-cyan-500/30">CETAK MAKS (28 x 38 cm)</span>
             </div>
 
-            <!-- Dynamic Artwork & Objects Layer -->
+            <!-- Lapisan Karya Seni & Objek Dinamis -->
             <div id="artwork-objects-container" class="absolute inset-0 z-20 pointer-events-auto">
             </div>
 
-            <!-- Interactive Transform Controls Box -->
-            <div id="selection-box" class="absolute z-30 border-2 border-cyan-400 pointer-events-none hidden" style="top:0; left:0; width:0; height:0;">
+            <!-- Kotak Kontrol Transformasi Interaktif -->
+            <div id="selection-box" class="absolute z-30 border-2 border-cyan-400 pointer-events-none hidden shadow-[0_0_10px_rgba(6,182,212,0.5)]" style="top:0; left:0; width:0; height:0;">
               <div class="transform-handle nw" onmousedown="initTransform(event, 'nw')" ontouchstart="initTransform(event, 'nw')"></div>
               <div class="transform-handle ne" onmousedown="initTransform(event, 'ne')" ontouchstart="initTransform(event, 'ne')"></div>
               <div class="transform-handle sw" onmousedown="initTransform(event, 'sw')" ontouchstart="initTransform(event, 'sw')"></div>
@@ -506,7 +496,7 @@
               <div class="transform-handle s"  onmousedown="initTransform(event, 's')" ontouchstart="initTransform(event, 's')"></div>
               <div class="transform-handle w"  onmousedown="initTransform(event, 'w')" ontouchstart="initTransform(event, 'w')"></div>
               <div class="transform-handle e"  onmousedown="initTransform(event, 'e')" ontouchstart="initTransform(event, 'e')"></div>
-              <div class="transform-handle rot" onmousedown="initRotate(event)" ontouchstart="initRotate(event)"></div>
+              <div class="transform-handle rot flex items-center justify-center text-white" onmousedown="initRotate(event)" ontouchstart="initRotate(event)"><i data-lucide="rotate-cw" style="width: 8px; height: 8px;"></i></div>
             </div>
 
           </div>
@@ -514,97 +504,97 @@
         </div>
       </div>
 
-      <!-- Bottom Status Bar -->
-      <footer class="h-6 bg-slate-900 border-t border-slate-800 px-3 md:px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 z-30">
-        <div class="flex items-center space-x-3">
-          <span class="flex items-center gap-1 text-cyan-400"><i data-lucide="check-circle" class="w-3 h-3"></i> READY</span>
-          <span class="hidden sm:inline">GARMENT: <strong id="status-garment-name" class="text-slate-200">REGULAR T-SHIRT</strong></span>
+      <!-- Bilah Status Bawah -->
+      <footer class="h-7 bg-slate-900 border-t border-slate-800 px-3 md:px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 z-30 shadow-inner">
+        <div class="flex items-center space-x-4">
+          <span class="flex items-center gap-1.5 text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded font-bold"><i data-lucide="check-circle" class="w-3 h-3"></i> SIAP</span>
+          <span class="hidden sm:inline">PAKAIAN: <strong id="status-garment-name" class="text-slate-200">KAOS REGULER</strong></span>
         </div>
-        <div class="flex items-center space-x-3">
-          <span>X: <span id="pos-x-val">0</span> <span class="unit-label">cm</span> | Y: <span id="pos-y-val">0</span> <span class="unit-label">cm</span></span>
-          <span class="hidden sm:inline">SIZE: <span id="size-w-val">0</span> x <span id="size-h-val">0</span> <span class="unit-label">cm</span></span>
+        <div class="flex items-center space-x-4">
+          <span>X: <strong id="pos-x-val" class="text-slate-200">0</strong> <span class="unit-label">cm</span> | Y: <strong id="pos-y-val" class="text-slate-200">0</strong> <span class="unit-label">cm</span></span>
+          <span class="hidden sm:inline border-l border-slate-700 pl-4">UKURAN: <strong id="size-w-val" class="text-slate-200">0</strong> x <strong id="size-h-val" class="text-slate-200">0</strong> <span class="unit-label">cm</span></span>
         </div>
       </footer>
     </main>
 
     <!-- ---------------------------------------- -->
-    <!-- RIGHT SIDEBAR: PROPERTIES & LAYERS PANEL -->
+    <!-- SIDEBAR KANAN: PANEL PROPERTI & LAPISAN  -->
     <!-- ---------------------------------------- -->
     <aside id="right-sidebar" class="w-80 bg-slate-900 border-l border-slate-800 flex flex-col z-20 select-none transition-all duration-200">
-      <!-- Tabs Selector -->
+      <!-- Pemilih Tab -->
       <div class="flex border-b border-slate-800 text-[11px] font-semibold bg-slate-950">
-        <button onclick="switchRightTab('properties')" id="tab-btn-properties" class="flex-1 py-2.5 text-center text-cyan-400 border-b-2 border-cyan-400 transition">PROPERTIES</button>
-        <button onclick="switchRightTab('layers')" id="tab-btn-layers" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">LAYERS</button>
-        <button onclick="switchRightTab('colors')" id="tab-btn-colors" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition">PALETTE</button>
+        <button onclick="switchRightTab('properties')" id="tab-btn-properties" class="flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition">PROPERTI</button>
+        <button onclick="switchRightTab('layers')" id="tab-btn-layers" class="flex-1 py-3 text-center text-slate-400 hover:text-slate-200 transition">LAPISAN</button>
+        <button onclick="switchRightTab('colors')" id="tab-btn-colors" class="flex-1 py-3 text-center text-slate-400 hover:text-slate-200 transition">PALET</button>
       </div>
 
-      <!-- TAB 1: PROPERTIES PANEL -->
-      <div id="tab-content-properties" class="flex-1 overflow-y-auto p-3 space-y-3">
-        <!-- Garment Color Blocking Controls -->
-        <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-2">
-          <label class="text-[10px] uppercase font-mono text-slate-400 block font-bold">Garment Color Blocking</label>
-          <div class="grid grid-cols-2 gap-2 text-xs">
+      <!-- TAB 1: PANEL PROPERTI -->
+      <div id="tab-content-properties" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- Kontrol Blok Warna Pakaian -->
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-3 shadow-inner">
+          <label class="text-[10px] uppercase font-mono text-slate-400 block font-bold border-b border-slate-800 pb-1">Blok Warna Pakaian</label>
+          <div class="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <label class="text-[9px] text-slate-400 block">Base Fabric</label>
-              <input type="color" id="garment-color-picker" value="#18181b" onchange="changeGarmentColor('base', this.value)" class="w-full h-7 rounded bg-transparent cursor-pointer border border-slate-700">
+              <label class="text-[9px] text-slate-400 block mb-1">Kain Dasar</label>
+              <input type="color" id="garment-color-picker" value="#18181b" onchange="changeGarmentColor('base', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
             </div>
             <div>
-              <label class="text-[9px] text-slate-400 block">Collar / Rib</label>
-              <input type="color" id="collar-color-picker" value="#0f172a" onchange="changeGarmentColor('collar', this.value)" class="w-full h-7 rounded bg-transparent cursor-pointer border border-slate-700">
+              <label class="text-[9px] text-slate-400 block mb-1">Kerah / Rib</label>
+              <input type="color" id="collar-color-picker" value="#0f172a" onchange="changeGarmentColor('collar', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
             </div>
             <div>
-              <label class="text-[9px] text-slate-400 block">Sleeves</label>
-              <input type="color" id="sleeve-color-picker" value="#18181b" onchange="changeGarmentColor('sleeves', this.value)" class="w-full h-7 rounded bg-transparent cursor-pointer border border-slate-700">
+              <label class="text-[9px] text-slate-400 block mb-1">Lengan</label>
+              <input type="color" id="sleeve-color-picker" value="#18181b" onchange="changeGarmentColor('sleeves', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
             </div>
             <div>
-              <label class="text-[9px] text-slate-400 block">Stitching</label>
-              <input type="color" id="stitch-color-picker" value="#475569" onchange="changeGarmentColor('stitching', this.value)" class="w-full h-7 rounded bg-transparent cursor-pointer border border-slate-700">
+              <label class="text-[9px] text-slate-400 block mb-1">Jahitan</label>
+              <input type="color" id="stitch-color-picker" value="#475569" onchange="changeGarmentColor('stitching', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-700">
             </div>
           </div>
         </div>
 
-        <!-- Print Placement & Area Controls -->
-        <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-2">
-          <label class="text-[10px] uppercase font-mono text-slate-400 block font-bold">Print Placement Zone</label>
-          <select id="print-zone-selector" onchange="changePrintZone(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200">
-            <option value="front-center">Front Center Print Area</option>
-            <option value="left-chest">Left Chest Badge</option>
-            <option value="right-chest">Right Chest Badge</option>
-            <option value="sleeve-left">Left Sleeve</option>
-            <option value="sleeve-right">Right Sleeve</option>
-            <option value="back-center">Full Back Print</option>
-            <option value="neck-label">Neck Label Area</option>
+        <!-- Penempatan Cetakan & Kontrol Area -->
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2 shadow-inner">
+          <label class="text-[10px] uppercase font-mono text-slate-400 block font-bold">Zona Penempatan Cetak</label>
+          <select id="print-zone-selector" onchange="changePrintZone(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-slate-200 cursor-pointer">
+            <option value="front-center">Area Cetak Tengah Depan</option>
+            <option value="left-chest">Lencana Dada Kiri</option>
+            <option value="right-chest">Lencana Dada Kanan</option>
+            <option value="sleeve-left">Lengan Kiri</option>
+            <option value="sleeve-right">Lengan Kanan</option>
+            <option value="back-center">Area Cetak Belakang Penuh</option>
+            <option value="neck-label">Area Label Leher</option>
           </select>
         </div>
 
-        <!-- Selected Object Detailed Properties -->
+        <!-- Properti Detail Objek Terpilih -->
         <div id="object-properties-container" class="space-y-3">
-          <p class="text-xs text-slate-500 italic text-center py-4">Pilih objek di kanvas untuk mengedit detail properti.</p>
+          <p class="text-xs text-slate-500 italic text-center py-6">Pilih objek di kanvas untuk mengedit detail properti.</p>
         </div>
       </div>
 
-      <!-- TAB 2: LAYER MANAGEMENT SYSTEM -->
-      <div id="tab-content-layers" class="hidden flex-1 overflow-y-auto p-3 space-y-2">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-[10px] font-mono text-slate-400 uppercase">Layer Order</span>
-          <div class="flex items-center gap-1">
-            <button onclick="moveLayerUp()" class="p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300"><i data-lucide="arrow-up" class="w-3 h-3"></i></button>
-            <button onclick="moveLayerDown()" class="p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300"><i data-lucide="arrow-down" class="w-3 h-3"></i></button>
-            <button onclick="deleteSelectedObject()" class="p-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+      <!-- TAB 2: SISTEM MANAJEMEN LAPISAN -->
+      <div id="tab-content-layers" class="hidden flex-1 overflow-y-auto p-4 space-y-3">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+          <span class="text-[10px] font-mono text-slate-400 uppercase font-bold">Urutan Lapisan</span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="moveLayerUp()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
+            <button onclick="moveLayerDown()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deleteSelectedObject()" class="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 rounded transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>
 
-        <div id="layers-list-container" class="space-y-1.5">
-          <!-- Layers Injected -->
+        <div id="layers-list-container" class="space-y-2">
+          <!-- Lapisan Disuntikkan -->
         </div>
       </div>
 
-      <!-- TAB 3: PANTONE® TCX & COLOR PALETTE -->
-      <div id="tab-content-colors" class="hidden flex-1 overflow-y-auto p-3 space-y-3">
+      <!-- TAB 3: PANTONE® TCX & PALET WARNA -->
+      <div id="tab-content-colors" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
         <div>
-          <label class="text-[10px] uppercase font-mono text-slate-400 block mb-1.5">Fashion Color TCX Palette Reference</label>
-          <div class="grid grid-cols-4 gap-2" id="pantone-swatches-grid">
-            <!-- Swatches dynamic -->
+          <label class="text-[10px] uppercase font-mono text-slate-400 block mb-2 font-bold">Referensi Palet Warna Fashion TCX</label>
+          <div class="grid grid-cols-4 gap-3" id="pantone-swatches-grid">
+            <!-- Contoh dinamis -->
           </div>
         </div>
       </div>
@@ -614,138 +604,153 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MOBILE MODE BOTTOM NAVIGATION BAR          -->
+  <!-- BAR NAVIGASI BAWAH MODE SELULER            -->
   <!-- ========================================== -->
-  <nav id="mobile-bottom-nav" class="hidden h-12 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-40 text-[10px] font-mono">
-    <button onclick="toggleMobileDrawer('left')" class="flex flex-col items-center justify-center text-slate-400 hover:text-cyan-400">
-      <i data-lucide="layout-grid" class="w-4 h-4 mb-0.5"></i>
-      <span>ASET & GARMEN</span>
+  <nav id="mobile-bottom-nav" class="hidden h-14 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-40 text-[10px] font-mono shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+    <button onclick="toggleMobileDrawer('left')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition">
+      <i data-lucide="layout-grid" class="w-5 h-5 mb-1"></i>
+      <span>ASET & PAKAIAN</span>
     </button>
-    <button onclick="setViewAngle(state.activeAngle === 'front' ? 'back' : 'front')" class="flex flex-col items-center justify-center text-slate-400 hover:text-cyan-400">
-      <i data-lucide="refresh-cw" class="w-4 h-4 mb-0.5"></i>
-      <span>SUDUT VIEW</span>
+    <button onclick="setViewAngle(state.activeAngle === 'front' ? 'back' : 'front')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition border-l border-r border-slate-800">
+      <i data-lucide="refresh-cw" class="w-5 h-5 mb-1"></i>
+      <span>SUDUT PANDANG</span>
     </button>
-    <button onclick="toggle3DMockupModal(true)" class="flex flex-col items-center justify-center text-emerald-400">
-      <i data-lucide="box" class="w-4 h-4 mb-0.5"></i>
-      <span>MOCKUP 3D</span>
+    <button onclick="toggle3DMockupModal(true)" class="flex flex-col items-center justify-center w-full h-full text-emerald-400 hover:bg-emerald-900/30 transition border-r border-slate-800 bg-emerald-950/20">
+      <i data-lucide="box" class="w-5 h-5 mb-1"></i>
+      <span class="font-bold">MOCKUP 3D</span>
     </button>
-    <button onclick="toggleMobileDrawer('right')" class="flex flex-col items-center justify-center text-slate-400 hover:text-cyan-400">
-      <i data-lucide="sliders" class="w-4 h-4 mb-0.5"></i>
+    <button onclick="toggleMobileDrawer('right')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition">
+      <i data-lucide="sliders" class="w-5 h-5 mb-1"></i>
       <span>PROPERTI</span>
     </button>
   </nav>
 
   <!-- ========================================== -->
-  <!-- 4. 3D REALISTIC MOCKUP PREVIEW MODAL      -->
+  <!-- 4. MODAL PRATINJAU MOCKUP 3D REALISTIS (360) -->
   <!-- ========================================== -->
-  <div id="modal-3d-preview" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6">
-    <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-      <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-        <div class="flex items-center gap-2">
-          <i data-lucide="box" class="w-5 h-5 text-emerald-400"></i>
-          <h2 class="text-xs md:text-sm font-bold text-slate-100 uppercase tracking-wider">3D Realtime Fabric Simulation</h2>
+  <div id="modal-3d-preview" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6 transition-opacity">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <div class="flex items-center gap-3">
+          <div class="p-1.5 bg-emerald-500/20 rounded">
+            <i data-lucide="box" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+          <div>
+            <h2 class="text-sm md:text-base font-bold text-slate-100 uppercase tracking-wider">Simulasi Kain Real-time 3D</h2>
+            <p class="text-[10px] text-slate-400 font-mono">Bisa Diputar 360 Derajat</p>
+          </div>
         </div>
-        <button onclick="toggle3DMockupModal(false)" class="text-slate-400 hover:text-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="toggle3DMockupModal(false)" class="text-slate-400 hover:text-slate-100 p-1 hover:bg-slate-800 rounded transition"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
 
       <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div id="threejs-canvas-container" class="flex-1 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden flex items-center justify-center">
-          <span class="absolute bottom-3 left-4 text-[10px] font-mono text-slate-500">Drag/Swipe to Rotate | Pinch/Scroll to Zoom</span>
+        <div id="threejs-canvas-container" class="flex-1 bg-gradient-to-b from-slate-950 via-slate-800/50 to-slate-950 relative overflow-hidden flex items-center justify-center cursor-move">
+          <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-2 rounded text-[10px] font-mono text-slate-300 pointer-events-none z-10 shadow-lg">
+            <p class="font-bold text-cyan-400 mb-1"><i data-lucide="mouse" class="w-3 h-3 inline"></i> KONTROL 3D</p>
+            <p>• Seret untuk Memutar (360°)</p>
+            <p>• Gulir / Cubit untuk Memperbesar</p>
+            <p>• Klik Kanan & Seret untuk Geser</p>
+          </div>
         </div>
 
-        <div class="w-full md:w-72 border-t md:border-t-0 md:border-l border-slate-800 bg-slate-950 p-4 space-y-3 md:space-y-4 text-xs shrink-0">
-          <h3 class="font-bold text-slate-200 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-2">Fabric Physics Shader</h3>
+        <div class="w-full md:w-80 border-t md:border-t-0 md:border-l border-slate-800 bg-slate-950 p-5 space-y-4 md:space-y-6 text-xs shrink-0 overflow-y-auto">
+          <h3 class="font-bold text-slate-200 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-2">Shader Fisika Kain</h3>
           
           <div>
-            <label class="text-[10px] text-slate-400 block mb-1">Fabric Material Preset</label>
-            <select id="fabric-preset-selector" onchange="update3DFabricMaterial(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200">
-              <option value="cotton">Cotton Comb 24s (200 GSM)</option>
-              <option value="heavy-cotton">Heavyweight Cotton (280 GSM)</option>
+            <label class="text-[10px] text-slate-400 block mb-1.5 font-bold">Preset Material Kain</label>
+            <select id="fabric-preset-selector" onchange="update3DFabricMaterial(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-md p-2.5 text-slate-200 cursor-pointer focus:border-emerald-500 focus:outline-none transition">
+              <option value="cotton">Katun Combed 24s (200 GSM)</option>
+              <option value="heavy-cotton">Katun Kelas Berat (280 GSM)</option>
               <option value="french-terry">French Terry Loopback</option>
-              <option value="fleece">Fleece Winter 330 GSM</option>
-              <option value="polyester">Polyester Sport Mesh</option>
-              <option value="denim">Raw Denim 14 oz</option>
-              <option value="satin">Satin / Silk Sheen</option>
+              <option value="fleece">Fleece Musim Dingin 330 GSM</option>
+              <option value="polyester">Jaring Olahraga Poliester</option>
+              <option value="denim">Denim Mentah 14 oz</option>
+              <option value="satin">Kilau Satin / Sutra</option>
             </select>
           </div>
 
           <div>
-            <label class="text-[10px] text-slate-400 block mb-1">Studio Lighting Environment</label>
-            <select id="lighting-preset-selector" onchange="update3DLighting(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200">
-              <option value="studio">Softbox Studio Light</option>
-              <option value="dramatic">Dramatic Top Spotlight</option>
-              <option value="cyberpunk">Cyberpunk Neon Cyan/Pink</option>
+            <label class="text-[10px] text-slate-400 block mb-1.5 font-bold">Lingkungan Pencahayaan Studio</label>
+            <select id="lighting-preset-selector" onchange="update3DLighting(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-md p-2.5 text-slate-200 cursor-pointer focus:border-emerald-500 focus:outline-none transition">
+              <option value="studio">Lampu Studio Softbox</option>
+              <option value="dramatic">Lampu Sorot Atas Dramatis</option>
+              <option value="cyberpunk">Neon Cyberpunk Cyan/Pink</option>
             </select>
           </div>
 
-          <button onclick="capture3DRender()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded transition shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5">
-            <i data-lucide="camera" class="w-4 h-4"></i> CAPTURE MOCKUP
-          </button>
+          <div class="pt-4 border-t border-slate-800">
+            <button onclick="capture3DRender()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-md transition shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2">
+              <i data-lucide="camera" class="w-4 h-4"></i> AMBIL GAMBAR MOCKUP
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 5. TECH PACK GENERATOR MODAL              -->
+  <!-- 5. MODAL GENERATOR TECH PACK              -->
   <!-- ========================================== -->
-  <div id="modal-techpack" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6">
+  <div id="modal-techpack" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-3 md:p-6 transition-opacity">
     <div class="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-      <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-        <div class="flex items-center gap-2">
-          <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i>
-          <h2 class="text-xs md:text-sm font-bold text-slate-100 uppercase tracking-wider">Tech Pack Production Specification</h2>
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <div class="flex items-center gap-3">
+          <div class="p-1.5 bg-cyan-500/20 rounded">
+            <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i>
+          </div>
+          <h2 class="text-sm md:text-base font-bold text-slate-100 uppercase tracking-wider">Spesifikasi Produksi Tech Pack</h2>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="window.print()" class="px-3 py-1 bg-cyan-500 text-slate-950 font-bold rounded text-xs flex items-center gap-1"><i data-lucide="printer" class="w-3.5 h-3.5"></i> PRINT / PDF</button>
-          <button onclick="toggleTechPackModal(false)" class="text-slate-400 hover:text-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <div class="flex items-center gap-3">
+          <button onclick="window.print()" class="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 transition text-slate-950 font-bold rounded text-xs flex items-center gap-2 shadow"><i data-lucide="printer" class="w-4 h-4"></i> CETAK / PDF</button>
+          <button onclick="toggleTechPackModal(false)" class="text-slate-400 hover:text-slate-100 p-1 hover:bg-slate-800 rounded transition"><i data-lucide="x" class="w-6 h-6"></i></button>
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950 text-slate-200 font-mono text-xs space-y-6" id="techpack-print-area">
-        <div class="border-b-2 border-slate-700 pb-4 flex justify-between items-start">
+      <div class="flex-1 overflow-y-auto p-5 md:p-8 bg-slate-950 text-slate-200 font-mono text-xs space-y-8" id="techpack-print-area">
+        <div class="border-b-2 border-slate-700 pb-5 flex justify-between items-start">
           <div>
-            <h1 class="text-lg md:text-xl font-bold text-cyan-400 uppercase tracking-wider">APPARIUM CAD — TECH PACK SPEC SHEET</h1>
-            <p class="text-slate-400 text-xs mt-1">STYLE NAME: <span id="tp-garment-title" class="text-slate-100">HEAVYWEIGHT OVERSIZED T-SHIRT</span></p>
-            <p class="text-slate-400 text-xs">STYLE ID: <span id="tp-garment-id" class="text-slate-100">APP-2026-TS01</span></p>
+            <h1 class="text-lg md:text-2xl font-black text-cyan-400 uppercase tracking-widest mb-1">APPARIUM CAD — LEMBAR SPESIFIKASI TECH PACK</h1>
+            <p class="text-slate-400 text-xs mt-2">NAMA GAYA: <strong id="tp-garment-title" class="text-slate-100">KAOS KELAS BERAT OVERSIZE</strong></p>
+            <p class="text-slate-400 text-xs mt-1">ID GAYA: <strong id="tp-garment-id" class="text-slate-100">APP-2026-TS01</strong></p>
           </div>
-          <div class="text-right">
-            <p class="text-slate-400 text-xs">DATE: <span id="tp-date">2026-09-29</span></p>
-            <p class="text-slate-400 text-xs">DPI: <span id="tp-dpi">300 DPI</span></p>
+          <div class="text-right bg-slate-900 p-3 rounded border border-slate-800">
+            <p class="text-slate-400 text-xs mb-1">TANGGAL: <strong id="tp-date" class="text-slate-100">2026-09-29</strong></p>
+            <p class="text-slate-400 text-xs">DPI CETAK: <strong id="tp-dpi" class="text-slate-100 text-cyan-400">300 DPI</strong></p>
           </div>
         </div>
 
         <div>
-          <h3 class="text-cyan-400 font-bold uppercase mb-2 border-b border-slate-800 pb-1">1. Technical Flat & Construction Views</h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-900 p-3 rounded border border-slate-800" id="tp-views-container">
+          <h3 class="text-cyan-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 text-sm tracking-wide">1. Tampilan Datar Teknis & Konstruksi</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="tp-views-container">
+            <!-- Disuntikkan JS -->
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-slate-900 p-3 rounded border border-slate-800">
-            <h3 class="text-emerald-400 font-bold uppercase mb-2 border-b border-slate-800 pb-1">2. Fabric Specifications</h3>
-            <table class="w-full text-left text-[11px] space-y-1">
-              <tr><td class="text-slate-400">Material:</td><td class="font-bold">100% Heavyweight Cotton Comb 24s</td></tr>
-              <tr><td class="text-slate-400">Weight:</td><td class="font-bold">240 GSM</td></tr>
-              <tr><td class="text-slate-400">Base Color:</td><td id="tp-color-spec" class="font-bold">Phantom Black (#18181B)</td></tr>
-              <tr><td class="text-slate-400">Print Method:</td><td class="font-bold">Plastisol Screen Print / High-Density</td></tr>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="bg-slate-900 p-4 rounded border border-slate-800">
+            <h3 class="text-emerald-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">2. Spesifikasi Kain</h3>
+            <table class="w-full text-left text-[11px] space-y-2">
+              <tr><td class="text-slate-400 py-1">Bahan:</td><td class="font-bold py-1 text-slate-100">100% Katun Combed Kelas Berat 24s</td></tr>
+              <tr><td class="text-slate-400 py-1">Berat:</td><td class="font-bold py-1 text-slate-100">240 GSM</td></tr>
+              <tr><td class="text-slate-400 py-1">Warna Dasar:</td><td id="tp-color-spec" class="font-bold py-1 text-slate-100">Hitam Siluman (#18181B)</td></tr>
+              <tr><td class="text-slate-400 py-1">Metode Cetak:</td><td class="font-bold py-1 text-slate-100">Cetak Sablon Plastisol / Kepadatan Tinggi</td></tr>
             </table>
           </div>
 
-          <div class="bg-slate-900 p-3 rounded border border-slate-800">
-            <h3 class="text-emerald-400 font-bold uppercase mb-2 border-b border-slate-800 pb-1">3. Stitching & Trim Specifications</h3>
-            <table class="w-full text-left text-[11px] space-y-1">
-              <tr><td class="text-slate-400">Seam Stitch:</td><td class="font-bold">Double Needle Topstitch (1/4")</td></tr>
-              <tr><td class="text-slate-400">Thread:</td><td class="font-bold">100% Core-Spun Polyester Thread</td></tr>
-              <tr><td class="text-slate-400">Ribbing:</td><td class="font-bold">1x1 Rib Cotton 300 GSM</td></tr>
-              <tr><td class="text-slate-400">Print Safe Area:</td><td id="tp-print-size" class="font-bold">28.0 x 38.0 cm (Front Center)</td></tr>
+          <div class="bg-slate-900 p-4 rounded border border-slate-800">
+            <h3 class="text-emerald-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">3. Spesifikasi Jahitan & Ornamen</h3>
+            <table class="w-full text-left text-[11px] space-y-2">
+              <tr><td class="text-slate-400 py-1">Jahitan Kelim:</td><td class="font-bold py-1 text-slate-100">Jahitan Atas Jarum Ganda (1/4")</td></tr>
+              <tr><td class="text-slate-400 py-1">Benang:</td><td class="font-bold py-1 text-slate-100">100% Benang Poliester Inti-Pintal</td></tr>
+              <tr><td class="text-slate-400 py-1">Rib:</td><td class="font-bold py-1 text-slate-100">Rib Katun 1x1 300 GSM</td></tr>
+              <tr><td class="text-slate-400 py-1">Area Aman Cetak:</td><td id="tp-print-size" class="font-bold py-1 text-slate-100">28.0 x 38.0 cm (Tengah Depan)</td></tr>
             </table>
           </div>
         </div>
 
-        <div class="bg-slate-900 p-3 rounded border border-slate-800">
-          <h3 class="text-cyan-400 font-bold uppercase mb-2 border-b border-slate-800 pb-1">4. Artwork & Layer Placement Log</h3>
-          <div id="tp-artwork-log" class="space-y-1 text-[11px]">
+        <div class="bg-slate-900 p-4 rounded border border-slate-800">
+          <h3 class="text-cyan-400 font-bold uppercase mb-3 border-b border-slate-800 pb-1 tracking-wide">4. Log Penempatan Karya Seni & Lapisan</h3>
+          <div id="tp-artwork-log" class="space-y-2 text-[11px]">
           </div>
         </div>
       </div>
@@ -754,14 +759,14 @@
 
 
   <!-- ========================================== -->
-  <!-- 6. COMPLETE JAVASCRIPT CAD WORKSPACE ENGINE -->
+  <!-- 6. MESIN RUANG KERJA CAD JAVASCRIPT LENGKAP -->
   <!-- ========================================== -->
   <script>
     /* ========================================================
-       1. GLOBAL APPLICATION STATE & DATA STRUCTURES
+       1. STATUS APLIKASI GLOBAL & STRUKTUR DATA
        ======================================================== */
     const state = {
-      appMode: 'desktop', // 'desktop' or 'mobile'
+      appMode: 'desktop', 
       activeGarmentId: 'tshirt-regular',
       activeAngle: 'front',
       colors: {
@@ -784,36 +789,30 @@
       lightingPreset: 'studio'
     };
 
-    const UNIT_SCALES = {
-      px: 1.0,
-      mm: 3.7795,
-      cm: 37.795,
-      in: 96.0,
-      pt: 1.3333
-    };
+    const UNIT_SCALES = { px: 1.0, mm: 3.7795, cm: 37.795, in: 96.0, pt: 1.3333 };
 
     /* ========================================================
-       2. GARMENT DATABASE
+       2. DATABASE PAKAIAN
        ======================================================== */
     const GARMENT_DATABASE = [
-      { id: 'tshirt-regular', name: 'Regular T-Shirt', cat: 'tshirts' },
-      { id: 'tshirt-oversized', name: 'Oversized T-Shirt', cat: 'tshirts' },
-      { id: 'tshirt-heavyweight', name: 'Heavyweight T-Shirt', cat: 'tshirts' },
-      { id: 'tshirt-longsleeve', name: 'Long Sleeve T-Shirt', cat: 'tshirts' },
-      { id: 'pullover-hoodie', name: 'Pullover Hoodie', cat: 'hoodies' },
-      { id: 'zip-hoodie', name: 'Zip-Up Hoodie', cat: 'hoodies' },
-      { id: 'crewneck-sweatshirt', name: 'Crewneck Sweatshirt', cat: 'hoodies' },
-      { id: 'bomber-jacket', name: 'Bomber Jacket', cat: 'jackets' },
-      { id: 'varsity-jacket', name: 'Varsity Jacket', cat: 'jackets' },
-      { id: 'coach-jacket', name: 'Coach Jacket', cat: 'jackets' },
-      { id: 'football-jersey', name: 'Football Jersey', cat: 'jerseys' },
-      { id: 'cargo-pants', name: 'Cargo Pants', cat: 'pants' },
-      { id: 'sweatpants', name: 'Sweatpants', cat: 'pants' },
-      { id: 'regular-shorts', name: 'Regular Shorts', cat: 'shorts' }
+      { id: 'tshirt-regular', name: 'Kaos Reguler', cat: 'tshirts' },
+      { id: 'tshirt-oversized', name: 'Kaos Oversize', cat: 'tshirts' },
+      { id: 'tshirt-heavyweight', name: 'Kaos Kelas Berat', cat: 'tshirts' },
+      { id: 'tshirt-longsleeve', name: 'Kaos Lengan Panjang', cat: 'tshirts' },
+      { id: 'pullover-hoodie', name: 'Jaket Hoodie Pullover', cat: 'hoodies' },
+      { id: 'zip-hoodie', name: 'Jaket Hoodie Ritsleting', cat: 'hoodies' },
+      { id: 'crewneck-sweatshirt', name: 'Sweatshirt Crewneck', cat: 'hoodies' },
+      { id: 'bomber-jacket', name: 'Jaket Bomber', cat: 'jackets' },
+      { id: 'varsity-jacket', name: 'Jaket Varsity', cat: 'jackets' },
+      { id: 'coach-jacket', name: 'Jaket Pelatih', cat: 'jackets' },
+      { id: 'football-jersey', name: 'Jersey Sepak Bola', cat: 'jerseys' },
+      { id: 'cargo-pants', name: 'Celana Kargo', cat: 'pants' },
+      { id: 'sweatpants', name: 'Celana Olahraga', cat: 'pants' },
+      { id: 'regular-shorts', name: 'Celana Pendek', cat: 'shorts' }
     ];
 
     /* ========================================================
-       3. PROCEDURAL SVG TECHNICAL FLAT ENGINE
+       3. MESIN DATAR TEKNIS SVG PROSEDURAL
        ======================================================== */
     function generateGarmentSVG(id, angle, colors) {
       const cBase = colors.base;
@@ -887,7 +886,7 @@
     }
 
     /* ========================================================
-       4. TYPOGRAPHY & PRESETS
+       4. TIPOGRAFI & PRESET
        ======================================================== */
     const FONT_PRESETS = [
       { name: 'STREETWEAR BOLD', font: 'Bebas Neue', category: 'Streetwear' },
@@ -903,7 +902,7 @@
     ];
 
     /* ========================================================
-       5. INITIALIZATION ENGINE & MODE HANDLING
+       5. INISIALISASI MESIN & PENANGANAN MODE
        ======================================================== */
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
@@ -915,7 +914,6 @@
       updateRulers();
       pushHistoryState();
 
-      // Auto-detect viewport size to enable Mobile mode if screen is small
       if (window.innerWidth < 768) {
         setAppMode('mobile');
       }
@@ -978,14 +976,15 @@
     }
 
     /* ========================================================
-       6. UI UTILITIES & TOAST ENGINE
+       6. UTILITAS UI & MESIN TOAST
        ======================================================== */
     function showToast(msg) {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
-      toast.className = 'toast-msg';
-      toast.innerText = msg;
+      toast.className = 'toast-msg flex items-center gap-2';
+      toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-cyan-400"></i> ${msg}`;
       container.appendChild(toast);
+      lucide.createIcons();
       setTimeout(() => toast.remove(), 2500);
     }
 
@@ -994,10 +993,10 @@
         const btn = document.getElementById(`tab-btn-${t}`);
         const content = document.getElementById(`tab-content-${t}`);
         if (t === tab) {
-          btn.className = 'flex-1 py-2.5 text-center text-cyan-400 border-b-2 border-cyan-400 transition';
+          btn.className = 'flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition';
           content.classList.remove('hidden');
         } else {
-          btn.className = 'flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition';
+          btn.className = 'flex-1 py-3 text-center text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition';
           content.classList.add('hidden');
         }
       });
@@ -1008,17 +1007,17 @@
         const btn = document.getElementById(`tab-btn-${t}`);
         const content = document.getElementById(`tab-content-${t}`);
         if (t === tab) {
-          btn.className = 'flex-1 py-2.5 text-center text-cyan-400 border-b-2 border-cyan-400 transition';
+          btn.className = 'flex-1 py-3 text-center text-cyan-400 border-b-2 border-cyan-400 transition';
           content.classList.remove('hidden');
         } else {
-          btn.className = 'flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition';
+          btn.className = 'flex-1 py-3 text-center text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition';
           content.classList.add('hidden');
         }
       });
     }
 
     /* ========================================================
-       7. RENDERERS & FILTERS
+       7. PENYAJIAN & FILTER
        ======================================================== */
     function renderGarmentGrid() {
       const container = document.getElementById('garment-items-grid');
@@ -1032,13 +1031,13 @@
       });
 
       container.innerHTML = filtered.map(item => `
-        <div onclick="selectGarment('${item.id}')" class="bg-slate-950 border border-slate-800 rounded p-2 text-center hover:border-cyan-500 cursor-pointer transition group">
-          <div class="w-full h-16 bg-slate-900 rounded flex items-center justify-center mb-1 group-hover:scale-105 transition overflow-hidden">
-            <svg class="w-12 h-14" viewBox="0 0 600 700">
+        <div onclick="selectGarment('${item.id}')" class="bg-slate-950 border border-slate-700 rounded-lg p-2 text-center hover:border-cyan-500 cursor-pointer transition group shadow-sm">
+          <div class="w-full h-20 bg-slate-900 rounded flex items-center justify-center mb-1.5 group-hover:scale-[1.02] transition overflow-hidden">
+            <svg class="w-14 h-16 drop-shadow-md" viewBox="0 0 600 700">
               ${generateGarmentSVG(item.id, 'front', {base: '#06b6d4', collar: '#0f172a', sleeves: '#06b6d4', stitching: '#94a3b8'})}
             </svg>
           </div>
-          <span class="text-[10px] font-semibold text-slate-300 group-hover:text-cyan-400 block truncate">${item.name}</span>
+          <span class="text-[10px] font-bold text-slate-300 group-hover:text-cyan-400 block truncate">${item.name}</span>
         </div>
       `).join('');
     }
@@ -1057,9 +1056,9 @@
       });
 
       container.innerHTML = filtered.map(preset => `
-        <div onclick="addTextObject('${preset.name}', '${preset.font}')" class="p-2 bg-slate-950 border border-slate-800 rounded hover:border-cyan-500 cursor-pointer flex items-center justify-between transition">
-          <span class="text-xs md:text-sm text-slate-100 truncate" style="font-family: '${preset.font}', sans-serif;">${preset.name}</span>
-          <span class="text-[8px] font-mono text-cyan-400 bg-cyan-950 px-1.5 py-0.5 rounded">${preset.category}</span>
+        <div onclick="addTextObject('${preset.name}', '${preset.font}')" class="p-3 bg-slate-950 border border-slate-700 rounded-md hover:border-cyan-500 cursor-pointer flex items-center justify-between transition group shadow-sm">
+          <span class="text-xs md:text-sm text-slate-100 truncate group-hover:text-cyan-400 transition" style="font-family: '${preset.font}', sans-serif;">${preset.name}</span>
+          <span class="text-[8px] font-bold text-slate-950 bg-cyan-500 px-2 py-0.5 rounded-full">${preset.category}</span>
         </div>
       `).join('');
     }
@@ -1068,40 +1067,40 @@
 
     function renderPantoneSwatches() {
       const PANTONE_COLORS = [
-        { name: 'Phantom Black', hex: '#18181b' },
-        { name: 'Bright White', hex: '#f8fafc' },
-        { name: 'Cyber Yellow', hex: '#facc15' },
-        { name: 'Infrared Red', hex: '#ef4444' },
-        { name: 'Toxic Lime', hex: '#84cc16' },
-        { name: 'Electric Cyan', hex: '#06b6d4' },
-        { name: 'Deep Cobalt', hex: '#1d4ed8' },
-        { name: 'Vintage Purple', hex: '#7e22ce' }
+        { name: 'Hitam Siluman', hex: '#18181b' },
+        { name: 'Putih Terang', hex: '#f8fafc' },
+        { name: 'Kuning Siber', hex: '#facc15' },
+        { name: 'Merah Inframerah', hex: '#ef4444' },
+        { name: 'Jeruk Nipis Beracun', hex: '#84cc16' },
+        { name: 'Sian Elektrik', hex: '#06b6d4' },
+        { name: 'Biru Kobalt', hex: '#1d4ed8' },
+        { name: 'Ungu Vintage', hex: '#7e22ce' }
       ];
       const container = document.getElementById('pantone-swatches-grid');
       container.innerHTML = PANTONE_COLORS.map(c => `
-        <div onclick="changeGarmentColor('base', '${c.hex}')" class="bg-slate-950 border border-slate-800 rounded p-1 text-center cursor-pointer hover:scale-105 transition">
-          <div class="w-full h-7 rounded mb-1 border border-slate-700" style="background-color: ${c.hex};"></div>
-          <span class="text-[8px] font-mono text-slate-300 block truncate">${c.name}</span>
+        <div onclick="changeGarmentColor('base', '${c.hex}')" class="bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-center cursor-pointer hover:border-cyan-400 transition group shadow-sm">
+          <div class="w-full h-8 rounded mb-1 border border-slate-600 shadow-inner group-hover:scale-105 transition" style="background-color: ${c.hex};"></div>
+          <span class="text-[8px] font-mono text-slate-300 block truncate group-hover:text-cyan-400">${c.name}</span>
         </div>
       `).join('');
     }
 
     function renderPatternGrid() {
-      const patterns = ['Stripes', 'Checker', 'Camo', 'Noise Grain'];
+      const patterns = ['Garis-garis', 'Papan Catur', 'Kamuflase', 'Bintik Noise'];
       const container = document.getElementById('pattern-presets-grid');
       container.innerHTML = patterns.map(p => `
-        <div onclick="applyPattern('${p}')" class="bg-slate-950 border border-slate-800 rounded p-3 text-center cursor-pointer hover:border-cyan-500 transition">
-          <i data-lucide="grid" class="w-5 h-5 text-cyan-400 mx-auto mb-1"></i>
-          <span class="text-[10px] font-semibold text-slate-300 block">${p}</span>
+        <div onclick="applyPattern('${p}')" class="bg-slate-950 border border-slate-700 rounded-lg p-4 text-center cursor-pointer hover:border-cyan-500 hover:text-cyan-400 transition group shadow-sm">
+          <i data-lucide="grid" class="w-6 h-6 text-slate-500 group-hover:text-cyan-400 mx-auto mb-2 transition"></i>
+          <span class="text-[10px] font-bold text-slate-300 group-hover:text-cyan-400 block">${p}</span>
         </div>
       `).join('');
       lucide.createIcons();
     }
 
-    function applyPattern(p) { showToast(`Applied ${p} pattern overlay`); }
+    function applyPattern(p) { showToast(`Overlay pola ${p} diterapkan`); }
 
     /* ========================================================
-       8. CANVAS & GARMENT ACTIONS
+       8. AKSI KANVAS & PAKAIAN
        ======================================================== */
     function loadActiveGarmentSVG() {
       const svgContainer = document.getElementById('garment-svg-layer');
@@ -1116,13 +1115,14 @@
     function selectGarment(id) {
       state.activeGarmentId = id;
       loadActiveGarmentSVG();
-      showToast(`Garment updated`);
+      showToast(`Pakaian diperbarui`);
       pushHistoryState();
       if (state.appMode === 'mobile') closeMobileDrawers();
     }
 
     function setViewAngle(angle) {
       state.activeAngle = angle;
+      const angleIds = { 'front': 'DEPAN', 'back': 'BELAKANG', 'left': 'SAMPING KIRI', 'right': 'SAMPING KANAN' };
       ['front', 'back', 'left', 'right'].forEach(a => {
         const btn = document.getElementById(`view-${a}-btn`);
         if (btn) {
@@ -1132,7 +1132,7 @@
         }
       });
       loadActiveGarmentSVG();
-      showToast(`Angle switched to ${angle.toUpperCase()}`);
+      showToast(`Sudut pandang diubah ke ${angleIds[angle]}`);
     }
 
     function changeGarmentColor(part, hex) {
@@ -1143,13 +1143,13 @@
 
     function setActiveTool(tool) {
       state.activeTool = tool;
-      showToast(`Active tool: ${tool.toUpperCase()}`);
+      showToast(`Alat aktif: ${tool.toUpperCase()}`);
     }
 
     /* ========================================================
-       9. OBJECT CREATION & RENDERING
+       9. PEMBUATAN OBJEK & PENYAJIAN
        ======================================================== */
-    function addTextObject(content = 'YOUR BRAND', fontFamily = 'Bebas Neue') {
+    function addTextObject(content = 'MEREK ANDA', fontFamily = 'Bebas Neue') {
       const obj = {
         id: 'obj_' + Date.now(),
         type: 'text',
@@ -1171,7 +1171,7 @@
       renderObjects();
       selectObject(obj.id);
       pushHistoryState();
-      showToast('Typography added');
+      showToast('Tipografi ditambahkan');
       if (state.appMode === 'mobile') closeMobileDrawers();
     }
 
@@ -1194,7 +1194,7 @@
       renderObjects();
       selectObject(obj.id);
       pushHistoryState();
-      showToast('Shape added');
+      showToast('Bentuk ditambahkan');
     }
 
     function handleAssetUpload(e) {
@@ -1219,7 +1219,7 @@
         renderObjects();
         selectObject(obj.id);
         pushHistoryState();
-        showToast('Asset uploaded');
+        showToast('Aset diunggah');
         if (state.appMode === 'mobile') closeMobileDrawers();
       };
       reader.readAsDataURL(file);
@@ -1234,7 +1234,7 @@
         const font = new FontFace(fontName, evt.target.result);
         font.load().then(loadedFont => {
           document.fonts.add(loadedFont);
-          showToast(`Font "${fontName}" imported!`);
+          showToast(`Font "${fontName}" diimpor!`);
           addTextObject(fontName.toUpperCase(), fontName);
         });
       };
@@ -1247,19 +1247,19 @@
         const transformStr = `translate(${obj.x}px, ${obj.y}px) rotate(${obj.rotation}deg) scale(${obj.scaleX}, ${obj.scaleY})`;
         if (obj.type === 'text') {
           return `
-            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; opacity: ${obj.opacity}; font-family: '${obj.fontFamily}', sans-serif; font-size: ${obj.fontSize}px; color: ${obj.color}; font-weight: ${obj.fontWeight};">
+            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; opacity: ${obj.opacity}; font-family: '${obj.fontFamily}', sans-serif; font-size: ${obj.fontSize}px; color: ${obj.color}; font-weight: ${obj.fontWeight}; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
               ${obj.content}
             </div>
           `;
         } else if (obj.type === 'image') {
           return `
-            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; opacity: ${obj.opacity};">
+            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none drop-shadow-md" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; opacity: ${obj.opacity};">
               <img src="${obj.src}" class="w-full h-full object-contain pointer-events-none"/>
             </div>
           `;
         } else if (obj.type === 'shape') {
           return `
-            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; background-color: ${obj.color}; opacity: ${obj.opacity}; border-radius: ${obj.shapeType==='circle'?'50%':'2px'};">
+            <div id="${obj.id}" onmousedown="initDrag(event, '${obj.id}')" ontouchstart="initDrag(event, '${obj.id}')" class="absolute cursor-move select-none touch-none shadow-md" style="transform-origin: center center; transform: ${transformStr}; width: ${obj.width}px; height: ${obj.height}px; background-color: ${obj.color}; opacity: ${obj.opacity}; border-radius: ${obj.shapeType==='circle'?'50%':'2px'};">
             </div>
           `;
         }
@@ -1270,7 +1270,7 @@
     }
 
     /* ==========================================================
-       10. SELECTION & TRANSFORM CONTROL (UNIFIED MOUSE & TOUCH)
+       10. PEMILIHAN & KONTROL TRANSFORMASI (MOUSE & SENTUHAN)
        ========================================================== */
     function selectObject(id) {
       state.selectedObjectId = id;
@@ -1317,18 +1317,13 @@
     }
 
     /* ========================================================
-       11. DRAG, RESIZE & ROTATE LOGIC WITH TOUCH SUPPORT
+       11. LOGIKA SERET, UBAH UKURAN & PUTAR
        ======================================================== */
-    let isDragging = false;
-    let isTransforming = false;
-    let activeHandle = null;
-    let startX = 0, startY = 0;
-    let startObjX = 0, startObjY = 0, startW = 0, startH = 0;
+    let isDragging = false, isTransforming = false, activeHandle = null;
+    let startX = 0, startY = 0, startObjX = 0, startObjY = 0, startW = 0, startH = 0;
 
     function getPointerPos(e) {
-      if (e.touches && e.touches.length > 0) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
+      if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
       return { x: e.clientX, y: e.clientY };
     }
 
@@ -1337,14 +1332,9 @@
       selectObject(id);
       const obj = state.objects.find(o => o.id === id);
       if (!obj) return;
-
       isDragging = true;
       const pos = getPointerPos(e);
-      startX = pos.x;
-      startY = pos.y;
-      startObjX = obj.x;
-      startObjY = obj.y;
-
+      startX = pos.x; startY = pos.y; startObjX = obj.x; startObjY = obj.y;
       window.addEventListener('mousemove', doDrag);
       window.addEventListener('mouseup', stopDrag);
       window.addEventListener('touchmove', doDrag, { passive: false });
@@ -1364,10 +1354,7 @@
     }
 
     function stopDrag() {
-      if (isDragging) {
-        isDragging = false;
-        pushHistoryState();
-      }
+      if (isDragging) { isDragging = false; pushHistoryState(); }
       window.removeEventListener('mousemove', doDrag);
       window.removeEventListener('mouseup', stopDrag);
       window.removeEventListener('touchmove', doDrag);
@@ -1381,13 +1368,8 @@
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
       const el = document.getElementById(state.selectedObjectId);
       if (!obj || !el) return;
-
       const pos = getPointerPos(e);
-      startX = pos.x;
-      startY = pos.y;
-      startW = el.offsetWidth || obj.width;
-      startH = el.offsetHeight || obj.height;
-
+      startX = pos.x; startY = pos.y; startW = el.offsetWidth || obj.width; startH = el.offsetHeight || obj.height;
       window.addEventListener('mousemove', doTransform);
       window.addEventListener('mouseup', stopTransform);
       window.addEventListener('touchmove', doTransform, { passive: false });
@@ -1400,7 +1382,6 @@
       const pos = getPointerPos(e);
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
       if (!obj) return;
-
       const dx = (pos.x - startX) / state.zoom;
       const dy = (pos.y - startY) / state.zoom;
 
@@ -1409,15 +1390,11 @@
       if (obj.type === 'text') {
         obj.fontSize = Math.max(10, Math.round(startH + dy / 2));
       }
-
       renderObjects();
     }
 
     function stopTransform() {
-      if (isTransforming) {
-        isTransforming = false;
-        pushHistoryState();
-      }
+      if (isTransforming) { isTransforming = false; pushHistoryState(); }
       window.removeEventListener('mousemove', doTransform);
       window.removeEventListener('mouseup', stopTransform);
       window.removeEventListener('touchmove', doTransform);
@@ -1428,7 +1405,6 @@
       e.stopPropagation();
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
       if (!obj) return;
-
       const box = document.getElementById('selection-box');
       const rect = box.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -1457,15 +1433,11 @@
     }
 
     /* ========================================================
-       12. PROPERTIES & LAYERS ENGINE
+       12. MESIN PROPERTI & LAPISAN
        ======================================================== */
     function updateActiveObject(key, val) {
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
-      if (obj) {
-        obj[key] = val;
-        renderObjects();
-        pushHistoryState();
-      }
+      if (obj) { obj[key] = val; renderObjects(); pushHistoryState(); }
     }
 
     function renderPropertiesPanel() {
@@ -1473,51 +1445,51 @@
       const obj = state.objects.find(o => o.id === state.selectedObjectId);
 
       if (!obj) {
-        container.innerHTML = `<p class="text-xs text-slate-500 italic text-center py-4">Pilih objek di kanvas untuk mengedit detail properti.</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-500 italic text-center py-6">Pilih objek di kanvas untuk mengedit detail properti.</p>`;
         return;
       }
 
       if (obj.type === 'text') {
         container.innerHTML = `
-          <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-3">
-            <h4 class="font-bold text-cyan-400 text-xs uppercase">Editor Tipografi</h4>
+          <div class="bg-slate-950 p-4 rounded-lg border border-slate-700 space-y-3 shadow-inner">
+            <h4 class="font-bold text-cyan-400 text-xs uppercase border-b border-slate-800 pb-1">Editor Tipografi</h4>
             <div>
-              <label class="text-[10px] text-slate-400 block mb-1">Text String</label>
-              <input type="text" value="${obj.content}" oninput="updateActiveObject('content', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-100">
+              <label class="text-[10px] text-slate-400 block mb-1 font-bold">Teks</label>
+              <input type="text" value="${obj.content}" oninput="updateActiveObject('content', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">Font Size</label>
-                <input type="number" value="${obj.fontSize}" onchange="updateActiveObject('fontSize', parseInt(this.value))" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-100">
+                <label class="text-[10px] text-slate-400 block mb-1 font-bold">Ukuran Font</label>
+                <input type="number" value="${obj.fontSize}" onchange="updateActiveObject('fontSize', parseInt(this.value))" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
               </div>
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">Font Color</label>
-                <input type="color" value="${obj.color}" onchange="updateActiveObject('color', this.value)" class="w-full h-7 rounded bg-transparent cursor-pointer">
+                <label class="text-[10px] text-slate-400 block mb-1 font-bold">Warna Font</label>
+                <input type="color" value="${obj.color}" onchange="updateActiveObject('color', this.value)" class="w-full h-8 rounded bg-transparent cursor-pointer border border-slate-600">
               </div>
             </div>
             <div>
-              <label class="text-[10px] text-slate-400 block mb-1">Opacity</label>
-              <input type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="updateActiveObject('opacity', parseFloat(this.value))" class="w-full">
+              <label class="text-[10px] text-slate-400 block mb-1 font-bold">Transparansi (Opacity)</label>
+              <input type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="updateActiveObject('opacity', parseFloat(this.value))" class="w-full accent-cyan-500">
             </div>
           </div>
         `;
       } else {
         container.innerHTML = `
-          <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-3">
-            <h4 class="font-bold text-emerald-400 text-xs uppercase">Kontrol Transformasi</h4>
-            <div class="grid grid-cols-2 gap-2">
+          <div class="bg-slate-950 p-4 rounded-lg border border-slate-700 space-y-3 shadow-inner">
+            <h4 class="font-bold text-emerald-400 text-xs uppercase border-b border-slate-800 pb-1">Kontrol Transformasi</h4>
+            <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">Width</label>
-                <input type="number" value="${Math.round(obj.width)}" onchange="updateActiveObject('width', parseInt(this.value))" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-100">
+                <label class="text-[10px] text-slate-400 block mb-1 font-bold">Lebar (Width)</label>
+                <input type="number" value="${Math.round(obj.width)}" onchange="updateActiveObject('width', parseInt(this.value))" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
               </div>
               <div>
-                <label class="text-[10px] text-slate-400 block mb-1">Height</label>
-                <input type="number" value="${Math.round(obj.height)}" onchange="updateActiveObject('height', parseInt(this.value))" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-100">
+                <label class="text-[10px] text-slate-400 block mb-1 font-bold">Tinggi (Height)</label>
+                <input type="number" value="${Math.round(obj.height)}" onchange="updateActiveObject('height', parseInt(this.value))" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
               </div>
             </div>
             <div>
-              <label class="text-[10px] text-slate-400 block mb-1">Opacity</label>
-              <input type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="updateActiveObject('opacity', parseFloat(this.value))" class="w-full">
+              <label class="text-[10px] text-slate-400 block mb-1 font-bold">Transparansi (Opacity)</label>
+              <input type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="updateActiveObject('opacity', parseFloat(this.value))" class="w-full accent-emerald-500">
             </div>
           </div>
         `;
@@ -1527,9 +1499,9 @@
     function renderLayersList() {
       const container = document.getElementById('layers-list-container');
       container.innerHTML = state.objects.map((obj, i) => `
-        <div onclick="selectObject('${obj.id}')" class="layer-item p-2 bg-slate-950 rounded border border-slate-800 flex items-center justify-between text-xs cursor-pointer ${obj.id === state.selectedObjectId ? 'active' : ''}">
-          <span class="truncate font-mono text-slate-200">${i+1}. ${obj.type.toUpperCase()} (${obj.content || obj.shapeType || 'Asset'})</span>
-          <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-500"></i>
+        <div onclick="selectObject('${obj.id}')" class="layer-item p-2.5 bg-slate-950 rounded-md border border-slate-800 flex items-center justify-between text-xs cursor-pointer hover:border-cyan-500 transition group shadow-sm ${obj.id === state.selectedObjectId ? 'active border-cyan-500' : ''}">
+          <span class="truncate font-mono text-slate-200 group-hover:text-cyan-400 transition">${i+1}. ${obj.type.toUpperCase()} (${obj.content || obj.shapeType || 'Gambar Aset'})</span>
+          <i data-lucide="layers" class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition"></i>
         </div>
       `).reverse().join('');
       lucide.createIcons();
@@ -1564,7 +1536,7 @@
       renderObjects();
       renderPropertiesPanel();
       pushHistoryState();
-      showToast('Object deleted');
+      showToast('Objek dihapus');
     }
 
     function duplicateSelectedObject() {
@@ -1572,13 +1544,12 @@
       if (!obj) return;
       const clone = JSON.parse(JSON.stringify(obj));
       clone.id = 'obj_' + Date.now();
-      clone.x += 20;
-      clone.y += 20;
+      clone.x += 20; clone.y += 20;
       state.objects.push(clone);
       renderObjects();
       selectObject(clone.id);
       pushHistoryState();
-      showToast('Object duplicated');
+      showToast('Objek diduplikat');
     }
 
     function flipSelectedObject(dir) {
@@ -1602,7 +1573,7 @@
     }
 
     /* ========================================================
-       13. WORKSPACE TOGGLES, UNITS & ZOOM
+       13. TOGGLE RUANG KERJA, SATUAN & ZOOM
        ======================================================== */
     function toggleRulers() {
       const rx = document.getElementById('ruler-x-bar');
@@ -1626,14 +1597,13 @@
     function changeUnit(u) {
       state.unit = u;
       document.querySelectorAll('.unit-label').forEach(el => el.innerText = u);
-      updateRulers();
-      updateSelectionBox();
-      showToast(`Unit changed to ${u}`);
+      updateRulers(); updateSelectionBox();
+      showToast(`Satuan diubah ke ${u}`);
     }
 
     function changeDPI(d) {
       state.dpi = parseInt(d);
-      showToast(`DPI set to ${d}`);
+      showToast(`DPI diatur ke ${d}`);
     }
 
     function changePrintZone(zone) {
@@ -1642,22 +1612,19 @@
       const tag = document.getElementById('print-area-tag');
 
       const zones = {
-        'front-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'MAX PRINT (28 x 38 cm)' },
-        'left-chest': { top: '180px', left: '330px', width: '90px', height: '100px', label: 'LEFT CHEST (9 x 10 cm)' },
-        'right-chest': { top: '180px', left: '180px', width: '90px', height: '100px', label: 'RIGHT CHEST (9 x 10 cm)' },
-        'sleeve-left': { top: '220px', left: '440px', width: '70px', height: '120px', label: 'LEFT SLEEVE' },
-        'sleeve-right': { top: '220px', left: '90px', width: '70px', height: '120px', label: 'RIGHT SLEEVE' },
-        'back-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'FULL BACK (28 x 38 cm)' },
-        'neck-label': { top: '140px', left: '260px', width: '80px', height: '50px', label: 'NECK LABEL' }
+        'front-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'CETAK MAKS (28 x 38 cm)' },
+        'left-chest': { top: '180px', left: '330px', width: '90px', height: '100px', label: 'DADA KIRI (9 x 10 cm)' },
+        'right-chest': { top: '180px', left: '180px', width: '90px', height: '100px', label: 'DADA KANAN (9 x 10 cm)' },
+        'sleeve-left': { top: '220px', left: '440px', width: '70px', height: '120px', label: 'LENGAN KIRI' },
+        'sleeve-right': { top: '220px', left: '90px', width: '70px', height: '120px', label: 'LENGAN KANAN' },
+        'back-center': { top: '130px', left: '160px', width: '280px', height: '380px', label: 'BELAKANG PENUH (28 x 38 cm)' },
+        'neck-label': { top: '140px', left: '260px', width: '80px', height: '50px', label: 'LABEL LEHER' }
       };
 
       const z = zones[zone] || zones['front-center'];
-      boundary.style.top = z.top;
-      boundary.style.left = z.left;
-      boundary.style.width = z.width;
-      boundary.style.height = z.height;
+      boundary.style.top = z.top; boundary.style.left = z.left; boundary.style.width = z.width; boundary.style.height = z.height;
       tag.innerText = z.label;
-      showToast(`Print zone: ${zone.toUpperCase()}`);
+      showToast(`Zona cetak: ${zone.toUpperCase()}`);
     }
 
     function adjustZoom(delta) {
@@ -1665,11 +1632,7 @@
       applyZoom();
     }
 
-    function resetZoom() {
-      state.zoom = 1.0;
-      applyZoom();
-    }
-
+    function resetZoom() { state.zoom = 1.0; applyZoom(); }
     function applyZoom() {
       const frame = document.getElementById('apparel-canvas-frame');
       frame.style.transform = `scale(${state.zoom})`;
@@ -1677,17 +1640,14 @@
     }
 
     function updateRulers() {
-      const rx = document.getElementById('ruler-x-bar');
-      const ry = document.getElementById('ruler-y-bar');
+      const rx = document.getElementById('ruler-x-bar'), ry = document.getElementById('ruler-y-bar');
       if (!rx || !ry) return;
-
       let rxHtml = '';
       for (let i = 0; i <= 600; i += 50) {
         const val = (i / UNIT_SCALES[state.unit]).toFixed(0);
         rxHtml += `<span>${val}</span>`;
       }
       rx.innerHTML = rxHtml;
-
       let ryHtml = '';
       for (let i = 0; i <= 700; i += 70) {
         const val = (i / UNIT_SCALES[state.unit]).toFixed(0);
@@ -1697,7 +1657,7 @@
     }
 
     /* ========================================================
-       14. HISTORY UNDO / REDO ENGINE
+       14. MESIN RIWAYAT (UNDO / REDO)
        ======================================================== */
     function pushHistoryState() {
       if (state.historyIndex < state.history.length - 1) {
@@ -1715,7 +1675,7 @@
       if (state.historyIndex > 0) {
         state.historyIndex--;
         restoreHistoryState(state.history[state.historyIndex]);
-        showToast('Undo performed');
+        showToast('Batal dilakukan');
       }
     }
 
@@ -1723,7 +1683,7 @@
       if (state.historyIndex < state.history.length - 1) {
         state.historyIndex++;
         restoreHistoryState(state.history[state.historyIndex]);
-        showToast('Redo performed');
+        showToast('Ulangi dilakukan');
       }
     }
 
@@ -1731,20 +1691,16 @@
       state.objects = JSON.parse(JSON.stringify(snap.objects));
       state.colors = JSON.parse(JSON.stringify(snap.colors));
       state.activeGarmentId = snap.garmentId;
-      loadActiveGarmentSVG();
-      renderObjects();
+      loadActiveGarmentSVG(); renderObjects();
     }
 
     /* ========================================================
-       15. SAVE / LOAD PROJECT JSON
+       15. SIMPAN / MUAT JSON PROYEK
        ======================================================== */
     function createNewProject() {
-      if (confirm('Create new project? Unsaved changes will be reset.')) {
-        state.objects = [];
-        state.selectedObjectId = null;
-        renderObjects();
-        pushHistoryState();
-        showToast('New project created');
+      if (confirm('Buat proyek baru? Perubahan yang belum disimpan akan hilang.')) {
+        state.objects = []; state.selectedObjectId = null;
+        renderObjects(); pushHistoryState(); showToast('Proyek baru dibuat');
       }
     }
 
@@ -1754,9 +1710,8 @@
       downloadAnchor.setAttribute("href", dataStr);
       downloadAnchor.setAttribute("download", `apparium_project_${Date.now()}.apparium`);
       document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      showToast('Project JSON Saved');
+      downloadAnchor.click(); downloadAnchor.remove();
+      showToast('Proyek JSON Disimpan');
     }
 
     function loadProjectJSON(e) {
@@ -1767,23 +1722,18 @@
         try {
           const loaded = JSON.parse(evt.target.result);
           if (loaded.objects && loaded.colors) {
-            state.objects = loaded.objects;
-            state.colors = loaded.colors;
+            state.objects = loaded.objects; state.colors = loaded.colors;
             state.activeGarmentId = loaded.activeGarmentId || state.activeGarmentId;
-            loadActiveGarmentSVG();
-            renderObjects();
-            pushHistoryState();
-            showToast('Project loaded successfully!');
+            loadActiveGarmentSVG(); renderObjects(); pushHistoryState();
+            showToast('Proyek berhasil dimuat!');
           }
-        } catch (err) {
-          alert('Invalid project file format!');
-        }
+        } catch (err) { alert('Format file proyek tidak valid!'); }
       };
       reader.readAsText(file);
     }
 
     /* ========================================================
-       16. EXPORT ARTWORK (PNG & SVG)
+       16. EKSPOR KARYA SENI (PNG & SVG)
        ======================================================== */
     function exportArtwork(format) {
       const frame = document.getElementById('apparel-canvas-frame');
@@ -1792,86 +1742,133 @@
         const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `apparium_design_${Date.now()}.svg`;
-        a.click();
-        showToast('Exported SVG Vector');
+        a.href = url; a.download = `apparium_design_${Date.now()}.svg`; a.click();
+        showToast('Vektor SVG Diekspor');
       } else if (format === 'png') {
-        showToast('Preparing High-Res PNG Export...');
+        showToast('Menyiapkan Ekspor PNG Resolusi Tinggi...');
         const canvas = document.createElement('canvas');
-        canvas.width = 1200;
-        canvas.height = 1400;
+        canvas.width = 1200; canvas.height = 1400;
         const ctx = canvas.getContext('2d');
-
         const svgElement = document.getElementById('garment-svg-layer');
         const svgString = new XMLSerializer().serializeToString(svgElement);
         const img = new Image();
         const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
         const url = URL.createObjectURL(svgBlob);
-
         img.onload = function () {
           ctx.drawImage(img, 0, 0, 1200, 1400);
           URL.revokeObjectURL(url);
           const pngUrl = canvas.toDataURL('image/png');
           const downloadLink = document.createElement('a');
-          downloadLink.href = pngUrl;
-          downloadLink.download = `apparium_design_${Date.now()}.png`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-          showToast('PNG Export Complete');
+          downloadLink.href = pngUrl; downloadLink.download = `apparium_design_${Date.now()}.png`;
+          document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink);
+          showToast('Ekspor PNG Selesai');
         };
         img.src = url;
       }
     }
 
     /* ========================================================
-       17. 3D SIMULATION ENGINE (THREE.JS)
+       17. MESIN SIMULASI 3D (THREE.JS) - UPGRADED TO PRO 360
        ======================================================== */
-    let threeScene, threeCamera, threeRenderer, threeShirtMesh, threeControls;
+    let threeScene, threeCamera, threeRenderer, threeShirtGroup, threeControls, dirLight, spotLight;
 
     function toggle3DMockupModal(show) {
       const modal = document.getElementById('modal-3d-preview');
       modal.classList.toggle('hidden', !show);
       if (show && !threeScene) {
         init3DSimulation();
+      } else if (show && threeScene) {
+        update3DModelColors();
       }
     }
 
     function init3DSimulation() {
       const container = document.getElementById('threejs-canvas-container');
-      const w = container.clientWidth || 500;
+      const w = container.clientWidth || 600;
       const h = container.clientHeight || 500;
 
       threeScene = new THREE.Scene();
+      
+      // Pro Camera Setup
       threeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-      threeCamera.position.set(0, 0, 5);
+      threeCamera.position.set(0, 1.5, 6);
 
       threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       threeRenderer.setSize(w, h);
       threeRenderer.setPixelRatio(window.devicePixelRatio);
+      threeRenderer.shadowMap.enabled = true;
+      threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
       container.appendChild(threeRenderer.domElement);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      // Studio Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       threeScene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
       dirLight.position.set(5, 10, 7);
+      dirLight.castShadow = true;
       threeScene.add(dirLight);
 
-      // Create procedural 3D T-Shirt Shape
-      const geom = new THREE.CylinderGeometry(1.2, 1.4, 2.8, 32);
-      const mat = new THREE.MeshStandardMaterial({
-        color: state.colors.base,
-        roughness: 0.7,
-        metalness: 0.1
-      });
-      threeShirtMesh = new THREE.Mesh(geom, mat);
-      threeScene.add(threeShirtMesh);
+      spotLight = new THREE.SpotLight(0x06b6d4, 1.5);
+      spotLight.position.set(-5, 5, 5);
+      spotLight.angle = Math.PI / 4;
+      spotLight.penumbra = 0.5;
+      threeScene.add(spotLight);
 
+      // Add Studio Floor / Grid Helper
+      const gridHelper = new THREE.GridHelper(10, 20, 0x06b6d4, 0x1e293b);
+      gridHelper.position.y = -2;
+      threeScene.add(gridHelper);
+
+      // Procedural 3D T-Shirt Creation (Looks like a real garment!)
+      threeShirtGroup = new THREE.Group();
+
+      const matBase = new THREE.MeshStandardMaterial({ color: state.colors.base, roughness: 0.8, metalness: 0.1 });
+      const matCollar = new THREE.MeshStandardMaterial({ color: state.colors.collar, roughness: 0.9, metalness: 0.0 });
+
+      // Torso (Flattened Cylinder)
+      const geomTorso = new THREE.CylinderGeometry(1.4, 1.3, 3.5, 32);
+      geomTorso.scale(1, 1, 0.4); // Make it flat like a shirt
+      const meshTorso = new THREE.Mesh(geomTorso, matBase);
+      meshTorso.castShadow = true;
+      threeShirtGroup.add(meshTorso);
+
+      // Left Sleeve
+      const geomSleeveL = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 32);
+      geomSleeveL.scale(1, 1, 0.4);
+      const meshSleeveL = new THREE.Mesh(geomSleeveL, matBase);
+      meshSleeveL.position.set(-1.6, 1.0, 0);
+      meshSleeveL.rotation.z = Math.PI / 4;
+      meshSleeveL.castShadow = true;
+      threeShirtGroup.add(meshSleeveL);
+
+      // Right Sleeve
+      const geomSleeveR = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 32);
+      geomSleeveR.scale(1, 1, 0.4);
+      const meshSleeveR = new THREE.Mesh(geomSleeveR, matBase);
+      meshSleeveR.position.set(1.6, 1.0, 0);
+      meshSleeveR.rotation.z = -Math.PI / 4;
+      meshSleeveR.castShadow = true;
+      threeShirtGroup.add(meshSleeveR);
+
+      // Collar / Neck hole
+      const geomNeck = new THREE.TorusGeometry(0.65, 0.12, 16, 32);
+      geomNeck.scale(1, 1, 0.4);
+      const meshNeck = new THREE.Mesh(geomNeck, matCollar);
+      meshNeck.position.set(0, 1.75, 0);
+      meshNeck.rotation.x = Math.PI / 2;
+      threeShirtGroup.add(meshNeck);
+
+      threeScene.add(threeShirtGroup);
+
+      // 360 Orbit Controls
       if (THREE.OrbitControls) {
         threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
         threeControls.enableDamping = true;
+        threeControls.dampingFactor = 0.05;
+        threeControls.minDistance = 2;
+        threeControls.maxDistance = 10;
+        threeControls.maxPolarAngle = Math.PI / 2 + 0.1; // Limit below floor
       }
 
       function animate() {
@@ -1882,72 +1879,90 @@
       animate();
     }
 
+    function update3DModelColors() {
+      if(!threeShirtGroup) return;
+      threeShirtGroup.children.forEach((child, index) => {
+        if(index === 3) child.material.color.set(state.colors.collar); // Neck
+        else child.material.color.set(state.colors.base); // Torso & Sleeves
+      });
+    }
+
     function update3DFabricMaterial(preset) {
-      if (!threeShirtMesh) return;
-      const mat = threeShirtMesh.material;
-      if (preset === 'satin') {
-        mat.roughness = 0.2;
-        mat.metalness = 0.5;
-      } else if (preset === 'denim') {
-        mat.roughness = 0.9;
-        mat.metalness = 0.0;
-      } else {
-        mat.roughness = 0.7;
-        mat.metalness = 0.1;
-      }
-      showToast(`Material updated: ${preset.toUpperCase()}`);
+      if (!threeShirtGroup) return;
+      
+      threeShirtGroup.children.forEach(child => {
+        const mat = child.material;
+        if (preset === 'satin') {
+          mat.roughness = 0.2; mat.metalness = 0.6;
+        } else if (preset === 'denim') {
+          mat.roughness = 0.95; mat.metalness = 0.0;
+        } else if (preset === 'polyester') {
+          mat.roughness = 0.5; mat.metalness = 0.3;
+        } else {
+          mat.roughness = 0.8; mat.metalness = 0.1;
+        }
+      });
+      showToast(`Material diperbarui: ${preset.toUpperCase()}`);
     }
 
     function update3DLighting(preset) {
-      showToast(`Lighting set: ${preset.toUpperCase()}`);
+      if(preset === 'dramatic') {
+        dirLight.intensity = 1.5; spotLight.intensity = 0.5; spotLight.color.setHex(0xffffff);
+      } else if(preset === 'cyberpunk') {
+        dirLight.intensity = 0.5; dirLight.color.setHex(0xec4899); 
+        spotLight.intensity = 2.0; spotLight.color.setHex(0x06b6d4);
+      } else {
+        dirLight.intensity = 0.8; dirLight.color.setHex(0xffffff); 
+        spotLight.intensity = 1.5; spotLight.color.setHex(0x06b6d4);
+      }
+      showToast(`Pencahayaan diatur: ${preset.toUpperCase()}`);
     }
 
     function capture3DRender() {
       if (!threeRenderer) return;
       const imgData = threeRenderer.domElement.toDataURL('image/png');
       const a = document.createElement('a');
-      a.href = imgData;
-      a.download = `apparium_3d_render_${Date.now()}.png`;
-      a.click();
-      showToast('3D Render Captured!');
+      a.href = imgData; a.download = `apparium_3d_render_${Date.now()}.png`; a.click();
+      showToast('Render 3D Ditangkap!');
     }
 
     /* ========================================================
-       18. TECH PACK ENGINE
+       18. MESIN TECH PACK
        ======================================================== */
     function openTechPackModal() {
       const modal = document.getElementById('modal-techpack');
       modal.classList.remove('hidden');
 
       const item = GARMENT_DATABASE.find(g => g.id === state.activeGarmentId);
-      document.getElementById('tp-garment-title').innerText = item ? item.name.toUpperCase() : 'CUSTOM GARMENT';
-      document.getElementById('tp-color-spec').innerText = `Base: ${state.colors.base} | Collar: ${state.colors.collar}`;
+      document.getElementById('tp-garment-title').innerText = item ? item.name.toUpperCase() : 'PAKAIAN KUSTOM';
+      document.getElementById('tp-color-spec').innerText = `Dasar: ${state.colors.base} | Kerah: ${state.colors.collar}`;
       document.getElementById('tp-dpi').innerText = `${state.dpi} DPI`;
       document.getElementById('tp-date').innerText = new Date().toISOString().split('T')[0];
 
-      // Views thumbnails
+      // Thumbnail Tampilan
       const viewsContainer = document.getElementById('tp-views-container');
       const angles = ['front', 'back', 'left', 'right'];
-      viewsContainer.innerHTML = angles.map(a => `
-        <div class="bg-slate-950 p-2 rounded text-center border border-slate-800">
-          <div class="w-full h-24 flex items-center justify-center mb-1 overflow-hidden">
+      const angleLabels = ['Depan', 'Belakang', 'Samping Kiri', 'Samping Kanan'];
+      viewsContainer.innerHTML = angles.map((a, i) => `
+        <div class="bg-slate-950 p-2 rounded text-center border border-slate-700 shadow-sm">
+          <div class="w-full h-24 flex items-center justify-center mb-2 overflow-hidden">
             <svg class="w-20 h-22" viewBox="0 0 600 700">
               ${generateGarmentSVG(state.activeGarmentId, a, state.colors)}
             </svg>
           </div>
-          <span class="text-[9px] font-bold text-cyan-400 uppercase">${a} view</span>
+          <span class="text-[9px] font-bold text-cyan-400 uppercase tracking-wide">Tampilan ${angleLabels[i]}</span>
         </div>
       `).join('');
 
-      // Artwork log
+      // Log Karya Seni
       const logContainer = document.getElementById('tp-artwork-log');
       if (state.objects.length === 0) {
-        logContainer.innerHTML = `<p class="text-slate-500 italic">No custom artwork/layers placed on canvas.</p>`;
+        logContainer.innerHTML = `<p class="text-slate-500 italic">Tidak ada karya seni/lapisan kustom yang ditempatkan pada kanvas.</p>`;
       } else {
         logContainer.innerHTML = state.objects.map((obj, i) => `
-          <div class="flex justify-between border-b border-slate-800 py-1">
-            <span>#${i+1} [${obj.type.toUpperCase()}] ${obj.content || obj.shapeType || 'Asset Image'}</span>
-            <span>X: ${(obj.x / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit} | Y: ${(obj.y / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit}</span>
+          <div class="flex justify-between border-b border-slate-800 py-2 hover:bg-slate-800/50 px-2 rounded transition">
+            <span class="font-semibold text-slate-300">#${i+1} [${obj.type.toUpperCase()}] ${obj.content || obj.shapeType || 'Gambar Aset'}</span>
+            <span class="text-cyan-400">X: ${(obj.x / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit} | Y: ${(obj.y / UNIT_SCALES[state.unit]).toFixed(1)} ${state.unit}</span>
           </div>
         `).join('');
       }
