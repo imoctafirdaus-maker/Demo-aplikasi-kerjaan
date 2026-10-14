@@ -7,15 +7,14 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
     <!-- Library Game Catur -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-
-    <!-- LIBRARY GOOGLE MAPS -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao&libraries=places&callback=initMap" async defer></script>
 
     <style>
         .dominos-blue { background-color: #006491; }
@@ -74,6 +73,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; }
         .chess-anim-piece { position: absolute; z-index: 999; transition: transform 0.2s ease-in-out; pointer-events: none; }
+        #liveRadarMap { height: 280px; width: 100%; border-radius: 14px; z-index: 1; }
+        .radar-btn { border-radius: 10px; padding: 10px 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -85,24 +86,6 @@
     <audio id="snd-end" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3" preload="auto"></audio>
     <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3" preload="auto"></audio>
     <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3" preload="auto"></audio>
-
-    <!-- MODAL KONFIRMASI CASH -->
-    <div id="cashConfirmModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white p-6 rounded-[2rem] text-center w-full max-w-xs shadow-2xl border-4 border-blue-900 relative">
-            <button onclick="closeCashConfirmModal()" class="absolute top-4 right-5 text-gray-300 hover:text-red-500 transition-colors">
-                <i class="fa fa-times text-xl"></i>
-            </button>
-            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                <i class="fa fa-money-bill-wave text-3xl"></i>
-            </div>
-            <h3 class="font-black text-blue-900 uppercase text-lg mb-2">Konfirmasi Status</h3>
-            <p class="text-xs font-bold text-gray-500 mb-6 tracking-wide px-2">APAKAH PESANAN INI PEMBAYARAN CASH?</p>
-            <div class="flex gap-3">
-                <button onclick="processCashConfirm(true)" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-black uppercase shadow-md hover:bg-green-600 active:scale-95 transition-transform">YA</button>
-                <button onclick="processCashConfirm(false)" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black uppercase shadow-md hover:bg-red-600 active:scale-95 transition-transform">TIDAK</button>
-            </div>
-        </div>
-    </div>
 
     <!-- MODAL CATUR -->
     <div id="promoModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
@@ -274,7 +257,7 @@
                 </div>
             </div>
 
-            <!-- HALAMAN LOBBY CATUR -->
+            <!-- HALAMAN LOBBY CATUR (NEW) -->
             <div id="page-chess-lobby" class="page p-6 bg-[#161512] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="showPage('home')" class="text-gray-300 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
@@ -282,6 +265,7 @@
                     <div class="w-10"></div>
                 </div>
                 
+                <!-- INJEKSI UI: LIVE GAMES -->
                 <div id="chessLiveList" class="space-y-3 mb-6"></div>
 
                 <div class="bg-gray-800/80 p-5 rounded-3xl shadow-xl border border-gray-700 mb-6">
@@ -387,9 +371,8 @@
                 </div>
             </div>
 
-            <!-- HALAMAN WA DIRECT (CHAT PELANGGAN) DENGAN PETA MAPS -->
-            <div id="page-chat" class="page h-full items-center justify-start p-4 bg-gray-100 overflow-y-auto w-full">
-                <div class="wa-card mb-4 mx-auto relative shrink-0">
+            <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
+                <div class="wa-card mb-20 mx-auto relative">
                     <div class="flex justify-between items-start mb-4 px-2 gap-2">
                         
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
@@ -418,17 +401,29 @@
                     </div>
                     
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
-                </div>
-                
-                <!-- PETA TRACKING DRIVER REALTIME -->
-                <div id="realtimeMapWrapper" class="w-full max-w-[350px] h-64 bg-white rounded-2xl mb-32 shadow-sm border-2 border-green-500/20 relative overflow-hidden transition-all duration-300 shrink-0 mx-auto">
-                    <div id="mapContainer" class="w-full h-full bg-gray-200"></div>
-                    <div class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-md shadow text-[9px] font-black text-green-700 border border-green-100 italic uppercase">
-                        <i class="fa fa-satellite-dish text-red-500 animate-pulse mr-1"></i> Live Driver Radar
-                    </div>
-                    <button onclick="toggleMapHeight()" class="absolute bottom-2 right-2 bg-green-500 text-white w-7 h-7 rounded-lg shadow-md flex items-center justify-center font-bold z-[10]">
-                        <i id="mapToggleIcon" class="fa fa-expand text-[10px]"></i>
-                    </button>
+
+                    <!-- LIVE RADAR TRACKCUST JTM -->
+                    <section class="w-full text-left border-2 border-blue-100 rounded-2xl p-3 bg-white mb-4">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <h3 class="font-black text-blue-900 uppercase text-xs"><i class="fa fa-satellite-dish mr-1"></i> Live Radar Kurir</h3>
+                            <span id="radarStatusBadge" class="text-[9px] font-black px-2 py-1 rounded-full bg-gray-100 text-gray-600">SIAP</span>
+                        </div>
+                        <label class="block text-[10px] font-black uppercase text-gray-500 mb-1">Pilih pesanan</label>
+                        <select id="radarOrderSelect" class="w-full border border-gray-200 rounded-xl p-3 text-xs font-bold mb-2" onchange="radarOrderChanged()">
+                            <option value="">-- Pilih pesanan aktif --</option>
+                        </select>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <button onclick="startDriverGps()" class="radar-btn bg-green-600 text-white"><i class="fa fa-location-arrow mr-1"></i> Mulai GPS Kurir</button>
+                            <button onclick="stopDriverGps()" class="radar-btn bg-gray-700 text-white"><i class="fa fa-stop mr-1"></i> Hentikan GPS</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <button onclick="startRadarMonitoring()" class="radar-btn bg-blue-700 text-white"><i class="fa fa-eye mr-1"></i> Pantau Pesanan</button>
+                            <button onclick="centerRadar()" class="radar-btn bg-blue-50 text-blue-900"><i class="fa fa-crosshairs mr-1"></i> Pusatkan Peta</button>
+                        </div>
+                        <div id="liveRadarMap" class="border border-gray-200"></div>
+                        <div id="radarDetails" class="text-[10px] font-bold text-gray-600 mt-2 leading-relaxed">Peta berpusat di Domino's Pizza Jatimakmur. Pilih pesanan untuk mulai.</div>
+                        <p class="text-[9px] text-gray-400 mt-2">Peta © OpenStreetMap. GPS memerlukan izin lokasi dan HTTPS. Browser dapat menghentikan GPS saat layar terkunci/aplikasi ditutup.</p>
+                    </section>
                 </div>
             </div>
         </main>
@@ -467,60 +462,6 @@
         let allData = {}; let photoBase64 = "";
         let renderTimer;
         let editCrewId = null;
-        
-        // VARIABEL KONFIRMASI CASH (BARU)
-        let pendingChatAction = null;
-
-        // VARIABEL GOOGLE MAPS REALTIME TRACKING
-        let realtimeMap;
-        let driverMarkers = {};
-        let watchPositionId = null;
-        let mapExpanded = false;
-
-        window.initMap = function() {
-            realtimeMap = new google.maps.Map(document.getElementById("mapContainer"), {
-                center: { lat: -6.2842, lng: 106.9242 },
-                zoom: 14,
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: false
-            });
-        };
-
-        function startLocationTracking() {
-            if (navigator.geolocation && !mgtAndCashiers.includes(currentUser)) {
-                watchPositionId = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        db.ref('presence/' + currentUser).update({
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            locTimestamp: Date.now()
-                        });
-                    },
-                    (err) => console.warn("GPS tracking error: ", err),
-                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-                );
-            }
-        }
-
-        function stopLocationTracking() {
-            if (watchPositionId !== null && navigator.geolocation) {
-                navigator.geolocation.clearWatch(watchPositionId);
-            }
-        }
-
-        function toggleMapHeight() {
-            const mapDiv = document.getElementById('realtimeMapWrapper');
-            const icon = document.getElementById('mapToggleIcon');
-            if (mapExpanded) {
-                mapDiv.classList.replace('h-[65vh]', 'h-64');
-                icon.classList.replace('fa-compress', 'fa-expand');
-            } else {
-                mapDiv.classList.replace('h-64', 'h-[65vh]');
-                icon.classList.replace('fa-expand', 'fa-compress');
-            }
-            mapExpanded = !mapExpanded;
-        }
 
         // VARIABEL GAME CATUR
         const pieceIcons = {
@@ -549,7 +490,7 @@
         let selectedSquare = null;
         let chessSyncListener = null;
         let chessTimerInterval = null;
-        let isSpectator = false;
+        let isSpectator = false; // FLAG UNTUK MODE PENONTON LIVE
         
         let wTime = 10 * 60;
         let bTime = 10 * 60;
@@ -566,6 +507,7 @@
         let audioUnlocked = false;
         let botIsThinking = false;
 
+        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -605,42 +547,7 @@
             }, { once: true });
         };
 
-        // FUNGSI KONFIRMASI PEMBAYARAN CASH (BARU)
-        function openCashConfirmModal(id, waLink) {
-            if (allData[id].paymentMode) {
-                // Jika metode pembayaran sudah tersimpan di database, langsung ke chat
-                pushDeliveryStatus(currentUser);
-                window.open(waLink, '_blank');
-            } else {
-                // Belum dikonfirmasi, tahan link WA, buka modal
-                pendingChatAction = { id: id, waLink: waLink };
-                document.getElementById('cashConfirmModal').style.display = 'flex';
-            }
-        }
-
-        function closeCashConfirmModal() {
-            document.getElementById('cashConfirmModal').style.display = 'none';
-            pendingChatAction = null;
-        }
-
-        function processCashConfirm(isCash) {
-            if (!pendingChatAction) return;
-            
-            const id = pendingChatAction.id;
-            const waLink = pendingChatAction.waLink;
-            const mode = isCash ? 'cash' : 'other';
-            
-            // Simpan status spesifik ke database firebase
-            db.ref('customers/' + id).update({ paymentMode: mode }).then(() => {
-                // Segera tutup modal & lanjutkan alur normal chat
-                closeCashConfirmModal();
-                pushDeliveryStatus(currentUser);
-                window.open(waLink, '_blank');
-            }).catch(err => {
-                alert("Gagal menyimpan status pembayaran: " + err.message);
-            });
-        }
-
+        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
@@ -780,11 +687,7 @@
                 document.getElementById('userDisplay').innerText = n;
                 document.getElementById('pinOverlay').style.display = "none";
                 document.getElementById('mainContent').style.display = "flex";
-                
-                startLocationTracking(); 
-                updatePresence(); 
-                updateProfileUI();
-                
+                updatePresence(); updateProfileUI();
                 db.ref('presence/' + n + '/session').on('value', snap => {
                     if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
                 });
@@ -794,7 +697,6 @@
 
         function handleLogout(withConfirm = true) { 
             if(withConfirm && !confirm("Keluar?")) return;
-            stopLocationTracking();
             if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
@@ -885,6 +787,7 @@
                     areaDisplayHtml = `
                         <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
                         <p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>
+                        ${i.paymentMethod === 'CASH' ? '<span class="inline-flex items-center gap-1 mt-1 bg-green-100 text-green-800 rounded-lg px-2 py-1 text-[9px] font-black"><i class="fa fa-dollar-sign"></i> CASH TERKONFIRMASI</span>' : (i.paymentMethod === 'NON_CASH' ? '<span class="inline-flex items-center gap-1 mt-1 bg-blue-100 text-blue-800 rounded-lg px-2 py-1 text-[9px] font-black"><i class="fa fa-credit-card"></i> NON-CASH</span>' : '<span class="inline-flex items-center gap-1 mt-1 bg-gray-100 text-gray-600 rounded-lg px-2 py-1 text-[9px] font-black">PEMBAYARAN BELUM DIKONFIRMASI</span>')}
                     `;
                 }
 
@@ -892,7 +795,7 @@
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             ${areaDisplayHtml}
-                            <h3 class="font-black text-blue-900 text-sm leading-tight flex items-center flex-wrap gap-1">${i.name} ${i.paymentMode === 'cash' ? '<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-300 text-[8px] align-middle shadow-sm"><i class="fa fa-dollar-sign mr-0.5"></i>CASH</span>' : ''}</h3>
+                            <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
                             <div class="flex items-center gap-2 mt-1">
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
                                 ${finalDriver ? `<span class="driver-badge">${finalDriver}</span>` : ''}
@@ -906,7 +809,7 @@
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
                              <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
                             : `<div class="flex gap-1 items-center">
-                                 ${i.paymentMode === 'cash' ? '<div class="bg-green-100 text-green-700 border border-green-300 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Pesanan CASH (Uang Belum Tentu Diterima)"><span class="font-black text-sm">$</span></div>' : ''}
+                                 ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
                                  <div class="flex flex-col items-center gap-1">
                                      <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
                                      ${historyGpsControlsHtml}
@@ -920,7 +823,7 @@
                     </div>
                     <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
                         ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
-                        <button onclick="openCashConfirmModal('${id}', this.getAttribute('data-walink'))" data-walink="${waLink}" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm active:scale-95 transition-transform"><i class="fab fa-whatsapp mr-1"></i> Chat WA</button>
+                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
                     </div>
                     
                     ${i.status !== 'done' && !i.maps ? `
@@ -1158,7 +1061,9 @@
 
         function setStatus(id, stat) { 
             if (stat === 'done') {
-                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser });
+                const answer = confirm("Apakah pesanan ini pembayaran CASH?\n\nPilih OK untuk CASH. Pilih Batal untuk NON-CASH.");
+                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser, paymentMethod: answer ? 'CASH' : 'NON_CASH', paymentConfirmedAt: Date.now(), paymentConfirmedBy: currentUser });
+                stopRadarMonitoringForOrder(id);
             } else {
                 db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
             }
@@ -1174,12 +1079,6 @@
             
             if(id === 'chess-lobby') renderChessOnlineList();
             if(id !== 'chess-game' && typeof chessTimerInterval !== 'undefined' && chessTimerInterval) clearInterval(chessTimerInterval);
-
-            if (id === 'chat' && realtimeMap) {
-                setTimeout(() => {
-                    google.maps.event.trigger(realtimeMap, 'resize');
-                }, 100);
-            }
         }
 
         function updateTimers() {
@@ -1189,7 +1088,8 @@
                     const rem = (20 * 60) - elapsed;
                     
                     if(elapsed >= 1200) {
-                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" });
+                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System", paymentMethod: allData[id].paymentMethod || 'UNCONFIRMED' });
+                        stopRadarMonitoringForOrder(id);
                         return;
                     }
 
@@ -1207,44 +1107,17 @@
             if(!currentUser) return;
             const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
             const userStatusRef = db.ref('presence/' + currentUser);
-            userStatusRef.update({ online: true, session: sessionID, lastActive: Date.now(), photo: photo }); 
+            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
             userStatusRef.onDisconnect().remove();
             
             db.ref('presence').on('value', s => {
                 const el = document.getElementById('onlineBar'); el.innerHTML = "";
                 s.forEach(u => {
                     const data = u.val();
-                    const usrKey = u.key;
-                    
-                    // Render Avatar Bar
-                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${usrKey}&background=006491&color=fff`;
+                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
                     el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${usrKey}')"> ${usrKey}
+                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
                     </span>`;
-                    
-                    // Render Driver Maps Marker
-                    if (realtimeMap && data.lat && data.lng) {
-                        const pos = { lat: data.lat, lng: data.lng };
-                        if (driverMarkers[usrKey]) {
-                            driverMarkers[usrKey].setPosition(pos);
-                        } else {
-                            driverMarkers[usrKey] = new google.maps.Marker({
-                                position: pos,
-                                map: realtimeMap,
-                                label: { text: usrKey.charAt(0).toUpperCase(), color: "white", fontWeight: "bold" },
-                                title: usrKey,
-                                animation: google.maps.Animation.DROP
-                            });
-                        }
-                    }
-                });
-                
-                // Cleanup offline/missing GPS markers
-                Object.keys(driverMarkers).forEach(mKey => {
-                    if (!s.hasChild(mKey) || !s.child(mKey).val().lat) {
-                        driverMarkers[mKey].setMap(null);
-                        delete driverMarkers[mKey];
-                    }
                 });
             });
         }
@@ -1527,6 +1400,7 @@
         function resetChessGame() {
             const btn = document.getElementById('btnResetGame');
             if (!btn.disabled && !isSpectator) {
+                // Mencegah double click dan memperbaiki race condition
                 btn.disabled = true;
                 btn.innerText = "Memproses...";
                 
@@ -1535,12 +1409,14 @@
                     if (game) {
                         const oppReset = game.resetRequest && game.resetRequest[chessOpponent];
                         if (oppReset) {
+                            // Lawan sudah setuju, satu player ini saja yang mengeksekusi reset ke DB agar sinkron
                             db.ref(`chess_games/${currentChessGameId}`).update({
                                 fen: 'start', turn: 'w', lastMove: null, wTime: 600, bTime: 600,
                                 lastUpdate: Date.now(), status: 'active', winner: null, reason: null,
-                                resetRequest: null, white: game.black, black: game.white 
+                                resetRequest: null, white: game.black, black: game.white // Tukar Warna
                             });
                         } else {
+                            // Lawan belum setuju, hanya kirim request kita
                             db.ref(`chess_games/${currentChessGameId}/resetRequest/${currentUser}`).set(true);
                         }
                     }
@@ -1855,7 +1731,7 @@
                     chess.reset();
                     selectedSquare = null;
                     isAnimatingPiece = false;
-                    lastRenderedFen = "start"; 
+                    lastRenderedFen = "start"; // Menghindari bug trigger animasi palsu
                 } else if (game.fen !== chess.fen()) {
                     chess.load(game.fen);
                     if (game.status !== 'ended' || !scoreProcessedForGame) {
@@ -1891,6 +1767,7 @@
                             });
                         }
 
+                        // Memberikan jeda 300ms agar DOM dapat merender skak mat visual dahulu sebelum notifikasi popup memblokir layar
                         setTimeout(() => {
                             if(game.lastMove) playChessSound('snd-end', false);
                             showAlert(`Game Selesai! Pemenang: ${pemenang} (${game.reason || 'Selesai'})`, "blue");
@@ -2038,10 +1915,12 @@
                     
                     if(selectedSquare === sq) sqEl.innerHTML += `<div class="chess-hl"></div>`;
                     
+                    // HIGHLIGHT KOTAK JALAN TERAKHIR - Memperlihatkan secara jelas Pion/Piece penyerang (warna kotak kuning transparan)
                     if(lastMoveObj && (sq === lastMoveObj.from || sq === lastMoveObj.to)) {
                         sqEl.innerHTML += `<div class="chess-last-move"></div>`;
                     }
                     
+                    // HIGHLIGHT RAJA YANG TERKENA SKAK (warna gradien merah)
                     if(sq === checkedKingSquare) sqEl.innerHTML += `<div class="chess-check-hl"></div>`;
                     
                     const moveMatch = legalMoves.find(m => m.to === sq);
@@ -2154,6 +2033,88 @@
             alertBox.style.display = 'flex';
             setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
         }
-    </script>
-</body>
-</html>
+
+        // ================= LIVE RADAR TRACKCUST JTM =================
+        const RADAR_STORE = { lat: -6.2854816, lng: 106.9355559, name: "Domino's Pizza Jatimakmur" };
+        const RADAR_TTL_MS = 20 * 60 * 1000;
+        let radarMap = null, radarStoreMarker = null, radarDriverMarker = null, radarRouteLine = null;
+        let radarTrail = [], radarWatchId = null, radarListenerRef = null, radarListenerFn = null;
+        let radarSelectedOrder = '', radarMonitoringStartedAt = 0, radarExpiryTimer = null;
+        const radarIcon = (emoji, bg) => L.divIcon({className:'', html:`<div style="background:${bg};border:2px solid white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #555;font-size:17px">${emoji}</div>`,iconSize:[32,32],iconAnchor:[16,16]});
+
+        function initLiveRadar() {
+            if (!window.L || radarMap) return;
+            const el = document.getElementById('liveRadarMap'); if (!el) return;
+            radarMap = L.map(el, { zoomControl: true }).setView([RADAR_STORE.lat, RADAR_STORE.lng], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(radarMap);
+            radarStoreMarker = L.marker([RADAR_STORE.lat, RADAR_STORE.lng], {icon:radarIcon('🏪','#006491')}).addTo(radarMap).bindPopup(RADAR_STORE.name);
+            radarRouteLine = L.polyline([], {color:'#e31837',weight:4,opacity:.85}).addTo(radarMap);
+            setTimeout(() => radarMap && radarMap.invalidateSize(), 250);
+        }
+        function radarStatus(text, color='gray') {
+            const b=document.getElementById('radarStatusBadge'); if(!b) return;
+            const classes={gray:'bg-gray-100 text-gray-600',green:'bg-green-100 text-green-700',blue:'bg-blue-100 text-blue-700',red:'bg-red-100 text-red-700',orange:'bg-orange-100 text-orange-700'};
+            b.className='text-[9px] font-black px-2 py-1 rounded-full '+(classes[color]||classes.gray); b.textContent=text;
+        }
+        function refreshRadarOrders() {
+            const sel=document.getElementById('radarOrderSelect'); if(!sel) return;
+            const old=sel.value || radarSelectedOrder; const active=Object.entries(allData||{}).filter(([id,o])=>o && o.status!=='done');
+            sel.innerHTML='<option value="">-- Pilih pesanan aktif --</option>'+active.map(([id,o])=>`<option value="${id}">${escapeRadarText(o.name||'Tanpa nama')} · ${escapeRadarText(o.area||'')}</option>`).join('');
+            if(active.some(([id])=>id===old)) sel.value=old; else if(radarSelectedOrder && !active.some(([id])=>id===radarSelectedOrder)) { radarSelectedOrder=''; stopRadarMonitoring(); }
+        }
+        function escapeRadarText(v) { return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function radarOrderChanged() {
+            const next=document.getElementById('radarOrderSelect')?.value || '';
+            if(next!==radarSelectedOrder) stopRadarMonitoring();
+            radarSelectedOrder=next;
+            const o=allData[radarSelectedOrder];
+            if(o) document.getElementById('radarDetails').textContent=`Pesanan: ${o.name||'-'} | Kurir: ${o.driverBy||'belum ditetapkan'} | Pilih “Pantau Pesanan” di komputer toko atau “Mulai GPS Kurir” di HP kurir.`;
+        }
+        function centerRadar() {
+            initLiveRadar(); if(!radarMap) return;
+            if(radarDriverMarker) radarMap.setView(radarDriverMarker.getLatLng(),16); else radarMap.setView([RADAR_STORE.lat,RADAR_STORE.lng],16);
+            setTimeout(()=>radarMap.invalidateSize(),100);
+        }
+        function startDriverGps() {
+            radarOrderChanged(); const id=radarSelectedOrder;
+            if(!id) return alert('Pilih pesanan aktif terlebih dahulu.');
+            if(mgtAndCashiers.includes(currentUser)) return alert('Akun management/kasir tidak dapat memulai GPS kurir. Masuk menggunakan akun kurir.');
+            if(!navigator.geolocation) return alert('Browser ini tidak mendukung GPS.');
+            if(location.protocol!=='https:' && location.hostname!=='localhost') return alert('GPS membutuhkan alamat HTTPS. Buka aplikasi melalui GitHub Pages atau HTTPS.');
+            if(radarWatchId!==null) navigator.geolocation.clearWatch(radarWatchId);
+            db.ref('live_tracking/'+id+'/meta').update({orderId:id, customerName:allData[id]?.name||'', driverName:currentUser, startedAt:Date.now(), active:true}).catch(e=>console.error(e));
+            radarStatus('GPS AKTIF','green');
+            radarWatchId=navigator.geolocation.watchPosition(pos=>{
+                const point={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy||null,timestamp:pos.timestamp||Date.now(),driverName:currentUser,orderId:id};
+                db.ref('live_tracking/'+id+'/latest').set(point).catch(err=>{radarStatus('GAGAL KIRIM','red');console.error(err)});
+                db.ref('live_tracking/'+id+'/route').push(point).catch(err=>console.error(err));
+                initLiveRadar(); drawRadarPoint(point); showRadarPointDetails(point,'GPS kurir aktif');
+            },err=>{radarStatus('GPS ERROR','red');alert('GPS gagal: '+({1:'izin lokasi ditolak',2:'posisi tidak tersedia',3:'waktu GPS habis'}[err.code]||err.message));}, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+        }
+        function stopDriverGps() {
+            if(radarWatchId!==null) { navigator.geolocation.clearWatch(radarWatchId); radarWatchId=null; }
+            if(radarSelectedOrder) db.ref('live_tracking/'+radarSelectedOrder+'/meta').update({active:false,stoppedAt:Date.now()}).catch(()=>{});
+            radarStatus('GPS BERHENTI','gray');
+        }
+        function startRadarMonitoring() {
+            radarOrderChanged(); const id=radarSelectedOrder;
+            if(!id) return alert('Pilih pesanan aktif terlebih dahulu.');
+            stopRadarMonitoring();
+            const key='trackcust_radar_start_'+id;
+            let started=Number(localStorage.getItem(key)||0);
+            if(!started) { started=Date.now(); localStorage.setItem(key,String(started)); }
+            radarMonitoringStartedAt=started;
+            const remaining=RADAR_TTL_MS-(Date.now()-started);
+            if(remaining<=0) { radarStatus('WAKTU HABIS','orange'); document.getElementById('radarDetails').textContent='Batas pemantauan 20 menit telah habis. Titik terakhir tetap ditampilkan. Untuk memulai sesi baru, pilih pesanan baru.'; return; }
+            radarListenerRef=db.ref('live_tracking/'+id);
+            radarListenerFn=snap=>{
+                const data=snap.val()||{}; if(data.latest) { initLiveRadar(); drawRadarPoint(data.latest); showRadarPointDetails(data.latest,'Memantau pesanan'); }
+                if(data.route) { const pts=Object.values(data.route).filter(p=>p && Number.isFinite(+p.lat)&&Number.isFinite(+p.lng)).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0)).map(p=>[+p.lat,+p.lng]); radarTrail=pts; if(radarRouteLine) radarRouteLine.setLatLngs(pts); }
+            };
+            radarListenerRef.on('value',radarListenerFn); radarStatus('MEMANTAU','blue');
+            radarExpiryTimer=setTimeout(()=>{ stopRadarMonitoring(); radarStatus('WAKTU HABIS','orange'); const d=document.getElementById('radarDetails'); if(d) d.textContent+=' | Pemantauan toko berhenti setelah 20 menit; titik terakhir tetap tersimpan.'; },remaining);
+        }
+        function stopRadarMonitoring() {
+            if(radarListenerRef && radarListenerFn) radarListenerRef.off('value',radarListenerFn);
+            radarListenerRe
+Pratinjau terpotong untuk file besar
