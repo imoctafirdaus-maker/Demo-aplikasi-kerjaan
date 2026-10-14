@@ -7,14 +7,16 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     
     <!-- Library Game Catur -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <!-- LIBRARY LEAFLET (Pengganti Google Maps) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <style>
         .dominos-blue { background-color: #006491; }
@@ -73,8 +75,9 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; }
         .chess-anim-piece { position: absolute; z-index: 999; transition: transform 0.2s ease-in-out; pointer-events: none; }
-        #liveRadarMap { height: 280px; width: 100%; border-radius: 14px; z-index: 1; }
-        .radar-btn { border-radius: 10px; padding: 10px 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+
+        /* Leaflet Fixes */
+        .leaflet-control-attribution { font-size: 8px !important; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -86,6 +89,24 @@
     <audio id="snd-end" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3" preload="auto"></audio>
     <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3" preload="auto"></audio>
     <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3" preload="auto"></audio>
+
+    <!-- MODAL KONFIRMASI CASH -->
+    <div id="cashConfirmModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-[2rem] text-center w-full max-w-xs shadow-2xl border-4 border-blue-900 relative">
+            <button onclick="closeCashConfirmModal()" class="absolute top-4 right-5 text-gray-300 hover:text-red-500 transition-colors">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <i class="fa fa-money-bill-wave text-3xl"></i>
+            </div>
+            <h3 class="font-black text-blue-900 uppercase text-lg mb-2">Konfirmasi Status</h3>
+            <p class="text-xs font-bold text-gray-500 mb-6 tracking-wide px-2">APAKAH PESANAN INI PEMBAYARAN CASH?</p>
+            <div class="flex gap-3">
+                <button onclick="processCashConfirm(true)" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-black uppercase shadow-md hover:bg-green-600 active:scale-95 transition-transform">YA</button>
+                <button onclick="processCashConfirm(false)" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black uppercase shadow-md hover:bg-red-600 active:scale-95 transition-transform">TIDAK</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL CATUR -->
     <div id="promoModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
@@ -257,7 +278,7 @@
                 </div>
             </div>
 
-            <!-- HALAMAN LOBBY CATUR (NEW) -->
+            <!-- HALAMAN LOBBY CATUR -->
             <div id="page-chess-lobby" class="page p-6 bg-[#161512] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="showPage('home')" class="text-gray-300 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
@@ -265,7 +286,6 @@
                     <div class="w-10"></div>
                 </div>
                 
-                <!-- INJEKSI UI: LIVE GAMES -->
                 <div id="chessLiveList" class="space-y-3 mb-6"></div>
 
                 <div class="bg-gray-800/80 p-5 rounded-3xl shadow-xl border border-gray-700 mb-6">
@@ -371,8 +391,9 @@
                 </div>
             </div>
 
-            <div id="page-chat" class="page h-full items-center p-4 bg-gray-100 overflow-y-auto">
-                <div class="wa-card mb-20 mx-auto relative">
+            <!-- HALAMAN WA DIRECT & PETA TRACKING LIVE RADAR -->
+            <div id="page-chat" class="page h-full items-center justify-start p-4 bg-gray-100 overflow-y-auto w-full">
+                <div class="wa-card mb-4 mx-auto relative shrink-0">
                     <div class="flex justify-between items-start mb-4 px-2 gap-2">
                         
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
@@ -401,29 +422,45 @@
                     </div>
                     
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
-
-                    <!-- LIVE RADAR TRACKCUST JTM -->
-                    <section class="w-full text-left border-2 border-blue-100 rounded-2xl p-3 bg-white mb-4">
-                        <div class="flex items-center justify-between gap-2 mb-2">
-                            <h3 class="font-black text-blue-900 uppercase text-xs"><i class="fa fa-satellite-dish mr-1"></i> Live Radar Kurir</h3>
-                            <span id="radarStatusBadge" class="text-[9px] font-black px-2 py-1 rounded-full bg-gray-100 text-gray-600">SIAP</span>
+                </div>
+                
+                <!-- PETA TRACKING DRIVER REALTIME -->
+                <div id="realtimeMapWrapper" class="w-full max-w-[350px] bg-white rounded-2xl mb-32 shadow-sm border-2 border-green-500/20 relative flex flex-col transition-all duration-300 shrink-0 mx-auto" style="height: 350px;">
+                    <!-- HEADER RADAR -->
+                    <div class="bg-green-50 px-3 py-2 border-b border-green-100 flex justify-between items-center z-[500] rounded-t-xl">
+                        <div>
+                            <h3 class="text-[10px] font-black text-green-800 uppercase italic"><i class="fa fa-satellite-dish text-red-500 animate-pulse mr-1"></i> LIVE RADAR KURIR</h3>
+                            <p id="radarOrderId" class="text-[9px] font-bold text-gray-500 uppercase">PILIH PESANAN DARI DAFTAR</p>
+                            <p id="radarCourierId" class="text-[9px] font-bold text-gray-500 uppercase">-</p>
                         </div>
-                        <label class="block text-[10px] font-black uppercase text-gray-500 mb-1">Pilih pesanan</label>
-                        <select id="radarOrderSelect" class="w-full border border-gray-200 rounded-xl p-3 text-xs font-bold mb-2" onchange="radarOrderChanged()">
-                            <option value="">-- Pilih pesanan aktif --</option>
-                        </select>
-                        <div class="grid grid-cols-2 gap-2 mb-2">
-                            <button onclick="startDriverGps()" class="radar-btn bg-green-600 text-white"><i class="fa fa-location-arrow mr-1"></i> Mulai GPS Kurir</button>
-                            <button onclick="stopDriverGps()" class="radar-btn bg-gray-700 text-white"><i class="fa fa-stop mr-1"></i> Hentikan GPS</button>
+                        <div class="text-right">
+                            <p id="radarSessionTimer" class="text-[14px] font-mono font-black text-blue-600">00:00</p>
+                            <p id="radarStatus" class="text-[8px] font-bold text-gray-500 uppercase">MENUNGGU GPS</p>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 mb-2">
-                            <button onclick="startRadarMonitoring()" class="radar-btn bg-blue-700 text-white"><i class="fa fa-eye mr-1"></i> Pantau Pesanan</button>
-                            <button onclick="centerRadar()" class="radar-btn bg-blue-50 text-blue-900"><i class="fa fa-crosshairs mr-1"></i> Pusatkan Peta</button>
+                    </div>
+                    
+                    <!-- AREA LEAFLET MAP -->
+                    <div id="mapContainer" class="flex-1 w-full bg-gray-200 z-0"></div>
+                    
+                    <!-- KONTROL RADAR -->
+                    <div class="absolute bottom-2 left-2 right-2 flex justify-between z-[400] pointer-events-none">
+                        <div class="flex gap-2 pointer-events-auto">
+                            <button onclick="centerStore()" class="bg-white text-blue-900 w-8 h-8 rounded-lg shadow-md flex items-center justify-center font-bold border border-gray-200" title="Kembali ke Toko">
+                                <i class="fa fa-store text-[10px]"></i>
+                            </button>
+                            <button onclick="centerCourier()" class="bg-white text-green-600 w-8 h-8 rounded-lg shadow-md flex items-center justify-center font-bold border border-gray-200" title="Lihat Kurir">
+                                <i class="fa fa-motorcycle text-[10px]"></i>
+                            </button>
                         </div>
-                        <div id="liveRadarMap" class="border border-gray-200"></div>
-                        <div id="radarDetails" class="text-[10px] font-bold text-gray-600 mt-2 leading-relaxed">Peta berpusat di Domino's Pizza Jatimakmur. Pilih pesanan untuk mulai.</div>
-                        <p class="text-[9px] text-gray-400 mt-2">Peta © OpenStreetMap. GPS memerlukan izin lokasi dan HTTPS. Browser dapat menghentikan GPS saat layar terkunci/aplikasi ditutup.</p>
-                    </section>
+                        <button onclick="toggleMapHeight()" class="bg-green-500 text-white w-8 h-8 rounded-lg shadow-md flex items-center justify-center font-bold pointer-events-auto border border-green-600 shadow-md">
+                            <i id="mapToggleIcon" class="fa fa-expand text-[10px]"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- INFORMASI TIMESTAMP GPS -->
+                    <div id="radarLastUpdate" class="absolute bottom-12 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded shadow text-[8px] font-black text-gray-600 border border-gray-200 z-[400] hidden pointer-events-none">
+                        Terakhir: -
+                    </div>
                 </div>
             </div>
         </main>
@@ -462,6 +499,222 @@
         let allData = {}; let photoBase64 = "";
         let renderTimer;
         let editCrewId = null;
+        
+        // VARIABEL KONFIRMASI CASH
+        let pendingChatAction = null;
+
+        // =========================================================================
+        // VARIABEL LIVE RADAR PWA (Leaflet.js & Firebase Tracking)
+        // =========================================================================
+        let leafMap;
+        const STORE_LAT = -6.2854816;
+        const STORE_LNG = 106.9355559;
+        let leafStoreMarker, leafCourierMarker, trackingPolyline;
+        
+        let driverMarkers = {}; // Untuk marker global presensi
+        let watchPositionId = null;
+        let mapExpanded = false;
+
+        let monitoredOrderId = null;
+        let radarSessionInterval = null;
+        let activeRadarListener = null;
+        let activeHistoryListener = null;
+        let lastKnownCourierLat = null;
+        let lastKnownCourierLng = null;
+        // =========================================================================
+
+        function initLeafletMap() {
+            if(leafMap) return;
+            leafMap = L.map('mapContainer', {zoomControl: false}).setView([STORE_LAT, STORE_LNG], 16);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 19
+            }).addTo(leafMap);
+            
+            // Icon khusus toko
+            const storeIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            });
+            leafStoreMarker = L.marker([STORE_LAT, STORE_LNG], {icon: storeIcon}).addTo(leafMap).bindPopup("<b>Domino's Pizza Jatimakmur</b>");
+            
+            // Polyline riwayat jejak GPS aktual
+            trackingPolyline = L.polyline([], {color: '#3b82f6', weight: 4, opacity: 0.8}).addTo(leafMap);
+        }
+
+        // PENGIRIMAN GPS ASLI KURIR
+        function startLocationTracking() {
+            if (navigator.geolocation && !mgtAndCashiers.includes(currentUser)) {
+                watchPositionId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        const acc = pos.coords.accuracy || 0;
+                        const ts = pos.timestamp || Date.now();
+                        
+                        // Update presensi global
+                        db.ref('presence/' + currentUser).update({ lat: lat, lng: lng, acc: acc, locTimestamp: ts });
+                        
+                        // Kirim data riwayat perjalanan untuk semua pesanan "otw" aktif milik kurir
+                        Object.keys(allData).forEach(id => {
+                            if (allData[id].status === 'otw' && allData[id].driverBy === currentUser) {
+                                db.ref('trackingHistory/' + id).push({ lat: lat, lng: lng, acc: acc, timestamp: ts });
+                            }
+                        });
+                    },
+                    (err) => console.warn("GPS tracking error: ", err),
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+                );
+            }
+        }
+
+        function stopLocationTracking() {
+            if (watchPositionId !== null && navigator.geolocation) {
+                navigator.geolocation.clearWatch(watchPositionId);
+            }
+        }
+
+        // LOGIKA PENERIMAAN GPS (LIVE RADAR TOKO)
+        function centerStore() {
+            if(leafMap) leafMap.setView([STORE_LAT, STORE_LNG], 16);
+        }
+        
+        function centerCourier() {
+            if(leafMap && lastKnownCourierLat && lastKnownCourierLng) {
+                leafMap.setView([lastKnownCourierLat, lastKnownCourierLng], 18);
+            } else {
+                alert("Koordinat kurir belum tersedia atau belum diperbarui.");
+            }
+        }
+
+        function toggleMapHeight() {
+            const mapDiv = document.getElementById('realtimeMapWrapper');
+            const icon = document.getElementById('mapToggleIcon');
+            if (mapExpanded) {
+                mapDiv.style.height = '350px';
+                icon.classList.replace('fa-compress', 'fa-expand');
+            } else {
+                mapDiv.style.height = '65vh';
+                icon.classList.replace('fa-expand', 'fa-compress');
+            }
+            mapExpanded = !mapExpanded;
+            setTimeout(() => { if (leafMap) leafMap.invalidateSize(); }, 300);
+        }
+
+        function startRadarTimer(startTime, orderId) {
+            if(radarSessionInterval) clearInterval(radarSessionInterval);
+            
+            radarSessionInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const rem = (20 * 60) - elapsed;
+                
+                const el = document.getElementById('radarSessionTimer');
+                const statEl = document.getElementById('radarStatus');
+                
+                if (rem > 0) {
+                    const m = Math.floor(rem / 60);
+                    const s = rem % 60;
+                    el.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+                    el.className = "text-[14px] font-mono font-black text-blue-600";
+                } else {
+                    el.innerText = "00:00";
+                    el.className = "text-[14px] font-mono font-black text-red-600";
+                    statEl.innerText = "SESI PEMANTAUAN BERAKHIR";
+                    // Hentikan listener UI jika waktu habis, tanpa menghapus GPS atau history kurir
+                    if(activeRadarListener && allData[orderId] && allData[orderId].driverBy) {
+                        db.ref('presence/' + allData[orderId].driverBy).off('value', activeRadarListener);
+                        activeRadarListener = null;
+                    }
+                    clearInterval(radarSessionInterval);
+                }
+            }, 1000);
+        }
+
+        function pantauPesanan(orderId) {
+            initLeafletMap();
+            monitoredOrderId = orderId;
+            const order = allData[orderId];
+            if(!order) return;
+            
+            showPage('chat');
+            setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 300);
+            
+            // Atur UI
+            document.getElementById('radarOrderId').innerText = "ID: " + (order.name || "Pesanan");
+            document.getElementById('radarCourierId').innerText = order.driverBy ? ("Kurir: " + order.driverBy) : "Belum ada kurir";
+            document.getElementById('radarStatus').innerText = "MENUNGGU GPS";
+            document.getElementById('radarLastUpdate').classList.add('hidden');
+            
+            // Inisialisasi atau Pulihkan Timer 20 Menit berbasis Firebase
+            db.ref('monitoring_sessions/' + orderId).once('value', snap => {
+                let startTs = snap.val()?.startTime;
+                if(!startTs || (Date.now() - startTs) > (20 * 60 * 1000)) {
+                    startTs = Date.now();
+                    db.ref('monitoring_sessions/' + orderId).set({ startTime: startTs });
+                }
+                startRadarTimer(startTs, orderId);
+            });
+            
+            // Bersihkan Sesi Sebelumnya
+            if(activeRadarListener && order.driverBy) db.ref('presence').off('value', activeRadarListener);
+            if(activeHistoryListener) db.ref('trackingHistory').off('child_added', activeHistoryListener);
+            
+            trackingPolyline.setLatLngs([]);
+            if(leafCourierMarker) leafMap.removeLayer(leafCourierMarker);
+            leafCourierMarker = null;
+            lastKnownCourierLat = null;
+            lastKnownCourierLng = null;
+            
+            // Render History Polyline (Jejak Perjalanan Asli)
+            activeHistoryListener = db.ref('trackingHistory/' + orderId).orderByChild('timestamp').on('child_added', snap => {
+                const pt = snap.val();
+                if (pt && pt.lat && pt.lng) {
+                    trackingPolyline.addLatLng([pt.lat, pt.lng]);
+                }
+            });
+            
+            // Dengar Live GPS Kurir
+            if(order.driverBy) {
+                const courierIcon = L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                });
+
+                activeRadarListener = db.ref('presence/' + order.driverBy).on('value', snap => {
+                    const data = snap.val();
+                    const statEl = document.getElementById('radarStatus');
+                    const lastUpdateEl = document.getElementById('radarLastUpdate');
+                    
+                    if(data && data.lat && data.lng) {
+                        lastKnownCourierLat = data.lat;
+                        lastKnownCourierLng = data.lng;
+                        const isFresh = (Date.now() - (data.locTimestamp || Date.now())) < 60000;
+                        
+                        statEl.innerText = isFresh ? "GPS AKTIF" : "LOKASI KEDALUWARSA";
+                        
+                        if(!leafCourierMarker) {
+                            leafCourierMarker = L.marker([data.lat, data.lng], {icon: courierIcon}).addTo(leafMap).bindPopup("Kurir: " + order.driverBy);
+                            leafMap.setView([data.lat, data.lng], 16);
+                        } else {
+                            leafCourierMarker.setLatLng([data.lat, data.lng]);
+                        }
+
+                        if(data.locTimestamp) {
+                            const d = new Date(data.locTimestamp);
+                            lastUpdateEl.innerText = `Terakhir: ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+                            lastUpdateEl.classList.remove('hidden');
+                        }
+                    } else {
+                        statEl.innerText = "GPS TERPUTUS";
+                    }
+                });
+            } else {
+                document.getElementById('radarStatus').innerText = "KURIR BELUM MEMULAI PELACAKAN";
+            }
+        }
 
         // VARIABEL GAME CATUR
         const pieceIcons = {
@@ -490,7 +743,7 @@
         let selectedSquare = null;
         let chessSyncListener = null;
         let chessTimerInterval = null;
-        let isSpectator = false; // FLAG UNTUK MODE PENONTON LIVE
+        let isSpectator = false;
         
         let wTime = 10 * 60;
         let bTime = 10 * 60;
@@ -507,7 +760,6 @@
         let audioUnlocked = false;
         let botIsThinking = false;
 
-        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
         const KECAMATAN_POLYGONS = [
             { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
             { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
@@ -535,6 +787,7 @@
             checkAndResetIdsAtMidnight();
 
             listenToChessChallenges();
+            initLeafletMap();
             
             document.body.addEventListener('click', () => {
                 if(!audioUnlocked) {
@@ -547,14 +800,39 @@
             }, { once: true });
         };
 
-        // SKRIP JEMBATAN OTOMATIS PORTAL FEM
+        // FUNGSI KONFIRMASI PEMBAYARAN CASH
+        function openCashConfirmModal(id, waLink) {
+            if (allData[id].paymentMode) {
+                pushDeliveryStatus(currentUser);
+                window.open(waLink, '_blank');
+            } else {
+                pendingChatAction = { id: id, waLink: waLink };
+                document.getElementById('cashConfirmModal').style.display = 'flex';
+            }
+        }
+
+        function closeCashConfirmModal() {
+            document.getElementById('cashConfirmModal').style.display = 'none';
+            pendingChatAction = null;
+        }
+
+        function processCashConfirm(isCash) {
+            if (!pendingChatAction) return;
+            const id = pendingChatAction.id;
+            const waLink = pendingChatAction.waLink;
+            const mode = isCash ? 'CASH' : 'NON_CASH'; // Disesuaikan ke standar baru
+            
+            db.ref('customers/' + id).update({ paymentMode: mode }).then(() => {
+                closeCashConfirmModal();
+                pushDeliveryStatus(currentUser);
+                window.open(waLink, '_blank');
+            }).catch(err => alert("Gagal menyimpan status pembayaran: " + err.message));
+        }
+
         function aksesPortalFEM() {
             navigator.clipboard.writeText("pdc9_pic").then(() => {
                 alert("📋 USERNAME BERHASIL DISALIN!\n\nUsername: pdc9_pic\nSandi: pdc9_pic@123\n\nKlik OK untuk menyalin Sandi dan menuju halaman Login.");
-                
-                navigator.clipboard.writeText("pdc9_pic@123").then(() => {
-                    window.open('https://www.femdpi.com/dashboard/', '_blank');
-                });
+                navigator.clipboard.writeText("pdc9_pic@123").then(() => { window.open('https://www.femdpi.com/dashboard/', '_blank'); });
             }).catch(err => {
                 alert("Kredensial Login:\nUsername: pdc9_pic\nSandi: pdc9_pic@123");
                 window.open('https://www.femdpi.com/dashboard/', '_blank');
@@ -605,36 +883,18 @@
             const pin = document.getElementById('newCrewPin').value.trim();
             if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
             
-            if(editCrewId && editCrewId !== name) {
-                delete userPins[editCrewId];
-            }
+            if(editCrewId && editCrewId !== name) { delete userPins[editCrewId]; }
             userPins[name] = pin;
-            db.ref('crew_settings').set(userPins).then(() => {
-                alert("Data Crew Terupdate!");
-                cancelCrewEdit();
-            });
+            db.ref('crew_settings').set(userPins).then(() => { alert("Data Crew Terupdate!"); cancelCrewEdit(); });
         }
 
         function editCrew(n) {
-            editCrewId = n;
-            document.getElementById('newCrewName').value = n;
-            document.getElementById('newCrewPin').value = userPins[n];
+            editCrewId = n; document.getElementById('newCrewName').value = n; document.getElementById('newCrewPin').value = userPins[n];
             document.getElementById('btnCancelCrew').classList.remove('hidden');
         }
 
-        function deleteCrew(n) {
-            if(confirm(`Hapus crew ${n} dari database?`)) {
-                delete userPins[n];
-                db.ref('crew_settings').set(userPins);
-            }
-        }
-
-        function cancelCrewEdit() {
-            editCrewId = null;
-            document.getElementById('newCrewName').value = "";
-            document.getElementById('newCrewPin').value = "";
-            document.getElementById('btnCancelCrew').classList.add('hidden');
-        }
+        function deleteCrew(n) { if(confirm(`Hapus crew ${n} dari database?`)) { delete userPins[n]; db.ref('crew_settings').set(userPins); } }
+        function cancelCrewEdit() { editCrewId = null; document.getElementById('newCrewName').value = ""; document.getElementById('newCrewPin').value = ""; document.getElementById('btnCancelCrew').classList.add('hidden'); }
 
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
@@ -643,8 +903,7 @@
                     const base64 = e.target.result;
                     document.getElementById('userAvatar').src = base64;
                     localStorage.setItem('profile_pic_' + currentUser, base64);
-                    updateProfileUI(); 
-                    updatePresence();
+                    updateProfileUI(); updatePresence();
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -661,12 +920,9 @@
             navAvatar.classList.remove('hidden');
 
             if(currentUser === "Okta") {
-                document.getElementById('adminPanel').classList.remove('hidden');
-                document.getElementById('gojekMenu').classList.remove('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('gojekMenu').classList.remove('hidden');
             } else {
-                document.getElementById('adminPanel').classList.add('hidden');
-                document.getElementById('gojekMenu').classList.add('hidden');
-                closeCrewManager();
+                document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('gojekMenu').classList.add('hidden'); closeCrewManager();
             }
         }
 
@@ -687,7 +943,9 @@
                 document.getElementById('userDisplay').innerText = n;
                 document.getElementById('pinOverlay').style.display = "none";
                 document.getElementById('mainContent').style.display = "flex";
-                updatePresence(); updateProfileUI();
+                
+                startLocationTracking(); updatePresence(); updateProfileUI();
+                
                 db.ref('presence/' + n + '/session').on('value', snap => {
                     if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
                 });
@@ -697,6 +955,7 @@
 
         function handleLogout(withConfirm = true) { 
             if(withConfirm && !confirm("Keluar?")) return;
+            stopLocationTracking();
             if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
             localStorage.removeItem('jtm_user'); location.reload(); 
         }
@@ -758,10 +1017,7 @@
                     const min = String(tgl.getMinutes()).padStart(2, '0');
                     const hariArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
                     const hari = hariArr[tgl.getDay()];
-                    const tglNum = tgl.getDate();
-                    const blnNum = tgl.getMonth() + 1;
-                    const thnNum = String(tgl.getFullYear()).slice(-2);
-                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tglNum}.${blnNum}.${thnNum} OLEH ${finalDriver}`;
+                    infoSelesai = `DIANTAR DAN SELESAI PADA ${jam}.${min} WIB, ${hari.toLowerCase()} ${tgl.getDate()}.${tgl.getMonth() + 1}.${String(tgl.getFullYear()).slice(-2)} OLEH ${finalDriver}`;
                 }
 
                 const nameEscaped = (i.name || "").replace(/['"\\]/g, '\\$&');
@@ -784,18 +1040,14 @@
 
                 let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
                 if (i.status === 'done' && i.historyDisplayId) {
-                    areaDisplayHtml = `
-                        <p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>
-                        <p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>
-                        ${i.paymentMethod === 'CASH' ? '<span class="inline-flex items-center gap-1 mt-1 bg-green-100 text-green-800 rounded-lg px-2 py-1 text-[9px] font-black"><i class="fa fa-dollar-sign"></i> CASH TERKONFIRMASI</span>' : (i.paymentMethod === 'NON_CASH' ? '<span class="inline-flex items-center gap-1 mt-1 bg-blue-100 text-blue-800 rounded-lg px-2 py-1 text-[9px] font-black"><i class="fa fa-credit-card"></i> NON-CASH</span>' : '<span class="inline-flex items-center gap-1 mt-1 bg-gray-100 text-gray-600 rounded-lg px-2 py-1 text-[9px] font-black">PEMBAYARAN BELUM DIKONFIRMASI</span>')}
-                    `;
+                    areaDisplayHtml += `<p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>`;
                 }
 
                 const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             ${areaDisplayHtml}
-                            <h3 class="font-black text-blue-900 text-sm leading-tight">${i.name}</h3>
+                            <h3 class="font-black text-blue-900 text-sm leading-tight flex items-center flex-wrap gap-1">${i.name} ${i.paymentMode === 'CASH' ? '<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-300 text-[8px] align-middle shadow-sm"><i class="fa fa-dollar-sign mr-0.5"></i>CASH</span>' : ''}</h3>
                             <div class="flex items-center gap-2 mt-1">
                                 <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
                                 ${finalDriver ? `<span class="driver-badge">${finalDriver}</span>` : ''}
@@ -804,12 +1056,13 @@
                         </div>
                         <div class="flex gap-2">
                             ${i.status !== 'done' ? 
-                            `<button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
+                            `<button onclick="pantauPesanan('${id}')" class="text-white bg-green-500 w-7 h-7 rounded-lg flex items-center justify-center shadow-sm" title="Pantau Live Radar"><i class="fa fa-satellite-dish text-[10px]"></i></button>
+                             <button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
                              <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
                             : `<div class="flex gap-1 items-center">
-                                 ${i.paymentMode === 'cash' ? '<span class="text-green-500 font-black text-lg mr-2" title="Paid Cash (COD)">$</span>' : ''}
+                                 ${i.paymentMode === 'CASH' ? '<div class="bg-green-100 text-green-700 border border-green-300 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Pesanan CASH (Uang Belum Tentu Diterima)"><span class="font-black text-sm">$</span></div>' : ''}
                                  <div class="flex flex-col items-center gap-1">
                                      <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
                                      ${historyGpsControlsHtml}
@@ -823,7 +1076,7 @@
                     </div>
                     <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
                         ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
-                        <a href="${waLink}" target="_blank" onclick="pushDeliveryStatus('${currentUser}')" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fab fa-whatsapp mr-1"></i> Chat WA</a>
+                        <button onclick="openCashConfirmModal('${id}', this.getAttribute('data-walink'))" data-walink="${waLink}" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm active:scale-95 transition-transform"><i class="fab fa-whatsapp mr-1"></i> Chat WA</button>
                     </div>
                     
                     ${i.status !== 'done' && !i.maps ? `
@@ -842,22 +1095,12 @@
         }
 
         function dapatkanKecamatanTerdekat(lat, lng) {
-            let kecamatanTerpilih = "JATIMAKMUR";
-            let jarakTerkecil = Infinity;
-
+            let kecamatanTerpilih = "JATIMAKMUR"; let jarakTerkecil = Infinity;
             KECAMATAN_POLYGONS.forEach(kec => {
-                const R = 6371; 
-                const dLat = (kec.lat - lat) * Math.PI / 180;
-                const dLng = (kec.lng - lng) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                          Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                const jarak = R * c;
-
-                if (jarak < jarakTerkecil) {
-                    jarakTerkecil = jarak;
-                    kecamatanTerpilih = kec.name;
-                }
+                const R = 6371; const dLat = (kec.lat - lat) * Math.PI / 180; const dLng = (kec.lng - lng) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); const jarak = R * c;
+                if (jarak < jarakTerkecil) { jarakTerkecil = jarak; kecamatanTerpilih = kec.name; }
             });
             return kecamatanTerpilih;
         }
@@ -865,103 +1108,42 @@
         function ambilDanSimpanKoordinatStatus(id, name, isHistory = false) {
             const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat & ambil foto rumah untuk ${name}?`);
             if (!yakin) return;
-
-            if (!navigator.geolocation) {
-                alert("Gagal: HP tidak mendukung fitur GPS.");
-                return;
-            }
+            if (!navigator.geolocation) { alert("Gagal: HP tidak mendukung fitur GPS."); return; }
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
+                    const lat = position.coords.latitude; const lng = position.coords.longitude;
                     const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
                     const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
 
-                    const camInput = document.getElementById('cameraCaptureHidden');
-                    camInput.value = ""; 
-
+                    const camInput = document.getElementById('cameraCaptureHidden'); camInput.value = ""; 
                     camInput.onchange = (event) => {
                         if (event.target.files && event.target.files[0]) {
                             const reader = new FileReader();
                             reader.onload = (e) => {
                                 const img = new Image();
                                 img.onload = () => {
-                                    const canvas = document.createElement('canvas');
-                                    const TARGET_WIDTH = 400; 
-                                    canvas.width = TARGET_WIDTH;
-                                    canvas.height = img.height * (TARGET_WIDTH / img.width);
-                                    
-                                    const ctx = canvas.getContext('2d');
-                                    ctx.imageSmoothingEnabled = true;
-                                    ctx.imageSmoothingQuality = 'high';
+                                    const canvas = document.createElement('canvas'); const TARGET_WIDTH = 400; 
+                                    canvas.width = TARGET_WIDTH; canvas.height = img.height * (TARGET_WIDTH / img.width);
+                                    const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
                                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                                    
                                     const compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
 
-                                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
-                                        headers: { 'Accept-Language': 'id' }
-                                    })
+                                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, { headers: { 'Accept-Language': 'id' } })
                                     .then(response => response.json())
                                     .then(data => {
-                                        const addr = data.address || {};
-                                        const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || "";
-                                        const jalan = addr.road || "";
-                                        
+                                        const addr = data.address || {}; const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || ""; const jalan = addr.road || "";
                                         let areaFormatBaru = kecamatanOtomatis;
-                                        if (kelurahan || jalan) {
-                                            const detailArray = [];
-                                            if (kelurahan) detailArray.push(kelurahan.toUpperCase());
-                                            if (jalan) detailArray.push(jalan.toUpperCase());
-                                            areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`;
-                                        }
-
-                                        let updateData = { 
-                                            maps: generatedMapsUrl,
-                                            area: areaFormatBaru,
-                                            photo: compressedPhotoBase64, 
-                                            status: isHistory ? 'done' : (allData[id].status || 'active')
-                                        };
-
-                                        if (allData[id]) {
-                                            if (allData[id].historyDisplayId) {
-                                                updateData.historyDisplayId = allData[id].historyDisplayId;
-                                            } else {
-                                                let currentArea = allData[id].area || "";
-                                                let extractedId = "";
-                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
-                                                if (extractedId) updateData.historyDisplayId = extractedId;
-                                            }
-                                        }
-
+                                        if (kelurahan || jalan) { const detailArray = []; if (kelurahan) detailArray.push(kelurahan.toUpperCase()); if (jalan) detailArray.push(jalan.toUpperCase()); areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`; }
+                                        let updateData = { maps: generatedMapsUrl, area: areaFormatBaru, photo: compressedPhotoBase64, status: isHistory ? 'done' : (allData[id].status || 'active') };
+                                        if (allData[id]) { if (allData[id].historyDisplayId) { updateData.historyDisplayId = allData[id].historyDisplayId; } else { let currentArea = allData[id].area || ""; let extractedId = ""; if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || ""; if (extractedId) updateData.historyDisplayId = extractedId; } }
                                         return db.ref('customers/' + id).update(updateData).then(() => areaFormatBaru);
                                     })
-                                    .then((areaFinal) => {
-                                        alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal);
-                                    })
+                                    .then((areaFinal) => { alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal); })
                                     .catch((err) => {
-                                        let fallbackData = { 
-                                            maps: generatedMapsUrl,
-                                            area: kecamatanOtomatis,
-                                            photo: compressedPhotoBase64,
-                                            status: isHistory ? 'done' : (allData[id].status || 'active')
-                                        };
-
-                                        if (allData[id]) {
-                                            if (allData[id].historyDisplayId) {
-                                                fallbackData.historyDisplayId = allData[id].historyDisplayId;
-                                            } else {
-                                                let currentArea = allData[id].area || "";
-                                                let extractedId = "";
-                                                if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || "";
-                                                if (extractedId) fallbackData.historyDisplayId = extractedId;
-                                            }
-                                        }
-
-                                        db.ref('customers/' + id).update(fallbackData)
-                                        .then(() => {
-                                            alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tetapi gagal memuat nama jalan. Area diset ke: " + kecamatanOtomatis);
-                                        });
+                                        let fallbackData = { maps: generatedMapsUrl, area: kecamatanOtomatis, photo: compressedPhotoBase64, status: isHistory ? 'done' : (allData[id].status || 'active') };
+                                        if (allData[id]) { if (allData[id].historyDisplayId) { fallbackData.historyDisplayId = allData[id].historyDisplayId; } else { let currentArea = allData[id].area || ""; let extractedId = ""; if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || ""; if (extractedId) fallbackData.historyDisplayId = extractedId; } }
+                                        db.ref('customers/' + id).update(fallbackData).then(() => { alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tetapi gagal memuat nama jalan. Area diset ke: " + kecamatanOtomatis); });
                                     });
                                 };
                                 img.src = e.target.result;
@@ -969,28 +1151,15 @@
                             reader.readAsDataURL(event.target.files[0]);
                         }
                     };
-
                     camInput.click();
                 },
-                (error) => {
-                    alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif.");
-                },
+                (error) => { alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif."); },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
-        function openFullImg(url, caption = "") { 
-            document.getElementById('fullImg').src = url; 
-            document.getElementById('modalCaption').innerText = caption; 
-            document.getElementById('imgModal').style.display = 'flex'; 
-            initPinchZoom();
-        }
-
-        function closeFullImgModal() {
-            document.getElementById('imgModal').style.display = 'none';
-            resetPinchZoom();
-        }
-
+        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; initPinchZoom(); }
+        function closeFullImgModal() { document.getElementById('imgModal').style.display = 'none'; resetPinchZoom(); }
         function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
         
         function processImage(input) {
@@ -999,20 +1168,11 @@
                 reader.onload = e => {
                     const img = new Image();
                     img.onload = () => {
-                        const c = document.createElement('canvas'); 
-                        const THUMB_W = 600; 
-                        c.width = THUMB_W; 
-                        c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        const c = document.createElement('canvas'); const THUMB_W = 600; c.width = THUMB_W; c.height = img.height * (THUMB_W / img.width);
+                        const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, c.width, c.height);
                         photoBase64 = c.toDataURL('image/jpeg', 0.75);
-                        document.getElementById('imgPrev').src = photoBase64;
-                        document.getElementById('imgPrev').classList.remove('hidden');
-                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                        document.getElementById('btnDrawPhoto').classList.remove('hidden');
-                        document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
+                        document.getElementById('imgPrev').src = photoBase64; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                        document.getElementById('btnDrawPhoto').classList.remove('hidden'); document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
                     };
                     img.src = e.target.result;
                 };
@@ -1042,11 +1202,8 @@
             const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
             document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
             if(i.photo) { 
-                photoBase64 = i.photo; 
-                document.getElementById('imgPrev').src = i.photo; 
-                document.getElementById('imgPrev').classList.remove('hidden'); 
-                document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                document.getElementById('btnDrawPhoto').classList.remove('hidden'); 
+                photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); 
+                document.getElementById('btnRemovePhoto').classList.remove('hidden'); document.getElementById('btnDrawPhoto').classList.remove('hidden'); 
             }
             document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
         }
@@ -1054,31 +1211,27 @@
         function goOTW(id) { 
             if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
             if(allData[id].status !== 'otw') { 
-                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); 
-                pushDeliveryStatus(currentUser); 
+                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); pushDeliveryStatus(currentUser); 
             } 
         }
 
         function setStatus(id, stat) { 
-            if (stat === 'done') {
-                const answer = confirm("Apakah pesanan ini pembayaran CASH?\n\nPilih OK untuk CASH. Pilih Batal untuk NON-CASH.");
-                db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser, paymentMethod: answer ? 'CASH' : 'NON_CASH', paymentConfirmedAt: Date.now(), paymentConfirmedBy: currentUser });
-                stopRadarMonitoringForOrder(id);
-            } else {
-                db.ref('customers/'+id).update({ status: stat, historyDisplayId: null });
-            }
+            if (stat === 'done') { db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser }); } 
+            else { db.ref('customers/'+id).update({ status: stat, historyDisplayId: null }); }
         }
 
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
             document.querySelectorAll('.nav-item').forEach(n => {
-                if(n.id === 'nav-'+id) n.classList.add('active');
-                else n.classList.remove('active');
+                if(n.id === 'nav-'+id) n.classList.add('active'); else n.classList.remove('active');
             });
             if(id === 'home') closeCrewManager();
-            
             if(id === 'chess-lobby') renderChessOnlineList();
             if(id !== 'chess-game' && typeof chessTimerInterval !== 'undefined' && chessTimerInterval) clearInterval(chessTimerInterval);
+
+            if (id === 'chat' && leafMap) {
+                setTimeout(() => { leafMap.invalidateSize(); }, 300);
+            }
         }
 
         function updateTimers() {
@@ -1086,19 +1239,9 @@
                 if(allData[id].status === 'otw') {
                     const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
                     const rem = (20 * 60) - elapsed;
-                    
-                    if(elapsed >= 1200) {
-                        db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System", paymentMethod: allData[id].paymentMethod || 'UNCONFIRMED' });
-                        stopRadarMonitoringForOrder(id);
-                        return;
-                    }
-
+                    if(elapsed >= 1200) { db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" }); return; }
                     const el = document.getElementById('timer-'+id);
-                    if(el) {
-                        const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60);
-                        el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`;
-                        if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic";
-                    }
+                    if(el) { const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60); el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`; if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic"; }
                 }
             });
         }
@@ -1107,17 +1250,30 @@
             if(!currentUser) return;
             const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
             const userStatusRef = db.ref('presence/' + currentUser);
-            userStatusRef.set({ online: true, session: sessionID, lastActive: Date.now(), photo: photo });
+            userStatusRef.update({ online: true, session: sessionID, lastActive: Date.now(), photo: photo }); 
             userStatusRef.onDisconnect().remove();
             
             db.ref('presence').on('value', s => {
                 const el = document.getElementById('onlineBar'); el.innerHTML = "";
                 s.forEach(u => {
-                    const data = u.val();
-                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${u.key}&background=006491&color=fff`;
+                    const data = u.val(); const usrKey = u.key;
+                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${usrKey}&background=006491&color=fff`;
                     el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${u.key}')"> ${u.key}
+                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${usrKey}')"> ${usrKey}
                     </span>`;
+                    
+                    if (leafMap && data.lat && data.lng) {
+                        const pos = [data.lat, data.lng];
+                        if (driverMarkers[usrKey]) { driverMarkers[usrKey].setLatLng(pos); } 
+                        else { driverMarkers[usrKey] = L.marker(pos).addTo(leafMap).bindPopup(usrKey); }
+                    }
+                });
+                
+                Object.keys(driverMarkers).forEach(mKey => {
+                    if (!s.hasChild(mKey) || !s.child(mKey).val().lat) {
+                        if(leafMap) leafMap.removeLayer(driverMarkers[mKey]);
+                        delete driverMarkers[mKey];
+                    }
                 });
             });
         }
@@ -1130,11 +1286,8 @@
         }
 
         function removePhoto() { 
-            photoBase64 = ""; 
-            document.getElementById('imgPrev').classList.add('hidden'); 
-            document.getElementById('btnRemovePhoto').classList.add('hidden'); 
-            document.getElementById('btnDrawPhoto').classList.add('hidden');
-            document.getElementById('photoStatus').innerText = "Foto Rumah"; 
+            photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); 
+            document.getElementById('btnDrawPhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; 
         }
         function cancelEdit() { resetForm(); }
         function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
@@ -1143,151 +1296,73 @@
             const old = prompt("Masukkan PIN Lama:");
             if (old === userPins[currentUser]) {
                 const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { 
-                    userPins[currentUser] = baru; 
-                    db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!"));
-                } else { alert("PIN harus 4 digit!"); }
+                if (baru && baru.length === 4) { userPins[currentUser] = baru; db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!")); } 
+                else { alert("PIN harus 4 digit!"); }
             } else { alert("PIN Salah!"); }
         }
 
         function toggleGojekInput() {
-            const view = document.getElementById('gojekInputView');
-            const icon = document.getElementById('gojekChevron');
-            if (view.classList.contains('hidden')) {
-                view.classList.remove('hidden');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
-            } else {
-                view.classList.add('hidden');
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-            }
+            const view = document.getElementById('gojekInputView'); const icon = document.getElementById('gojekChevron');
+            if (view.classList.contains('hidden')) { view.classList.remove('hidden'); icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); } 
+            else { view.classList.add('hidden'); icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
         }
 
         function prosesWaGojek() {
-            let n = document.getElementById('gojekWaNumber').value.trim();
-            if (!n) return alert("Masukkan Nomor HP Customer Gojek terlebih dahulu!");
-            
-            let nClean = n.replace(/\D/g, '');
-            if (!nClean) return alert("Nomor tidak valid!");
-            
+            let n = document.getElementById('gojekWaNumber').value.trim(); if (!n) return alert("Masukkan Nomor HP Customer Gojek terlebih dahulu!");
+            let nClean = n.replace(/\D/g, ''); if (!nClean) return alert("Nomor tidak valid!");
             let wa = nClean.startsWith('0') ? '62' + nClean.slice(1) : (nClean.startsWith('8') ? '62' + nClean : nClean);
             let msg = "Halo bapak/ibu saya okta driver gojek,mau kirim paket";
-            
-            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
-            document.getElementById('gojekWaNumber').value = ""; 
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank'); document.getElementById('gojekWaNumber').value = ""; 
         }
 
         function openWaDirect() {
-            let custName = document.getElementById('waDirectCustName').value.trim();
-            let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, '');
-            let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
-            let isCash = document.getElementById('waDirectCashPayment').checked;
-            let isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
+            let custName = document.getElementById('waDirectCustName').value.trim(); let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, ''); let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
+            let isCash = document.getElementById('waDirectCashPayment').checked; let isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
+            if(!custName) return alert("Nama Customer wajib diisi!"); if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!"); if(!n) return alert("Nomor HP kosong atau tidak valid!");
             
-            if(!custName) return alert("Nama Customer wajib diisi!");
-            if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!");
-            if(!n) return alert("Nomor HP kosong atau tidak valid!");
-            
-            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n);
-            const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
-            
-            const activeId = Object.keys(allData).find(id => {
-                const dataN = (allData[id].phone || "").replace(/\D/g, '');
-                return allData[id].status !== 'done' && dataN.includes(searchN);
-            });
+            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n); const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
+            const activeId = Object.keys(allData).find(id => { const dataN = (allData[id].phone || "").replace(/\D/g, ''); return allData[id].status !== 'done' && dataN.includes(searchN); });
             
             if (activeId) {
-                document.getElementById('searchInput').value = allData[activeId].phone;
-                render(); 
-                showPage('list');
+                document.getElementById('searchInput').value = allData[activeId].phone; render(); showPage('list');
             } else { 
                 pushDeliveryStatus(currentUser, custId);
-                
-                const autoData = {
-                    area: "ID " + custId,
-                    name: custName,
-                    phone: n,
-                    maps: "",
-                    photo: "",
-                    status: 'otw',
-                    startTime: Date.now(),
-                    timestamp: Date.now(),
-                    driverBy: currentUser,
-                    paymentMode: isCash ? 'cash' : 'other'
-                };
+                const autoData = { area: "ID " + custId, name: custName, phone: n, maps: "", photo: "", status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser, paymentMode: isCash ? 'CASH' : 'NON_CASH' };
                 db.ref('customers').push(autoData);
 
                 let msg = "";
-                if (isGrabConfirm) {
-                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.`;
-                } else if (cashiersOnly.includes(currentUser)) {
-                    msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`;
-                } else {
-                    msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`;
-                }
+                if (isGrabConfirm) { msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.`; } 
+                else if (cashiersOnly.includes(currentUser)) { msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`; } 
+                else { msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`; }
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
                 
-                document.getElementById('waDirectCustName').value = "";
-                document.getElementById('waDirectCustId').value = "";
-                document.getElementById('waDirectNumber').value = "";
-                document.getElementById('waDirectCashPayment').checked = false;
-                document.getElementById('waDirectGrabConfirmation').checked = false;
+                document.getElementById('waDirectCustName').value = ""; document.getElementById('waDirectCustId').value = ""; document.getElementById('waDirectNumber').value = ""; document.getElementById('waDirectCashPayment').checked = false; document.getElementById('waDirectGrabConfirmation').checked = false;
             }
         }
 
-        let hammerInstance = null;
-        let scale = 1;
-        let lastScale = 1;
-
+        let hammerInstance = null; let scale = 1; let lastScale = 1;
         function initPinchZoom() {
-            const el = document.getElementById('fullImg');
-            if (!el) return;
-            
-            resetPinchZoom();
-            hammerInstance = new Hammer.Manager(el);
-            const pinch = new Hammer.Pinch();
-            hammerInstance.add([pinch]);
-
-            hammerInstance.on('pinchstart', () => {
-                lastScale = scale;
-            });
-
-            hammerInstance.on('pinchmove', (e) => {
-                scale = Math.max(1, Math.min(lastScale * e.scale, 4)); 
-                el.style.transform = `scale(${scale})`;
-            });
-
-            hammerInstance.on('pinchend', () => {
-                lastScale = scale;
-            });
+            const el = document.getElementById('fullImg'); if (!el) return; resetPinchZoom();
+            hammerInstance = new Hammer.Manager(el); const pinch = new Hammer.Pinch(); hammerInstance.add([pinch]);
+            hammerInstance.on('pinchstart', () => { lastScale = scale; });
+            hammerInstance.on('pinchmove', (e) => { scale = Math.max(1, Math.min(lastScale * e.scale, 4)); el.style.transform = `scale(${scale})`; });
+            hammerInstance.on('pinchend', () => { lastScale = scale; });
         }
-
         function resetPinchZoom() {
-            const el = document.getElementById('fullImg');
-            scale = 1;
-            lastScale = 1;
-            if (el) el.style.transform = 'scale(1)';
-            if (hammerInstance) {
-                hammerInstance.destroy();
-                hammerInstance = null;
-            }
+            const el = document.getElementById('fullImg'); scale = 1; lastScale = 1;
+            if (el) el.style.transform = 'scale(1)'; if (hammerInstance) { hammerInstance.destroy(); hammerInstance = null; }
         }
 
         function checkAndResetIdsAtMidnight() {
             setInterval(() => {
-                const now = new Date();
-                const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                const now = new Date(); const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
                 const currentTimeWIB = new Intl.DateTimeFormat('id-ID', options).format(now);
-
                 if (currentTimeWIB === "00:00:00") {
                     db.ref('customers').once('value', snapshot => {
                         if (snapshot.exists()) {
                             snapshot.forEach(childSnapshot => {
                                 const item = childSnapshot.val();
-                                if (item.status === 'done' && item.historyDisplayId) {
-                                    db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null });
-                                }
+                                if (item.status === 'done' && item.historyDisplayId) { db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null }); }
                             });
                         }
                     });
@@ -1295,130 +1370,40 @@
             }, 1000);
         }
 
-        // ==========================================
-        // FITUR CORET GAMBAR (DRAW ON CANVAS LOGIC)
-        // ==========================================
         let drawCanvas, drawCtx, isDrawing = false;
-        
         function openDrawModal() {
-            if (!photoBase64) return;
-            document.getElementById('drawModal').style.display = 'flex';
-            drawCanvas = document.getElementById('drawCanvas');
-            drawCtx = drawCanvas.getContext('2d');
-            
+            if (!photoBase64) return; document.getElementById('drawModal').style.display = 'flex'; drawCanvas = document.getElementById('drawCanvas'); drawCtx = drawCanvas.getContext('2d');
             const img = new Image();
-            img.onload = () => {
-                drawCanvas.width = img.width;
-                drawCanvas.height = img.height;
-                drawCtx.drawImage(img, 0, 0);
-                drawCtx.lineCap = 'round';
-                drawCtx.lineJoin = 'round';
-            };
+            img.onload = () => { drawCanvas.width = img.width; drawCanvas.height = img.height; drawCtx.drawImage(img, 0, 0); drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; };
             img.src = photoBase64;
-            
-            drawCanvas.removeEventListener('mousedown', startDrawing);
-            drawCanvas.removeEventListener('mousemove', draw);
-            drawCanvas.removeEventListener('mouseup', stopDrawing);
-            drawCanvas.removeEventListener('mouseout', stopDrawing);
-            drawCanvas.removeEventListener('touchstart', startDrawing);
-            drawCanvas.removeEventListener('touchmove', draw);
-            drawCanvas.removeEventListener('touchend', stopDrawing);
-
-            drawCanvas.addEventListener('mousedown', startDrawing);
-            drawCanvas.addEventListener('mousemove', draw);
-            drawCanvas.addEventListener('mouseup', stopDrawing);
-            drawCanvas.addEventListener('mouseout', stopDrawing);
-            
-            drawCanvas.addEventListener('touchstart', startDrawing, {passive: false});
-            drawCanvas.addEventListener('touchmove', draw, {passive: false});
-            drawCanvas.addEventListener('touchend', stopDrawing);
+            drawCanvas.removeEventListener('mousedown', startDrawing); drawCanvas.removeEventListener('mousemove', draw); drawCanvas.removeEventListener('mouseup', stopDrawing); drawCanvas.removeEventListener('mouseout', stopDrawing); drawCanvas.removeEventListener('touchstart', startDrawing); drawCanvas.removeEventListener('touchmove', draw); drawCanvas.removeEventListener('touchend', stopDrawing);
+            drawCanvas.addEventListener('mousedown', startDrawing); drawCanvas.addEventListener('mousemove', draw); drawCanvas.addEventListener('mouseup', stopDrawing); drawCanvas.addEventListener('mouseout', stopDrawing); drawCanvas.addEventListener('touchstart', startDrawing, {passive: false}); drawCanvas.addEventListener('touchmove', draw, {passive: false}); drawCanvas.addEventListener('touchend', stopDrawing);
         }
-
-        function closeDrawModal() {
-            document.getElementById('drawModal').style.display = 'none';
-        }
-
-        function clearDraw() {
-            const img = new Image();
-            img.onload = () => {
-                drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-                drawCtx.drawImage(img, 0, 0);
-            };
-            img.src = photoBase64; 
-        }
-
-        function saveDraw() {
-            photoBase64 = drawCanvas.toDataURL('image/jpeg', 0.8);
-            document.getElementById('imgPrev').src = photoBase64;
-            closeDrawModal();
-        }
-        
+        function closeDrawModal() { document.getElementById('drawModal').style.display = 'none'; }
+        function clearDraw() { const img = new Image(); img.onload = () => { drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); drawCtx.drawImage(img, 0, 0); }; img.src = photoBase64; }
+        function saveDraw() { photoBase64 = drawCanvas.toDataURL('image/jpeg', 0.8); document.getElementById('imgPrev').src = photoBase64; closeDrawModal(); }
         function getPos(e) {
-            const rect = drawCanvas.getBoundingClientRect();
-            let clientX = e.clientX;
-            let clientY = e.clientY;
-            
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            }
-            
-            const scaleX = drawCanvas.width / rect.width;
-            const scaleY = drawCanvas.height / rect.height;
-            
-            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+            const rect = drawCanvas.getBoundingClientRect(); let clientX = e.clientX; let clientY = e.clientY;
+            if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+            const scaleX = drawCanvas.width / rect.width; const scaleY = drawCanvas.height / rect.height; return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
         }
-
-        function startDrawing(e) {
-            e.preventDefault();
-            isDrawing = true;
-            const pos = getPos(e);
-            drawCtx.beginPath();
-            drawCtx.moveTo(pos.x, pos.y);
-        }
-
-        function draw(e) {
-            if (!isDrawing) return;
-            e.preventDefault();
-            const pos = getPos(e);
-            drawCtx.lineWidth = drawCanvas.width * 0.015; 
-            drawCtx.strokeStyle = document.getElementById('drawColor').value;
-            drawCtx.lineTo(pos.x, pos.y);
-            drawCtx.stroke();
-        }
-
-        function stopDrawing(e) {
-            if(e) e.preventDefault();
-            isDrawing = false;
-            drawCtx.closePath();
-        }
+        function startDrawing(e) { e.preventDefault(); isDrawing = true; const pos = getPos(e); drawCtx.beginPath(); drawCtx.moveTo(pos.x, pos.y); }
+        function draw(e) { if (!isDrawing) return; e.preventDefault(); const pos = getPos(e); drawCtx.lineWidth = drawCanvas.width * 0.015; drawCtx.strokeStyle = document.getElementById('drawColor').value; drawCtx.lineTo(pos.x, pos.y); drawCtx.stroke(); }
+        function stopDrawing(e) { if(e) e.preventDefault(); isDrawing = false; drawCtx.closePath(); }
 
         // ==========================================
-        // JAVASCRIPT GAME CATUR (INTEGRASI)
+        // JAVASCRIPT GAME CATUR 
         // ==========================================
-
         function resetChessGame() {
             const btn = document.getElementById('btnResetGame');
             if (!btn.disabled && !isSpectator) {
-                // Mencegah double click dan memperbaiki race condition
-                btn.disabled = true;
-                btn.innerText = "Memproses...";
-                
+                btn.disabled = true; btn.innerText = "Memproses...";
                 db.ref(`chess_games/${currentChessGameId}`).once('value', snap => {
                     const game = snap.val();
                     if (game) {
                         const oppReset = game.resetRequest && game.resetRequest[chessOpponent];
-                        if (oppReset) {
-                            // Lawan sudah setuju, satu player ini saja yang mengeksekusi reset ke DB agar sinkron
-                            db.ref(`chess_games/${currentChessGameId}`).update({
-                                fen: 'start', turn: 'w', lastMove: null, wTime: 600, bTime: 600,
-                                lastUpdate: Date.now(), status: 'active', winner: null, reason: null,
-                                resetRequest: null, white: game.black, black: game.white // Tukar Warna
-                            });
-                        } else {
-                            // Lawan belum setuju, hanya kirim request kita
-                            db.ref(`chess_games/${currentChessGameId}/resetRequest/${currentUser}`).set(true);
-                        }
+                        if (oppReset) { db.ref(`chess_games/${currentChessGameId}`).update({ fen: 'start', turn: 'w', lastMove: null, wTime: 600, bTime: 600, lastUpdate: Date.now(), status: 'active', winner: null, reason: null, resetRequest: null, white: game.black, black: game.white }); } 
+                        else { db.ref(`chess_games/${currentChessGameId}/resetRequest/${currentUser}`).set(true); }
                     }
                 });
             }
@@ -1427,153 +1412,68 @@
         function updateAndLoadScores(playerBottom, playerTop) {
             if(lastBottomPlayer) db.ref(`chess_scores/${lastBottomPlayer}`).off('value', bottomScoreListener);
             if(lastTopPlayer) db.ref(`chess_scores/${lastTopPlayer}`).off('value', topScoreListener);
-
-            lastBottomPlayer = playerBottom;
-            lastTopPlayer = playerTop;
-
-            bottomScoreListener = db.ref(`chess_scores/${playerBottom}`).on('value', snap => {
-                const s = snap.val() || { win: 0, lose: 0, draw: 0 };
-                document.getElementById('myChessScore').innerText = `🏆 Win : ${s.win} ❌ Lose : ${s.lose} 🤝 Draw : ${s.draw}`;
-            });
-            topScoreListener = db.ref(`chess_scores/${playerTop}`).on('value', snap => {
-                const s = snap.val() || { win: 0, lose: 0, draw: 0 };
-                document.getElementById('chessOpponentScore').innerText = `🏆 Win : ${s.win} ❌ Lose : ${s.lose} 🤝 Draw : ${s.draw}`;
-            });
+            lastBottomPlayer = playerBottom; lastTopPlayer = playerTop;
+            bottomScoreListener = db.ref(`chess_scores/${playerBottom}`).on('value', snap => { const s = snap.val() || { win: 0, lose: 0, draw: 0 }; document.getElementById('myChessScore').innerText = `🏆 Win : ${s.win} ❌ Lose : ${s.lose} 🤝 Draw : ${s.draw}`; });
+            topScoreListener = db.ref(`chess_scores/${playerTop}`).on('value', snap => { const s = snap.val() || { win: 0, lose: 0, draw: 0 }; document.getElementById('chessOpponentScore').innerText = `🏆 Win : ${s.win} ❌ Lose : ${s.lose} 🤝 Draw : ${s.draw}`; });
         }
 
-        function sendChessChat() {
-            const inp = document.getElementById('chessChatInput');
-            const msg = inp.value.trim();
-            if(!msg) return;
-            db.ref(`chess_games/${currentChessGameId}/chat`).push().set({
-                sender: currentUser,
-                text: msg,
-                timestamp: Date.now()
-            });
-            inp.value = '';
-        }
-        
+        function sendChessChat() { const inp = document.getElementById('chessChatInput'); const msg = inp.value.trim(); if(!msg) return; db.ref(`chess_games/${currentChessGameId}/chat`).push().set({ sender: currentUser, text: msg, timestamp: Date.now() }); inp.value = ''; }
         function initChessChat() {
-            const chatBox = document.getElementById('chessChatHistory');
-            chatBox.innerHTML = '';
-            if(chessChatListener) db.ref(`chess_games/${currentChessGameId}/chat`).off('child_added', chessChatListener);
-            
+            const chatBox = document.getElementById('chessChatHistory'); chatBox.innerHTML = ''; if(chessChatListener) db.ref(`chess_games/${currentChessGameId}/chat`).off('child_added', chessChatListener);
             chessChatListener = db.ref(`chess_games/${currentChessGameId}/chat`).on('child_added', snap => {
-                const msg = snap.val();
-                const d = new Date(msg.timestamp);
-                const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                const isMe = msg.sender === currentUser;
-                const nameColor = isMe ? 'text-emerald-400' : 'text-blue-400';
-                
-                chatBox.innerHTML += `
-                    <div class="mb-1 leading-tight">
-                        <span class="${nameColor} font-bold mr-1">${msg.sender}</span>
-                        <span class="text-gray-500 text-[8px] mr-1">[${time}]</span>
-                        <span class="text-gray-200">${msg.text}</span>
-                    </div>
-                `;
+                const msg = snap.val(); const d = new Date(msg.timestamp); const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                const isMe = msg.sender === currentUser; const nameColor = isMe ? 'text-emerald-400' : 'text-blue-400';
+                chatBox.innerHTML += `<div class="mb-1 leading-tight"><span class="${nameColor} font-bold mr-1">${msg.sender}</span><span class="text-gray-500 text-[8px] mr-1">[${time}]</span><span class="text-gray-200">${msg.text}</span></div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
             });
         }
 
         function renderChessOnlineList() {
             db.ref('presence').once('value', snapshot => {
-                const list = document.getElementById('chessOnlineList');
-                list.innerHTML = "";
+                const list = document.getElementById('chessOnlineList'); list.innerHTML = "";
                 snapshot.forEach(child => {
                     const usr = child.key;
                     if(usr !== currentUser) {
                         const avatar = child.val().photo || `https://ui-avatars.com/api/?name=${usr}&background=16a34a&color=fff`;
-                        list.innerHTML += `
-                            <div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-2xl border border-gray-600">
-                                <div class="flex items-center gap-3">
-                                    <img src="${avatar}" class="w-10 h-10 rounded-full object-cover">
-                                    <span class="font-bold text-white text-sm">${usr}</span>
-                                </div>
-                                <button onclick="sendChessChallenge('${usr}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md hover:bg-emerald-500 active:scale-95 transition-transform">Tantang</button>
-                            </div>
-                        `;
+                        list.innerHTML += `<div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-2xl border border-gray-600"><div class="flex items-center gap-3"><img src="${avatar}" class="w-10 h-10 rounded-full object-cover"><span class="font-bold text-white text-sm">${usr}</span></div><button onclick="sendChessChallenge('${usr}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md hover:bg-emerald-500 active:scale-95 transition-transform">Tantang</button></div>`;
                     }
                 });
             });
 
             db.ref('chess_games').once('value', gameSnap => {
-                const liveList = document.getElementById('chessLiveList');
-                liveList.innerHTML = "";
-                let hasLive = false;
+                const liveList = document.getElementById('chessLiveList'); liveList.innerHTML = ""; let hasLive = false;
                 gameSnap.forEach(child => {
                     const g = child.val();
                     if(g.status === 'active' && g.white && g.black) {
-                        if(g.white === currentUser || g.black === currentUser) return;
-                        
-                        hasLive = true;
-                        liveList.innerHTML += `
-                            <div class="flex justify-between items-center bg-blue-900/30 p-4 rounded-2xl border border-blue-500/50 shadow-md">
-                                <div class="flex flex-col">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                                        <span class="font-black text-blue-300 text-[10px] tracking-widest uppercase">Live Game</span>
-                                    </div>
-                                    <span class="font-bold text-white text-sm">${g.white} <span class="text-gray-400 text-xs mx-1">VS</span> ${g.black}</span>
-                                </div>
-                                <button onclick="watchChessGame('${child.key}', '${g.white}', '${g.black}')" class="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-transform active:scale-95"><i class="fa fa-eye"></i></button>
-                            </div>
-                        `;
+                        if(g.white === currentUser || g.black === currentUser) return; hasLive = true;
+                        liveList.innerHTML += `<div class="flex justify-between items-center bg-blue-900/30 p-4 rounded-2xl border border-blue-500/50 shadow-md"><div class="flex flex-col"><div class="flex items-center gap-2 mb-1"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span class="font-black text-blue-300 text-[10px] tracking-widest uppercase">Live Game</span></div><span class="font-bold text-white text-sm">${g.white} <span class="text-gray-400 text-xs mx-1">VS</span> ${g.black}</span></div><button onclick="watchChessGame('${child.key}', '${g.white}', '${g.black}')" class="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-transform active:scale-95"><i class="fa fa-eye"></i></button></div>`;
                     }
                 });
-                if(!hasLive) {
-                    liveList.innerHTML = `<div class="text-center text-gray-500 text-xs font-bold py-3">Tidak ada pertandingan yang berlangsung.</div>`;
-                }
+                if(!hasLive) { liveList.innerHTML = `<div class="text-center text-gray-500 text-xs font-bold py-3">Tidak ada pertandingan yang berlangsung.</div>`; }
             });
         }
 
         function watchChessGame(gameId, whiteName, blackName) {
-            isSpectator = true;
-            currentChessGameId = gameId;
-            myChessColor = 'w'; 
-            chessOpponent = blackName;
-            
-            document.getElementById('myChessNameDisplay').innerText = whiteName;
-            document.getElementById('chessOpponentName').innerText = blackName;
-            document.getElementById('myChessColorLabel').innerText = 'WHITE';
-            document.getElementById('oktaBotContainer').classList.add('hidden');
-            document.getElementById('chessResetContainer').classList.add('hidden');
-            
-            document.getElementById('chessMyAvatar').src = `https://ui-avatars.com/api/?name=${whiteName}&background=16a34a&color=fff`;
-            document.getElementById('chessOpponentAvatar').src = `https://ui-avatars.com/api/?name=${blackName}&background=16a34a&color=fff`;
-
-            updateAndLoadScores(whiteName, blackName);
-            showPage('chess-game');
-            initChessChat(); 
-
-            if(chessSyncListener) db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener);
-            attachChessListener();
+            isSpectator = true; currentChessGameId = gameId; myChessColor = 'w'; chessOpponent = blackName;
+            document.getElementById('myChessNameDisplay').innerText = whiteName; document.getElementById('chessOpponentName').innerText = blackName; document.getElementById('myChessColorLabel').innerText = 'WHITE';
+            document.getElementById('oktaBotContainer').classList.add('hidden'); document.getElementById('chessResetContainer').classList.add('hidden');
+            document.getElementById('chessMyAvatar').src = `https://ui-avatars.com/api/?name=${whiteName}&background=16a34a&color=fff`; document.getElementById('chessOpponentAvatar').src = `https://ui-avatars.com/api/?name=${blackName}&background=16a34a&color=fff`;
+            updateAndLoadScores(whiteName, blackName); showPage('chess-game'); initChessChat(); 
+            if(chessSyncListener) db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener); attachChessListener();
         }
 
         function sendChessChallenge(opponent) {
             const challengeId = `chal_${currentUser}_${Date.now()}`;
-            db.ref(`chess_challenges/${opponent}`).set({ from: currentUser, id: challengeId, timestamp: Date.now() });
-            showAlert(`Menunggu ${opponent}...`, "blue");
-            
-            db.ref(`chess_challenges/${opponent}`).on('value', snap => {
-                const val = snap.val();
-                if(val && val.status === 'accepted') {
-                    db.ref(`chess_challenges/${opponent}`).off();
-                    initChessGame(val.gameId, 'w', opponent);
-                }
-            });
+            db.ref(`chess_challenges/${opponent}`).set({ from: currentUser, id: challengeId, timestamp: Date.now() }); showAlert(`Menunggu ${opponent}...`, "blue");
+            db.ref(`chess_challenges/${opponent}`).on('value', snap => { const val = snap.val(); if(val && val.status === 'accepted') { db.ref(`chess_challenges/${opponent}`).off(); initChessGame(val.gameId, 'w', opponent); } });
         }
 
         function listenToChessChallenges() {
             if(!currentUser) return;
             db.ref(`chess_challenges/${currentUser}`).on('value', snap => {
                 const chal = snap.val();
-                if(chal && !chal.status && (Date.now() - chal.timestamp < 30000)) {
-                    document.getElementById('challengerName').innerText = chal.from;
-                    document.getElementById('challengeModal').style.display = 'flex';
-                } else {
-                    document.getElementById('challengeModal').style.display = 'none';
-                }
+                if(chal && !chal.status && (Date.now() - chal.timestamp < 30000)) { document.getElementById('challengerName').innerText = chal.from; document.getElementById('challengeModal').style.display = 'flex'; } 
+                else { document.getElementById('challengeModal').style.display = 'none'; }
             });
         }
 
@@ -1582,356 +1482,144 @@
                 const chal = snap.val();
                 if(chal) {
                     const gameId = `game_${Date.now()}`;
-                    db.ref(`chess_games/${gameId}`).set({
-                        fen: 'start', turn: 'w', white: chal.from, black: currentUser,
-                        lastMove: null, wTime: 600, bTime: 600, lastUpdate: Date.now(), status: 'active'
-                    }).then(() => {
-                        db.ref(`chess_challenges/${currentUser}`).update({ status: 'accepted', gameId: gameId });
-                        initChessGame(gameId, 'b', chal.from);
-                    });
+                    db.ref(`chess_games/${gameId}`).set({ fen: 'start', turn: 'w', white: chal.from, black: currentUser, lastMove: null, wTime: 600, bTime: 600, lastUpdate: Date.now(), status: 'active' })
+                    .then(() => { db.ref(`chess_challenges/${currentUser}`).update({ status: 'accepted', gameId: gameId }); initChessGame(gameId, 'b', chal.from); });
                 }
             });
         }
 
-        function rejectChallenge() {
-            document.getElementById('challengeModal').style.display = 'none';
-            if(currentUser) {
-                db.ref(`chess_challenges/${currentUser}`).remove();
-            }
-        }
+        function rejectChallenge() { document.getElementById('challengeModal').style.display = 'none'; if(currentUser) { db.ref(`chess_challenges/${currentUser}`).remove(); } }
         
         function playChessSound(moveObj, inCheck) {
             if(!audioUnlocked || !moveObj) return;
-            let audioId = 'snd-move';
-            if(moveObj.captured) audioId = 'snd-capture';
+            let audioId = 'snd-move'; if(moveObj.captured) audioId = 'snd-capture';
             if(moveObj.flags && (moveObj.flags.includes('k') || moveObj.flags.includes('q'))) audioId = 'snd-castle';
-            if(moveObj.promotion) audioId = 'snd-promote';
-            if(inCheck) audioId = 'snd-check';
-            
-            const au = document.getElementById(audioId);
-            if(au) { au.currentTime = 0; au.play().catch(e=>{}); }
+            if(moveObj.promotion) audioId = 'snd-promote'; if(inCheck) audioId = 'snd-check';
+            const au = document.getElementById(audioId); if(au) { au.currentTime = 0; au.play().catch(e=>{}); }
         }
 
         async function checkAndPlayBot() {
-            if (currentUser !== 'Okta' || isSpectator) return;
-            const botToggle = document.getElementById('oktaBotToggle');
-            if (!botToggle || !botToggle.checked) return;
-            
+            if (currentUser !== 'Okta' || isSpectator) return; const botToggle = document.getElementById('oktaBotToggle'); if (!botToggle || !botToggle.checked) return;
             if (chess.turn() === myChessColor && !chess.game_over() && !botIsThinking) {
                 botIsThinking = true;
                 try {
-                    const fen = chess.fen();
-                    const res = await fetch('https://chess-api.com/v1', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fen: fen })
-                    });
+                    const res = await fetch('https://chess-api.com/v1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fen: chess.fen() }) });
                     const data = await res.json();
-                    
                     if (data && data.move && currentChessGameId) {
-                        const moveStr = data.move; 
-                        const fromSquare = moveStr.substring(0,2);
-                        const toSquare = moveStr.substring(2,4);
-                        const promoType = moveStr.length === 5 ? moveStr[4] : undefined;
-                        
-                        const moveMatches = chess.moves({ verbose: true });
-                        const validatedMove = moveMatches.find(m => 
-                            m.from === fromSquare && 
-                            m.to === toSquare && 
-                            (!promoType || m.promotion === promoType)
-                        );
-                        
-                        if(validatedMove) {
-                            executeChessMove(validatedMove);
-                        }
+                        const moveStr = data.move; const fromSquare = moveStr.substring(0,2); const toSquare = moveStr.substring(2,4); const promoType = moveStr.length === 5 ? moveStr[4] : undefined;
+                        const validatedMove = chess.moves({ verbose: true }).find(m => m.from === fromSquare && m.to === toSquare && (!promoType || m.promotion === promoType));
+                        if(validatedMove) { executeChessMove(validatedMove); }
                     }
-                } catch(e) {
-                    console.error("GM Bot API Error: ", e);
-                } finally {
-                    botIsThinking = false;
-                }
+                } catch(e) { console.error("GM Bot API Error: ", e); } finally { botIsThinking = false; }
             }
         }
 
         function initChessGame(gameId, color, opponentName) {
-            isSpectator = false;
-            currentChessGameId = gameId; 
-            myChessColor = color; 
-            chessOpponent = opponentName;
-            chess = new Chess();
-            selectedSquare = null; wTime = 600; bTime = 600; lastTimestamp = Date.now();
-            botIsThinking = false;
-            if (chessTimerInterval) clearInterval(chessTimerInterval);
-            
-            document.getElementById('myChessNameDisplay').innerText = currentUser;
-            document.getElementById('myChessColorLabel').innerText = color === 'w' ? 'WHITE' : 'BLACK';
-            document.getElementById('chessOpponentName').innerText = opponentName;
-            document.getElementById('chessMyAvatar').src = localStorage.getItem('profile_pic_' + currentUser) || `https://ui-avatars.com/api/?name=${currentUser}&background=16a34a&color=fff`;
-            
-            if(currentUser === 'Okta') {
-                document.getElementById('oktaBotContainer').classList.remove('hidden');
-                document.getElementById('oktaBotToggle').checked = false;
-            } else {
-                document.getElementById('oktaBotContainer').classList.add('hidden');
-            }
-
-            showPage('chess-game');
-
-            scoreProcessedForGame = false;
-            updateAndLoadScores(currentUser, opponentName);
-            initChessChat();
-            
-            if(chessSyncListener) db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener);
-            attachChessListener();
+            isSpectator = false; currentChessGameId = gameId; myChessColor = color; chessOpponent = opponentName; chess = new Chess();
+            selectedSquare = null; wTime = 600; bTime = 600; lastTimestamp = Date.now(); botIsThinking = false; if (chessTimerInterval) clearInterval(chessTimerInterval);
+            document.getElementById('myChessNameDisplay').innerText = currentUser; document.getElementById('myChessColorLabel').innerText = color === 'w' ? 'WHITE' : 'BLACK';
+            document.getElementById('chessOpponentName').innerText = opponentName; document.getElementById('chessMyAvatar').src = localStorage.getItem('profile_pic_' + currentUser) || `https://ui-avatars.com/api/?name=${currentUser}&background=16a34a&color=fff`;
+            if(currentUser === 'Okta') { document.getElementById('oktaBotContainer').classList.remove('hidden'); document.getElementById('oktaBotToggle').checked = false; } else { document.getElementById('oktaBotContainer').classList.add('hidden'); }
+            showPage('chess-game'); scoreProcessedForGame = false; updateAndLoadScores(currentUser, opponentName); initChessChat(); 
+            if(chessSyncListener) db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener); attachChessListener();
         }
 
         function attachChessListener() {
             chessSyncListener = db.ref(`chess_games/${currentChessGameId}`).on('value', snap => {
-                const game = snap.val();
-                if(!game) return;
+                const game = snap.val(); if(!game) return;
                 
                 if (!isSpectator) {
-                    myChessColor = (game.white === currentUser) ? 'w' : 'b';
-                    chessOpponent = (myChessColor === 'w') ? game.black : game.white;
-                    document.getElementById('myChessColorLabel').innerText = myChessColor === 'w' ? 'WHITE' : 'BLACK';
-                    document.getElementById('myChessNameDisplay').innerText = currentUser;
-                    document.getElementById('chessOpponentName').innerText = chessOpponent;
-
-                    const resetRequests = game.resetRequest || {};
-                    const myReset = resetRequests[currentUser];
-                    const oppReset = resetRequests[chessOpponent];
-                    const btnReset = document.getElementById('btnResetGame');
-
-                    if (myReset && oppReset) {
-                        btnReset.innerText = "Mereset Game...";
-                        btnReset.disabled = true;
-                    } else if (oppReset && !myReset) {
-                        btnReset.innerText = "Terima Reset Game";
-                        btnReset.className = "bg-green-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full animate-pulse";
-                        btnReset.disabled = false;
-                    } else if (myReset && !oppReset) {
-                        btnReset.innerText = "Menunggu Lawan...";
-                        btnReset.className = "bg-gray-500 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full cursor-not-allowed";
-                        btnReset.disabled = true;
-                    } else {
-                        btnReset.innerText = "Reset Game";
-                        btnReset.className = "bg-blue-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all";
-                        btnReset.disabled = false;
-                    }
+                    myChessColor = (game.white === currentUser) ? 'w' : 'b'; chessOpponent = (myChessColor === 'w') ? game.black : game.white;
+                    document.getElementById('myChessColorLabel').innerText = myChessColor === 'w' ? 'WHITE' : 'BLACK'; document.getElementById('myChessNameDisplay').innerText = currentUser; document.getElementById('chessOpponentName').innerText = chessOpponent;
+                    const myReset = (game.resetRequest || {})[currentUser]; const oppReset = (game.resetRequest || {})[chessOpponent]; const btnReset = document.getElementById('btnResetGame');
+                    if (myReset && oppReset) { btnReset.innerText = "Mereset Game..."; btnReset.disabled = true; } else if (oppReset && !myReset) { btnReset.innerText = "Terima Reset Game"; btnReset.className = "bg-green-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full animate-pulse"; btnReset.disabled = false; } else if (myReset && !oppReset) { btnReset.innerText = "Menunggu Lawan..."; btnReset.className = "bg-gray-500 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full cursor-not-allowed"; btnReset.disabled = true; } else { btnReset.innerText = "Reset Game"; btnReset.className = "bg-blue-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all"; btnReset.disabled = false; }
                 } else {
-                    myChessColor = 'w';
-                    document.getElementById('myChessColorLabel').innerText = 'WHITE';
-                    document.getElementById('myChessNameDisplay').innerText = game.white;
-                    document.getElementById('chessOpponentName').innerText = game.black;
+                    myChessColor = 'w'; document.getElementById('myChessColorLabel').innerText = 'WHITE'; document.getElementById('myChessNameDisplay').innerText = game.white; document.getElementById('chessOpponentName').innerText = game.black;
                 }
 
                 const isNewFen = game.fen !== chess.fen() && (game.fen !== 'start' || chess.fen() !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 
-                if (game.fen === 'start') {
-                    chess.reset();
-                    selectedSquare = null;
-                    isAnimatingPiece = false;
-                    lastRenderedFen = "start"; // Menghindari bug trigger animasi palsu
-                } else if (game.fen !== chess.fen()) {
-                    chess.load(game.fen);
-                    if (game.status !== 'ended' || !scoreProcessedForGame) {
-                        playChessSound(game.lastMove, chess.in_check());
-                    }
-                }
+                if (game.fen === 'start') { chess.reset(); selectedSquare = null; isAnimatingPiece = false; lastRenderedFen = "start"; } 
+                else if (game.fen !== chess.fen()) { chess.load(game.fen); if (game.status !== 'ended' || !scoreProcessedForGame) { playChessSound(game.lastMove, chess.in_check()); } }
                 
                 wTime = game.wTime; bTime = game.bTime; lastTimestamp = game.lastUpdate;
-                
-                renderChessBoard(game.lastMove);
-                updateTurnIndicators();
-                startLocalTimer(); 
+                renderChessBoard(game.lastMove); updateTurnIndicators(); startLocalTimer(); 
                 
                 if(game.status === 'ended') {
-                    if (!isSpectator) document.getElementById('chessResetContainer').classList.remove('hidden');
-                    if (chessTimerInterval) clearInterval(chessTimerInterval);
-                    
+                    if (!isSpectator) document.getElementById('chessResetContainer').classList.remove('hidden'); if (chessTimerInterval) clearInterval(chessTimerInterval);
                     const pemenang = game.winner ? (game.winner === 'w' ? game.white : game.black) : 'Seri';
-                    
                     if(!scoreProcessedForGame) {
                         scoreProcessedForGame = true; 
-                        
                         if (!isSpectator) {
                             db.ref(`chess_scores/${currentUser}`).once('value', sSnap => {
                                 let s = sSnap.val() || { win: 0, lose: 0, draw: 0 };
-                                if(game.winner) {
-                                    if(game.winner === (game.white === currentUser ? 'w' : 'b')) s.win++;
-                                    else s.lose++;
-                                } else {
-                                    s.draw++;
-                                }
+                                if(game.winner) { if(game.winner === (game.white === currentUser ? 'w' : 'b')) s.win++; else s.lose++; } else { s.draw++; }
                                 db.ref(`chess_scores/${currentUser}`).set(s);
                             });
                         }
-
-                        // Memberikan jeda 300ms agar DOM dapat merender skak mat visual dahulu sebelum notifikasi popup memblokir layar
-                        setTimeout(() => {
-                            if(game.lastMove) playChessSound('snd-end', false);
-                            showAlert(`Game Selesai! Pemenang: ${pemenang} (${game.reason || 'Selesai'})`, "blue");
-                        }, 300);
+                        setTimeout(() => { if(game.lastMove) playChessSound('snd-end', false); showAlert(`Game Selesai! Pemenang: ${pemenang} (${game.reason || 'Selesai'})`, "blue"); }, 300);
                     }
                     return;
-                } else {
-                    if (!isSpectator) document.getElementById('chessResetContainer').classList.add('hidden');
-                    scoreProcessedForGame = false;
-                }
+                } else { if (!isSpectator) document.getElementById('chessResetContainer').classList.add('hidden'); scoreProcessedForGame = false; }
                 
-                if(currentUser === 'Okta' && !isSpectator && chess.turn() === myChessColor && isNewFen && !botIsThinking) {
-                    setTimeout(checkAndPlayBot, 800);
-                }
+                if(currentUser === 'Okta' && !isSpectator && chess.turn() === myChessColor && isNewFen && !botIsThinking) { setTimeout(checkAndPlayBot, 800); }
             });
         }
 
         function startLocalTimer() {
             if (chessTimerInterval) clearInterval(chessTimerInterval);
-            
             chessTimerInterval = setInterval(() => {
-                if (!currentChessGameId) {
-                    clearInterval(chessTimerInterval);
-                    return;
-                }
-                
-                const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
-                let liveWTime = wTime;
-                let liveBTime = bTime;
-                
-                if (chess.turn() === 'w') {
-                    liveWTime = Math.max(0, wTime - elapsed);
-                    if (liveWTime === 0 && chess.turn() === myChessColor && !isSpectator) {
-                        handleTimeOut('w');
-                    }
-                } else {
-                    liveBTime = Math.max(0, bTime - elapsed);
-                    if (liveBTime === 0 && chess.turn() === myChessColor && !isSpectator) {
-                        handleTimeOut('b');
-                    }
-                }
-                
+                if (!currentChessGameId) { clearInterval(chessTimerInterval); return; }
+                const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000); let liveWTime = wTime; let liveBTime = bTime;
+                if (chess.turn() === 'w') { liveWTime = Math.max(0, wTime - elapsed); if (liveWTime === 0 && chess.turn() === myChessColor && !isSpectator) { handleTimeOut('w'); } } 
+                else { liveBTime = Math.max(0, bTime - elapsed); if (liveBTime === 0 && chess.turn() === myChessColor && !isSpectator) { handleTimeOut('b'); } }
                 displayTimes(liveWTime, liveBTime);
             }, 250);
         }
 
         function displayTimes(whiteSecs, blackSecs) {
-            const format = (s) => {
-                const mins = Math.floor(s / 60);
-                const secs = s % 60;
-                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            };
-            
-            const myTimeEl = document.getElementById('chessMyTime');
-            const oppTimeEl = document.getElementById('chessOpponentTime');
-            
-            if (myChessColor === 'w') {
-                myTimeEl.innerText = format(whiteSecs);
-                oppTimeEl.innerText = format(blackSecs);
-            } else {
-                myTimeEl.innerText = format(blackSecs);
-                oppTimeEl.innerText = format(whiteSecs);
-            }
+            const format = (s) => { const mins = Math.floor(s / 60); const secs = s % 60; return `${mins}:${secs < 10 ? '0' : ''}${secs}`; };
+            if (myChessColor === 'w') { document.getElementById('chessMyTime').innerText = format(whiteSecs); document.getElementById('chessOpponentTime').innerText = format(blackSecs); } 
+            else { document.getElementById('chessMyTime').innerText = format(blackSecs); document.getElementById('chessOpponentTime').innerText = format(whiteSecs); }
         }
 
-        function handleTimeOut(loserColor) {
-            clearInterval(chessTimerInterval);
-            db.ref(`chess_games/${currentChessGameId}`).update({
-                status: 'ended',
-                winner: loserColor === 'w' ? 'b' : 'w',
-                reason: 'Waktu Habis (Timeout)',
-                lastUpdate: Date.now() 
-            });
-        }
+        function handleTimeOut(loserColor) { clearInterval(chessTimerInterval); db.ref(`chess_games/${currentChessGameId}`).update({ status: 'ended', winner: loserColor === 'w' ? 'b' : 'w', reason: 'Waktu Habis (Timeout)', lastUpdate: Date.now() }); }
 
         function renderChessBoard(lastMoveObj = null) {
             const boardEl = document.getElementById('chessBoard');
-            
             if (lastMoveObj && lastRenderedFen !== chess.fen() && !isAnimatingPiece) {
                 isAnimatingPiece = true;
                 const getCoords = (sq) => {
-                    const c = sq.charCodeAt(0) - 97;
-                    const r = 8 - parseInt(sq[1]);
-                    const displayCol = myChessColor === 'w' ? c : 7 - c;
-                    const displayRow = myChessColor === 'w' ? r : 7 - r;
-                    const rect = boardEl.getBoundingClientRect();
-                    const sqSize = rect.width / 8;
-                    return { x: displayCol * sqSize, y: displayRow * sqSize, size: sqSize };
+                    const c = sq.charCodeAt(0) - 97; const r = 8 - parseInt(sq[1]); const displayCol = myChessColor === 'w' ? c : 7 - c; const displayRow = myChessColor === 'w' ? r : 7 - r;
+                    const rect = boardEl.getBoundingClientRect(); const sqSize = rect.width / 8; return { x: displayCol * sqSize, y: displayRow * sqSize, size: sqSize };
                 };
                 try {
-                    const start = getCoords(lastMoveObj.from);
-                    const end = getCoords(lastMoveObj.to);
-                    const animPiece = document.createElement('img');
-                    const displayPiece = lastMoveObj.promotion ? 'p' : lastMoveObj.piece; 
-                    animPiece.src = pieceIcons[lastMoveObj.color][displayPiece];
-                    animPiece.className = 'chess-anim-piece';
-                    animPiece.style.width = start.size * 0.9 + 'px';
-                    animPiece.style.height = start.size * 0.9 + 'px';
-                    animPiece.style.left = start.x + (start.size * 0.05) + 'px';
-                    animPiece.style.top = start.y + (start.size * 0.05) + 'px';
+                    const start = getCoords(lastMoveObj.from); const end = getCoords(lastMoveObj.to); const animPiece = document.createElement('img'); const displayPiece = lastMoveObj.promotion ? 'p' : lastMoveObj.piece; 
+                    animPiece.src = pieceIcons[lastMoveObj.color][displayPiece]; animPiece.className = 'chess-anim-piece'; animPiece.style.width = start.size * 0.9 + 'px'; animPiece.style.height = start.size * 0.9 + 'px'; animPiece.style.left = start.x + (start.size * 0.05) + 'px'; animPiece.style.top = start.y + (start.size * 0.05) + 'px';
                     boardEl.appendChild(animPiece);
-                    
                     setTimeout(() => { animPiece.style.transform = `translate(${end.x - start.x}px, ${end.y - start.y}px)`; }, 10);
-                    
-                    setTimeout(() => {
-                        isAnimatingPiece = false;
-                        lastRenderedFen = chess.fen();
-                        renderChessBoard(lastMoveObj); 
-                    }, 200);
+                    setTimeout(() => { isAnimatingPiece = false; lastRenderedFen = chess.fen(); renderChessBoard(lastMoveObj); }, 200);
                     return; 
-                } catch(e) {
-                    isAnimatingPiece = false;
-                }
+                } catch(e) { isAnimatingPiece = false; }
             }
-            lastRenderedFen = chess.fen();
-            
-            boardEl.innerHTML = '';
-            const board = chess.board();
-
+            lastRenderedFen = chess.fen(); boardEl.innerHTML = ''; const board = chess.board();
             let checkedKingSquare = null;
-            if (chess.in_check()) {
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 8; c++) {
-                        if (board[r][c] && board[r][c].type === 'k' && board[r][c].color === chess.turn()) {
-                            checkedKingSquare = String.fromCharCode(97 + c) + (8 - r);
-                            break;
-                        }
-                    }
-                }
-            }
+            if (chess.in_check()) { for (let r = 0; r < 8; r++) { for (let c = 0; c < 8; c++) { if (board[r][c] && board[r][c].type === 'k' && board[r][c].color === chess.turn()) { checkedKingSquare = String.fromCharCode(97 + c) + (8 - r); break; } } } }
             
-            const rows = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
-            const cols = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
+            const rows = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0]; const cols = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
             const legalMoves = selectedSquare ? chess.moves({ square: selectedSquare, verbose: true }) : [];
 
             rows.forEach((r) => {
                 cols.forEach((c) => {
-                    const sq = String.fromCharCode(97 + c) + (8 - r);
-                    const piece = board[r][c];
-                    const isLight = (r + c) % 2 === 0;
-                    
-                    const sqEl = document.createElement('div');
-                    sqEl.className = `chess-sq ${isLight ? 'chess-light' : 'chess-dark'}`;
-                    sqEl.onclick = () => handleSquareClick(sq);
+                    const sq = String.fromCharCode(97 + c) + (8 - r); const piece = board[r][c]; const isLight = (r + c) % 2 === 0;
+                    const sqEl = document.createElement('div'); sqEl.className = `chess-sq ${isLight ? 'chess-light' : 'chess-dark'}`; sqEl.onclick = () => handleSquareClick(sq);
                     
                     if(selectedSquare === sq) sqEl.innerHTML += `<div class="chess-hl"></div>`;
-                    
-                    // HIGHLIGHT KOTAK JALAN TERAKHIR - Memperlihatkan secara jelas Pion/Piece penyerang (warna kotak kuning transparan)
-                    if(lastMoveObj && (sq === lastMoveObj.from || sq === lastMoveObj.to)) {
-                        sqEl.innerHTML += `<div class="chess-last-move"></div>`;
-                    }
-                    
-                    // HIGHLIGHT RAJA YANG TERKENA SKAK (warna gradien merah)
+                    if(lastMoveObj && (sq === lastMoveObj.from || sq === lastMoveObj.to)) { sqEl.innerHTML += `<div class="chess-last-move"></div>`; }
                     if(sq === checkedKingSquare) sqEl.innerHTML += `<div class="chess-check-hl"></div>`;
-                    
-                    const moveMatch = legalMoves.find(m => m.to === sq);
-                    if(moveMatch) sqEl.innerHTML += `<div class="chess-legal-dot"></div>`;
+                    const moveMatch = legalMoves.find(m => m.to === sq); if(moveMatch) sqEl.innerHTML += `<div class="chess-legal-dot"></div>`;
 
-                    if (piece) {
-                        const img = document.createElement('img');
-                        img.src = pieceIcons[piece.color][piece.type];
-                        img.className = 'chess-piece';
-                        sqEl.appendChild(img);
-                    }
+                    if (piece) { const img = document.createElement('img'); img.src = pieceIcons[piece.color][piece.type]; img.className = 'chess-piece'; sqEl.appendChild(img); }
                     boardEl.appendChild(sqEl);
                 });
             });
@@ -1939,182 +1627,43 @@
 
         function executeChessMove(moveObj) {
             const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
-            if (chess.turn() === 'w') {
-                wTime = Math.max(0, wTime - elapsed);
-            } else {
-                bTime = Math.max(0, bTime - elapsed);
-            }
-
+            if (chess.turn() === 'w') { wTime = Math.max(0, wTime - elapsed); } else { bTime = Math.max(0, bTime - elapsed); }
             chess.move(moveObj);
-            
-            let gameStatus = 'active';
-            let winner = null;
-            let reason = null;
-            
-            if (chess.in_checkmate()) {
-                gameStatus = 'ended';
-                winner = chess.turn() === 'w' ? 'b' : 'w'; 
-                reason = 'Skakmat (Checkmate)';
-            } else if (chess.in_draw() || chess.in_stalemate()) {
-                gameStatus = 'ended';
-                reason = 'Remis (Draw)';
-            }
-
-            db.ref(`chess_games/${currentChessGameId}`).update({
-                fen: chess.fen(), turn: chess.turn(), lastMove: moveObj,
-                wTime: wTime, bTime: bTime, lastUpdate: Date.now(),
-                status: gameStatus, winner: winner, reason: reason
-            });
+            let gameStatus = 'active'; let winner = null; let reason = null;
+            if (chess.in_checkmate()) { gameStatus = 'ended'; winner = chess.turn() === 'w' ? 'b' : 'w'; reason = 'Skakmat (Checkmate)'; } 
+            else if (chess.in_draw() || chess.in_stalemate()) { gameStatus = 'ended'; reason = 'Remis (Draw)'; }
+            db.ref(`chess_games/${currentChessGameId}`).update({ fen: chess.fen(), turn: chess.turn(), lastMove: moveObj, wTime: wTime, bTime: bTime, lastUpdate: Date.now(), status: gameStatus, winner: winner, reason: reason });
             selectedSquare = null;
         }
 
         function showPromoModal() {
-            document.getElementById('promoModal').style.display = 'flex';
-            const opts = document.getElementById('promoOptions');
-            opts.innerHTML = '';
-            
+            document.getElementById('promoModal').style.display = 'flex'; const opts = document.getElementById('promoOptions'); opts.innerHTML = '';
             ['q', 'r', 'b', 'n'].forEach(p => {
-                const img = document.createElement('img');
-                img.src = pieceIcons[myChessColor][p];
-                img.className = 'w-full h-full object-contain cursor-pointer hover:scale-110 transition bg-gray-700 rounded-xl p-2 shadow-lg';
+                const img = document.createElement('img'); img.src = pieceIcons[myChessColor][p]; img.className = 'w-full h-full object-contain cursor-pointer hover:scale-110 transition bg-gray-700 rounded-xl p-2 shadow-lg';
                 img.onclick = () => {
-                    document.getElementById('promoModal').style.display = 'none';
-                    const moves = chess.moves({ square: pendingPromotion.from, verbose: true });
-                    const move = moves.find(m => m.to === pendingPromotion.to && m.promotion === p);
-                    if(move) executeChessMove(move);
-                    pendingPromotion = null;
-                };
-                opts.appendChild(img);
+                    document.getElementById('promoModal').style.display = 'none'; const moves = chess.moves({ square: pendingPromotion.from, verbose: true });
+                    const move = moves.find(m => m.to === pendingPromotion.to && m.promotion === p); if(move) executeChessMove(move); pendingPromotion = null;
+                }; opts.appendChild(img);
             });
         }
 
         function handleSquareClick(sq) {
             if(isSpectator || chess.turn() !== myChessColor) return;
-            
             const piece = chess.get(sq);
-            
-            if(piece && piece.color === myChessColor) {
-                selectedSquare = sq;
-                renderChessBoard();
-                return;
-            }
-            
+            if(piece && piece.color === myChessColor) { selectedSquare = sq; renderChessBoard(); return; }
             if(selectedSquare) {
-                const moves = chess.moves({ square: selectedSquare, verbose: true });
-                const moveMatches = moves.filter(m => m.to === sq); 
-                
-                if(moveMatches.length > 0) {
-                    if(moveMatches[0].promotion) {
-                        pendingPromotion = { from: selectedSquare, to: sq };
-                        showPromoModal();
-                    } else {
-                        executeChessMove(moveMatches[0]);
-                    }
-                }
+                const moveMatches = chess.moves({ square: selectedSquare, verbose: true }).filter(m => m.to === sq); 
+                if(moveMatches.length > 0) { if(moveMatches[0].promotion) { pendingPromotion = { from: selectedSquare, to: sq }; showPromoModal(); } else { executeChessMove(moveMatches[0]); } }
             }
         }
 
         function updateTurnIndicators() {
-            const isMyTurn = chess.turn() === myChessColor;
-            const myTimer = document.getElementById('chessMyTimerBox');
-            const oppTimer = document.getElementById('chessOpponentTimerBox');
-            if(isMyTurn) {
-                myTimer.className = 'timer-active px-4 py-2 rounded font-mono font-bold text-lg';
-                oppTimer.className = 'timer-inactive px-4 py-2 rounded font-mono font-bold text-lg';
-            } else {
-                myTimer.className = 'timer-inactive px-4 py-2 rounded font-mono font-bold text-lg';
-                oppTimer.className = 'timer-active px-4 py-2 rounded font-mono font-bold text-lg';
-            }
+            const isMyTurn = chess.turn() === myChessColor; const myTimer = document.getElementById('chessMyTimerBox'); const oppTimer = document.getElementById('chessOpponentTimerBox');
+            if(isMyTurn) { myTimer.className = 'timer-active px-4 py-2 rounded font-mono font-bold text-lg'; oppTimer.className = 'timer-inactive px-4 py-2 rounded font-mono font-bold text-lg'; } 
+            else { myTimer.className = 'timer-inactive px-4 py-2 rounded font-mono font-bold text-lg'; oppTimer.className = 'timer-active px-4 py-2 rounded font-mono font-bold text-lg'; }
         }
 
-        function showAlert(msg, color) {
-            const alertBox = document.getElementById('chessAlert');
-            alertBox.innerText = msg;
-            alertBox.style.display = 'flex';
-            setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
-        }
-
-        // ================= LIVE RADAR TRACKCUST JTM =================
-        const RADAR_STORE = { lat: -6.2854816, lng: 106.9355559, name: "Domino's Pizza Jatimakmur" };
-        const RADAR_TTL_MS = 20 * 60 * 1000;
-        let radarMap = null, radarStoreMarker = null, radarDriverMarker = null, radarRouteLine = null;
-        let radarTrail = [], radarWatchId = null, radarListenerRef = null, radarListenerFn = null;
-        let radarSelectedOrder = '', radarMonitoringStartedAt = 0, radarExpiryTimer = null;
-        const radarIcon = (emoji, bg) => L.divIcon({className:'', html:`<div style="background:${bg};border:2px solid white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #555;font-size:17px">${emoji}</div>`,iconSize:[32,32],iconAnchor:[16,16]});
-
-        function initLiveRadar() {
-            if (!window.L || radarMap) return;
-            const el = document.getElementById('liveRadarMap'); if (!el) return;
-            radarMap = L.map(el, { zoomControl: true }).setView([RADAR_STORE.lat, RADAR_STORE.lng], 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(radarMap);
-            radarStoreMarker = L.marker([RADAR_STORE.lat, RADAR_STORE.lng], {icon:radarIcon('🏪','#006491')}).addTo(radarMap).bindPopup(RADAR_STORE.name);
-            radarRouteLine = L.polyline([], {color:'#e31837',weight:4,opacity:.85}).addTo(radarMap);
-            setTimeout(() => radarMap && radarMap.invalidateSize(), 250);
-        }
-        function radarStatus(text, color='gray') {
-            const b=document.getElementById('radarStatusBadge'); if(!b) return;
-            const classes={gray:'bg-gray-100 text-gray-600',green:'bg-green-100 text-green-700',blue:'bg-blue-100 text-blue-700',red:'bg-red-100 text-red-700',orange:'bg-orange-100 text-orange-700'};
-            b.className='text-[9px] font-black px-2 py-1 rounded-full '+(classes[color]||classes.gray); b.textContent=text;
-        }
-        function refreshRadarOrders() {
-            const sel=document.getElementById('radarOrderSelect'); if(!sel) return;
-            const old=sel.value || radarSelectedOrder; const active=Object.entries(allData||{}).filter(([id,o])=>o && o.status!=='done');
-            sel.innerHTML='<option value="">-- Pilih pesanan aktif --</option>'+active.map(([id,o])=>`<option value="${id}">${escapeRadarText(o.name||'Tanpa nama')} · ${escapeRadarText(o.area||'')}</option>`).join('');
-            if(active.some(([id])=>id===old)) sel.value=old; else if(radarSelectedOrder && !active.some(([id])=>id===radarSelectedOrder)) { radarSelectedOrder=''; stopRadarMonitoring(); }
-        }
-        function escapeRadarText(v) { return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-        function radarOrderChanged() {
-            const next=document.getElementById('radarOrderSelect')?.value || '';
-            if(next!==radarSelectedOrder) stopRadarMonitoring();
-            radarSelectedOrder=next;
-            const o=allData[radarSelectedOrder];
-            if(o) document.getElementById('radarDetails').textContent=`Pesanan: ${o.name||'-'} | Kurir: ${o.driverBy||'belum ditetapkan'} | Pilih “Pantau Pesanan” di komputer toko atau “Mulai GPS Kurir” di HP kurir.`;
-        }
-        function centerRadar() {
-            initLiveRadar(); if(!radarMap) return;
-            if(radarDriverMarker) radarMap.setView(radarDriverMarker.getLatLng(),16); else radarMap.setView([RADAR_STORE.lat,RADAR_STORE.lng],16);
-            setTimeout(()=>radarMap.invalidateSize(),100);
-        }
-        function startDriverGps() {
-            radarOrderChanged(); const id=radarSelectedOrder;
-            if(!id) return alert('Pilih pesanan aktif terlebih dahulu.');
-            if(mgtAndCashiers.includes(currentUser)) return alert('Akun management/kasir tidak dapat memulai GPS kurir. Masuk menggunakan akun kurir.');
-            if(!navigator.geolocation) return alert('Browser ini tidak mendukung GPS.');
-            if(location.protocol!=='https:' && location.hostname!=='localhost') return alert('GPS membutuhkan alamat HTTPS. Buka aplikasi melalui GitHub Pages atau HTTPS.');
-            if(radarWatchId!==null) navigator.geolocation.clearWatch(radarWatchId);
-            db.ref('live_tracking/'+id+'/meta').update({orderId:id, customerName:allData[id]?.name||'', driverName:currentUser, startedAt:Date.now(), active:true}).catch(e=>console.error(e));
-            radarStatus('GPS AKTIF','green');
-            radarWatchId=navigator.geolocation.watchPosition(pos=>{
-                const point={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy||null,timestamp:pos.timestamp||Date.now(),driverName:currentUser,orderId:id};
-                db.ref('live_tracking/'+id+'/latest').set(point).catch(err=>{radarStatus('GAGAL KIRIM','red');console.error(err)});
-                db.ref('live_tracking/'+id+'/route').push(point).catch(err=>console.error(err));
-                initLiveRadar(); drawRadarPoint(point); showRadarPointDetails(point,'GPS kurir aktif');
-            },err=>{radarStatus('GPS ERROR','red');alert('GPS gagal: '+({1:'izin lokasi ditolak',2:'posisi tidak tersedia',3:'waktu GPS habis'}[err.code]||err.message));}, {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-        }
-        function stopDriverGps() {
-            if(radarWatchId!==null) { navigator.geolocation.clearWatch(radarWatchId); radarWatchId=null; }
-            if(radarSelectedOrder) db.ref('live_tracking/'+radarSelectedOrder+'/meta').update({active:false,stoppedAt:Date.now()}).catch(()=>{});
-            radarStatus('GPS BERHENTI','gray');
-        }
-        function startRadarMonitoring() {
-            radarOrderChanged(); const id=radarSelectedOrder;
-            if(!id) return alert('Pilih pesanan aktif terlebih dahulu.');
-            stopRadarMonitoring();
-            const key='trackcust_radar_start_'+id;
-            let started=Number(localStorage.getItem(key)||0);
-            if(!started) { started=Date.now(); localStorage.setItem(key,String(started)); }
-            radarMonitoringStartedAt=started;
-            const remaining=RADAR_TTL_MS-(Date.now()-started);
-            if(remaining<=0) { radarStatus('WAKTU HABIS','orange'); document.getElementById('radarDetails').textContent='Batas pemantauan 20 menit telah habis. Titik terakhir tetap ditampilkan. Untuk memulai sesi baru, pilih pesanan baru.'; return; }
-            radarListenerRef=db.ref('live_tracking/'+id);
-            radarListenerFn=snap=>{
-                const data=snap.val()||{}; if(data.latest) { initLiveRadar(); drawRadarPoint(data.latest); showRadarPointDetails(data.latest,'Memantau pesanan'); }
-                if(data.route) { const pts=Object.values(data.route).filter(p=>p && Number.isFinite(+p.lat)&&Number.isFinite(+p.lng)).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0)).map(p=>[+p.lat,+p.lng]); radarTrail=pts; if(radarRouteLine) radarRouteLine.setLatLngs(pts); }
-            };
-            radarListenerRef.on('value',radarListenerFn); radarStatus('MEMANTAU','blue');
-            radarExpiryTimer=setTimeout(()=>{ stopRadarMonitoring(); radarStatus('WAKTU HABIS','orange'); const d=document.getElementById('radarDetails'); if(d) d.textContent+=' | Pemantauan toko berhenti setelah 20 menit; titik terakhir tetap tersimpan.'; },remaining);
-        }
-        function stopRadarMonitoring() {
-            if(radarListenerRef && radarListenerFn) radarListenerRef.off('value',radarListenerFn);
-            radarListenerRe
-Pratinjau terpotong untuk file besar
+        function showAlert(msg, color) { const alertBox = document.getElementById('chessAlert'); alertBox.innerText = msg; alertBox.style.display = 'flex'; setTimeout(() => { alertBox.style.display = 'none'; }, 3000); }
+    </script>
+</body>
+</html>
