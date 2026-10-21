@@ -373,9 +373,10 @@ onclick="openFullImg(this.src, currentUser)">
 </div>
 
 <!-- NEW CHAT PAGE -->
-<div id="page-crewchat" class="page">
+<!-- PENAMBAHAN PADDING BOTTOM 70PX AGAR TIDAK TERPOTONG MENU BAWAH -->
+<div id="page-crewchat" class="page" style="padding-bottom: 70px;">
   <div class="chat-wrap">
-    <div class="dominos-blue text-white p-3 flex items-center gap-3">
+    <div class="dominos-blue text-white p-3 flex items-center gap-3 shadow-md z-10">
       <button onclick="closeCrewChat()" class="w-8 h-8 rounded-full bg-white/20"><i class="fa fa-arrow-left"></i></button>
       <div class="flex-1 font-black uppercase italic text-sm">Chat Crew</div>
       <button onclick="toggleChatSound()" id="chatSoundBtn" class="w-8 h-8 rounded-full bg-white/20"><i class="fa fa-bell"></i></button>
@@ -383,12 +384,32 @@ onclick="openFullImg(this.src, currentUser)">
     </div>
     <div id="chatScroll" class="chat-scroll" onscroll="chatOnScroll()"></div>
     <div id="chatPreview" class="hidden bg-white p-2 border-t flex items-center gap-2"></div>
-    <div class="bg-gray-100 p-2 pb-24 flex items-end gap-2">
-      <label class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-500 shrink-0"><i class="fa fa-image"></i>
+    
+    <!-- KOLOM KETIK PESAN (DIPERBAIKI) -->
+    <div class="bg-gray-100 p-2 flex items-end gap-2 relative border-t border-gray-200">
+      
+      <!-- STICKER PANEL (Tampil jika ikon ditekan) -->
+      <div id="stickerPanel" class="hidden absolute bottom-full left-0 w-full bg-white border-t border-gray-200 p-2 shadow-lg z-50 rounded-t-xl">
+        <div class="flex justify-between items-center mb-2 px-1">
+          <span class="text-xs font-bold text-gray-600"><i class="fa fa-sticky-note mr-1"></i>Stiker Saya</span>
+          <label class="bg-blue-100 text-blue-600 px-3 py-1 rounded cursor-pointer text-[10px] font-bold shadow-sm active:scale-95 transition-transform">
+             + Tambah <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="addCustomSticker(this)">
+          </label>
+        </div>
+        <div id="stickerList" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto"></div>
+      </div>
+
+      <!-- TOMBOL STICKER -->
+      <button onclick="toggleStickerPanel()" class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-orange-500 shrink-0 shadow-sm"><i class="fa fa-sticky-note"></i></button>
+      
+      <label class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-blue-500 shrink-0 shadow-sm cursor-pointer"><i class="fa fa-image"></i>
         <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="chatPickImage(this)"></label>
-      <textarea id="chatInput" rows="1" placeholder="Ketik pesan..." class="flex-1 rounded-2xl px-3 py-2 text-sm outline-none resize-none max-h-24"></textarea>
-      <button id="chatMicBtn" onclick="chatToggleRec()" class="w-9 h-9 rounded-full bg-white text-red-600 shrink-0"><i class="fa fa-microphone"></i></button>
-      <button onclick="chatSendText()" class="w-9 h-9 rounded-full bg-green-500 text-white shrink-0"><i class="fa fa-paper-plane"></i></button>
+      
+      <textarea id="chatInput" rows="1" placeholder="Ketik pesan..." class="flex-1 rounded-2xl px-3 py-2 text-sm outline-none resize-none max-h-24 shadow-sm border border-gray-200"></textarea>
+      
+      <button id="chatMicBtn" onclick="chatToggleRec()" class="w-9 h-9 rounded-full bg-white text-red-600 shrink-0 shadow-sm"><i class="fa fa-microphone"></i></button>
+      
+      <button onclick="chatSendText()" class="w-9 h-9 rounded-full bg-green-500 text-white shrink-0 shadow-sm active:scale-90 transition-transform"><i class="fa fa-paper-plane"></i></button>
     </div>
   </div>
 </div>
@@ -1666,6 +1687,84 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const jkt = (ts, o) => new Intl.DateTimeFormat('id-ID', Object.assign({timeZone:'Asia/Jakarta'}, o)).format(new Date(ts));
 const isChatAdmin = () => currentUser === 'Okta';
 
+// LOGIKA STICKER MANDIRI
+let isStickerPanelOpen = false;
+function toggleStickerPanel() {
+    isStickerPanelOpen = !isStickerPanelOpen;
+    const panel = document.getElementById('stickerPanel');
+    if (isStickerPanelOpen) {
+        panel.classList.remove('hidden');
+        renderStickerPanel();
+    } else {
+        panel.classList.add('hidden');
+    }
+}
+
+function addCustomSticker(inp) {
+    const f = inp.files[0]; inp.value = ''; if (!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            const W = Math.min(250, img.width);
+            const c = document.createElement('canvas');
+            c.width = W; c.height = img.height * W / img.width;
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            const url = c.toDataURL('image/webp', 0.8);
+            let stickers = JSON.parse(localStorage.getItem('my_stickers_' + currentUser) || '[]');
+            stickers.push(url);
+            localStorage.setItem('my_stickers_' + currentUser, JSON.stringify(stickers));
+            renderStickerPanel();
+        };
+        img.src = e.target.result;
+    };
+    r.readAsDataURL(f);
+}
+
+function renderStickerPanel() {
+    const list = document.getElementById('stickerList');
+    let stickers = JSON.parse(localStorage.getItem('my_stickers_' + currentUser) || '[]');
+    if (stickers.length === 0) {
+        list.innerHTML = '<div class="text-[10px] text-gray-400 text-center w-full py-2">Belum ada stiker. Klik + Tambah untuk membuat stiker anda sendiri.</div>';
+        return;
+    }
+    list.innerHTML = stickers.map((s, index) => `
+        <div class="relative group">
+           <img src="${s}" onclick="sendCustomSticker('${s}')" class="w-16 h-16 object-contain cursor-pointer hover:scale-110 transition bg-gray-50 rounded-lg p-1 border border-gray-200">
+           <button onclick="deleteCustomSticker(${index})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-md"><i class="fa fa-times"></i></button>
+        </div>
+    `).join('');
+}
+
+function deleteCustomSticker(index) {
+    let stickers = JSON.parse(localStorage.getItem('my_stickers_' + currentUser) || '[]');
+    stickers.splice(index, 1);
+    localStorage.setItem('my_stickers_' + currentUser, JSON.stringify(stickers));
+    renderStickerPanel();
+}
+
+function sendCustomSticker(base64) {
+    toggleStickerPanel(); 
+    chatSendBeep();
+    sendChat({ type: 'sticker', mediaMimeType: 'image/webp', mediaSize: base64.length }, base64);
+}
+
+// LOGIKA SUARA KIRIM PESAN
+function chatSendBeep() {
+  if (!chatSound) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'sine'; 
+    o.frequency.setValueAtTime(600, audioCtx.currentTime); 
+    o.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); 
+    g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.1);
+  } catch (e) {}
+}
+
 function startChatListeners() {
   if (chatInit || !currentUser) return; chatInit = true;
   db.ref('chatReadState/' + currentUser + '/lastReadAt').on('value', s => { chatLastRead = s.val() || 0; updateChatBadge(); });
@@ -1723,8 +1822,10 @@ function chatBeep() {
 }
 function chatNotify(m) {
   if (document.visibilityState === 'visible' || !('Notification' in window) || Notification.permission !== 'granted') return;
-  new Notification('Chat Crew: ' + m.senderName, { body: m.type === 'text' ? m.text : (m.type === 'image' ? '📷 Foto' : '🎤 Voice note') });
+  new Notification('Chat Crew: ' + m.senderName, { body: m.type === 'text' ? m.text : (m.type === 'image' ? '📷 Foto' : (m.type === 'sticker' ? '🖼️ Stiker' : '🎤 Voice note')) });
 }
+
+// LOGIKA RENDER CHAT DIPERBARUI UNTUK STIKER
 function renderChat(stick) {
   const box = document.getElementById('chatScroll'); if (!box) return;
   const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
@@ -1738,13 +1839,27 @@ function renderChat(stick) {
     const me = m.senderId === currentUser, first = lastSender !== m.senderId; lastSender = m.senderId;
     const del = isChatAdmin() && !m.deletedAt ? `<button onclick="adminDeleteMsg('${m.id}')" class="text-red-500 text-[10px] ml-2"><i class="fa fa-trash"></i></button>` : '';
     let body = '';
+    let isSticker = m.type === 'sticker';
+    
     if (m.deletedAt) body = '<i class="text-gray-400 text-xs">Pesan ini telah dihapus</i>';
     else if (m.type === 'image') body = `<img class="cimg" data-media="${m.id}" onclick="chatZoom(this)">` + (m.text ? `<div>${esc(m.text)}</div>` : '');
+    else if (isSticker) body = `<img class="cimg" data-media="${m.id}" style="background:transparent; box-shadow:none; max-width: 140px; object-fit: contain;">`;
     else if (m.type === 'audio') body = `<audio controls preload="none" data-media="${m.id}"></audio>`;
     else body = esc(m.text).replace(/\n/g, '<br>');
-    html += `<div class="flex ${me ? 'justify-end' : ''} ${first ? 'mt-2' : 'mt-0.5'}"><div class="cb ${me ? 'me' : 'other'}">
-      ${!me && first ? `<div class="cb-name"><img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.senderName)}&background=006491&color=fff&size=32" class="inline w-4 h-4 rounded-full mr-1">${esc(m.senderName)}</div>` : ''}
-      ${body}<div class="cb-time">${jkt(m.createdAt, { hour: '2-digit', minute: '2-digit', hour12: false })} WIB${del}</div></div></div>`;
+
+    if (isSticker && !m.deletedAt) {
+      html += `<div class="flex ${me ? 'justify-end' : ''} ${first ? 'mt-2' : 'mt-0.5'}">
+         <div class="${me ? 'ml-auto text-right' : 'text-left'}" style="max-width:80%;">
+            ${!me && first ? `<div class="cb-name" style="text-shadow:0 0 2px #fff;"><img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.senderName)}&background=006491&color=fff&size=32" class="inline w-4 h-4 rounded-full mr-1">${esc(m.senderName)}</div>` : ''}
+            ${body}
+            <div class="cb-time font-bold" style="text-shadow:0 0 3px #fff, 0 0 3px #fff;">${jkt(m.createdAt, { hour: '2-digit', minute: '2-digit', hour12: false })}${del}</div>
+         </div>
+      </div>`;
+    } else {
+      html += `<div class="flex ${me ? 'justify-end' : ''} ${first ? 'mt-2' : 'mt-0.5'}"><div class="cb ${me ? 'me' : 'other'}">
+        ${!me && first ? `<div class="cb-name"><img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.senderName)}&background=006491&color=fff&size=32" class="inline w-4 h-4 rounded-full mr-1">${esc(m.senderName)}</div>` : ''}
+        ${body}<div class="cb-time">${jkt(m.createdAt, { hour: '2-digit', minute: '2-digit', hour12: false })}${del}</div></div></div>`;
+    }
   });
   box.innerHTML = html;
   box.querySelectorAll('[data-media]').forEach(el => loadChatMedia(el));
@@ -1777,7 +1892,9 @@ function sendChat(data, mediaDataUrl) {
 function chatSendText() {
   const i = document.getElementById('chatInput'), t = i.value.trim(); if (!t) return;
   if (t.length > 2000) return alert('Maksimal 2000 karakter');
-  i.value = ''; sendChat({ type: 'text', text: t });
+  i.value = ''; 
+  chatSendBeep(); // Bunyi send
+  sendChat({ type: 'text', text: t });
 }
 function chatPickImage(inp) {
   const f = inp.files[0]; inp.value = ''; if (!f) return;
@@ -1799,7 +1916,13 @@ function showChatPreview(inner, data, media) {
   p.classList.remove('hidden');
 }
 function cancelChatPreview() { chatPending = null; document.getElementById('chatPreview').classList.add('hidden'); }
-function sendChatPreview() { if (!chatPending) return; const { data, media } = chatPending; cancelChatPreview(); sendChat(data, media); }
+function sendChatPreview() { 
+  if (!chatPending) return; 
+  const { data, media } = chatPending; 
+  cancelChatPreview(); 
+  chatSendBeep(); // Bunyi send
+  sendChat(data, media); 
+}
 async function chatToggleRec() {
   const btn = document.getElementById('chatMicBtn');
   if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
