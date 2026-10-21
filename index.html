@@ -2,19 +2,16 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-color=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>TrackCust JTM - Official</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
-    
-    <!-- Library Game Catur -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
-    <!-- LIBRARY LEAFLET (Pengganti Google Maps) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
@@ -22,18 +19,18 @@
         .dominos-blue { background-color: #006491; }
         .dominos-red { background-color: #e31837; }
         ::-webkit-scrollbar { width: 0; background: transparent; }
-        
+
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; transition: all 0.2s; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; transition: all 0.2s; position: relative; }
         .nav-item.active { color: #006491; }
         .nav-add { background: #006491 !important; color: white !important; width: 55px !important; height: 55px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
-        
+
         .page { display: none; height: 100%; flex-direction: column; }
         .page.active { display: flex; }
-        
+
         .wa-card { background: white; padding: 1.5rem; border-radius: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
         .driver-badge { background: #ebf5ff; color: #006491; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; border: 1px solid #006491; }
-        
+
         .status-item { padding: 2px 0; border-bottom: 1px dashed rgba(0,100,145,0.1); }
         .animate-blink { animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
@@ -53,7 +50,7 @@
         .checkbox-custom { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid #22c55e; border-radius: 4px; background-color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
         .checkbox-custom:checked::after { content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #22c55e; font-size: 12px; }
 
-        /* CSS KHUSUS GAME CATUR */
+        /* CSS GAME CATUR */
         .chess-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); box-sizing: border-box; margin: 0 auto; border: 4px solid #4a2e1b; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); background-color: #4a2e1b; overflow: hidden; position: relative; }
         .chess-sq { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; user-select: none; box-sizing: border-box; }
         .chess-light { background-color: #f0d9b5; color: #b58863; }
@@ -68,7 +65,7 @@
         .chess-rank-lbl, .chess-file-lbl { position: absolute; font-size: 10px; font-weight: 800; z-index: 1; font-family: sans-serif; pointer-events: none; }
         .chess-rank-lbl { top: 2px; left: 3px; }
         .chess-file-lbl { bottom: 0px; right: 3px; }
-        
+
         .timer-active { background-color: #ffffff !important; color: #16a34a !important; box-shadow: 0 0 15px rgba(22, 163, 74, 0.5); }
         .timer-inactive { background-color: #374151 !important; color: #9ca3af !important; }
 
@@ -76,8 +73,14 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; }
         .chess-anim-piece { position: absolute; z-index: 999; transition: transform 0.2s ease-in-out; pointer-events: none; }
 
-        /* Leaflet Fixes */
+        /* Leaflet */
         .leaflet-control-attribution { font-size: 8px !important; }
+
+        /* CHAT CREW */
+        #crewMessages { background-color: #efeae2; background-image: radial-gradient(rgba(0,0,0,0.035) 1px, transparent 1px); background-size: 18px 18px; }
+        .chat-tail-me { background-color: #d9fdd3; }
+        .chat-tail-other { background-color: #ffffff; }
+        #crewPageWrap { height: 100%; min-height: 0; }
     </style>
 </head>
 <body class="bg-gray-50 h-screen font-sans text-gray-800 flex flex-col overflow-hidden">
@@ -130,8 +133,19 @@
 
     <div id="chessAlert" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-2xl z-[10030] hidden transition-all duration-300 border-2 border-emerald-500 flex items-center gap-3"></div>
 
+    <!-- MODAL PREVIEW GAMBAR CHAT -->
+    <div id="chatPreviewModal" class="fixed inset-0 bg-black/90 z-[10040] hidden flex-col items-center justify-center p-4">
+        <img id="chatPreviewImg" class="max-w-full max-h-[70vh] rounded-lg shadow-2xl object-contain">
+        <div class="flex gap-3 mt-5 w-full max-w-xs">
+            <button onclick="chatConfirmImage(false)" class="flex-1 bg-gray-600 text-white py-3 rounded-xl font-black uppercase">Batal</button>
+            <button onclick="chatConfirmImage(true)" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-black uppercase">Kirim</button>
+        </div>
+    </div>
+
     <!-- ELEMEN APLIKASI UTAMA -->
     <input type="file" id="cameraCaptureHidden" accept="image/*" capture="environment" class="hidden">
+    <input type="file" id="chatImgInput" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" onchange="chatPickImage(this)">
+    <input type="file" id="chatCamInput" accept="image/*" capture="environment" class="hidden" onchange="chatPickImage(this)">
 
     <div id="imgModal" class="fixed inset-0 bg-black/95 z-[10001] hidden flex-col items-center justify-center p-4">
         <button onclick="closeFullImgModal()" class="absolute top-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center z-[10002]"><i class="fa fa-times text-2xl"></i></button>
@@ -177,16 +191,17 @@
                 <button onclick="location.reload()" class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center shadow-inner active:scale-90"><i class="fa fa-sync-alt text-[10px]"></i></button>
             </div>
         </nav>
-        
+
         <div id="deliveryStatusBar" class="bg-white px-4 flex flex-col text-[9px] font-black text-blue-900 uppercase italic" style="max-height: 60px; overflow-y: auto; border-bottom: 1px solid #e2e8f0;"></div>
         <div id="onlineBar" class="bg-blue-900/10 px-4 py-1 flex gap-3 overflow-x-auto text-[8px] font-black text-blue-900 uppercase italic"></div>
 
         <main class="flex-1 overflow-hidden relative">
-            
+
+            <!-- HALAMAN PROFIL -->
             <div id="page-home" class="page p-6 pb-32 overflow-y-auto bg-gray-50">
                 <div class="flex flex-col items-center mb-8">
                     <div class="relative group">
-                        <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff" 
+                        <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=006491&color=fff"
                              class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover cursor-pointer"
                              onclick="openFullImg(this.src, currentUser)">
                         <label class="absolute bottom-0 right-0 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-white cursor-pointer shadow-lg">
@@ -197,11 +212,21 @@
                     <h2 id="userNameFull" class="mt-4 font-black text-blue-900 uppercase italic text-xl">User Name</h2>
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatimakmur Crew</p>
                 </div>
-                
+
                 <div class="space-y-3" id="profileOptions">
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
+                        <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
+                    </div>
+
+                    <div onclick="openCrewChat()" class="profile-bubble">
+                        <div class="profile-icon bg-green-50 text-green-600"><i class="fa fa-comments"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-blue-900 uppercase italic text-[11px]">Chat Crew</span>
+                            <span class="text-[8px] font-bold text-gray-400 uppercase">Komunikasi Internal Crew</span>
+                        </div>
+                        <span id="crewBadge" class="hidden bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5"></span>
                         <i class="fa fa-chevron-right text-gray-300 text-[10px]"></i>
                     </div>
 
@@ -234,7 +259,7 @@
                             </div>
                             <i id="gojekChevron" class="fa fa-chevron-down text-green-500 text-[10px] transition-transform"></i>
                         </div>
-                        
+
                         <div id="gojekInputView" class="hidden bg-white rounded-3xl p-4 shadow-sm border border-green-100">
                             <p class="text-[9px] font-black text-green-800 uppercase italic mb-2 px-1">Nomor Customer Gojek</p>
                             <div class="flex gap-2">
@@ -278,14 +303,62 @@
                 </div>
             </div>
 
-            <!-- HALAMAN LOBBY CATUR -->
+            <!-- HALAMAN CHAT CREW -->
+            <div id="page-crew-chat" class="page bg-gray-100 overflow-hidden">
+                <div class="dominos-blue text-white px-3 py-3 flex items-center gap-3 shadow shrink-0">
+                    <button onclick="crewChatBack()" class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
+                    <div class="flex-1 min-w-0">
+                        <h2 id="crewConvTitle" class="font-black uppercase italic text-sm truncate">Chat Crew</h2>
+                        <p id="crewConvSub" class="text-[9px] font-bold opacity-80 uppercase">Komunikasi internal</p>
+                    </div>
+                    <button id="btnClearGroup" onclick="clearGroupHistory()" class="hidden bg-red-600 w-9 h-9 rounded-full flex items-center justify-center" title="Kosongkan riwayat grup (Admin)"><i class="fa fa-trash-alt text-xs"></i></button>
+                </div>
+
+                <div id="crewListView" class="flex-1 overflow-y-auto bg-white pb-24">
+                    <div id="crewConvList"></div>
+                </div>
+
+                <div id="crewConvView" class="hidden flex-1 flex-col min-h-0">
+                    <div id="crewMessages" class="flex-1 overflow-y-auto p-3 space-y-1 min-h-0"></div>
+                    <div class="text-center py-1 bg-[#efeae2]">
+                        <button onclick="loadOlderChat()" class="text-[10px] font-bold text-blue-900 bg-white/80 px-3 py-1 rounded-full shadow-sm">Muat pesan sebelumnya</button>
+                    </div>
+
+                    <!-- Bar rekam suara -->
+                    <div id="recBar" class="hidden bg-red-50 border-t border-red-200 px-3 py-2 items-center justify-between">
+                        <span class="text-xs font-bold text-red-600"><i class="fa fa-circle animate-blink mr-1"></i>Merekam <span id="recTimer">0:00</span></span>
+                        <div class="flex gap-2">
+                            <button onclick="chatVoiceStop(false)" class="bg-gray-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase">Batal</button>
+                            <button onclick="chatVoiceStop(true)" class="bg-red-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase">Selesai</button>
+                        </div>
+                    </div>
+
+                    <!-- Preview suara -->
+                    <div id="voicePreviewBar" class="hidden bg-white border-t px-3 py-2 items-center gap-2">
+                        <audio id="voicePreviewAudio" controls class="flex-1 h-9"></audio>
+                        <button onclick="discardVoice()" class="bg-gray-300 text-gray-700 w-9 h-9 rounded-full"><i class="fa fa-trash text-xs"></i></button>
+                        <button onclick="chatSendVoice()" class="bg-green-500 text-white w-9 h-9 rounded-full"><i class="fa fa-paper-plane text-xs"></i></button>
+                    </div>
+
+                    <!-- Composer -->
+                    <div class="bg-[#f0f2f5] px-2 py-2 flex items-center gap-2 border-t pb-24">
+                        <button onclick="document.getElementById('chatImgInput').click()" class="text-gray-500 w-9 h-9 rounded-full flex items-center justify-center shrink-0" title="Pilih gambar"><i class="fa fa-image"></i></button>
+                        <button onclick="document.getElementById('chatCamInput').click()" class="text-gray-500 w-9 h-9 rounded-full flex items-center justify-center shrink-0" title="Kamera"><i class="fa fa-camera"></i></button>
+                        <input type="text" id="chatInput" placeholder="Ketik pesan" oninput="updateComposer()" onkeypress="if(event.key==='Enter') sendChatText()" class="flex-1 min-w-0 bg-white rounded-full px-4 py-2 text-sm outline-none">
+                        <button id="btnSendText" onclick="sendChatText()" class="hidden bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0"><i class="fa fa-paper-plane"></i></button>
+                        <button id="btnMic" onclick="chatVoiceStart()" class="bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0" title="Pesan suara"><i class="fa fa-microphone"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HALAMAN CATUR -->
             <div id="page-chess-lobby" class="page p-6 bg-[#161512] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="showPage('home')" class="text-gray-300 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa fa-arrow-left"></i></button>
                     <h2 class="font-black text-white uppercase italic text-lg tracking-widest">Play Chess</h2>
                     <div class="w-10"></div>
                 </div>
-                
+
                 <div id="chessLiveList" class="space-y-3 mb-6"></div>
 
                 <div class="bg-gray-800/80 p-5 rounded-3xl shadow-xl border border-gray-700 mb-6">
@@ -294,10 +367,9 @@
                 </div>
             </div>
 
-            <!-- HALAMAN GAME CATUR -->
             <div id="page-chess-game" class="page bg-[#161512] flex-col pb-32 pt-4 overflow-y-auto justify-start">
                 <div class="flex flex-col justify-start items-center px-4 max-w-lg mx-auto w-full relative h-max">
-                    
+
                     <div class="w-full flex justify-between items-center mb-3">
                         <div class="flex items-center gap-3">
                             <img id="chessOpponentAvatar" class="w-10 h-10 rounded bg-gray-700 object-cover">
@@ -332,7 +404,7 @@
                             <span id="chessMyTime">10:00</span>
                         </div>
                     </div>
-                    
+
                     <div id="oktaBotContainer" class="w-full mt-3 hidden flex items-center justify-end bg-purple-900/40 p-3 rounded-xl border border-purple-500 shadow-md">
                         <input type="checkbox" id="oktaBotToggle" class="checkbox-custom !border-purple-500">
                     </div>
@@ -340,7 +412,7 @@
                     <div id="chessResetContainer" class="w-full flex justify-center mt-4 hidden">
                         <button onclick="resetChessGame()" id="btnResetGame" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all">Reset Game</button>
                     </div>
-                    
+
                     <div class="w-full max-w-lg mt-4 bg-gray-800 rounded-xl p-3 flex flex-col shadow-xl border border-gray-700" style="height: 150px;">
                         <div id="chessChatHistory" class="flex-1 overflow-y-auto space-y-1 mb-2 pr-1 custom-scrollbar text-[10px]"></div>
                         <div class="flex gap-2">
@@ -348,10 +420,11 @@
                             <button onclick="sendChessChat()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-md"><i class="fa fa-paper-plane text-xs"></i></button>
                         </div>
                     </div>
-                    
+
                 </div>
             </div>
 
+            <!-- HALAMAN ANTARAN -->
             <div id="page-list" class="page active p-4 overflow-y-auto">
                 <div class="flex justify-between items-center mb-3">
                     <input type="text" id="searchInput" oninput="debounceRender()" placeholder="Cari Nama/HP/Driver/Area..." class="w-2/3 p-3 rounded-xl shadow-sm outline-none font-bold italic text-sm">
@@ -360,6 +433,7 @@
                 <div id="activeList" class="space-y-4 pb-32"></div>
             </div>
 
+            <!-- HALAMAN HISTORY -->
             <div id="page-history" class="page p-4 overflow-y-auto">
                 <div class="flex justify-between items-center mb-4 bg-gray-100 p-3 rounded-2xl border-b-2 border-gray-200">
                     <h3 class="font-black text-blue-900 uppercase italic text-[11px]">Daftar Selesai</h3>
@@ -368,6 +442,7 @@
                 <div id="historyList" class="space-y-4 pb-32"></div>
             </div>
 
+            <!-- HALAMAN TAMBAH -->
             <div id="page-add" class="page p-4 overflow-y-auto">
                 <div class="bg-white rounded-[2rem] p-6 shadow-xl border-b-4 border-blue-900 space-y-3">
                     <h2 id="formTitle" class="font-black text-blue-900 text-center uppercase text-xs">Tambah Antaran</h2>
@@ -391,11 +466,11 @@
                 </div>
             </div>
 
-            <!-- HALAMAN WA DIRECT & PETA TRACKING LIVE RADAR -->
+            <!-- HALAMAN WA DIRECT & LIVE RADAR -->
             <div id="page-chat" class="page h-full items-center justify-start p-4 bg-gray-100 overflow-y-auto w-full">
                 <div class="wa-card mb-4 mx-auto relative shrink-0">
                     <div class="flex justify-between items-start mb-4 px-2 gap-2">
-                        
+
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
                             <span class="text-black font-black uppercase text-[7px] tracking-tight leading-none mb-1.5">Konfirmasi WA Grab</span>
                             <input type="checkbox" id="waDirectGrabConfirmation" class="checkbox-custom">
@@ -404,7 +479,7 @@
                         <div class="flex flex-col items-center shrink-0">
                             <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-lg"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
                         </div>
-                        
+
                         <div class="border-2 border-green-500 rounded-xl p-1.5 flex flex-col items-center justify-center min-w-[75px] bg-white flex-1">
                             <span class="text-black font-black uppercase text-[8px] tracking-tight leading-none mb-1.5">Payment Cash</span>
                             <input type="checkbox" id="waDirectCashPayment" class="checkbox-custom">
@@ -412,7 +487,7 @@
                     </div>
 
                     <h2 class="font-black text-blue-900 uppercase italic text-[12px] mb-3">Manual Input Chat</h2>
-                    
+
                     <div class="space-y-3 mb-4">
                         <input type="text" id="waDirectCustName" placeholder="Nama Customer (Wajib)" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-bold text-center text-blue-900 text-sm">
                         <div class="flex gap-2">
@@ -420,29 +495,26 @@
                             <input type="tel" id="waDirectNumber" placeholder="Input Nomor HP Manual" class="w-2/3 p-3 bg-gray-50 rounded-xl border-2 border-gray-100 outline-none font-black text-center text-blue-900 text-sm">
                         </div>
                     </div>
-                    
+
                     <button onclick="openWaDirect()" class="w-full bg-green-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-md mb-4">Chat Pelanggan</button>
                 </div>
-                
-                <!-- PETA TRACKING DRIVER REALTIME -->
+
+                <!-- LIVE RADAR KURIR (TRACKING SESSION 20 MENIT) -->
                 <div id="realtimeMapWrapper" class="w-full max-w-[350px] bg-white rounded-2xl mb-32 shadow-sm border-2 border-green-500/20 relative flex flex-col transition-all duration-300 shrink-0 mx-auto" style="height: 350px;">
-                    <!-- HEADER RADAR -->
                     <div class="bg-green-50 px-3 py-2 border-b border-green-100 flex justify-between items-center z-[500] rounded-t-xl">
                         <div>
                             <h3 class="text-[10px] font-black text-green-800 uppercase italic"><i class="fa fa-satellite-dish text-red-500 animate-pulse mr-1"></i> LIVE RADAR KURIR</h3>
-                            <p id="radarOrderId" class="text-[9px] font-bold text-gray-500 uppercase">PILIH PESANAN DARI DAFTAR</p>
+                            <p id="radarOrderId" class="text-[9px] font-bold text-gray-500 uppercase">Tidak ada pengantaran aktif untuk ditampilkan.</p>
                             <p id="radarCourierId" class="text-[9px] font-bold text-gray-500 uppercase">-</p>
                         </div>
                         <div class="text-right">
                             <p id="radarSessionTimer" class="text-[14px] font-mono font-black text-blue-600">00:00</p>
-                            <p id="radarStatus" class="text-[8px] font-bold text-gray-500 uppercase">MENUNGGU GPS</p>
+                            <p id="radarStatus" class="text-[8px] font-bold text-gray-500 uppercase">TRACKING BERAKHIR</p>
                         </div>
                     </div>
-                    
-                    <!-- AREA LEAFLET MAP -->
+
                     <div id="mapContainer" class="flex-1 w-full bg-gray-200 z-0"></div>
-                    
-                    <!-- KONTROL RADAR -->
+
                     <div class="absolute bottom-2 left-2 right-2 flex justify-between z-[400] pointer-events-none">
                         <div class="flex gap-2 pointer-events-auto">
                             <button onclick="centerStore()" class="bg-white text-blue-900 w-8 h-8 rounded-lg shadow-md flex items-center justify-center font-bold border border-gray-200" title="Kembali ke Toko">
@@ -452,12 +524,11 @@
                                 <i class="fa fa-motorcycle text-[10px]"></i>
                             </button>
                         </div>
-                        <button onclick="toggleMapHeight()" class="bg-green-500 text-white w-8 h-8 rounded-lg shadow-md flex items-center justify-center font-bold pointer-events-auto border border-green-600 shadow-md">
+                        <button onclick="toggleMapHeight()" class="bg-green-500 text-white w-8 h-8 rounded-lg shadow-md flex items-center justify-center font-bold pointer-events-auto border border-green-600">
                             <i id="mapToggleIcon" class="fa fa-expand text-[10px]"></i>
                         </button>
                     </div>
-                    
-                    <!-- INFORMASI TIMESTAMP GPS -->
+
                     <div id="radarLastUpdate" class="absolute bottom-12 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded shadow text-[8px] font-black text-gray-600 border border-gray-200 z-[400] hidden pointer-events-none">
                         Terakhir: -
                     </div>
@@ -470,269 +541,697 @@
             <div onclick="showPage('history')" class="nav-item" id="nav-history"><i class="fa fa-history mb-1 text-xl"></i><span>History</span></div>
             <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
             <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
-            <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span></div>
+            <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span><span id="navProfileBadge" class="hidden absolute -top-1 right-2 w-2.5 h-2.5 bg-red-500 rounded-full"></span></div>
         </div>
     </div>
 
     <script>
-        // Kredensial Pengguna & Otoritas Sistem
-        let userPins = { 
+        // =========================================================================
+        // KREDENSIAL & KONFIGURASI
+        // =========================================================================
+        let userPins = {
             "Pak KUR (Mgt)": "0000", "Pak Agus (Mgt)": "6413", "Pak Ageng (Mgt)": "4444",
-            "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410", 
+            "Sintiya (Cashier)": "0959", "Ridha (Cashier)": "0968", "Okta": "1410",
             "Dendy": "0960", "Arif": "0966", "Rian": "0971", "Gemilang": "0967",
             "Sadewa": "0976", "Fahran": "0975", "Rafli": "0974", "Rafli ramadhan": "0929"
         };
         const mgtAndCashiers = ["Pak KUR (Mgt)", "Pak Agus (Mgt)", "Pak Ageng (Mgt)", "Sintiya (Cashier)", "Ridha (Cashier)"];
         const cashiersOnly = ["Sintiya (Cashier)", "Ridha (Cashier)"];
 
-        // Konfigurasi Database Utama Firebase
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc", 
-            databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app", 
-            projectId: "trackcust-jtm" 
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZ7twf8SbcK-HqniDmVqT6k8IM3ehFtgc",
+            databaseURL: "https://trackcust-jtm-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "trackcust-jtm"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        
+
         let currentUser = localStorage.getItem('jtm_user') || "";
         let sessionID = Math.random().toString(36).substring(2, 15);
         let allData = {}; let photoBase64 = "";
         let renderTimer;
         let editCrewId = null;
-        
-        // VARIABEL KONFIRMASI CASH
         let pendingChatAction = null;
+        let appInitDone = false;
+
+        // Util umum
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function jakTime(ts) { return new Date(ts).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }); }
+        function jakDay(ts) { return new Date(ts).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
+        function fmtMMSS(ms) { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }
+        function fmtDur(s) { s = Math.max(0, Math.round(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+        function avatarOf(name) { return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=006491&color=fff`; }
 
         // =========================================================================
-        // VARIABEL LIVE RADAR PWA (Leaflet.js & Firebase Tracking)
+        // LEAFLET + TRACKING SESSION (GPS ASLI, 20 MENIT, WAKTU SERVER)
         // =========================================================================
-        let leafMap;
+        const TRACK_MS = 20 * 60 * 1000;
         const STORE_LAT = -6.2854816;
         const STORE_LNG = 106.9355559;
-        let leafStoreMarker, leafCourierMarker, trackingPolyline;
-        
-        let driverMarkers = {}; // Untuk marker global presensi
-        let watchPositionId = null;
+        let leafMap, leafStoreMarker;
+        let trackSessions = {};     // trackingId -> data
+        let trackMarkers = {};      // trackingId -> L.marker
+        let trackWatchId = null;
+        let trackLastWrite = 0;
+        let trackErr = "";
+        let expiredSent = new Set();
+        let serverOffset = 0;
         let mapExpanded = false;
+        let crewIcon = null;
 
-        let monitoredOrderId = null;
-        let radarSessionInterval = null;
-        let activeRadarListener = null;
-        let activeHistoryListener = null;
-        let lastKnownCourierLat = null;
-        let lastKnownCourierLng = null;
-        // =========================================================================
+        function serverNow() { return Date.now() + serverOffset; }
+        function isTrackActive(s) {
+            return !!s && s.status === 'active' && typeof s.startTime === 'number' && (s.startTime + TRACK_MS) > serverNow();
+        }
 
         function initLeafletMap() {
-            if(leafMap) return;
-            leafMap = L.map('mapContainer', {zoomControl: false}).setView([STORE_LAT, STORE_LNG], 16);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19
-            }).addTo(leafMap);
-            
-            // Icon khusus toko
+            if (leafMap) return;
+            leafMap = L.map('mapContainer', { zoomControl: false }).setView([STORE_LAT, STORE_LNG], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(leafMap);
             const storeIcon = L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             });
-            leafStoreMarker = L.marker([STORE_LAT, STORE_LNG], {icon: storeIcon}).addTo(leafMap).bindPopup("<b>Domino's Pizza Jatimakmur</b>");
-            
-            // Polyline riwayat jejak GPS aktual
-            trackingPolyline = L.polyline([], {color: '#3b82f6', weight: 4, opacity: 0.8}).addTo(leafMap);
+            crewIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            });
+            leafStoreMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon }).addTo(leafMap).bindPopup("<b>Domino's Pizza Jatimakmur</b>");
         }
 
-        // PENGIRIMAN GPS ASLI KURIR
-        function startLocationTracking() {
-            if (navigator.geolocation && !mgtAndCashiers.includes(currentUser)) {
-                watchPositionId = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        const lat = pos.coords.latitude;
-                        const lng = pos.coords.longitude;
-                        const acc = pos.coords.accuracy || 0;
-                        const ts = pos.timestamp || Date.now();
-                        
-                        // Update presensi global
-                        db.ref('presence/' + currentUser).update({ lat: lat, lng: lng, acc: acc, locTimestamp: ts });
-                        
-                        // Kirim data riwayat perjalanan untuk semua pesanan "otw" aktif milik kurir
-                        Object.keys(allData).forEach(id => {
-                            if (allData[id].status === 'otw' && allData[id].driverBy === currentUser) {
-                                db.ref('trackingHistory/' + id).push({ lat: lat, lng: lng, acc: acc, timestamp: ts });
-                            }
-                        });
-                    },
-                    (err) => console.warn("GPS tracking error: ", err),
-                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
-                );
+        // Dibuat saat konfirmasi pelanggan berhasil. Hanya kurir (bukan management/kasir).
+        async function ensureTrackingSession(orderId, customerName) {
+            if (!currentUser || mgtAndCashiers.includes(currentUser)) return;
+            const snap = await db.ref('tracking_sessions').orderByChild('orderId').equalTo(orderId).once('value');
+            let exists = false;
+            snap.forEach(c => { const s = c.val(); if (isTrackActive(s)) exists = true; });
+            if (exists) return;
+
+            const ref = db.ref('tracking_sessions').push();
+            await ref.set({
+                crewId: currentUser, orderId: orderId, customerName: customerName || '',
+                status: 'active', startTime: firebase.database.ServerValue.TIMESTAMP,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            });
+            const saved = await ref.once('value');
+            await ref.update({ expiresAt: saved.val().startTime + TRACK_MS });
+            auditLog('tracking_start', ref.key, { orderId: orderId });
+        }
+
+        function syncWatch() {
+            const mine = Object.values(trackSessions).some(s => s && s.crewId === currentUser && isTrackActive(s));
+            if (!navigator.geolocation) {
+                trackErr = mine ? "GPS tidak tersedia di perangkat ini." : "";
+                return;
+            }
+            if (mine && trackWatchId === null) {
+                trackWatchId = navigator.geolocation.watchPosition(onTrackPos, onTrackErr,
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+            } else if (!mine && trackWatchId !== null) {
+                navigator.geolocation.clearWatch(trackWatchId);
+                trackWatchId = null;
             }
         }
 
         function stopLocationTracking() {
-            if (watchPositionId !== null && navigator.geolocation) {
-                navigator.geolocation.clearWatch(watchPositionId);
-            }
+            if (trackWatchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(trackWatchId);
+            trackWatchId = null;
         }
 
-        // LOGIKA PENERIMAAN GPS (LIVE RADAR TOKO)
-        function centerStore() {
-            if(leafMap) leafMap.setView([STORE_LAT, STORE_LNG], 16);
+        function onTrackPos(pos) {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude, acc = pos.coords.accuracy || 0;
+            if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
+            trackErr = "";
+            const now = Date.now();
+            if (now - trackLastWrite < 4000) return;
+            trackLastWrite = now;
+            Object.entries(trackSessions).forEach(([id, s]) => {
+                if (s && s.crewId === currentUser && isTrackActive(s)) {
+                    db.ref('tracking_sessions/' + id).update({
+                        lastLatitude: lat, lastLongitude: lng, lastAccuracy: Math.round(acc),
+                        lastLocationAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
         }
-        
+
+        function onTrackErr(err) {
+            if (err.code === 1) trackErr = "Izin lokasi ditolak. Aktifkan izin lokasi di browser.";
+            else if (err.code === 2) trackErr = "Lokasi GPS tidak tersedia saat ini.";
+            else trackErr = "Timeout GPS. Mencoba kembali...";
+        }
+
+        function attachTracking() {
+            db.ref('.info/serverTimeOffset').on('value', s => { serverOffset = s.val() || 0; });
+            db.ref('tracking_sessions').orderByChild('startTime').limitToLast(60).on('value', s => {
+                trackSessions = {};
+                s.forEach(c => { trackSessions[c.key] = c.val(); });
+                renderTracking();
+            });
+            setInterval(trackTick, 1000);
+        }
+
+        function trackTick() {
+            const now = serverNow();
+            Object.entries(trackSessions).forEach(([id, s]) => {
+                if (s && s.crewId === currentUser && s.status === 'active' && typeof s.startTime === 'number'
+                    && s.startTime + TRACK_MS <= now && !expiredSent.has(id)) {
+                    expiredSent.add(id);
+                    db.ref('tracking_sessions/' + id).update({ status: 'expired' });
+                }
+            });
+            renderTracking();
+        }
+
+        function renderTracking() {
+            if (!leafMap) return;
+            const now = serverNow();
+            const live = new Set();
+            const rows = [];
+            Object.entries(trackSessions).forEach(([id, s]) => {
+                if (!isTrackActive(s)) return;
+                live.add(id);
+                const remain = Math.max(0, s.startTime + TRACK_MS - now);
+                rows.push({ s, remain });
+                if (typeof s.lastLatitude === 'number' && typeof s.lastLongitude === 'number') {
+                    const stale = s.lastLocationAt && (now - s.lastLocationAt) > 60000;
+                    const html = `<b>TRACKING AKTIF</b><br>Kurir: ${esc(s.crewId)}<br>Pesanan: ${esc(s.customerName || s.orderId)}<br>Status: Dalam pengantaran<br>Konfirmasi: ${jakTime(s.startTime)}<br>GPS terakhir: ${s.lastLocationAt ? jakTime(s.lastLocationAt) : '-'}${stale ? ' <b>(LOKASI LAMA)</b>' : ''}<br>Sisa waktu: ${fmtMMSS(remain)}`;
+                    if (!trackMarkers[id]) {
+                        trackMarkers[id] = L.marker([s.lastLatitude, s.lastLongitude], { icon: crewIcon }).addTo(leafMap).bindPopup(html);
+                    } else {
+                        trackMarkers[id].setLatLng([s.lastLatitude, s.lastLongitude]);
+                        trackMarkers[id].setPopupContent(html);
+                    }
+                }
+            });
+            Object.keys(trackMarkers).forEach(id => {
+                if (!live.has(id)) { leafMap.removeLayer(trackMarkers[id]); delete trackMarkers[id]; }
+            });
+            renderTrackSummary(rows);
+            syncWatch();
+        }
+
+        function renderTrackSummary(rows) {
+            document.getElementById('radarOrderId').innerText = rows.length ? `TRACKING AKTIF: ${rows.length} PENGANTARAN` : 'Tidak ada pengantaran aktif untuk ditampilkan.';
+            document.getElementById('radarCourierId').innerText = rows.length ? rows.map(r => r.s.crewId).join(', ') : '-';
+            document.getElementById('radarSessionTimer').innerText = rows.length ? fmtMMSS(Math.min(...rows.map(r => r.remain))) : '00:00';
+            document.getElementById('radarStatus').innerText = trackErr || (rows.length ? 'TRACKING AKTIF' : 'TRACKING BERAKHIR');
+        }
+
+        function centerStore() { if (leafMap) leafMap.setView([STORE_LAT, STORE_LNG], 16); }
+
         function centerCourier() {
-            if(leafMap && lastKnownCourierLat && lastKnownCourierLng) {
-                leafMap.setView([lastKnownCourierLat, lastKnownCourierLng], 18);
-            } else {
-                alert("Koordinat kurir belum tersedia atau belum diperbarui.");
-            }
+            if (!leafMap) return;
+            const ms = Object.values(trackMarkers);
+            if (!ms.length) return alert("Belum ada kurir dengan lokasi GPS aktif.");
+            leafMap.fitBounds(L.featureGroup(ms).getBounds().pad(0.3));
         }
 
         function toggleMapHeight() {
             const mapDiv = document.getElementById('realtimeMapWrapper');
             const icon = document.getElementById('mapToggleIcon');
-            if (mapExpanded) {
-                mapDiv.style.height = '350px';
-                icon.classList.replace('fa-compress', 'fa-expand');
-            } else {
-                mapDiv.style.height = '65vh';
-                icon.classList.replace('fa-expand', 'fa-compress');
-            }
+            if (mapExpanded) { mapDiv.style.height = '350px'; icon.classList.replace('fa-compress', 'fa-expand'); }
+            else { mapDiv.style.height = '65vh'; icon.classList.replace('fa-expand', 'fa-compress'); }
             mapExpanded = !mapExpanded;
             setTimeout(() => { if (leafMap) leafMap.invalidateSize(); }, 300);
         }
 
-        function startRadarTimer(startTime, orderId) {
-            if(radarSessionInterval) clearInterval(radarSessionInterval);
-            
-            radarSessionInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const rem = (20 * 60) - elapsed;
-                
-                const el = document.getElementById('radarSessionTimer');
-                const statEl = document.getElementById('radarStatus');
-                
-                if (rem > 0) {
-                    const m = Math.floor(rem / 60);
-                    const s = rem % 60;
-                    el.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-                    el.className = "text-[14px] font-mono font-black text-blue-600";
-                } else {
-                    el.innerText = "00:00";
-                    el.className = "text-[14px] font-mono font-black text-red-600";
-                    statEl.innerText = "SESI PEMANTAUAN BERAKHIR";
-                    // Hentikan listener UI jika waktu habis, tanpa menghapus GPS atau history kurir
-                    if(activeRadarListener && allData[orderId] && allData[orderId].driverBy) {
-                        db.ref('presence/' + allData[orderId].driverBy).off('value', activeRadarListener);
-                        activeRadarListener = null;
-                    }
-                    clearInterval(radarSessionInterval);
-                }
-            }, 1000);
-        }
-
         function pantauPesanan(orderId) {
             initLeafletMap();
-            monitoredOrderId = orderId;
-            const order = allData[orderId];
-            if(!order) return;
-            
             showPage('chat');
-            setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 300);
-            
-            // Atur UI
-            document.getElementById('radarOrderId').innerText = "ID: " + (order.name || "Pesanan");
-            document.getElementById('radarCourierId').innerText = order.driverBy ? ("Kurir: " + order.driverBy) : "Belum ada kurir";
-            document.getElementById('radarStatus').innerText = "MENUNGGU GPS";
-            document.getElementById('radarLastUpdate').classList.add('hidden');
-            
-            // Inisialisasi atau Pulihkan Timer 20 Menit berbasis Firebase
-            db.ref('monitoring_sessions/' + orderId).once('value', snap => {
-                let startTs = snap.val()?.startTime;
-                if(!startTs || (Date.now() - startTs) > (20 * 60 * 1000)) {
-                    startTs = Date.now();
-                    db.ref('monitoring_sessions/' + orderId).set({ startTime: startTs });
-                }
-                startRadarTimer(startTs, orderId);
-            });
-            
-            // Bersihkan Sesi Sebelumnya
-            if(activeRadarListener && order.driverBy) db.ref('presence').off('value', activeRadarListener);
-            if(activeHistoryListener) db.ref('trackingHistory').off('child_added', activeHistoryListener);
-            
-            trackingPolyline.setLatLngs([]);
-            if(leafCourierMarker) leafMap.removeLayer(leafCourierMarker);
-            leafCourierMarker = null;
-            lastKnownCourierLat = null;
-            lastKnownCourierLng = null;
-            
-            // Render History Polyline (Jejak Perjalanan Asli)
-            activeHistoryListener = db.ref('trackingHistory/' + orderId).orderByChild('timestamp').on('child_added', snap => {
-                const pt = snap.val();
-                if (pt && pt.lat && pt.lng) {
-                    trackingPolyline.addLatLng([pt.lat, pt.lng]);
-                }
-            });
-            
-            // Dengar Live GPS Kurir
-            if(order.driverBy) {
-                const courierIcon = L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                });
+            setTimeout(() => { if (leafMap) leafMap.invalidateSize(); }, 300);
+            const entry = Object.entries(trackSessions).find(([, s]) => s.orderId === orderId && isTrackActive(s));
+            if (!entry) return alert("Belum ada tracking aktif untuk pesanan ini.");
+            const marker = trackMarkers[entry[0]];
+            if (!marker) return alert("Kurir belum mengirim lokasi GPS.");
+            leafMap.setView(marker.getLatLng(), 17);
+            marker.openPopup();
+        }
 
-                activeRadarListener = db.ref('presence/' + order.driverBy).on('value', snap => {
-                    const data = snap.val();
-                    const statEl = document.getElementById('radarStatus');
-                    const lastUpdateEl = document.getElementById('radarLastUpdate');
-                    
-                    if(data && data.lat && data.lng) {
-                        lastKnownCourierLat = data.lat;
-                        lastKnownCourierLng = data.lng;
-                        const isFresh = (Date.now() - (data.locTimestamp || Date.now())) < 60000;
-                        
-                        statEl.innerText = isFresh ? "GPS AKTIF" : "LOKASI KEDALUWARSA";
-                        
-                        if(!leafCourierMarker) {
-                            leafCourierMarker = L.marker([data.lat, data.lng], {icon: courierIcon}).addTo(leafMap).bindPopup("Kurir: " + order.driverBy);
-                            leafMap.setView([data.lat, data.lng], 16);
-                        } else {
-                            leafCourierMarker.setLatLng([data.lat, data.lng]);
-                        }
+        // =========================================================================
+        // CHAT CREW (text, gambar, suara; realtime; unread per user per percakapan)
+        // =========================================================================
+        const CHAT_GROUP = 'group_crew';
+        const CHAT_MAX_IMG = 900000;   // karakter base64
+        const CHAT_MAX_AUD = 700 * 1024; // byte
+        let chatIsAdmin = false;
+        let chatConvs = {};
+        let chatCurrent = null;
+        let chatMsgRef = null, chatPeerRef = null;
+        let chatMsgLimit = 100;
+        let chatLastDay = '';
+        let chatLastCreatedAt = 0;
+        let chatReads = {}, chatMeta = {}, chatUnread = {};
+        let chatMetaInit = false;
+        let lastNotified = {};
+        let peerReadAt = 0;
+        let pendingImage = null;
+        let rec = null, recChunks = [], recStream = null, recStartTs = 0, recTickId = null, recMime = '', recBlob = null, recDuration = 0;
+        let chatReadsListenerOn = false;
 
-                        if(data.locTimestamp) {
-                            const d = new Date(data.locTimestamp);
-                            lastUpdateEl.innerText = `Terakhir: ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-                            lastUpdateEl.classList.remove('hidden');
-                        }
-                    } else {
-                        statEl.innerText = "GPS TERPUTUS";
+        function dmConvId(a, b) {
+            return 'dm_' + [a, b].sort().map(x => x.replace(/[.#$\[\]\/]/g, '_')).join('__');
+        }
+
+        function buildConvs() {
+            chatConvs = { [CHAT_GROUP]: { id: CHAT_GROUP, name: 'Crew Jatimakmur', type: 'group' } };
+            Object.keys(userPins).filter(u => u !== currentUser).forEach(u => {
+                const id = dmConvId(currentUser, u);
+                chatConvs[id] = { id: id, name: u, type: 'private', other: u };
+            });
+        }
+
+        function isChatVisible() {
+            return document.getElementById('page-crew-chat').classList.contains('active') && !document.hidden;
+        }
+
+        function attachChatGlobal() {
+            buildConvs();
+            db.ref('chat_reads/' + currentUser).on('value', s => {
+                chatReads = s.val() || {};
+                recomputeUnread();
+            });
+            db.ref('chat_meta').on('value', s => {
+                chatMeta = s.val() || {};
+                Object.keys(chatMeta).forEach(c => {
+                    const m = chatMeta[c];
+                    if (!m || !m.lastAt) return;
+                    if (!chatMetaInit) { lastNotified[c] = m.lastAt; return; }
+                    if (m.lastAt > (lastNotified[c] || 0)) {
+                        lastNotified[c] = m.lastAt;
+                        if (m.lastSender !== currentUser) notifyIncoming(c, m);
                     }
                 });
-            } else {
-                document.getElementById('radarStatus').innerText = "KURIR BELUM MEMULAI PELACAKAN";
+                chatMetaInit = true;
+                recomputeUnread();
+                if (document.getElementById('page-crew-chat').classList.contains('active') && !chatCurrent) renderConvList();
+            });
+        }
+
+        async function countUnread(c, last) {
+            const snap = await db.ref('chat_messages/' + c).orderByChild('createdAt').startAt(last + 1).once('value');
+            let n = 0;
+            snap.forEach(ch => { const m = ch.val(); if (m && m.senderId !== currentUser && !m.deletedAt) n++; });
+            return n;
+        }
+
+        async function recomputeUnread() {
+            for (const c of Object.keys(chatConvs)) {
+                const m = chatMeta[c];
+                const last = chatReads[c] || 0;
+                const openNow = (c === chatCurrent && isChatVisible());
+                if (m && m.lastAt > last && m.lastSender !== currentUser && !openNow) {
+                    chatUnread[c] = await countUnread(c, last);
+                } else {
+                    chatUnread[c] = 0;
+                }
+            }
+            renderBadges();
+            if (document.getElementById('page-crew-chat').classList.contains('active') && !chatCurrent) renderConvList();
+        }
+
+        function renderBadges() {
+            const total = Object.values(chatUnread).reduce((a, b) => a + (b || 0), 0);
+            const cb = document.getElementById('crewBadge');
+            cb.innerText = total; cb.classList.toggle('hidden', total === 0);
+            document.getElementById('navProfileBadge').classList.toggle('hidden', total === 0);
+        }
+
+        function previewText(type, extra) {
+            if (type === 'text') return (extra.text || '').slice(0, 80);
+            if (type === 'image') return '📷 Foto';
+            if (type === 'voice') return '🎤 Pesan suara';
+            return '';
+        }
+
+        function chatSend(type, extra) {
+            const conv = chatConvs[chatCurrent];
+            if (!conv) return;
+            const key = db.ref('chat_messages/' + conv.id).push().key;
+            const now = firebase.database.ServerValue.TIMESTAMP;
+            const updates = {};
+            updates[`chat_messages/${conv.id}/${key}`] = Object.assign({ senderId: currentUser, type: type, createdAt: now }, extra);
+            updates[`chat_meta/${conv.id}`] = { lastAt: now, lastSender: currentUser, lastText: previewText(type, extra) };
+            if (conv.type === 'private') {
+                updates[`chat_conversations/${conv.id}/memberIds/${currentUser}`] = true;
+                updates[`chat_conversations/${conv.id}/memberIds/${conv.other}`] = true;
+            }
+            return db.ref().update(updates).catch(e => alert('Gagal mengirim: ' + e.message));
+        }
+
+        function updateComposer() {
+            const has = document.getElementById('chatInput').value.trim().length > 0;
+            document.getElementById('btnSendText').classList.toggle('hidden', !has);
+            document.getElementById('btnMic').classList.toggle('hidden', has);
+        }
+
+        function sendChatText() {
+            const inp = document.getElementById('chatInput');
+            const t = inp.value.trim();
+            if (!t) return;
+            inp.value = '';
+            updateComposer();
+            chatSend('text', { text: t.slice(0, 2000) });
+        }
+
+        function openCrewChat() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().catch(() => {});
+            }
+            showPage('crew-chat');
+        }
+
+        function crewChatBack() {
+            if (chatCurrent) { closeConv(); renderConvList(); }
+            else showPage('home');
+        }
+
+        function closeConv() {
+            if (chatMsgRef) chatMsgRef.off();
+            if (chatPeerRef) chatPeerRef.off();
+            chatMsgRef = null; chatPeerRef = null;
+            chatCurrent = null; peerReadAt = 0;
+            document.getElementById('crewConvView').classList.add('hidden');
+            document.getElementById('crewListView').classList.remove('hidden');
+            document.getElementById('crewConvTitle').innerText = 'Chat Crew';
+            document.getElementById('crewConvSub').innerText = 'Komunikasi internal';
+            document.getElementById('btnClearGroup').classList.add('hidden');
+            recomputeUnread();
+        }
+
+        function renderConvList() {
+            const list = document.getElementById('crewConvList');
+            list.innerHTML = '';
+            Object.values(chatConvs).forEach(c => {
+                const meta = chatMeta[c.id] || {};
+                const n = chatUnread[c.id] || 0;
+                const prefix = meta.lastSender === currentUser ? 'Anda: ' : (c.type === 'group' && meta.lastSender ? esc(meta.lastSender) + ': ' : '');
+                const preview = meta.lastText ? prefix + esc(meta.lastText) : 'Belum ada pesan';
+                const el = document.createElement('div');
+                el.className = 'flex items-center gap-3 p-3 border-b border-gray-200 active:bg-gray-100 cursor-pointer';
+                el.onclick = () => openChatConv(c.id);
+                el.innerHTML = `
+                    <img src="${avatarOf(c.type === 'group' ? 'Crew Jatimakmur' : c.name)}" class="w-12 h-12 rounded-full object-cover">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-900 truncate">${esc(c.name)}</span>
+                            <span class="text-[10px] ${n ? 'text-green-600 font-bold' : 'text-gray-400'}">${meta.lastAt ? jakTime(meta.lastAt) : ''}</span>
+                        </div>
+                        <div class="flex justify-between items-center gap-2">
+                            <span class="text-xs text-gray-500 truncate">${preview}</span>
+                            ${n ? `<span class="bg-green-500 text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center">${n}</span>` : ''}
+                        </div>
+                    </div>`;
+                list.appendChild(el);
+            });
+        }
+
+        function openChatConv(id) {
+            if (chatMsgRef) chatMsgRef.off();
+            if (chatPeerRef) chatPeerRef.off();
+            chatCurrent = id; chatLastDay = ''; chatLastCreatedAt = 0; chatMsgLimit = 100; peerReadAt = 0;
+            const c = chatConvs[id];
+            document.getElementById('crewListView').classList.add('hidden');
+            document.getElementById('crewConvView').classList.remove('hidden');
+            document.getElementById('crewConvTitle').innerText = c.name;
+            document.getElementById('crewConvSub').innerText = c.type === 'group' ? 'Grup crew' : 'Pesan pribadi';
+            document.getElementById('btnClearGroup').classList.toggle('hidden', !(c.type === 'group' && chatIsAdmin));
+            document.getElementById('crewMessages').innerHTML = '';
+            if (c.type === 'private') {
+                chatPeerRef = db.ref(`chat_reads/${c.other}/${id}`);
+                chatPeerRef.on('value', s => {
+                    peerReadAt = s.val() || 0;
+                    document.querySelectorAll('.tick').forEach(t => {
+                        const ok = Number(t.dataset.ts) <= peerReadAt;
+                        t.textContent = ok ? '✓✓' : '✓';
+                        t.className = t.className.replace(/text-(blue|gray)-500|text-(blue|gray)-400/, ok ? 'text-blue-500' : 'text-gray-400');
+                    });
+                });
+            }
+            attachChatMessages();
+        }
+
+        function attachChatMessages() {
+            if (chatMsgRef) chatMsgRef.off();
+            chatLastDay = ''; chatLastCreatedAt = 0;
+            document.getElementById('crewMessages').innerHTML = '';
+            chatMsgRef = db.ref('chat_messages/' + chatCurrent).orderByChild('createdAt').limitToLast(chatMsgLimit);
+            chatMsgRef.on('child_added', snap => renderChatMsg(snap.key, snap.val()));
+            chatMsgRef.on('child_changed', snap => renderChatMsg(snap.key, snap.val()));
+            chatMsgRef.on('child_removed', snap => { const el = document.getElementById('msg-' + snap.key); if (el) el.remove(); });
+        }
+
+        function loadOlderChat() {
+            chatMsgLimit += 100;
+            attachChatMessages();
+        }
+
+        function safeMedia(url, prefix) {
+            return typeof url === 'string' && url.startsWith(prefix);
+        }
+
+        function buildBubble(key, m, mine, ts) {
+            const conv = chatConvs[chatCurrent];
+            let body;
+            if (m.deletedAt) body = `<i class="text-gray-500 text-xs">🚫 Pesan ini dihapus oleh administrator</i>`;
+            else if (m.type === 'text') body = `<div class="whitespace-pre-wrap break-words">${esc(m.text)}</div>`;
+            else if (m.type === 'image' && safeMedia(m.mediaUrl, 'data:image/')) body = `<img src="${m.mediaUrl}" class="rounded-lg max-w-full max-h-60 cursor-pointer" onclick="event.stopPropagation(); openFullImg(this.src,'Foto chat')">`;
+            else if (m.type === 'voice' && safeMedia(m.mediaUrl, 'data:audio/')) body = `<audio controls preload="metadata" src="${m.mediaUrl}" class="max-w-[220px] h-9" onclick="event.stopPropagation()"></audio><div class="text-[9px] text-gray-500">${fmtDur(m.audioDuration)}</div>`;
+            else body = `<i class="text-xs text-gray-500">Media tidak tersedia</i>`;
+
+            const sender = (!mine && conv && conv.type === 'group') ? `<div class="text-[10px] font-bold text-emerald-700">${esc(m.senderId)}</div>` : '';
+            let tick = '';
+            if (mine && conv && conv.type === 'private') {
+                const ok = ts <= peerReadAt;
+                tick = `<span class="tick ml-1 text-[10px] ${ok ? 'text-blue-500' : 'text-gray-400'}" data-ts="${ts}">${ok ? '✓✓' : '✓'}</span>`;
+            }
+            const adminAttr = (chatIsAdmin && !m.deletedAt) ? ` onclick="adminDeleteMsg('${key}')" style="cursor:pointer" title="Admin: hapus pesan"` : '';
+            return `<div class="max-w-[80%] rounded-lg px-2.5 py-1.5 shadow-sm text-[13px] ${mine ? 'chat-tail-me' : 'chat-tail-other'}"${adminAttr}>${sender}${body}<div class="text-[9px] text-gray-500 text-right mt-0.5">${jakTime(ts)}${tick}</div></div>`;
+        }
+
+        function renderChatMsg(key, m) {
+            if (!m) return;
+            const box = document.getElementById('crewMessages');
+            const ts = typeof m.createdAt === 'number' ? m.createdAt : Date.now();
+            const mine = m.senderId === currentUser;
+            const row = document.createElement('div');
+            row.id = 'msg-' + key;
+            row.className = 'flex ' + (mine ? 'justify-end' : 'justify-start');
+            row.innerHTML = buildBubble(key, m, mine, ts);
+
+            const old = document.getElementById('msg-' + key);
+            if (old) { old.replaceWith(row); return; }
+
+            const day = jakDay(ts);
+            if (day !== chatLastDay) {
+                chatLastDay = day;
+                const sep = document.createElement('div');
+                sep.className = 'text-center my-2';
+                sep.innerHTML = `<span class="bg-white/80 text-[10px] px-3 py-1 rounded-lg text-gray-600 shadow-sm">${day}</span>`;
+                box.appendChild(sep);
+            }
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+
+            if (typeof m.createdAt === 'number' && m.createdAt > chatLastCreatedAt) chatLastCreatedAt = m.createdAt;
+            if (!mine && isChatVisible()) markChatRead();
+        }
+
+        function markChatRead() {
+            if (!chatCurrent || !chatLastCreatedAt || !isChatVisible()) return;
+            if ((chatReads[chatCurrent] || 0) >= chatLastCreatedAt) return;
+            chatReads[chatCurrent] = chatLastCreatedAt;
+            chatUnread[chatCurrent] = 0;
+            renderBadges();
+            db.ref(`chat_reads/${currentUser}/${chatCurrent}`).set(chatLastCreatedAt);
+        }
+
+        function notifyIncoming(c, m) {
+            const conv = chatConvs[c];
+            if (!conv) return;
+            const viewingNow = (chatCurrent === c && isChatVisible());
+            if (!viewingNow && localStorage.getItem('jtm_chat_sound') !== '0') chatBeep();
+            if ('Notification' in window && Notification.permission === 'granted' && (document.hidden || !viewingNow)) {
+                try {
+                    new Notification(conv.type === 'group' ? conv.name : m.lastSender, {
+                        body: (conv.type === 'group' ? m.lastSender + ': ' : '') + (m.lastText || 'Pesan baru'),
+                        tag: c
+                    });
+                } catch (e) {}
             }
         }
 
-        // VARIABEL GAME CATUR
+        function chatBeep() {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!window._jtmAC) window._jtmAC = new AC();
+                const o = window._jtmAC.createOscillator(), g = window._jtmAC.createGain();
+                o.frequency.value = 880; g.gain.value = 0.15;
+                o.connect(g); g.connect(window._jtmAC.destination);
+                o.start(); o.stop(window._jtmAC.currentTime + 0.18);
+            } catch (e) {}
+        }
+
+        // ----- Admin (verifikasi role dari database, bukan dari nama tampilan saja) -----
+        function auditLog(action, targetId, metadata) {
+            db.ref('audit_logs').push({
+                actorId: currentUser, action: action, targetId: targetId || '',
+                createdAt: firebase.database.ServerValue.TIMESTAMP, metadata: metadata || {}
+            });
+        }
+
+        function adminDeleteMsg(key) {
+            if (!chatIsAdmin || !chatCurrent) return;
+            if (!confirm('Hapus pesan ini untuk semua anggota?')) return;
+            db.ref(`chat_messages/${chatCurrent}/${key}`).update({
+                deletedAt: firebase.database.ServerValue.TIMESTAMP, deletedBy: currentUser,
+                text: null, mediaUrl: null
+            }).then(() => auditLog('message_delete', chatCurrent + '/' + key, {}))
+              .catch(e => alert('Gagal menghapus: ' + e.message));
+        }
+
+        function clearGroupHistory() {
+            if (!chatIsAdmin) return alert('Hanya administrator yang dapat melakukan ini.');
+            if (!confirm('Kosongkan seluruh riwayat chat grup?')) return;
+            db.ref('chat_messages/' + CHAT_GROUP).remove()
+              .then(() => db.ref('chat_meta/' + CHAT_GROUP).remove())
+              .then(() => auditLog('group_clear', CHAT_GROUP, {}))
+              .catch(e => alert('Gagal: ' + e.message));
+        }
+
+        // ----- Gambar -----
+        function chatPickImage(input) {
+            const f = input.files && input.files[0];
+            input.value = '';
+            if (!f) return;
+            const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            if (!allowed.includes(f.type)) return alert('Format gambar tidak didukung (JPG, PNG, WEBP, GIF).');
+            if (f.size > 10 * 1024 * 1024) return alert('Ukuran gambar maksimal 10 MB.');
+            const r = new FileReader();
+            r.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+                    const c = document.createElement('canvas');
+                    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    const data = c.toDataURL('image/jpeg', 0.8);
+                    if (data.length > CHAT_MAX_IMG) return alert('Gambar terlalu besar setelah dikompres. Pilih gambar lain.');
+                    pendingImage = data;
+                    document.getElementById('chatPreviewImg').src = data;
+                    document.getElementById('chatPreviewModal').style.display = 'flex';
+                };
+                img.onerror = () => alert('File gambar tidak valid.');
+                img.src = e.target.result;
+            };
+            r.readAsDataURL(f);
+        }
+
+        function chatConfirmImage(ok) {
+            document.getElementById('chatPreviewModal').style.display = 'none';
+            if (ok && pendingImage) {
+                chatSend('image', { mediaUrl: pendingImage, mediaMimeType: 'image/jpeg', mediaSize: Math.round(pendingImage.length * 0.75) });
+            }
+            pendingImage = null;
+        }
+
+        // ----- Pesan suara -----
+        async function chatVoiceStart() {
+            if (!chatCurrent) return;
+            if (!navigator.mediaDevices || !window.MediaRecorder) return alert('Perekaman suara tidak didukung browser ini.');
+            try { recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+            catch (e) { return alert('Izin mikrofon ditolak. Aktifkan izin mikrofon di pengaturan browser.'); }
+            const cands = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+            const mime = cands.find(t => MediaRecorder.isTypeSupported(t)) || '';
+            rec = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined);
+            recMime = rec.mimeType || mime || 'audio/webm';
+            recChunks = [];
+            rec.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+            rec.start();
+            recStartTs = Date.now();
+            document.getElementById('recBar').classList.remove('hidden');
+            document.getElementById('recBar').classList.add('flex');
+            recTickId = setInterval(() => {
+                const sec = Math.floor((Date.now() - recStartTs) / 1000);
+                document.getElementById('recTimer').innerText = fmtDur(sec);
+                if (sec >= 60) chatVoiceStop(true);
+            }, 250);
+        }
+
+        function stopRecStream() {
+            if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+        }
+
+        function chatVoiceStop(keep) {
+            if (!rec) return;
+            clearInterval(recTickId);
+            const r = rec; rec = null;
+            recDuration = Math.max(1, Math.round((Date.now() - recStartTs) / 1000));
+            document.getElementById('recBar').classList.add('hidden');
+            document.getElementById('recBar').classList.remove('flex');
+            r.onstop = () => {
+                stopRecStream();
+                if (keep && recChunks.length) {
+                    recBlob = new Blob(recChunks, { type: recMime });
+                    showVoicePreview();
+                }
+                recChunks = [];
+            };
+            if (r.state !== 'inactive') r.stop(); else r.onstop();
+        }
+
+        function showVoicePreview() {
+            const a = document.getElementById('voicePreviewAudio');
+            a.src = URL.createObjectURL(recBlob);
+            const bar = document.getElementById('voicePreviewBar');
+            bar.classList.remove('hidden'); bar.classList.add('flex');
+        }
+
+        function discardVoice() {
+            recBlob = null;
+            const a = document.getElementById('voicePreviewAudio');
+            if (a.src) URL.revokeObjectURL(a.src);
+            a.removeAttribute('src');
+            const bar = document.getElementById('voicePreviewBar');
+            bar.classList.add('hidden'); bar.classList.remove('flex');
+        }
+
+        function chatSendVoice() {
+            if (!recBlob) return;
+            const okTypes = ['audio/webm', 'audio/mp4', 'audio/ogg'];
+            if (!okTypes.some(t => recBlob.type.startsWith(t))) { discardVoice(); return alert('Format audio tidak didukung.'); }
+            if (recBlob.size > CHAT_MAX_AUD) { discardVoice(); return alert('Rekaman terlalu besar. Rekam lebih singkat.'); }
+            const dur = recDuration;
+            const blob = recBlob;
+            const r = new FileReader();
+            r.onload = () => {
+                discardVoice();
+                chatSend('voice', { mediaUrl: r.result, mediaMimeType: blob.type, mediaSize: blob.size, audioDuration: dur });
+            };
+            r.readAsDataURL(blob);
+        }
+
+        // =========================================================================
+        // FUNGSI ASLI (dipertahankan)
+        // =========================================================================
         const pieceIcons = {
-            'w': { 
-                'p': 'https://chessboardjs.com/img/chesspieces/wikipedia/wP.png', 
-                'n': 'https://chessboardjs.com/img/chesspieces/wikipedia/wN.png', 
-                'b': 'https://chessboardjs.com/img/chesspieces/wikipedia/wB.png', 
-                'r': 'https://chessboardjs.com/img/chesspieces/wikipedia/wR.png', 
-                'q': 'https://chessboardjs.com/img/chesspieces/wikipedia/wQ.png', 
-                'k': 'https://chessboardjs.com/img/chesspieces/wikipedia/wK.png' 
+            'w': {
+                'p': 'https://chessboardjs.com/img/chesspieces/wikipedia/wP.png',
+                'n': 'https://chessboardjs.com/img/chesspieces/wikipedia/wN.png',
+                'b': 'https://chessboardjs.com/img/chesspieces/wikipedia/wB.png',
+                'r': 'https://chessboardjs.com/img/chesspieces/wikipedia/wR.png',
+                'q': 'https://chessboardjs.com/img/chesspieces/wikipedia/wQ.png',
+                'k': 'https://chessboardjs.com/img/chesspieces/wikipedia/wK.png'
             },
-            'b': { 
-                'p': 'https://chessboardjs.com/img/chesspieces/wikipedia/bP.png', 
-                'n': 'https://chessboardjs.com/img/chesspieces/wikipedia/bN.png', 
-                'b': 'https://chessboardjs.com/img/chesspieces/wikipedia/bB.png', 
-                'r': 'https://chessboardjs.com/img/chesspieces/wikipedia/bR.png', 
-                'q': 'https://chessboardjs.com/img/chesspieces/wikipedia/bQ.png', 
-                'k': 'https://chessboardjs.com/img/chesspieces/wikipedia/bK.png' 
+            'b': {
+                'p': 'https://chessboardjs.com/img/chesspieces/wikipedia/bP.png',
+                'n': 'https://chessboardjs.com/img/chesspieces/wikipedia/bN.png',
+                'b': 'https://chessboardjs.com/img/chesspieces/wikipedia/bB.png',
+                'r': 'https://chessboardjs.com/img/chesspieces/wikipedia/bR.png',
+                'q': 'https://chessboardjs.com/img/chesspieces/wikipedia/bQ.png',
+                'k': 'https://chessboardjs.com/img/chesspieces/wikipedia/bK.png'
             }
         };
 
@@ -744,63 +1243,52 @@
         let chessSyncListener = null;
         let chessTimerInterval = null;
         let isSpectator = false;
-        
         let wTime = 10 * 60;
         let bTime = 10 * 60;
         let lastTimestamp = 0;
-
         let lastRenderedFen = "start";
         let isAnimatingPiece = false;
         let scoreProcessedForGame = false;
         let chessChatListener = null;
         let bottomScoreListener, topScoreListener;
         let lastBottomPlayer, lastTopPlayer;
-        
         let pendingPromotion = null;
         let audioUnlocked = false;
         let botIsThinking = false;
 
-        const KECAMATAN_POLYGONS = [
-            { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 },
-            { name: "JATIASIH", lat: -6.3046, lng: 106.9615 },
-            { name: "PONDOK MELATI", lat: -6.3117, lng: 106.9267 },
-            { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 },
-            { name: "DUREN SAWIT", lat: -6.2343, lng: 106.9194 },
-            { name: "MAKASAR", lat: -6.2735, lng: 106.8841 },
-            { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
-        ];
-
         window.onload = () => {
             db.ref('crew_settings').on('value', snap => {
-                if(snap.exists()) {
+                if (snap.exists()) {
                     userPins = snap.val();
                 } else {
                     db.ref('crew_settings').set(userPins);
                 }
                 refreshUserDropdown();
-                if(currentUser === "Okta") renderCrewAdminList();
+                buildConvs();
+                if (currentUser === "Okta") renderCrewAdminList();
             });
 
-            if(currentUser) bukaApp(currentUser);
+            attachTracking();
+            initLeafletMap();
+            listenToChessChallenges();
             setInterval(updateTimers, 1000);
             startDeliveryStatusListener();
             checkAndResetIdsAtMidnight();
 
-            listenToChessChallenges();
-            initLeafletMap();
-            
+            if (currentUser) bukaApp(currentUser);
+
             document.body.addEventListener('click', () => {
-                if(!audioUnlocked) {
+                if (!audioUnlocked) {
                     ['snd-move', 'snd-capture', 'snd-check', 'snd-end', 'snd-promote', 'snd-castle'].forEach(id => {
                         const au = document.getElementById(id);
-                        if(au) { au.play().catch(e=>{}); au.pause(); au.currentTime = 0; }
+                        if (au) { au.play().catch(e => {}); au.pause(); au.currentTime = 0; }
                     });
                     audioUnlocked = true;
                 }
             }, { once: true });
         };
 
-        // FUNGSI KONFIRMASI PEMBAYARAN CASH
+        // KONFIRMASI PEMBAYARAN CASH
         function openCashConfirmModal(id, waLink) {
             if (allData[id].paymentMode) {
                 pushDeliveryStatus(currentUser);
@@ -820,11 +1308,13 @@
             if (!pendingChatAction) return;
             const id = pendingChatAction.id;
             const waLink = pendingChatAction.waLink;
-            const mode = isCash ? 'CASH' : 'NON_CASH'; // Disesuaikan ke standar baru
-            
+            const mode = isCash ? 'CASH' : 'NON_CASH';
+            const custName = allData[id] ? allData[id].name : '';
             db.ref('customers/' + id).update({ paymentMode: mode }).then(() => {
                 closeCashConfirmModal();
                 pushDeliveryStatus(currentUser);
+                // Konfirmasi pelanggan berhasil -> buat sesi tracking 20 menit
+                ensureTrackingSession(id, custName).catch(e => console.warn('Tracking gagal dibuat:', e));
                 window.open(waLink, '_blank');
             }).catch(err => alert("Gagal menyimpan status pembayaran: " + err.message));
         }
@@ -841,9 +1331,9 @@
 
         function refreshUserDropdown() {
             const logSel = document.getElementById('selectUser');
-            if(!logSel) return;
+            if (!logSel) return;
             logSel.innerHTML = '<option value="">-- PILIH NAMA --</option>';
-            Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${n}">${n}</option>`);
+            Object.keys(userPins).sort().forEach(n => logSel.innerHTML += `<option value="${esc(n)}">${esc(n)}</option>`);
         }
 
         function showCrewManager() {
@@ -866,12 +1356,12 @@
                 list.innerHTML += `
                     <div class="flex justify-between items-center bg-gray-50 p-2 px-3 rounded-xl border border-gray-100">
                         <div class="flex flex-col">
-                            <span class="font-black text-blue-900 text-[10px] uppercase italic">${n}</span>
+                            <span class="font-black text-blue-900 text-[10px] uppercase italic">${esc(n)}</span>
                             <span class="text-[8px] text-gray-400 font-bold">PIN: ****</span>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="editCrew('${n}')" class="text-blue-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-edit"></i></button>
-                            ${!isProtected ? `<button onclick="deleteCrew('${n}')" class="text-red-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-trash"></i></button>` : ''}
+                            <button onclick="editCrew('${esc(n)}')" class="text-blue-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-edit"></i></button>
+                            ${!isProtected ? `<button onclick="deleteCrew('${esc(n)}')" class="text-red-500 w-6 h-6 bg-white rounded-md shadow-sm flex items-center justify-center text-[10px]"><i class="fa fa-trash"></i></button>` : ''}
                         </div>
                     </div>
                 `;
@@ -881,25 +1371,31 @@
         function saveCrew() {
             const name = document.getElementById('newCrewName').value.trim();
             const pin = document.getElementById('newCrewPin').value.trim();
-            if(!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
-            
-            if(editCrewId && editCrewId !== name) { delete userPins[editCrewId]; }
+            if (!name || pin.length !== 4) return alert("Nama & PIN 4 Digit wajib diisi!");
+            if (editCrewId && editCrewId !== name) { delete userPins[editCrewId]; }
             userPins[name] = pin;
             db.ref('crew_settings').set(userPins).then(() => { alert("Data Crew Terupdate!"); cancelCrewEdit(); });
         }
 
         function editCrew(n) {
-            editCrewId = n; document.getElementById('newCrewName').value = n; document.getElementById('newCrewPin').value = userPins[n];
+            editCrewId = n;
+            document.getElementById('newCrewName').value = n;
+            document.getElementById('newCrewPin').value = userPins[n];
             document.getElementById('btnCancelCrew').classList.remove('hidden');
         }
 
-        function deleteCrew(n) { if(confirm(`Hapus crew ${n} dari database?`)) { delete userPins[n]; db.ref('crew_settings').set(userPins); } }
-        function cancelCrewEdit() { editCrewId = null; document.getElementById('newCrewName').value = ""; document.getElementById('newCrewPin').value = ""; document.getElementById('btnCancelCrew').classList.add('hidden'); }
+        function deleteCrew(n) { if (confirm(`Hapus crew ${n} dari database?`)) { delete userPins[n]; db.ref('crew_settings').set(userPins); } }
+        function cancelCrewEdit() {
+            editCrewId = null;
+            document.getElementById('newCrewName').value = "";
+            document.getElementById('newCrewPin').value = "";
+            document.getElementById('btnCancelCrew').classList.add('hidden');
+        }
 
         function changeProfilePhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     const base64 = e.target.result;
                     document.getElementById('userAvatar').src = base64;
                     localStorage.setItem('profile_pic_' + currentUser, base64);
@@ -913,58 +1409,71 @@
             document.getElementById('userNameFull').innerText = currentUser;
             const savedPic = localStorage.getItem('profile_pic_' + currentUser);
             const navAvatar = document.getElementById('navUserAvatar');
-            const targetSrc = savedPic ? savedPic : `https://ui-avatars.com/api/?name=${currentUser}&background=006491&color=fff`;
-            
+            const targetSrc = savedPic ? savedPic : avatarOf(currentUser);
             document.getElementById('userAvatar').src = targetSrc;
             navAvatar.src = targetSrc;
             navAvatar.classList.remove('hidden');
 
-            if(currentUser === "Okta") {
-                document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('gojekMenu').classList.remove('hidden');
+            if (currentUser === "Okta") {
+                document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('gojekMenu').classList.remove('hidden');
             } else {
-                document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('gojekMenu').classList.add('hidden'); closeCrewManager();
+                document.getElementById('adminPanel').classList.add('hidden');
+                document.getElementById('gojekMenu').classList.add('hidden');
+                closeCrewManager();
             }
         }
 
         function prosesLogin() {
             const u = document.getElementById('selectUser').value;
             const p = document.getElementById('inputPin').value;
-            if(p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
+            if (u && p === userPins[u]) bukaApp(u); else alert("PIN SALAH!");
         }
 
         function bukaApp(n) {
-            const isOkta = (n === "Okta");
             db.ref('presence/' + n).once('value', snapshot => {
                 const existingData = snapshot.val();
-                if (!isOkta && existingData && existingData.session !== sessionID) {
+                if (existingData && existingData.session !== sessionID && n !== "Okta") {
                     if (!confirm(`⚠️ Nama "${n}" sedang aktif. Timpa sesi lama?`)) return;
                 }
                 currentUser = n; localStorage.setItem('jtm_user', n);
                 document.getElementById('userDisplay').innerText = n;
                 document.getElementById('pinOverlay').style.display = "none";
                 document.getElementById('mainContent').style.display = "flex";
-                
-                startLocationTracking(); updatePresence(); updateProfileUI();
-                
+
+                // Peran admin dari database (role), bukan dari nama saja
+                db.ref('roles/' + n + '/admin').once('value')
+                  .then(s => { chatIsAdmin = (s.val() === true && n === 'Okta'); })
+                  .catch(() => { chatIsAdmin = false; });
+
+                updatePresence(); updateProfileUI();
+
                 db.ref('presence/' + n + '/session').on('value', snap => {
-                    if (!isOkta && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
+                    if (n !== "Okta" && snap.exists() && snap.val() !== sessionID) { alert("⚠️ Sesi Anda berakhir."); handleLogout(false); }
                 });
                 db.ref('customers').on('value', s => { allData = s.val() || {}; render(); });
+
+                if (!appInitDone) {
+                    appInitDone = true;
+                    attachChatGlobal();
+                } else {
+                    buildConvs();
+                }
             });
         }
 
-        function handleLogout(withConfirm = true) { 
-            if(withConfirm && !confirm("Keluar?")) return;
+        function handleLogout(withConfirm = true) {
+            if (withConfirm && !confirm("Keluar?")) return;
             stopLocationTracking();
-            if(currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/'+currentUser).remove(); }
-            localStorage.removeItem('jtm_user'); location.reload(); 
+            if (currentUser) { db.ref('presence/' + currentUser).off(); db.ref('presence/' + currentUser).remove(); }
+            localStorage.removeItem('jtm_user'); location.reload();
         }
 
         function debounceRender() { clearTimeout(renderTimer); renderTimer = setTimeout(() => { render(); }, 300); }
-        
-        function pushDeliveryStatus(nama, idCust = "") { 
-            if(mgtAndCashiers.includes(nama)) return; 
-            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust }); 
+
+        function pushDeliveryStatus(nama, idCust = "") {
+            if (mgtAndCashiers.includes(nama)) return;
+            db.ref('delivery_activity/' + nama).set({ name: nama, timestamp: Date.now(), idCust: idCust });
         }
 
         function startDeliveryStatusListener() {
@@ -974,10 +1483,10 @@
                 s.forEach(child => {
                     const d = child.val();
                     if (now - d.timestamp > 900000) db.ref('delivery_activity/' + child.key).remove();
-                    else { 
-                        hasData = true; 
+                    else {
+                        hasData = true;
                         const textStatus = d.idCust ? `${d.name} SEDANG MENGANTAR ID ${d.idCust}` : `${d.name} SEDANG MENGANTAR`;
-                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${textStatus})</span></div>`; 
+                        bar.innerHTML += `<div class="status-item flex items-center px-1 animate-blink"><i class="fa fa-motorcycle mr-2 text-[7px] text-red-500"></i><span>(${esc(textStatus)})</span></div>`;
                     }
                 });
                 bar.style.display = hasData ? "block" : "none";
@@ -991,17 +1500,17 @@
             Object.keys(allData).reverse().forEach(id => {
                 const i = allData[id];
                 const searchStr = `${i.name} ${i.phone} ${i.driverBy || ''} ${i.area}`.toLowerCase();
-                if(i.status !== 'done') activeCount++;
+                if (i.status !== 'done') activeCount++;
                 let wa = (i.phone || "").replace(/\D/g, '');
-                if(wa.startsWith('0')) wa = '62' + wa.slice(1);
-                
+                if (wa.startsWith('0')) wa = '62' + wa.slice(1);
+
                 let msgWa = "";
                 if (cashiersOnly.includes(currentUser)) {
                     msgWa = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${i.name}) saya ingin mengkonfirmasi .....`;
                 } else {
                     msgWa = `Halo Bapak/Ibu ${i.name}, saya ${currentUser} dari Domino's Pizza Jatimakmur. Pesanan Anda sedang saya antar,mohon ditunggu,dan tetap aktif WhatsApp ya, Terimakasih 😊.`;
                 }
-                
+
                 const waLink = `https://wa.me/${wa}?text=${encodeURIComponent(msgWa)}`;
                 const isBlockedUser = mgtAndCashiers.includes(currentUser);
 
@@ -1038,632 +1547,26 @@
                     `;
                 }
 
-                let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${i.area}</p>`;
+                let areaDisplayHtml = `<p class="text-[8px] font-black text-red-500 uppercase italic">${esc(i.area)}</p>`;
                 if (i.status === 'done' && i.historyDisplayId) {
-                    areaDisplayHtml += `<p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${i.historyDisplayId}</p>`;
+                    areaDisplayHtml += `<p class="text-[9px] font-black text-blue-700 uppercase italic mt-0.5">ID: ${esc(i.historyDisplayId)}</p>`;
                 }
 
-                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status==='done'?'border-gray-300':'border-red-500'}">
+                const cardHtml = `<div class="bg-white rounded-2xl p-4 shadow-sm border-l-8 ${i.status === 'done' ? 'border-gray-300' : 'border-red-500'}">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             ${areaDisplayHtml}
-                            <h3 class="font-black text-blue-900 text-sm leading-tight flex items-center flex-wrap gap-1">${i.name} ${i.paymentMode === 'CASH' ? '<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-300 text-[8px] align-middle shadow-sm"><i class="fa fa-dollar-sign mr-0.5"></i>CASH</span>' : ''}</h3>
+                            <h3 class="font-black text-blue-900 text-sm leading-tight flex items-center flex-wrap gap-1">${esc(i.name)} ${i.paymentMode === 'CASH' ? '<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-300 text-[8px] align-middle shadow-sm"><i class="fa fa-dollar-sign mr-0.5"></i>CASH</span>' : ''}</h3>
                             <div class="flex items-center gap-2 mt-1">
-                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status==='done'?infoSelesai:'READY'}</p>
-                                ${finalDriver ? `<span class="driver-badge">${finalDriver}</span>` : ''}
+                                <p id="timer-${id}" class="text-[10px] font-bold text-gray-400 italic">${i.status === 'done' ? esc(infoSelesai) : 'READY'}</p>
+                                ${finalDriver ? `<span class="driver-badge">${esc(finalDriver)}</span>` : ''}
                             </div>
-                            ${i.status==='done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${i.phone}</p>` : ''}
+                            ${i.status === 'done' && i.phone ? `<p class="text-[10px] text-gray-500 mt-1 font-bold"><i class="fab fa-whatsapp text-green-500 mr-1"></i>${esc(i.phone)}</p>` : ''}
                         </div>
                         <div class="flex gap-2">
-                            ${i.status !== 'done' ? 
+                            ${i.status !== 'done' ?
                             `<button onclick="pantauPesanan('${id}')" class="text-white bg-green-500 w-7 h-7 rounded-lg flex items-center justify-center shadow-sm" title="Pantau Live Radar"><i class="fa fa-satellite-dish text-[10px]"></i></button>
                              <button onclick="editData('${id}')" class="text-blue-500 bg-blue-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-edit text-[10px]"></i></button>
                              <button onclick="secureDelete('${id}')" class="text-red-500 bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"><i class="fa fa-trash text-[10px]"></i></button>
                              <button onclick="setStatus('${id}','done')" class="bg-yellow-400 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md"><i class="fa fa-check"></i></button>
-                             <button onclick="${isBlockedUser ? "alert('Management/Kasir tidak diizinkan antar')" : `goOTW('${id}')`}" class="w-9 h-9 rounded-xl flex items-center justify-center ${i.status==='otw' || isBlockedUser ?'bg-gray-100 text-gray-400':'bg-blue-500 text-white shadow-md'}"><i class="fa fa-motorcycle"></i></button>` 
-                            : `<div class="flex gap-1 items-center">
-                                 ${i.paymentMode === 'CASH' ? '<div class="bg-green-100 text-green-700 border border-green-300 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Pesanan CASH (Uang Belum Tentu Diterima)"><span class="font-black text-sm">$</span></div>' : ''}
-                                 <div class="flex flex-col items-center gap-1">
-                                     <button onclick="setStatus('${id}','active')" class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa fa-undo text-[10px]"></i></button>
-                                     ${historyGpsControlsHtml}
-                                 </div>
-                                 <a href="${waLateLink}" target="_blank" class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" title="Kirim Pesan Maaf Keterlambatan"><i class="fa fa-envelope-open-text text-[10px]"></i></a>
-                               </div>`}
-                        </div>
-                    </div>
-                    <div class="mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.photo ? `<img src="${i.photo}" onclick="openFullImg('${i.photo}', 'FOTO RUMAH - ${i.name}')" class="antaran-photo w-full h-24 object-cover rounded-xl border">` : ''}
-                    </div>
-                    <div class="flex gap-2 mt-3 ${i.status==='done'?'hidden':''}">
-                        ${i.maps ? `<a href="${i.maps}" target="_blank" class="dominos-blue text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase"><i class="fa fa-map-marker-alt mr-1"></i> Buka Maps</a>` : ''}
-                        <button onclick="openCashConfirmModal('${id}', this.getAttribute('data-walink'))" data-walink="${waLink}" class="bg-green-500 text-white py-2 rounded-lg text-center font-bold text-[9px] flex-1 italic uppercase shadow-sm active:scale-95 transition-transform"><i class="fab fa-whatsapp mr-1"></i> Chat WA</button>
-                    </div>
-                    
-                    ${i.status !== 'done' && !i.maps ? `
-                    <div class="flex items-center justify-between gap-2 mt-3 bg-red-600 p-2 rounded-xl border border-red-700 w-full shadow-inner">
-                        <span class="text-[9px] font-black text-white uppercase leading-tight">
-                            <span class="animate-blink inline-block mr-1">⚠️</span> Tekan icon maps di sebelah kanan jika telah sampai dirumah customer
-                        </span>
-                        <button onclick="ambilDanSimpanKoordinatStatus('${id}', '${nameEscaped}', false)" class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md active:scale-95" title="Ambil GPS Rumah & Foto"><i class="fa fa-map-marker-alt text-[11px]"></i></button>
-                    </div>` : ''}
-                </div>`;
-                if(i.status === 'done') histHTML += cardHtml; 
-                else if(searchStr.includes(filter)) listHTML += cardHtml;
-            });
-            list.innerHTML = listHTML; hist.innerHTML = histHTML;
-            document.getElementById('countActive').innerText = `${activeCount} AKTIF`;
-        }
-
-        function dapatkanKecamatanTerdekat(lat, lng) {
-            let kecamatanTerpilih = "JATIMAKMUR"; let jarakTerkecil = Infinity;
-            KECAMATAN_POLYGONS.forEach(kec => {
-                const R = 6371; const dLat = (kec.lat - lat) * Math.PI / 180; const dLng = (kec.lng - lng) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat * Math.PI / 180) * Math.cos(kec.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); const jarak = R * c;
-                if (jarak < jarakTerkecil) { jarakTerkecil = jarak; kecamatanTerpilih = kec.name; }
-            });
-            return kecamatanTerpilih;
-        }
-
-        function ambilDanSimpanKoordinatStatus(id, name, isHistory = false) {
-            const yakin = confirm(`Apakah anda yakin ingin menyimpan titik koordinat & ambil foto rumah untuk ${name}?`);
-            if (!yakin) return;
-            if (!navigator.geolocation) { alert("Gagal: HP tidak mendukung fitur GPS."); return; }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude; const lng = position.coords.longitude;
-                    const generatedMapsUrl = "https://maps.google.com/?q=" + lat + "," + lng;
-                    const kecamatanOtomatis = dapatkanKecamatanTerdekat(lat, lng);
-
-                    const camInput = document.getElementById('cameraCaptureHidden'); camInput.value = ""; 
-                    camInput.onchange = (event) => {
-                        if (event.target.files && event.target.files[0]) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                const img = new Image();
-                                img.onload = () => {
-                                    const canvas = document.createElement('canvas'); const TARGET_WIDTH = 400; 
-                                    canvas.width = TARGET_WIDTH; canvas.height = img.height * (TARGET_WIDTH / img.width);
-                                    const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                                    const compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-                                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, { headers: { 'Accept-Language': 'id' } })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        const addr = data.address || {}; const kelurahan = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || ""; const jalan = addr.road || "";
-                                        let areaFormatBaru = kecamatanOtomatis;
-                                        if (kelurahan || jalan) { const detailArray = []; if (kelurahan) detailArray.push(kelurahan.toUpperCase()); if (jalan) detailArray.push(jalan.toUpperCase()); areaFormatBaru = `${kecamatanOtomatis} (${detailArray.join(', ')})`; }
-                                        let updateData = { maps: generatedMapsUrl, area: areaFormatBaru, photo: compressedPhotoBase64, status: isHistory ? 'done' : (allData[id].status || 'active') };
-                                        if (allData[id]) { if (allData[id].historyDisplayId) { updateData.historyDisplayId = allData[id].historyDisplayId; } else { let currentArea = allData[id].area || ""; let extractedId = ""; if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || ""; if (extractedId) updateData.historyDisplayId = extractedId; } }
-                                        return db.ref('customers/' + id).update(updateData).then(() => areaFormatBaru);
-                                    })
-                                    .then((areaFinal) => { alert("Berhasil!\nKoordinat & Foto berhasil disimpan ke database.\n\nArea: " + areaFinal); })
-                                    .catch((err) => {
-                                        let fallbackData = { maps: generatedMapsUrl, area: kecamatanOtomatis, photo: compressedPhotoBase64, status: isHistory ? 'done' : (allData[id].status || 'active') };
-                                        if (allData[id]) { if (allData[id].historyDisplayId) { fallbackData.historyDisplayId = allData[id].historyDisplayId; } else { let currentArea = allData[id].area || ""; let extractedId = ""; if (currentArea.startsWith("ID ")) extractedId = currentArea.split(" ")[1] || ""; if (extractedId) fallbackData.historyDisplayId = extractedId; } }
-                                        db.ref('customers/' + id).update(fallbackData).then(() => { alert("Berhasil dengan batasan!\nKoordinat & Foto tersimpan, tetapi gagal memuat nama jalan. Area diset ke: " + kecamatanOtomatis); });
-                                    });
-                                };
-                                img.src = e.target.result;
-                            };
-                            reader.readAsDataURL(event.target.files[0]);
-                        }
-                    };
-                    camInput.click();
-                },
-                (error) => { alert("Gagal mendeteksi GPS. Pastikan izin lokasi HP aktif."); },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-
-        function openFullImg(url, caption = "") { document.getElementById('fullImg').src = url; document.getElementById('modalCaption').innerText = caption; document.getElementById('imgModal').style.display = 'flex'; initPinchZoom(); }
-        function closeFullImgModal() { document.getElementById('imgModal').style.display = 'none'; resetPinchZoom(); }
-        function secureDelete(id) { const p = prompt("PIN:"); if(p === userPins[currentUser]) db.ref('customers/' + id).remove(); }
-        
-        function processImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const c = document.createElement('canvas'); const THUMB_W = 600; c.width = THUMB_W; c.height = img.height * (THUMB_W / img.width);
-                        const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, c.width, c.height);
-                        photoBase64 = c.toDataURL('image/jpeg', 0.75);
-                        document.getElementById('imgPrev').src = photoBase64; document.getElementById('imgPrev').classList.remove('hidden'); document.getElementById('btnRemovePhoto').classList.remove('hidden');
-                        document.getElementById('btnDrawPhoto').classList.remove('hidden'); document.getElementById('photoStatus').innerText = "FOTO TERKOMPRES!";
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function saveData() {
-            const a = document.getElementById('custArea').value; const n = document.getElementById('custName').value; const ph = document.getElementById('custPhone').value;
-            const eid = document.getElementById('editId').value; if(!a || !n) return alert("Lengkapi data!");
-            if (ph) {
-                const cleanInputPhone = ph.replace(/\D/g, '');
-                const isDuplicate = Object.keys(allData).some(id => {
-                    if (id === eid) return false; 
-                    const item = allData[id];
-                    const cleanExistPhone = (item.phone || "").replace(/\D/g, '');
-                    return item.status !== 'done' && cleanExistPhone === cleanInputPhone && cleanInputPhone !== "";
-                });
-                if (isDuplicate) { alert("⚠️ NOMOR SUDAH ADA DI DAFTAR AKTIF!"); return; }
-            }
-            const d = { area: a.toUpperCase(), name: n, phone: ph, maps: document.getElementById('custMaps').value, photo: photoBase64, status: 'active', timestamp: Date.now() };
-            const ref = eid ? db.ref('customers/'+eid).update(d) : db.ref('customers').push(d);
-            ref.then(() => resetForm());
-        }
-
-        function editData(id) {
-            const i = allData[id]; document.getElementById('editId').value = id; document.getElementById('custArea').value = i.area;
-            document.getElementById('custName').value = i.name; document.getElementById('custPhone').value = i.phone; document.getElementById('custMaps').value = i.maps;
-            if(i.photo) { 
-                photoBase64 = i.photo; document.getElementById('imgPrev').src = i.photo; document.getElementById('imgPrev').classList.remove('hidden'); 
-                document.getElementById('btnRemovePhoto').classList.remove('hidden'); document.getElementById('btnDrawPhoto').classList.remove('hidden'); 
-            }
-            document.getElementById('formTitle').innerText = "Edit Antaran"; document.getElementById('cancelBtn').classList.remove('hidden'); showPage('add');
-        }
-
-        function goOTW(id) { 
-            if(mgtAndCashiers.includes(currentUser)) return alert("Management/Kasir tidak diizinkan mengantar!");
-            if(allData[id].status !== 'otw') { 
-                db.ref('customers/'+id).update({ status: 'otw', startTime: Date.now(), driverBy: currentUser }); pushDeliveryStatus(currentUser); 
-            } 
-        }
-
-        function setStatus(id, stat) { 
-            if (stat === 'done') { db.ref('customers/'+id).update({ status: stat, doneTime: Date.now(), doneBy: currentUser }); } 
-            else { db.ref('customers/'+id).update({ status: stat, historyDisplayId: null }); }
-        }
-
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-'+id));
-            document.querySelectorAll('.nav-item').forEach(n => {
-                if(n.id === 'nav-'+id) n.classList.add('active'); else n.classList.remove('active');
-            });
-            if(id === 'home') closeCrewManager();
-            if(id === 'chess-lobby') renderChessOnlineList();
-            if(id !== 'chess-game' && typeof chessTimerInterval !== 'undefined' && chessTimerInterval) clearInterval(chessTimerInterval);
-
-            if (id === 'chat' && leafMap) {
-                setTimeout(() => { leafMap.invalidateSize(); }, 300);
-            }
-        }
-
-        function updateTimers() {
-            Object.keys(allData).forEach(id => {
-                if(allData[id].status === 'otw') {
-                    const elapsed = Math.floor((Date.now() - allData[id].startTime) / 1000);
-                    const rem = (20 * 60) - elapsed;
-                    if(elapsed >= 1200) { db.ref('customers/' + id).update({ status: 'done', doneTime: Date.now(), doneBy: allData[id].driverBy || "System" }); return; }
-                    const el = document.getElementById('timer-'+id);
-                    if(el) { const m = Math.max(0, Math.floor(rem / 60)); const s = Math.max(0, rem % 60); el.innerText = `${m}:${s < 10 ? '0'+s : s} MENIT`; if(rem < 0) el.className = "text-[10px] font-bold text-red-600 italic"; }
-                }
-            });
-        }
-
-        function updatePresence() {
-            if(!currentUser) return;
-            const photo = localStorage.getItem('profile_pic_' + currentUser) || "";
-            const userStatusRef = db.ref('presence/' + currentUser);
-            userStatusRef.update({ online: true, session: sessionID, lastActive: Date.now(), photo: photo }); 
-            userStatusRef.onDisconnect().remove();
-            
-            db.ref('presence').on('value', s => {
-                const el = document.getElementById('onlineBar'); el.innerHTML = "";
-                s.forEach(u => {
-                    const data = u.val(); const usrKey = u.key;
-                    const photoUrl = data.photo || `https://ui-avatars.com/api/?name=${usrKey}&background=006491&color=fff`;
-                    el.innerHTML += `<span class="flex items-center gap-1 shrink-0 bg-white/50 pr-2 rounded-full border border-blue-900/5">
-                        <img src="${photoUrl}" class="online-avatar cursor-pointer" onclick="openFullImg('${photoUrl}', 'PROFIL: ${usrKey}')"> ${usrKey}
-                    </span>`;
-                    
-                    if (leafMap && data.lat && data.lng) {
-                        const pos = [data.lat, data.lng];
-                        if (driverMarkers[usrKey]) { driverMarkers[usrKey].setLatLng(pos); } 
-                        else { driverMarkers[usrKey] = L.marker(pos).addTo(leafMap).bindPopup(usrKey); }
-                    }
-                });
-                
-                Object.keys(driverMarkers).forEach(mKey => {
-                    if (!s.hasChild(mKey) || !s.child(mKey).val().lat) {
-                        if(leafMap) leafMap.removeLayer(driverMarkers[mKey]);
-                        delete driverMarkers[mKey];
-                    }
-                });
-            });
-        }
-
-        function resetForm() {
-            document.getElementById('editId').value = ""; document.getElementById('custArea').value = ""; document.getElementById('custName').value = "";
-            document.getElementById('custPhone').value = ""; document.getElementById('custMaps').value = "";
-            removePhoto(); document.getElementById('formTitle').innerText = "Tambah Antaran";
-            document.getElementById('cancelBtn').classList.add('hidden'); showPage('list');
-        }
-
-        function removePhoto() { 
-            photoBase64 = ""; document.getElementById('imgPrev').classList.add('hidden'); document.getElementById('btnRemovePhoto').classList.add('hidden'); 
-            document.getElementById('btnDrawPhoto').classList.add('hidden'); document.getElementById('photoStatus').innerText = "Foto Rumah"; 
-        }
-        function cancelEdit() { resetForm(); }
-        function clearAllHistory() { if (confirm("Kosongkan history?")) { Object.keys(allData).forEach(id => { if(allData[id].status === 'done') db.ref('customers/' + id).remove(); }); } }
-        
-        function changePinPrompt() {
-            const old = prompt("Masukkan PIN Lama:");
-            if (old === userPins[currentUser]) {
-                const baru = prompt("Masukkan PIN Baru (4 Digit):");
-                if (baru && baru.length === 4) { userPins[currentUser] = baru; db.ref('crew_settings').set(userPins).then(() => alert("PIN Berhasil diubah!")); } 
-                else { alert("PIN harus 4 digit!"); }
-            } else { alert("PIN Salah!"); }
-        }
-
-        function toggleGojekInput() {
-            const view = document.getElementById('gojekInputView'); const icon = document.getElementById('gojekChevron');
-            if (view.classList.contains('hidden')) { view.classList.remove('hidden'); icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); } 
-            else { view.classList.add('hidden'); icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
-        }
-
-        function prosesWaGojek() {
-            let n = document.getElementById('gojekWaNumber').value.trim(); if (!n) return alert("Masukkan Nomor HP Customer Gojek terlebih dahulu!");
-            let nClean = n.replace(/\D/g, ''); if (!nClean) return alert("Nomor tidak valid!");
-            let wa = nClean.startsWith('0') ? '62' + nClean.slice(1) : (nClean.startsWith('8') ? '62' + nClean : nClean);
-            let msg = "Halo bapak/ibu saya okta driver gojek,mau kirim paket";
-            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank'); document.getElementById('gojekWaNumber').value = ""; 
-        }
-
-        function openWaDirect() {
-            let custName = document.getElementById('waDirectCustName').value.trim(); let custId = document.getElementById('waDirectCustId').value.trim().replace(/\D/g, ''); let n = document.getElementById('waDirectNumber').value.replace(/\D/g, '');
-            let isCash = document.getElementById('waDirectCashPayment').checked; let isGrabConfirm = document.getElementById('waDirectGrabConfirmation').checked;
-            if(!custName) return alert("Nama Customer wajib diisi!"); if(!custId || custId.length !== 3) return alert("ID Pelanggan wajib 3 digit angka!"); if(!n) return alert("Nomor HP kosong atau tidak valid!");
-            
-            let wa = n.startsWith('0') ? '62' + n.slice(1) : (n.startsWith('8') ? '62' + n : n); const searchN = n.startsWith('0') ? n.slice(1) : (n.startsWith('62') ? n.slice(2) : n);
-            const activeId = Object.keys(allData).find(id => { const dataN = (allData[id].phone || "").replace(/\D/g, ''); return allData[id].status !== 'done' && dataN.includes(searchN); });
-            
-            if (activeId) {
-                document.getElementById('searchInput').value = allData[activeId].phone; render(); showPage('list');
-            } else { 
-                pushDeliveryStatus(currentUser, custId);
-                const autoData = { area: "ID " + custId, name: custName, phone: n, maps: "", photo: "", status: 'otw', startTime: Date.now(), timestamp: Date.now(), driverBy: currentUser, paymentMode: isCash ? 'CASH' : 'NON_CASH' };
-                db.ref('customers').push(autoData);
-
-                let msg = "";
-                if (isGrabConfirm) { msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser}, driver Domino's Pizza Jatimakmur. Saat ini saya sudah berada di titik lokasi pengantaran.\n\nMohon bantu konfirmasinya ya. Terima kasih.`; } 
-                else if (cashiersOnly.includes(currentUser)) { msg = `Halo bapak/ibu perkenalkan saya ${currentUser} dari kasir Domino's jatimakmur, mau konfirmasi pesanan atas nama/atau nomer tlpn (${custName}) saya ingin mengkonfirmasi .....`; } 
-                else { msg = `Halo Bapak/Ibu ${custName},\n\nSaya ${currentUser} dari Domino's Pizza Jatimakmur. Saat ini saya akan mengantarkan pesanan Bapak/Ibu.\n\nBoleh minta bantuan untuk share lokasinya, Pak/Bu? Agar pesanan bisa sampai lebih cepat dan tepat.\n\nTerima kasih 😊`; }
-                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
-                
-                document.getElementById('waDirectCustName').value = ""; document.getElementById('waDirectCustId').value = ""; document.getElementById('waDirectNumber').value = ""; document.getElementById('waDirectCashPayment').checked = false; document.getElementById('waDirectGrabConfirmation').checked = false;
-            }
-        }
-
-        let hammerInstance = null; let scale = 1; let lastScale = 1;
-        function initPinchZoom() {
-            const el = document.getElementById('fullImg'); if (!el) return; resetPinchZoom();
-            hammerInstance = new Hammer.Manager(el); const pinch = new Hammer.Pinch(); hammerInstance.add([pinch]);
-            hammerInstance.on('pinchstart', () => { lastScale = scale; });
-            hammerInstance.on('pinchmove', (e) => { scale = Math.max(1, Math.min(lastScale * e.scale, 4)); el.style.transform = `scale(${scale})`; });
-            hammerInstance.on('pinchend', () => { lastScale = scale; });
-        }
-        function resetPinchZoom() {
-            const el = document.getElementById('fullImg'); scale = 1; lastScale = 1;
-            if (el) el.style.transform = 'scale(1)'; if (hammerInstance) { hammerInstance.destroy(); hammerInstance = null; }
-        }
-
-        function checkAndResetIdsAtMidnight() {
-            setInterval(() => {
-                const now = new Date(); const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-                const currentTimeWIB = new Intl.DateTimeFormat('id-ID', options).format(now);
-                if (currentTimeWIB === "00:00:00") {
-                    db.ref('customers').once('value', snapshot => {
-                        if (snapshot.exists()) {
-                            snapshot.forEach(childSnapshot => {
-                                const item = childSnapshot.val();
-                                if (item.status === 'done' && item.historyDisplayId) { db.ref('customers/' + childSnapshot.key).update({ historyDisplayId: null }); }
-                            });
-                        }
-                    });
-                }
-            }, 1000);
-        }
-
-        let drawCanvas, drawCtx, isDrawing = false;
-        function openDrawModal() {
-            if (!photoBase64) return; document.getElementById('drawModal').style.display = 'flex'; drawCanvas = document.getElementById('drawCanvas'); drawCtx = drawCanvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => { drawCanvas.width = img.width; drawCanvas.height = img.height; drawCtx.drawImage(img, 0, 0); drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; };
-            img.src = photoBase64;
-            drawCanvas.removeEventListener('mousedown', startDrawing); drawCanvas.removeEventListener('mousemove', draw); drawCanvas.removeEventListener('mouseup', stopDrawing); drawCanvas.removeEventListener('mouseout', stopDrawing); drawCanvas.removeEventListener('touchstart', startDrawing); drawCanvas.removeEventListener('touchmove', draw); drawCanvas.removeEventListener('touchend', stopDrawing);
-            drawCanvas.addEventListener('mousedown', startDrawing); drawCanvas.addEventListener('mousemove', draw); drawCanvas.addEventListener('mouseup', stopDrawing); drawCanvas.addEventListener('mouseout', stopDrawing); drawCanvas.addEventListener('touchstart', startDrawing, {passive: false}); drawCanvas.addEventListener('touchmove', draw, {passive: false}); drawCanvas.addEventListener('touchend', stopDrawing);
-        }
-        function closeDrawModal() { document.getElementById('drawModal').style.display = 'none'; }
-        function clearDraw() { const img = new Image(); img.onload = () => { drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); drawCtx.drawImage(img, 0, 0); }; img.src = photoBase64; }
-        function saveDraw() { photoBase64 = drawCanvas.toDataURL('image/jpeg', 0.8); document.getElementById('imgPrev').src = photoBase64; closeDrawModal(); }
-        function getPos(e) {
-            const rect = drawCanvas.getBoundingClientRect(); let clientX = e.clientX; let clientY = e.clientY;
-            if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-            const scaleX = drawCanvas.width / rect.width; const scaleY = drawCanvas.height / rect.height; return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
-        }
-        function startDrawing(e) { e.preventDefault(); isDrawing = true; const pos = getPos(e); drawCtx.beginPath(); drawCtx.moveTo(pos.x, pos.y); }
-        function draw(e) { if (!isDrawing) return; e.preventDefault(); const pos = getPos(e); drawCtx.lineWidth = drawCanvas.width * 0.015; drawCtx.strokeStyle = document.getElementById('drawColor').value; drawCtx.lineTo(pos.x, pos.y); drawCtx.stroke(); }
-        function stopDrawing(e) { if(e) e.preventDefault(); isDrawing = false; drawCtx.closePath(); }
-
-        // ==========================================
-        // JAVASCRIPT GAME CATUR 
-        // ==========================================
-        function resetChessGame() {
-            const btn = document.getElementById('btnResetGame');
-            if (!btn.disabled && !isSpectator) {
-                btn.disabled = true; btn.innerText = "Memproses...";
-                db.ref(`chess_games/${currentChessGameId}`).once('value', snap => {
-                    const game = snap.val();
-                    if (game) {
-                        const oppReset = game.resetRequest && game.resetRequest[chessOpponent];
-                        if (oppReset) { db.ref(`chess_games/${currentChessGameId}`).update({ fen: 'start', turn: 'w', lastMove: null, wTime: 600, bTime: 600, lastUpdate: Date.now(), status: 'active', winner: null, reason: null, resetRequest: null, white: game.black, black: game.white }); } 
-                        else { db.ref(`chess_games/${currentChessGameId}/resetRequest/${currentUser}`).set(true); }
-                    }
-                });
-            }
-        }
-
-        function updateAndLoadScores(playerBottom, playerTop) {
-            if(lastBottomPlayer) db.ref(`chess_scores/${lastBottomPlayer}`).off('value', bottomScoreListener);
-            if(lastTopPlayer) db.ref(`chess_scores/${lastTopPlayer}`).off('value', topScoreListener);
-            lastBottomPlayer = playerBottom; lastTopPlayer = playerTop;
-            bottomScoreListener = db.ref(`chess_scores/${playerBottom}`).on('value', snap => { const s = snap.val() || { win: 0, lose: 0, draw: 0 }; document.getElementById('myChessScore').innerText = `🏆 Win : ${s.win} ❌ Lose : ${s.lose} 🤝 Draw : ${s.draw}`; });
-            topScoreListener = db.ref(`chess_scores/${playerTop}`).on('value', snap => { const s = snap.val() || { win: 0, lose: 0, draw: 0 }; document.getElementById('chessOpponentScore').innerText = `🏆 Win : ${s.win} ❌ Lose : ${s.lose} 🤝 Draw : ${s.draw}`; });
-        }
-
-        function sendChessChat() { const inp = document.getElementById('chessChatInput'); const msg = inp.value.trim(); if(!msg) return; db.ref(`chess_games/${currentChessGameId}/chat`).push().set({ sender: currentUser, text: msg, timestamp: Date.now() }); inp.value = ''; }
-        function initChessChat() {
-            const chatBox = document.getElementById('chessChatHistory'); chatBox.innerHTML = ''; if(chessChatListener) db.ref(`chess_games/${currentChessGameId}/chat`).off('child_added', chessChatListener);
-            chessChatListener = db.ref(`chess_games/${currentChessGameId}/chat`).on('child_added', snap => {
-                const msg = snap.val(); const d = new Date(msg.timestamp); const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                const isMe = msg.sender === currentUser; const nameColor = isMe ? 'text-emerald-400' : 'text-blue-400';
-                chatBox.innerHTML += `<div class="mb-1 leading-tight"><span class="${nameColor} font-bold mr-1">${msg.sender}</span><span class="text-gray-500 text-[8px] mr-1">[${time}]</span><span class="text-gray-200">${msg.text}</span></div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            });
-        }
-
-        function renderChessOnlineList() {
-            db.ref('presence').once('value', snapshot => {
-                const list = document.getElementById('chessOnlineList'); list.innerHTML = "";
-                snapshot.forEach(child => {
-                    const usr = child.key;
-                    if(usr !== currentUser) {
-                        const avatar = child.val().photo || `https://ui-avatars.com/api/?name=${usr}&background=16a34a&color=fff`;
-                        list.innerHTML += `<div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-2xl border border-gray-600"><div class="flex items-center gap-3"><img src="${avatar}" class="w-10 h-10 rounded-full object-cover"><span class="font-bold text-white text-sm">${usr}</span></div><button onclick="sendChessChallenge('${usr}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md hover:bg-emerald-500 active:scale-95 transition-transform">Tantang</button></div>`;
-                    }
-                });
-            });
-
-            db.ref('chess_games').once('value', gameSnap => {
-                const liveList = document.getElementById('chessLiveList'); liveList.innerHTML = ""; let hasLive = false;
-                gameSnap.forEach(child => {
-                    const g = child.val();
-                    if(g.status === 'active' && g.white && g.black) {
-                        if(g.white === currentUser || g.black === currentUser) return; hasLive = true;
-                        liveList.innerHTML += `<div class="flex justify-between items-center bg-blue-900/30 p-4 rounded-2xl border border-blue-500/50 shadow-md"><div class="flex flex-col"><div class="flex items-center gap-2 mb-1"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span class="font-black text-blue-300 text-[10px] tracking-widest uppercase">Live Game</span></div><span class="font-bold text-white text-sm">${g.white} <span class="text-gray-400 text-xs mx-1">VS</span> ${g.black}</span></div><button onclick="watchChessGame('${child.key}', '${g.white}', '${g.black}')" class="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-transform active:scale-95"><i class="fa fa-eye"></i></button></div>`;
-                    }
-                });
-                if(!hasLive) { liveList.innerHTML = `<div class="text-center text-gray-500 text-xs font-bold py-3">Tidak ada pertandingan yang berlangsung.</div>`; }
-            });
-        }
-
-        function watchChessGame(gameId, whiteName, blackName) {
-            isSpectator = true; currentChessGameId = gameId; myChessColor = 'w'; chessOpponent = blackName;
-            document.getElementById('myChessNameDisplay').innerText = whiteName; document.getElementById('chessOpponentName').innerText = blackName; document.getElementById('myChessColorLabel').innerText = 'WHITE';
-            document.getElementById('oktaBotContainer').classList.add('hidden'); document.getElementById('chessResetContainer').classList.add('hidden');
-            document.getElementById('chessMyAvatar').src = `https://ui-avatars.com/api/?name=${whiteName}&background=16a34a&color=fff`; document.getElementById('chessOpponentAvatar').src = `https://ui-avatars.com/api/?name=${blackName}&background=16a34a&color=fff`;
-            updateAndLoadScores(whiteName, blackName); showPage('chess-game'); initChessChat(); 
-            if(chessSyncListener) db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener); attachChessListener();
-        }
-
-        function sendChessChallenge(opponent) {
-            const challengeId = `chal_${currentUser}_${Date.now()}`;
-            db.ref(`chess_challenges/${opponent}`).set({ from: currentUser, id: challengeId, timestamp: Date.now() }); showAlert(`Menunggu ${opponent}...`, "blue");
-            db.ref(`chess_challenges/${opponent}`).on('value', snap => { const val = snap.val(); if(val && val.status === 'accepted') { db.ref(`chess_challenges/${opponent}`).off(); initChessGame(val.gameId, 'w', opponent); } });
-        }
-
-        function listenToChessChallenges() {
-            if(!currentUser) return;
-            db.ref(`chess_challenges/${currentUser}`).on('value', snap => {
-                const chal = snap.val();
-                if(chal && !chal.status && (Date.now() - chal.timestamp < 30000)) { document.getElementById('challengerName').innerText = chal.from; document.getElementById('challengeModal').style.display = 'flex'; } 
-                else { document.getElementById('challengeModal').style.display = 'none'; }
-            });
-        }
-
-        function acceptChallenge() {
-            db.ref(`chess_challenges/${currentUser}`).once('value', snap => {
-                const chal = snap.val();
-                if(chal) {
-                    const gameId = `game_${Date.now()}`;
-                    db.ref(`chess_games/${gameId}`).set({ fen: 'start', turn: 'w', white: chal.from, black: currentUser, lastMove: null, wTime: 600, bTime: 600, lastUpdate: Date.now(), status: 'active' })
-                    .then(() => { db.ref(`chess_challenges/${currentUser}`).update({ status: 'accepted', gameId: gameId }); initChessGame(gameId, 'b', chal.from); });
-                }
-            });
-        }
-
-        function rejectChallenge() { document.getElementById('challengeModal').style.display = 'none'; if(currentUser) { db.ref(`chess_challenges/${currentUser}`).remove(); } }
-        
-        function playChessSound(moveObj, inCheck) {
-            if(!audioUnlocked || !moveObj) return;
-            let audioId = 'snd-move'; if(moveObj.captured) audioId = 'snd-capture';
-            if(moveObj.flags && (moveObj.flags.includes('k') || moveObj.flags.includes('q'))) audioId = 'snd-castle';
-            if(moveObj.promotion) audioId = 'snd-promote'; if(inCheck) audioId = 'snd-check';
-            const au = document.getElementById(audioId); if(au) { au.currentTime = 0; au.play().catch(e=>{}); }
-        }
-
-        async function checkAndPlayBot() {
-            if (currentUser !== 'Okta' || isSpectator) return; const botToggle = document.getElementById('oktaBotToggle'); if (!botToggle || !botToggle.checked) return;
-            if (chess.turn() === myChessColor && !chess.game_over() && !botIsThinking) {
-                botIsThinking = true;
-                try {
-                    const res = await fetch('https://chess-api.com/v1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fen: chess.fen() }) });
-                    const data = await res.json();
-                    if (data && data.move && currentChessGameId) {
-                        const moveStr = data.move; const fromSquare = moveStr.substring(0,2); const toSquare = moveStr.substring(2,4); const promoType = moveStr.length === 5 ? moveStr[4] : undefined;
-                        const validatedMove = chess.moves({ verbose: true }).find(m => m.from === fromSquare && m.to === toSquare && (!promoType || m.promotion === promoType));
-                        if(validatedMove) { executeChessMove(validatedMove); }
-                    }
-                } catch(e) { console.error("GM Bot API Error: ", e); } finally { botIsThinking = false; }
-            }
-        }
-
-        function initChessGame(gameId, color, opponentName) {
-            isSpectator = false; currentChessGameId = gameId; myChessColor = color; chessOpponent = opponentName; chess = new Chess();
-            selectedSquare = null; wTime = 600; bTime = 600; lastTimestamp = Date.now(); botIsThinking = false; if (chessTimerInterval) clearInterval(chessTimerInterval);
-            document.getElementById('myChessNameDisplay').innerText = currentUser; document.getElementById('myChessColorLabel').innerText = color === 'w' ? 'WHITE' : 'BLACK';
-            document.getElementById('chessOpponentName').innerText = opponentName; document.getElementById('chessMyAvatar').src = localStorage.getItem('profile_pic_' + currentUser) || `https://ui-avatars.com/api/?name=${currentUser}&background=16a34a&color=fff`;
-            if(currentUser === 'Okta') { document.getElementById('oktaBotContainer').classList.remove('hidden'); document.getElementById('oktaBotToggle').checked = false; } else { document.getElementById('oktaBotContainer').classList.add('hidden'); }
-            showPage('chess-game'); scoreProcessedForGame = false; updateAndLoadScores(currentUser, opponentName); initChessChat(); 
-            if(chessSyncListener) db.ref(`chess_games/${currentChessGameId}`).off('value', chessSyncListener); attachChessListener();
-        }
-
-        function attachChessListener() {
-            chessSyncListener = db.ref(`chess_games/${currentChessGameId}`).on('value', snap => {
-                const game = snap.val(); if(!game) return;
-                
-                if (!isSpectator) {
-                    myChessColor = (game.white === currentUser) ? 'w' : 'b'; chessOpponent = (myChessColor === 'w') ? game.black : game.white;
-                    document.getElementById('myChessColorLabel').innerText = myChessColor === 'w' ? 'WHITE' : 'BLACK'; document.getElementById('myChessNameDisplay').innerText = currentUser; document.getElementById('chessOpponentName').innerText = chessOpponent;
-                    const myReset = (game.resetRequest || {})[currentUser]; const oppReset = (game.resetRequest || {})[chessOpponent]; const btnReset = document.getElementById('btnResetGame');
-                    if (myReset && oppReset) { btnReset.innerText = "Mereset Game..."; btnReset.disabled = true; } else if (oppReset && !myReset) { btnReset.innerText = "Terima Reset Game"; btnReset.className = "bg-green-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full animate-pulse"; btnReset.disabled = false; } else if (myReset && !oppReset) { btnReset.innerText = "Menunggu Lawan..."; btnReset.className = "bg-gray-500 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full cursor-not-allowed"; btnReset.disabled = true; } else { btnReset.innerText = "Reset Game"; btnReset.className = "bg-blue-600 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg text-sm w-full transition-all"; btnReset.disabled = false; }
-                } else {
-                    myChessColor = 'w'; document.getElementById('myChessColorLabel').innerText = 'WHITE'; document.getElementById('myChessNameDisplay').innerText = game.white; document.getElementById('chessOpponentName').innerText = game.black;
-                }
-
-                const isNewFen = game.fen !== chess.fen() && (game.fen !== 'start' || chess.fen() !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-
-                if (game.fen === 'start') { chess.reset(); selectedSquare = null; isAnimatingPiece = false; lastRenderedFen = "start"; } 
-                else if (game.fen !== chess.fen()) { chess.load(game.fen); if (game.status !== 'ended' || !scoreProcessedForGame) { playChessSound(game.lastMove, chess.in_check()); } }
-                
-                wTime = game.wTime; bTime = game.bTime; lastTimestamp = game.lastUpdate;
-                renderChessBoard(game.lastMove); updateTurnIndicators(); startLocalTimer(); 
-                
-                if(game.status === 'ended') {
-                    if (!isSpectator) document.getElementById('chessResetContainer').classList.remove('hidden'); if (chessTimerInterval) clearInterval(chessTimerInterval);
-                    const pemenang = game.winner ? (game.winner === 'w' ? game.white : game.black) : 'Seri';
-                    if(!scoreProcessedForGame) {
-                        scoreProcessedForGame = true; 
-                        if (!isSpectator) {
-                            db.ref(`chess_scores/${currentUser}`).once('value', sSnap => {
-                                let s = sSnap.val() || { win: 0, lose: 0, draw: 0 };
-                                if(game.winner) { if(game.winner === (game.white === currentUser ? 'w' : 'b')) s.win++; else s.lose++; } else { s.draw++; }
-                                db.ref(`chess_scores/${currentUser}`).set(s);
-                            });
-                        }
-                        setTimeout(() => { if(game.lastMove) playChessSound('snd-end', false); showAlert(`Game Selesai! Pemenang: ${pemenang} (${game.reason || 'Selesai'})`, "blue"); }, 300);
-                    }
-                    return;
-                } else { if (!isSpectator) document.getElementById('chessResetContainer').classList.add('hidden'); scoreProcessedForGame = false; }
-                
-                if(currentUser === 'Okta' && !isSpectator && chess.turn() === myChessColor && isNewFen && !botIsThinking) { setTimeout(checkAndPlayBot, 800); }
-            });
-        }
-
-        function startLocalTimer() {
-            if (chessTimerInterval) clearInterval(chessTimerInterval);
-            chessTimerInterval = setInterval(() => {
-                if (!currentChessGameId) { clearInterval(chessTimerInterval); return; }
-                const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000); let liveWTime = wTime; let liveBTime = bTime;
-                if (chess.turn() === 'w') { liveWTime = Math.max(0, wTime - elapsed); if (liveWTime === 0 && chess.turn() === myChessColor && !isSpectator) { handleTimeOut('w'); } } 
-                else { liveBTime = Math.max(0, bTime - elapsed); if (liveBTime === 0 && chess.turn() === myChessColor && !isSpectator) { handleTimeOut('b'); } }
-                displayTimes(liveWTime, liveBTime);
-            }, 250);
-        }
-
-        function displayTimes(whiteSecs, blackSecs) {
-            const format = (s) => { const mins = Math.floor(s / 60); const secs = s % 60; return `${mins}:${secs < 10 ? '0' : ''}${secs}`; };
-            if (myChessColor === 'w') { document.getElementById('chessMyTime').innerText = format(whiteSecs); document.getElementById('chessOpponentTime').innerText = format(blackSecs); } 
-            else { document.getElementById('chessMyTime').innerText = format(blackSecs); document.getElementById('chessOpponentTime').innerText = format(whiteSecs); }
-        }
-
-        function handleTimeOut(loserColor) { clearInterval(chessTimerInterval); db.ref(`chess_games/${currentChessGameId}`).update({ status: 'ended', winner: loserColor === 'w' ? 'b' : 'w', reason: 'Waktu Habis (Timeout)', lastUpdate: Date.now() }); }
-
-        function renderChessBoard(lastMoveObj = null) {
-            const boardEl = document.getElementById('chessBoard');
-            if (lastMoveObj && lastRenderedFen !== chess.fen() && !isAnimatingPiece) {
-                isAnimatingPiece = true;
-                const getCoords = (sq) => {
-                    const c = sq.charCodeAt(0) - 97; const r = 8 - parseInt(sq[1]); const displayCol = myChessColor === 'w' ? c : 7 - c; const displayRow = myChessColor === 'w' ? r : 7 - r;
-                    const rect = boardEl.getBoundingClientRect(); const sqSize = rect.width / 8; return { x: displayCol * sqSize, y: displayRow * sqSize, size: sqSize };
-                };
-                try {
-                    const start = getCoords(lastMoveObj.from); const end = getCoords(lastMoveObj.to); const animPiece = document.createElement('img'); const displayPiece = lastMoveObj.promotion ? 'p' : lastMoveObj.piece; 
-                    animPiece.src = pieceIcons[lastMoveObj.color][displayPiece]; animPiece.className = 'chess-anim-piece'; animPiece.style.width = start.size * 0.9 + 'px'; animPiece.style.height = start.size * 0.9 + 'px'; animPiece.style.left = start.x + (start.size * 0.05) + 'px'; animPiece.style.top = start.y + (start.size * 0.05) + 'px';
-                    boardEl.appendChild(animPiece);
-                    setTimeout(() => { animPiece.style.transform = `translate(${end.x - start.x}px, ${end.y - start.y}px)`; }, 10);
-                    setTimeout(() => { isAnimatingPiece = false; lastRenderedFen = chess.fen(); renderChessBoard(lastMoveObj); }, 200);
-                    return; 
-                } catch(e) { isAnimatingPiece = false; }
-            }
-            lastRenderedFen = chess.fen(); boardEl.innerHTML = ''; const board = chess.board();
-            let checkedKingSquare = null;
-            if (chess.in_check()) { for (let r = 0; r < 8; r++) { for (let c = 0; c < 8; c++) { if (board[r][c] && board[r][c].type === 'k' && board[r][c].color === chess.turn()) { checkedKingSquare = String.fromCharCode(97 + c) + (8 - r); break; } } } }
-            
-            const rows = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0]; const cols = myChessColor === 'w' ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
-            const legalMoves = selectedSquare ? chess.moves({ square: selectedSquare, verbose: true }) : [];
-
-            rows.forEach((r) => {
-                cols.forEach((c) => {
-                    const sq = String.fromCharCode(97 + c) + (8 - r); const piece = board[r][c]; const isLight = (r + c) % 2 === 0;
-                    const sqEl = document.createElement('div'); sqEl.className = `chess-sq ${isLight ? 'chess-light' : 'chess-dark'}`; sqEl.onclick = () => handleSquareClick(sq);
-                    
-                    if(selectedSquare === sq) sqEl.innerHTML += `<div class="chess-hl"></div>`;
-                    if(lastMoveObj && (sq === lastMoveObj.from || sq === lastMoveObj.to)) { sqEl.innerHTML += `<div class="chess-last-move"></div>`; }
-                    if(sq === checkedKingSquare) sqEl.innerHTML += `<div class="chess-check-hl"></div>`;
-                    const moveMatch = legalMoves.find(m => m.to === sq); if(moveMatch) sqEl.innerHTML += `<div class="chess-legal-dot"></div>`;
-
-                    if (piece) { const img = document.createElement('img'); img.src = pieceIcons[piece.color][piece.type]; img.className = 'chess-piece'; sqEl.appendChild(img); }
-                    boardEl.appendChild(sqEl);
-                });
-            });
-        }
-
-        function executeChessMove(moveObj) {
-            const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
-            if (chess.turn() === 'w') { wTime = Math.max(0, wTime - elapsed); } else { bTime = Math.max(0, bTime - elapsed); }
-            chess.move(moveObj);
-            let gameStatus = 'active'; let winner = null; let reason = null;
-            if (chess.in_checkmate()) { gameStatus = 'ended'; winner = chess.turn() === 'w' ? 'b' : 'w'; reason = 'Skakmat (Checkmate)'; } 
-            else if (chess.in_draw() || chess.in_stalemate()) { gameStatus = 'ended'; reason = 'Remis (Draw)'; }
-            db.ref(`chess_games/${currentChessGameId}`).update({ fen: chess.fen(), turn: chess.turn(), lastMove: moveObj, wTime: wTime, bTime: bTime, lastUpdate: Date.now(), status: gameStatus, winner: winner, reason: reason });
-            selectedSquare = null;
-        }
-
-        function showPromoModal() {
-            document.getElementById('promoModal').style.display = 'flex'; const opts = document.getElementById('promoOptions'); opts.innerHTML = '';
-            ['q', 'r', 'b', 'n'].forEach(p => {
-                const img = document.createElement('img'); img.src = pieceIcons[myChessColor][p]; img.className = 'w-full h-full object-contain cursor-pointer hover:scale-110 transition bg-gray-700 rounded-xl p-2 shadow-lg';
-                img.onclick = () => {
-                    document.getElementById('promoModal').style.display = 'none'; const moves = chess.moves({ square: pendingPromotion.from, verbose: true });
-                    const move = moves.find(m => m.to === pendingPromotion.to && m.promotion === p); if(move) executeChessMove(move); pendingPromotion = null;
-                }; opts.appendChild(img);
-            });
-        }
-
-        function handleSquareClick(sq) {
-            if(isSpectator || chess.turn() !== myChessColor) return;
-            const piece = chess.get(sq);
-            if(piece && piece.color === myChessColor) { selectedSquare = sq; renderChessBoard(); return; }
-            if(selectedSquare) {
-                const moveMatches = chess.moves({ square: selectedSquare, verbose: true }).filter(m => m.to === sq); 
-                if(moveMatches.length > 0) { if(moveMatches[0].promotion) { pendingPromotion = { from: selectedSquare, to: sq }; showPromoModal(); } else { executeChessMove(moveMatches[0]); } }
-            }
-        }
-
-        function updateTurnIndicators() {
-            const isMyTurn = chess.turn() === myChessColor; const myTimer = document.getElementById('chessMyTimerBox'); const oppTimer = document.getElementById('chessOpponentTimerBox');
-            if(isMyTurn) { myTimer.className = 'timer-active px-4 py-2 rounded font-mono font-bold text-lg'; oppTimer.className = 'timer-inactive px-4 py-2 rounded font-mono font-bold text-lg'; } 
-            else { myTimer.className = 'timer-inactive px-4 py-2 rounded font-mono font-bold text-lg'; oppTimer.className = 'timer-active px-4 py-2 rounded font-mono font-bold text-lg'; }
-        }
-
-        function showAlert(msg, color) { const alertBox = document.getElementById('chessAlert'); alertBox.innerText = msg; alertBox.style.display = 'flex'; setTimeout(() => { alertBox.style.display = 'none'; }, 3000); }
-    </script>
-</body>
-</html>
+                             <button onclick="${isBlockedUser ? "alert('Mana
