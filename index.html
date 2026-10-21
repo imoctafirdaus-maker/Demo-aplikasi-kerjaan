@@ -68,8 +68,8 @@
 /* Leaflet Fixes */
 .leaflet-control-attribution { font-size: 8px !important; }
 
-/* CHAT & LIVE TRACKING CSS */
-.chat-wrap{display:flex;flex-direction:column;height:100%;background:#e5ddd5}
+/* CHAT & LIVE TRACKING CSS - DIPERBAIKI */
+.chat-wrap{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#e5ddd5}
 .chat-scroll{flex:1;overflow-y:auto;padding:10px 10px 6px}
 .cb{max-width:80%;padding:6px 9px;border-radius:14px;font-size:13px;line-height:1.3;word-wrap:break-word;overflow-wrap:anywhere;box-shadow:0 1px 1px rgba(0,0,0,.08)}
 .cb.me{background:#d9fdd3;border-bottom-right-radius:4px;margin-left:auto}
@@ -373,20 +373,24 @@ onclick="openFullImg(this.src, currentUser)">
 </div>
 
 <!-- NEW CHAT PAGE -->
-<!-- PENAMBAHAN PADDING BOTTOM 70PX AGAR TIDAK TERPOTONG MENU BAWAH -->
-<div id="page-crewchat" class="page" style="padding-bottom: 70px;">
+<!-- PENAMBAHAN PADDING BOTTOM 75PX AGAR TIDAK TERPOTONG MENU BAWAH -->
+<div id="page-crewchat" class="page bg-[#e5ddd5]" style="padding-bottom: 75px;">
   <div class="chat-wrap">
-    <div class="dominos-blue text-white p-3 flex items-center gap-3 shadow-md z-10">
+    <!-- TAMBAHAN CLASS shrink-0 PADA HEADER AGAR TIDAK TERTEKAN OLEH FLEX -->
+    <div class="dominos-blue text-white p-3 flex items-center gap-3 shadow-md z-10 shrink-0">
       <button onclick="closeCrewChat()" class="w-8 h-8 rounded-full bg-white/20"><i class="fa fa-arrow-left"></i></button>
       <div class="flex-1 font-black uppercase italic text-sm">Chat Crew</div>
       <button onclick="toggleChatSound()" id="chatSoundBtn" class="w-8 h-8 rounded-full bg-white/20"><i class="fa fa-bell"></i></button>
       <button id="chatAdminBtn" onclick="adminClearChat()" class="hidden w-8 h-8 rounded-full bg-red-600" title="Bersihkan seluruh riwayat"><i class="fa fa-trash"></i></button>
     </div>
-    <div id="chatScroll" class="chat-scroll" onscroll="chatOnScroll()"></div>
-    <div id="chatPreview" class="hidden bg-white p-2 border-t flex items-center gap-2"></div>
     
-    <!-- KOLOM KETIK PESAN (DIPERBAIKI) -->
-    <div class="bg-gray-100 p-2 flex items-end gap-2 relative border-t border-gray-200">
+    <div id="chatScroll" class="chat-scroll" onscroll="chatOnScroll()"></div>
+    
+    <!-- TAMBAHAN CLASS shrink-0 PADA PREVIEW -->
+    <div id="chatPreview" class="hidden bg-white p-2 border-t flex items-center gap-2 shrink-0"></div>
+    
+    <!-- KOLOM KETIK PESAN - TAMBAHAN shrink-0 AGAR SELALU MUNCUL UTUH -->
+    <div class="bg-gray-100 p-2 flex items-end gap-2 relative border-t border-gray-200 shrink-0">
       
       <!-- STICKER PANEL (Tampil jika ikon ditekan) -->
       <div id="stickerPanel" class="hidden absolute bottom-full left-0 w-full bg-white border-t border-gray-200 p-2 shadow-lg z-50 rounded-t-xl">
