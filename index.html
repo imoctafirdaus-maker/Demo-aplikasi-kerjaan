@@ -20,7 +20,7 @@
         ::-webkit-scrollbar { width: 0; background: transparent; }
         
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-top: 2px solid #f1f5f9; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 16.66%; cursor: pointer; transition: all 0.2s; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; width: 20%; cursor: pointer; transition: all 0.2s; }
         .nav-item.active { color: #006491; }
         .nav-add { background: #006491 !important; color: white !important; width: 50px !important; height: 50px !important; border-radius: 50% !important; margin-top: -35px; justify-content: center; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,100,145,0.3); position: relative; z-index: 1001; }
         
@@ -52,10 +52,6 @@
         /* Inventory Tabs CSS */
         .inv-tab.active { background-color: #006491; color: white; border-color: #006491; }
         .inv-tab { background-color: #f1f5f9; color: #64748b; border: 1px solid transparent; transition: all 0.2s; }
-        
-        .calc-btn { background-color: white; font-size: 1.5rem; font-weight: 900; color: #1e293b; padding: 1rem 0; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: all 0.1s; }
-        .calc-btn:active { transform: scale(0.95); background-color: #f1f5f9; }
-        .op-btn { background-color: #f8fafc; color: #006491; border-color: #cbd5e1; }
 
         /* CSS KHUSUS GAME CATUR */
         .chess-container { width: 100%; max-width: 450px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); box-sizing: border-box; margin: 0 auto; border: 4px solid #4a2e1b; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); background-color: #4a2e1b; overflow: hidden; position: relative; }
@@ -91,7 +87,7 @@
     <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3" preload="auto"></audio>
     <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3" preload="auto"></audio>
 
-    <!-- MODAL KALKULATOR INVENTORY -->
+    <!-- MODAL INPUT CV & ECERAN INVENTORY -->
     <div id="calc-modal" class="fixed inset-0 bg-black/70 z-[10050] hidden flex-col justify-end backdrop-blur-sm transition-opacity">
         <div class="bg-gray-100 rounded-t-[2.5rem] p-5 pb-8 shadow-2xl">
             <div class="flex justify-between items-center mb-4 px-2">
@@ -99,36 +95,36 @@
                 <button onclick="closeCalc()" class="text-gray-400 bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-sm active:scale-90"><i class="fa fa-times"></i></button>
             </div>
             
-            <div class="bg-white p-4 rounded-3xl mb-5 text-right shadow-sm border border-gray-200 relative overflow-hidden">
-                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-200">
-                    <i class="fa fa-calculator text-3xl"></i>
+            <div class="bg-white p-5 rounded-3xl mb-5 shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                    <span class="text-[10px] font-black text-gray-500 uppercase">Input CV & Satuan Bebas</span>
+                    <span id="calc-item-spec" class="text-[9px] bg-gray-100 px-2 py-1 rounded font-bold text-gray-600">1 x 20 PCS</span>
                 </div>
-                <div id="calc-expression" class="text-gray-400 text-xs h-5 font-mono mb-1 tracking-widest"></div>
-                <div id="calc-result" class="text-4xl font-black text-blue-900 font-mono tracking-tight">0</div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-[9px] font-black text-blue-900 uppercase ml-1">Jumlah CV / Karton</label>
+                        <input type="number" id="input-cv-qty" oninput="calculateCV()" inputmode="numeric" class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 font-black text-lg text-blue-900 mt-1 outline-none text-center" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-blue-900 uppercase ml-1">Isi per 1 CV (Edit)</label>
+                        <input type="number" id="input-cv-multiplier" oninput="calculateCV()" inputmode="numeric" class="w-full p-3 bg-blue-50 rounded-xl border border-blue-200 font-black text-lg text-blue-900 mt-1 outline-none text-center text-blue-600">
+                    </div>
+                </div>
+                
+                <div class="mb-5">
+                    <label class="text-[9px] font-black text-blue-900 uppercase ml-1">Jumlah Eceran (Satuan Bebas)</label>
+                    <input type="number" id="input-loose-qty" oninput="calculateCV()" inputmode="numeric" class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 font-black text-lg text-blue-900 mt-1 outline-none text-center" placeholder="0">
+                </div>
+
+                <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100 text-center">
+                    <p class="text-[9px] font-black text-emerald-800 uppercase tracking-widest mb-1">TOTAL STOK ENDING</p>
+                    <div class="text-4xl font-black text-emerald-600" id="calc-result">0</div>
+                    <p class="text-[10px] font-bold text-emerald-700 mt-1" id="calc-unit">PCS</p>
+                </div>
             </div>
             
-            <div class="grid grid-cols-4 gap-3">
-                <button onclick="calcPress('7')" class="calc-btn">7</button>
-                <button onclick="calcPress('8')" class="calc-btn">8</button>
-                <button onclick="calcPress('9')" class="calc-btn">9</button>
-                <button onclick="calcPress('/')" class="calc-btn op-btn text-xl"><i class="fa fa-divide"></i></button>
-                
-                <button onclick="calcPress('4')" class="calc-btn">4</button>
-                <button onclick="calcPress('5')" class="calc-btn">5</button>
-                <button onclick="calcPress('6')" class="calc-btn">6</button>
-                <button onclick="calcPress('*')" class="calc-btn op-btn text-sm"><i class="fa fa-times"></i></button>
-                
-                <button onclick="calcPress('1')" class="calc-btn">1</button>
-                <button onclick="calcPress('2')" class="calc-btn">2</button>
-                <button onclick="calcPress('3')" class="calc-btn">3</button>
-                <button onclick="calcPress('-')" class="calc-btn op-btn text-xl"><i class="fa fa-minus"></i></button>
-                
-                <button onclick="calcPress('C')" class="calc-btn bg-red-50 text-red-600 border-red-200">C</button>
-                <button onclick="calcPress('0')" class="calc-btn">0</button>
-                <button onclick="calcPress('=')" class="calc-btn bg-blue-50 text-blue-600 border-blue-200"><i class="fa fa-equals"></i></button>
-                <button onclick="calcPress('+')" class="calc-btn op-btn text-xl"><i class="fa fa-plus"></i></button>
-            </div>
-            <button onclick="calcSave()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl mt-5 uppercase shadow-lg text-sm active:scale-95 transition-transform"><i class="fa fa-check mr-2"></i>Gunakan Angka</button>
+            <button onclick="calcSave()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl uppercase shadow-lg text-sm active:scale-95 transition-transform"><i class="fa fa-check mr-2"></i>Gunakan Angka Ini</button>
         </div>
     </div>
 
@@ -223,6 +219,16 @@
                 </div>
                 
                 <div class="space-y-3" id="profileOptions">
+
+                    <div onclick="showPage('inventory')" class="profile-bubble border-blue-200 bg-blue-50/40">
+                        <div class="profile-icon bg-blue-600 text-white shadow-md"><i class="fa fa-boxes"></i></div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-black text-blue-900 uppercase italic text-[11px]">Menu Inventory</span>
+                            <span class="text-[8px] font-bold text-gray-500 uppercase">Kelola Stok Ending JTM</span>
+                        </div>
+                        <i class="fa fa-chevron-right text-blue-300 text-[10px]"></i>
+                    </div>
+
                     <div onclick="changePinPrompt()" class="profile-bubble">
                         <div class="profile-icon bg-yellow-50 text-yellow-600"><i class="fa fa-key"></i></div>
                         <span class="font-black text-blue-900 uppercase italic text-[11px] flex-1">Ganti PIN Akses</span>
@@ -379,24 +385,16 @@
                 <div class="bg-white px-4 py-3 border-b flex flex-col gap-3 sticky top-0 z-30 shadow-sm">
                     <h2 class="font-black text-blue-900 uppercase italic text-center tracking-wider text-sm">Inventory JTM</h2>
                     <div class="flex justify-between gap-2">
-                         <button onclick="changeInvTab('entry')" id="tab-inv-entry" class="inv-tab active flex-1 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm">Stok Masuk</button>
+                         <button onclick="changeInvTab('entry')" id="tab-inv-entry" class="inv-tab active flex-1 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm">Stok Ending</button>
                          <button onclick="changeInvTab('items')" id="tab-inv-items" class="inv-tab flex-1 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm">Barang</button>
                          <button onclick="changeInvTab('reports')" id="tab-inv-reports" class="inv-tab flex-1 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm">Laporan</button>
                     </div>
                 </div>
 
-                <!-- 1. STOK MASUK (Form Vertikal Masal) -->
+                <!-- 1. STOK ENDING (Form Vertikal Masal) -->
                 <div id="inv-entry" class="p-3 space-y-3 pb-32">
                     <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-200">
-                        <h3 id="inv-entry-date-title" class="font-black text-blue-900 text-sm uppercase text-center mb-3 border-b-2 border-dashed border-gray-200 pb-2 tracking-widest">INPUT HARI INI</h3>
-                        <div class="flex justify-between items-center bg-gray-50 p-1.5 rounded-xl border border-gray-200">
-                            <span class="text-[9px] font-black text-gray-500 uppercase ml-2">Mode Update:</span>
-                            <select id="inv-entry-type" onchange="resetPendingUpdates()" class="p-2 rounded-lg border-none outline-none text-[11px] font-black bg-white uppercase text-blue-900 shadow-sm">
-                                <option value="in">📦 STOK MASUK</option>
-                                <option value="out">🚚 STOK KELUAR</option>
-                                <option value="opname">⚖️ STOCK OPNAME</option>
-                            </select>
-                        </div>
+                        <h3 id="inv-entry-date-title" class="font-black text-blue-900 text-sm uppercase text-center tracking-widest">INPUT STOK ENDING HARI INI</h3>
                     </div>
                     
                     <!-- Container List Barang Dinamis -->
@@ -412,28 +410,9 @@
                     <button onclick="saveBulkInventory()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black uppercase shadow-lg text-xs active:scale-95 transition-transform"><i class="fa fa-save mr-2"></i>Simpan Stok</button>
                 </div>
 
-                <!-- 2. DATA BARANG (Dashboard Stats dipindah ke sini) -->
+                <!-- 2. DATA BARANG (Dashboard Stats Dihapus Sesuai Permintaan) -->
                 <div id="inv-items" class="p-4 hidden space-y-4">
-                    <div class="grid grid-cols-2 gap-3 mb-2">
-                         <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-                              <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none">Total Item</p>
-                              <h3 class="text-3xl font-black text-blue-900 mt-2" id="inv-total-items">0</h3>
-                         </div>
-                         <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
-                              <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none">Tersedia</p>
-                              <h3 class="text-3xl font-black text-green-700 mt-2" id="inv-avail-items">0</h3>
-                         </div>
-                         <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 border-l-4 border-l-yellow-500">
-                              <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none">Menipis (≤5)</p>
-                              <h3 class="text-3xl font-black text-yellow-600 mt-2" id="inv-low-items">0</h3>
-                         </div>
-                         <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 border-l-4 border-l-red-500">
-                              <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none">Kosong / No Data</p>
-                              <h3 class="text-3xl font-black text-red-600 mt-2" id="inv-empty-items">0</h3>
-                         </div>
-                    </div>
-
-                    <div class="flex gap-2 sticky top-[100px] z-20 bg-gray-50 py-2 border-b border-dashed border-gray-200">
+                    <div class="flex gap-2 sticky top-[60px] z-20 bg-gray-50 py-2 border-b border-dashed border-gray-200">
                          <input type="text" id="inv-search" oninput="renderInvItems()" placeholder="Cari nama barang..." class="flex-1 p-3 rounded-xl border border-gray-200 outline-none text-xs font-bold bg-white text-blue-900 shadow-sm">
                          <select id="inv-category-filter" onchange="renderInvItems()" class="w-[40%] p-3 rounded-xl border border-gray-200 outline-none text-[10px] font-black bg-white uppercase text-blue-900 shadow-sm">
                               <option value="ALL">ALL CAT</option>
@@ -445,13 +424,7 @@
                 <!-- 3. LAPORAN -->
                 <div id="inv-reports" class="p-4 hidden space-y-4">
                     <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-200 space-y-4">
-                         <p class="text-[10px] font-black text-blue-900 uppercase tracking-widest border-b pb-2">Filter Laporan Transaksi</p>
-                         <select id="inv-report-type" class="w-full p-3 rounded-xl border border-gray-200 outline-none text-[11px] font-black bg-gray-50 uppercase text-blue-900">
-                             <option value="ALL">SEMUA TRANSAKSI</option>
-                             <option value="in">STOK MASUK</option>
-                             <option value="out">STOK KELUAR</option>
-                             <option value="opname">STOCK OPNAME</option>
-                         </select>
+                         <p class="text-[10px] font-black text-blue-900 uppercase tracking-widest border-b pb-2">LAPORAN ENDING INVENTORY</p>
                          <div class="flex gap-2">
                              <div class="flex-1">
                                  <label class="text-[9px] font-bold text-gray-400 uppercase ml-1">Dari Tanggal</label>
@@ -541,7 +514,6 @@
             <div onclick="showPage('list')" class="nav-item active" id="nav-list"><i class="fa fa-motorcycle mb-1 text-xl"></i><span>Antaran</span></div>
             <div onclick="showPage('history')" class="nav-item" id="nav-history"><i class="fa fa-history mb-1 text-xl"></i><span>History</span></div>
             <div onclick="showPage('add')" class="nav-item nav-add" id="nav-add"><i class="fa fa-plus text-2xl"></i></div>
-            <div onclick="showPage('inventory')" class="nav-item" id="nav-inventory"><i class="fa fa-boxes mb-1 text-xl"></i><span>Stok JTM</span></div>
             <div onclick="showPage('chat')" class="nav-item" id="nav-chat"><i class="fab fa-whatsapp mb-1 text-xl"></i><span>WA Direct</span></div>
             <div onclick="showPage('home')" class="nav-item" id="nav-home"><i class="fa fa-user mb-1 text-xl"></i><span>Profil</span></div>
         </div>
@@ -579,36 +551,11 @@
         let invItems = {};
         let invTransactions = [];
         let pendingUpdates = {}; // Menyimpan sementara input stok dari user
-        let calcExpr = "";
         let calcTargetItemId = null;
         let calcTargetItemName = "";
 
-        // Data Seed dari "Inventory Book Juni 2026.xlsx" (Urutan Dipertahankan)[span_0](start_span)[span_0](end_span)
+        // Data Seed dari "Inventory Book Juni 2026.xlsx" (Urutan Dipertahankan)
         const seedInventoryData = [{"name": "DOUGH SMALL 125 GR", "category": "DOUGH", "spec": "1 × 20 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH MEDIUM 275 GR", "category": "DOUGH", "spec": "1 × 10 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH LARGE 400 GR", "category": "DOUGH", "spec": "1 × 8 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH PAN 325 GR", "category": "DOUGH", "spec": "1 × 9 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "THIN CRUST", "category": "DOUGH", "spec": "4 × 15 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "TORTILLA", "category": "DOUGH", "spec": "10 × 20 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "BEEF TOPPING", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF PEPPERONI", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF RASHER", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF BURGER", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF SAUSAGE CUT", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF FLOSS", "category": "BEEF AND CHICKEN", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN SAUSAGE", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN PEPPERONI", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN WINGS", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN STRIP", "category": "BEEF AND CHICKEN", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN BONELESS HABANERO", "category": "BEEF AND CHICKEN", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHOCO LAVA", "category": "SIDE", "spec": "12 × 750 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MACARONI", "category": "SIDE", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "SPAGHETTI", "category": "SIDE", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "GREEN PEPPER SLICED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "CHAMPIGNON MUSHROOM", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "MUSHROOM PACKED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "ONION SLICED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "LOCAL TOMATO", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "SLICED CHEDDAR CHEESE", "category": "CHEESE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "STRING CHEESE", "category": "CHEESE", "spec": "1 × 6804 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MOZARELLA CHEESE", "category": "CHEESE", "spec": "1 × 12 KG", "unit": "GR", "calcType": "Daily"}, {"name": "PARMESAN CHEESE", "category": "CHEESE", "spec": "1 × 2 KG", "unit": "GR", "calcType": "Daily"}, {"name": "RICOTTA CHEESE", "category": "CHEESE", "spec": "1 × 600 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHILI SAUCE SACHETS", "category": "SAUCE", "spec": "8 x 125 PCS", "unit": "PAC", "calcType": "Daily"}, {"name": "BUTTERSCOTCH", "category": "SAUCE", "spec": "20 x 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MUSTARD SAUCE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "TOMATO POUCH", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "PIZZA SAUCE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "DOMINO'S CONCENTRATE", "category": "SAUCE", "spec": "6 × 3160 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MAYONNAISE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BUMBU PASTA", "category": "SAUCE", "spec": "20 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "YELLOW CHEESE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHEESE SAUCE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHEESE BURST SAUCE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "ALFREDO TRUFFLE SAUCE", "category": "SAUCE", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "RUSTIC SAUCE", "category": "SAUCE", "spec": "20 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "SCIROPPI CHOCOLATE", "category": "SAUCE", "spec": "6 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "DURIAN PASTE", "category": "SAUCE", "spec": "16 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "PIZZA BOX SMALL 6", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA BOX MEDIUM 9.5", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA BOX LARGE 12", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER SMALL 6", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER MEDIUM 9.5", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER LARGE 12", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER MINI BOX", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PASTA BOX", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA SIDE DISH BOX", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "MINI BOX CHOCOLAVA", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PAPER BOWL 12OZ", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID BOWL 12OZ", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID PASTA PENNE", "category": "DRY", "spec": "4 × 125 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMUNIUM PASTA", "category": "DRY", "spec": "20 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "SLEEVE PASTA", "category": "DRY", "spec": "10 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "SAUCE CUP", "category": "DRY", "spec": "20 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMUNIUM FOIL", "category": "DRY", "spec": "1 × 6 ROLL", "unit": "PCS", "calcType": "Daily"}, {"name": "PAPER BOWL 650ML", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID BOWL 650ML", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "WRAPPING SPORK", "category": "DRY", "spec": "30 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID SUPPORT", "category": "DRY", "spec": "30 × 100 PCS", "unit": "PCS", "calcType": "Weekly"}, {"name": "PAPER PARCHMENT", "category": "DRY", "spec": "4 × 500 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "WHITE SPOON", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Weekly"}, {"name": "ALUMINIUM TRAY", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMINIUM TRAY XL", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ECOBAG", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ECOBAG ROPE", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "MULTIFOLD", "category": "DRY", "spec": "1 × 24 PAC", "unit": "PAC", "calcType": "Monthly"}, {"name": "NAPKIN", "category": "DRY", "spec": "1 × 48 PAC", "unit": "PAC", "calcType": "Monthly"}, {"name": "CORNMILLS", "category": "DRY", "spec": "1 × 5 KG", "unit": "GR", "calcType": "Monthly"}, {"name": "TALI RAFIA", "category": "DRY", "spec": "1 × 10 ROLL", "unit": "ROL", "calcType": "Monthly"}, {"name": "BERAS", "category": "AIR COND", "spec": "1 × 5 KG", "unit": "GR", "calcType": "Daily"}, {"name": "WHOLE KERNEL CORN", "category": "AIR COND", "spec": "24 X 260 GR", "unit": "CAN", "calcType": "Daily"}, {"name": "BLACK OLIVES SLICED", "category": "AIR COND", "spec": "6 × 1.560 GR", "unit": "GR", "calcType": "Daily"}, {"name": "ICING SUGAR", "category": "AIR COND", "spec": "1 × 200 GR", "unit": "GR", "calcType": "Daily"}, {"name": "DRY PARSLEY", "category": "AIR COND", "spec": "10 × 100 GR", "unit": "GR", "calcType": "Daily"}, {"name": "GARLIC BREAD SEASONING", "category": "AIR COND", "spec": "16 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "COMPOUND CHIP DARK", "category": "AIR COND", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "WIJEN", "category": "AIR COND", "spec": "1× 100 GR", "unit": "GR", "calcType": "Daily"}, {"name": "BUTTER OIL", "category": "AIR COND", "spec": "1 × 18 KG", "unit": "GR", "calcType": "Daily"}, {"name": "HERB BUTTER OIL", "category": "AIR COND", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "ADES", "category": "DRINK", "spec": "24 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FANTA 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "SPRITE 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COCA COLA 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COKE ZERO 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "SPRITE 1  LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COCA COLA 1  LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FANTA 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COKE ZERO 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FRESHTEA APPLE", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FRESHTEA JASMINE", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}];
-
-        // VARIABEL GAME CATUR
-        const pieceIcons = {
-            'w': { 
-                'p': 'https://chessboardjs.com/img/chesspieces/wikipedia/wP.png', 'n': 'https://chessboardjs.com/img/chesspieces/wikipedia/wN.png', 
-                'b': 'https://chessboardjs.com/img/chesspieces/wikipedia/wB.png', 'r': 'https://chessboardjs.com/img/chesspieces/wikipedia/wR.png', 
-                'q': 'https://chessboardjs.com/img/chesspieces/wikipedia/wQ.png', 'k': 'https://chessboardjs.com/img/chesspieces/wikipedia/wK.png' 
-            },
-            'b': { 
-                'p': 'https://chessboardjs.com/img/chesspieces/wikipedia/bP.png', 'n': 'https://chessboardjs.com/img/chesspieces/wikipedia/bN.png', 
-                'b': 'https://chessboardjs.com/img/chesspieces/wikipedia/bB.png', 'r': 'https://chessboardjs.com/img/chesspieces/wikipedia/bR.png', 
-                'q': 'https://chessboardjs.com/img/chesspieces/wikipedia/bQ.png', 'k': 'https://chessboardjs.com/img/chesspieces/wikipedia/bK.png' 
-            }
-        };
-
-        let chess = new Chess();
-        let currentChessGameId = null; let myChessColor = 'w'; let chessOpponent = ""; let selectedSquare = null; let chessSyncListener = null; let chessTimerInterval = null; let isSpectator = false; 
-        let wTime = 10 * 60; let bTime = 10 * 60; let lastTimestamp = 0; let lastRenderedFen = "start"; let isAnimatingPiece = false; let scoreProcessedForGame = false; let chessChatListener = null; let bottomScoreListener, topScoreListener; let lastBottomPlayer, lastTopPlayer; let pendingPromotion = null; let audioUnlocked = false; let botIsThinking = false;
-
-        // Titik Koordinat Deteksi Jarak Wilayah Terdekat
-        const KECAMATAN_POLYGONS = [
-            { name: "PONDOK GEDE", lat: -6.2842, lng: 106.9242 }, { name: "JATIASIH", lat: -6.3046, lng: 106.9615 }, { name: "PONDOK MELATI", lat: -6.3117, lng: 106.9267 },
-            { name: "BEKASI BARAT", lat: -6.2394, lng: 106.9744 }, { name: "DUREN SAWIT", lat: -6.2343, lng: 106.9194 }, { name: "MAKASAR", lat: -6.2735, lng: 106.8841 }, { name: "CIRACAS", lat: -6.3262, lng: 106.8797 }
-        ];
 
         window.onload = () => {
             db.ref('crew_settings').on('value', snap => {
@@ -626,9 +573,22 @@
             initInventoryDatabase();
             startInventoryListeners();
             
-            // Set Tanggal Input
+            // Set Tanggal Input Untuk Laporan & Header
+            const now = new Date();
             const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-            document.getElementById('inv-entry-date-title').innerText = `INPUT ${new Date().toLocaleDateString('id-ID', dateOptions)}`;
+            document.getElementById('inv-entry-date-title').innerText = `INPUT STOK ENDING ${now.toLocaleDateString('id-ID', dateOptions)}`;
+            
+            // Set Default Tanggal Laporan (Tgl 1 s/d Akhir Bulan Ini)
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0); 
+            const formatDate = (d) => {
+                let m = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+                if (m.length < 2) m = '0' + m;
+                if (day.length < 2) day = '0' + day;
+                return [year, m, day].join('-');
+            };
+            document.getElementById('inv-report-start').value = formatDate(firstDay);
+            document.getElementById('inv-report-end').value = formatDate(lastDay);
             
             document.body.addEventListener('click', () => {
                 if(!audioUnlocked) {
@@ -663,12 +623,11 @@
         function startInventoryListeners() {
             db.ref('inventory/items').on('value', s => {
                 invItems = s.val() || {};
-                updateInvStats();
                 renderInvEntryList();
                 renderInvItems();
                 populateInvCategories();
             });
-            db.ref('inventory/transactions').orderByChild('timestamp').limitToLast(150).on('value', s => {
+            db.ref('inventory/transactions').orderByChild('timestamp').limitToLast(300).on('value', s => {
                 let txs = [];
                 s.forEach(c => { txs.push({id: c.key, ...c.val()}); });
                 invTransactions = txs.reverse();
@@ -693,22 +652,6 @@
             if(tab === 'reports') generateInvReport();
         }
 
-        function updateInvStats() {
-            let total = 0, avail = 0, low = 0, empty = 0;
-            Object.values(invItems).forEach(item => {
-                total++;
-                let s = item.stock;
-                if(s === null || s === undefined || s === 0) { empty++; } 
-                else if (s > 0 && s <= 5) { low++; avail++; }
-                else { avail++; }
-            });
-            
-            document.getElementById('inv-total-items').innerText = total;
-            document.getElementById('inv-avail-items').innerText = avail;
-            document.getElementById('inv-low-items').innerText = low;
-            document.getElementById('inv-empty-items').innerText = empty;
-        }
-
         function populateInvCategories() {
             let catSelect = document.getElementById('inv-category-filter');
             let currentVal = catSelect.value;
@@ -721,7 +664,7 @@
             if(Array.from(cats).includes(currentVal)) catSelect.value = currentVal;
         }
 
-        // ---------- RENDER STOK MASUK VERTICAL ----------
+        // ---------- RENDER STOK ENDING VERTICAL ----------
         function resetPendingUpdates() {
             pendingUpdates = {};
             renderInvEntryList();
@@ -729,7 +672,6 @@
 
         function renderInvEntryList() {
             let list = document.getElementById('inv-entry-list');
-            let type = document.getElementById('inv-entry-type').value;
             
             let orderedItems = [];
             let keyMap = {};
@@ -751,17 +693,11 @@
                 let currentStock = (item.stock === null || item.stock === undefined) ? 0 : item.stock;
                 let valToDisplay = pendingUpdates[item.id] !== undefined ? pendingUpdates[item.id] : 0;
                 
-                // Kalkulasi Prediksi Hasil (Pratinjau)
-                let hasil = currentStock;
                 let hasilHtml = "";
                 let isEdited = pendingUpdates[item.id] !== undefined;
 
                 if (isEdited) {
-                    if (type === 'in') hasil = currentStock + valToDisplay;
-                    else if (type === 'out') hasil = currentStock - valToDisplay;
-                    else if (type === 'opname') hasil = valToDisplay;
-                    
-                    hasilHtml = `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full ml-2 uppercase text-[9px] font-black"><i class="fa fa-arrow-right mr-1"></i>HASIL: ${hasil}</span>`;
+                    hasilHtml = `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full ml-2 uppercase text-[9px] font-black"><i class="fa fa-arrow-right mr-1"></i>HASIL: ${valToDisplay}</span>`;
                 }
 
                 let btnClass = isEdited ? "bg-emerald-100 border-2 border-emerald-500 text-emerald-800 shadow-inner" : "bg-gray-50 border-2 border-gray-200 text-gray-400";
@@ -801,83 +737,91 @@
             }
         }
 
-        // ---------- KALKULATOR LOGIC ----------
+        // ---------- LOGIKA MULTIPLIER (CV & SATUAN) ----------
+        function parseMultiplier(spec, unit) {
+            if(!spec) return 1;
+            let s = spec.toUpperCase();
+            let num = 1;
+            
+            // Format regex mencari angka sebelum satuan
+            let match = s.match(/(\d+)\s*(PCS|GR|KG|ROLL|PAC|CAN|BTL)/);
+            if (match) {
+                num = parseInt(match[1]);
+                let specUnit = match[2];
+                // Konversi jika spec dalam KG tapi unit sistem dalam GR
+                if (specUnit === 'KG' && unit === 'GR') num *= 1000;
+            } else {
+                // Fallback cari angka sesudah huruf X
+                let parts = s.split(/X|×/);
+                if (parts.length > 1) {
+                    num = parseInt(parts[1].replace(/[^\d]/g, ''));
+                    if (s.includes('KG') && unit === 'GR') num *= 1000;
+                }
+            }
+            return (isNaN(num) || num === 0) ? 1 : num;
+        }
+
         function openCalculator(id, name) {
-            let type = document.getElementById('inv-entry-type').value;
-            if (type === 'opname' && !mgtAndCashiers.includes(currentUser) && currentUser !== 'Okta') {
-                return alert("🔒 AKSES DITOLAK!\nStock Opname (Koreksi) hanya dapat dilakukan oleh Management, Kasir, atau Okta.");
+            if (!mgtAndCashiers.includes(currentUser) && currentUser !== 'Okta') {
+                return alert("🔒 AKSES DITOLAK!\nStok Ending (Koreksi) hanya dapat dilakukan oleh Management, Kasir, atau Okta.");
             }
 
             calcTargetItemId = id;
             calcTargetItemName = name;
-            calcExpr = (pendingUpdates[id] || "").toString();
+            let item = invItems[id];
+            
             document.getElementById('calc-item-name').innerText = name;
+            document.getElementById('calc-item-spec').innerText = item.spec || "-";
+            document.getElementById('calc-unit').innerText = item.unit || "PCS";
+            
+            // Dapatkan multiplier otomatis berdasarkan data Spec
+            let defaultMultiplier = parseMultiplier(item.spec, item.unit);
+            
+            // Setel Input
+            document.getElementById('input-cv-multiplier').value = defaultMultiplier;
+            document.getElementById('input-cv-qty').value = "";
+            document.getElementById('input-loose-qty').value = "";
+            
+            // Apabila user sebelumnya sudah mengedit barang ini (edit ulang)
+            if(pendingUpdates[id] !== undefined) {
+                document.getElementById('input-loose-qty').value = pendingUpdates[id];
+                document.getElementById('input-cv-qty').value = 0;
+            }
+
+            calculateCV();
             document.getElementById('calc-modal').style.display = 'flex';
-            updateCalcDisplay();
         }
 
         function closeCalc() {
             document.getElementById('calc-modal').style.display = 'none';
         }
 
-        function calcPress(key) {
-            if(key === 'C') { 
-                calcExpr = ""; 
-            } else if(key === '=') {
-                try { 
-                    // Evaluate string gently using Function
-                    let evalResult = new Function('return ' + calcExpr)(); 
-                    if(isFinite(evalResult)) calcExpr = evalResult.toString();
-                    else calcExpr = "Error";
-                } catch(e) { calcExpr = "Error"; }
-            } else {
-                if(calcExpr === "Error" || calcExpr === "0") calcExpr = "";
-                calcExpr += key;
-            }
-            updateCalcDisplay();
-        }
-
-        function updateCalcDisplay() {
-            // Replace operators for UI Display
-            let displayStr = calcExpr.replace(/\*/g, ' x ').replace(/\//g, ' : ').replace(/\+/g, ' + ').replace(/\-/g, ' - ');
-            document.getElementById('calc-expression').innerText = displayStr || "0";
+        function calculateCV() {
+            let cvQty = parseFloat(document.getElementById('input-cv-qty').value) || 0;
+            let cvMult = parseFloat(document.getElementById('input-cv-multiplier').value) || 1;
+            let loose = parseFloat(document.getElementById('input-loose-qty').value) || 0;
             
-            let res = 0;
-            try { 
-                if (calcExpr) {
-                    res = new Function('return ' + calcExpr)(); 
-                    if(!isFinite(res) || isNaN(res)) res = "...";
-                }
-            } catch(e) { res = "..."; }
-            
-            document.getElementById('calc-result').innerText = res;
+            let total = (cvQty * cvMult) + loose;
+            document.getElementById('calc-result').innerText = total;
         }
 
         function calcSave() {
-            let res = 0;
-            try { 
-                res = new Function('return ' + calcExpr)(); 
-            } catch(e) { return alert("Format hitungan tidak valid!"); }
+            let total = parseFloat(document.getElementById('calc-result').innerText) || 0;
+            if(total < 0) return alert("Hasil stok tidak boleh negatif!");
             
-            res = parseFloat(res);
-            if(isNaN(res) || res < 0) return alert("Hasil harus angka bulat / desimal positif!");
-            
-            if(res > 0 || document.getElementById('inv-entry-type').value === 'opname') {
-                pendingUpdates[calcTargetItemId] = res;
-            } else {
-                delete pendingUpdates[calcTargetItemId];
+            if (total > 0 || pendingUpdates[calcTargetItemId] !== undefined) {
+                pendingUpdates[calcTargetItemId] = total;
             }
+            
             closeCalc();
             renderInvEntryList();
         }
 
         // ---------- SAVE BULK INVENTORY ----------
         function saveBulkInventory() {
-            let type = document.getElementById('inv-entry-type').value;
             if(Object.keys(pendingUpdates).length === 0) return alert("Belum ada angka yang diinput!");
             
-            let typeLabel = type === 'in' ? 'Stok Masuk' : (type === 'out' ? 'Stok Keluar' : 'Stock Opname');
-            let note = prompt(`Menyimpan ${Object.keys(pendingUpdates).length} barang sebagai ${typeLabel}.\nMasukkan Catatan (Opsional):`, `Input ${currentUser}`);
+            let note = prompt(`Menyimpan ${Object.keys(pendingUpdates).length} barang sebagai Stok Ending.\nMasukkan Catatan (Opsional):`, `Input ${currentUser}`);
             if(note === null) return; 
             
             const btnSave = document.querySelector('#inv-entry-bottom-bar button');
@@ -889,20 +833,11 @@
             
             Object.keys(pendingUpdates).forEach(itemId => {
                 let qty = pendingUpdates[itemId];
-                if(qty <= 0 && type !== 'opname') return;
                 
                 let itemRef = db.ref('inventory/items/' + itemId);
                 let p = itemRef.transaction(currentData => {
                     if(!currentData) return null;
-                    let prevStock = (currentData.stock === undefined || currentData.stock === null) ? 0 : currentData.stock;
-                    let newStock = prevStock;
-                    
-                    if(type === 'in') newStock += qty;
-                    else if(type === 'out') newStock -= qty;
-                    else if(type === 'opname') newStock = qty;
-                    
-                    if(newStock < 0) return undefined; // abort
-                    currentData.stock = newStock;
+                    currentData.stock = qty; // Override stock (mode Opname/Ending)
                     currentData.lastUpdate = Date.now();
                     return currentData;
                 }).then(result => {
@@ -912,12 +847,10 @@
                         let prevStockDisp = (oldData && (oldData.stock === undefined || oldData.stock === null)) ? 0 : ((oldData) ? oldData.stock : 0);
                         
                         return db.ref('inventory/transactions').push({
-                            itemId: itemId, itemName: newData.name, type: type,
+                            itemId: itemId, itemName: newData.name, type: 'opname',
                             amount: qty, stockBefore: prevStockDisp, stockAfter: newData.stock,
                             unit: newData.unit, timestamp: Date.now(), user: currentUser, note: note || "-"
                         });
-                    } else {
-                        console.error(`Gagal menyimpan ${itemId} (Mungkin stok negatif)`);
                     }
                 });
                 promises.push(p);
@@ -926,7 +859,7 @@
             Promise.all(promises).then(() => {
                 btnSave.innerHTML = origText;
                 btnSave.disabled = false;
-                alert("✅ Berhasil menyimpan semua data stok ke server!");
+                alert("✅ Berhasil menyimpan semua data Stok Ending ke server!");
                 pendingUpdates = {};
                 renderInvEntryList();
                 changeInvTab('items'); // Langsung alihkan ke halaman Barang
@@ -977,7 +910,6 @@
 
         // ---------- LAPORAN TAB ----------
         function generateInvReport() {
-            let filterType = document.getElementById('inv-report-type').value;
             let dateStart = document.getElementById('inv-report-start').value;
             let dateEnd = document.getElementById('inv-report-end').value;
             
@@ -989,18 +921,16 @@
             
             let count = 0;
             invTransactions.forEach(tx => {
-                if(filterType !== 'ALL' && tx.type !== filterType) return;
                 if(tx.timestamp < startMs || tx.timestamp > endMs) return;
                 
                 count++;
-                let typeColor = tx.type === 'in' ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : (tx.type === 'out' ? 'bg-red-100 text-red-700 border-red-300' : 'bg-blue-100 text-blue-700 border-blue-300');
-                let typeLabel = tx.type === 'in' ? 'MASUK' : (tx.type === 'out' ? 'KELUAR' : 'OPNAME');
+                let typeColor = 'bg-blue-100 text-blue-700 border-blue-300';
                 let timeStr = new Date(tx.timestamp).toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
                 
                 resultsBox.innerHTML += `
                 <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-200">
                     <div class="flex justify-between items-start mb-2">
-                        <span class="font-black text-[10px] px-2 py-1 rounded-md border ${typeColor} tracking-widest">${typeLabel}</span>
+                        <span class="font-black text-[10px] px-2 py-1 rounded-md border ${typeColor} tracking-widest">ENDING</span>
                         <span class="text-[9px] font-bold text-gray-500">${timeStr}</span>
                     </div>
                     <h4 class="font-black text-blue-900 text-[11px] uppercase">${tx.itemName}</h4>
@@ -1010,7 +940,7 @@
                             <p>Akhir: <span class="text-black">${tx.stockAfter}</span></p>
                         </div>
                         <div class="text-right">
-                            <p class="font-black text-lg ${tx.type === 'in' ? 'text-emerald-600' : (tx.type === 'out' ? 'text-red-600' : 'text-blue-600')} leading-none">${tx.type === 'in' ? '+' : (tx.type === 'out' ? '-' : '')}${tx.amount} <span class="text-[9px] text-gray-500">${tx.unit}</span></p>
+                            <p class="font-black text-lg text-blue-600 leading-none">${tx.amount} <span class="text-[9px] text-gray-500">${tx.unit}</span></p>
                         </div>
                     </div>
                     <div class="mt-2 bg-gray-50 p-2 rounded border text-[9px] font-bold text-gray-500">
@@ -1023,7 +953,6 @@
         }
 
         function exportInvReportCSV() {
-            let filterType = document.getElementById('inv-report-type').value;
             let dateStart = document.getElementById('inv-report-start').value;
             let dateEnd = document.getElementById('inv-report-end').value;
             
@@ -1031,10 +960,9 @@
             let endMs = dateEnd ? new Date(dateEnd + "T23:59:59").getTime() : Infinity;
 
             let csvRows = [];
-            csvRows.push(["WAKTU", "NAMA BARANG", "TIPE", "JUMLAH", "STOK AWAL", "STOK AKHIR", "SATUAN", "PENGGUNA", "CATATAN"]);
+            csvRows.push(["WAKTU", "NAMA BARANG", "STOK AWAL", "STOK AKHIR", "SATUAN", "PENGGUNA", "CATATAN"]);
             
             let exportData = invTransactions.filter(tx => {
-                if(filterType !== 'ALL' && tx.type !== filterType) return false;
                 if(tx.timestamp < startMs || tx.timestamp > endMs) return false;
                 return true;
             });
@@ -1043,10 +971,8 @@
             
             exportData.forEach(tx => {
                 let timeStr = new Date(tx.timestamp).toLocaleString('id-ID');
-                let typeLabel = tx.type === 'in' ? 'MASUK' : (tx.type === 'out' ? 'KELUAR' : 'OPNAME');
                 csvRows.push([
-                    `"${timeStr}"`, `"${tx.itemName}"`, `"${typeLabel}"`, 
-                    tx.amount, `"${tx.stockBefore}"`, tx.stockAfter, 
+                    `"${timeStr}"`, `"${tx.itemName}"`, `"${tx.stockBefore}"`, tx.stockAfter, 
                     `"${tx.unit}"`, `"${tx.user}"`, `"${tx.note.replace(/"/g, '""')}"`
                 ]);
             });
@@ -1057,7 +983,7 @@
             let url = URL.createObjectURL(blob);
             let link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", `Laporan_Inventory_JTM_${Date.now()}.csv`);
+            link.setAttribute("download", `Laporan_Stok_Ending_JTM_${Date.now()}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
