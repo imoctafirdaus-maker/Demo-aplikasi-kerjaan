@@ -87,47 +87,6 @@
     <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3" preload="auto"></audio>
     <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3" preload="auto"></audio>
 
-    <!-- MODAL INPUT CV & ECERAN INVENTORY -->
-    <div id="calc-modal" class="fixed inset-0 bg-black/70 z-[10050] hidden flex-col justify-end backdrop-blur-sm transition-opacity">
-        <div class="bg-gray-100 rounded-t-[2.5rem] p-5 pb-8 shadow-2xl">
-            <div class="flex justify-between items-center mb-4 px-2">
-                <span id="calc-item-name" class="font-black text-blue-900 uppercase text-[11px] tracking-widest bg-blue-100 px-3 py-1 rounded-full">NAMA BARANG</span>
-                <button onclick="closeCalc()" class="text-gray-400 bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-sm active:scale-90"><i class="fa fa-times"></i></button>
-            </div>
-            
-            <div class="bg-white p-5 rounded-3xl mb-5 shadow-sm border border-gray-200">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-                    <span class="text-[10px] font-black text-gray-500 uppercase">Input CV & Satuan Bebas</span>
-                    <span id="calc-item-spec" class="text-[9px] bg-gray-100 px-2 py-1 rounded font-bold text-gray-600">1 x 20 PCS</span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="text-[9px] font-black text-blue-900 uppercase ml-1">Jumlah CV / Karton</label>
-                        <input type="number" id="input-cv-qty" oninput="calculateCV()" inputmode="numeric" class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 font-black text-lg text-blue-900 mt-1 outline-none text-center" placeholder="0">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-blue-900 uppercase ml-1">Isi per 1 CV (Edit)</label>
-                        <input type="number" id="input-cv-multiplier" oninput="calculateCV()" inputmode="numeric" class="w-full p-3 bg-blue-50 rounded-xl border border-blue-200 font-black text-lg text-blue-900 mt-1 outline-none text-center text-blue-600">
-                    </div>
-                </div>
-                
-                <div class="mb-5">
-                    <label class="text-[9px] font-black text-blue-900 uppercase ml-1">Jumlah Eceran (Satuan Bebas)</label>
-                    <input type="number" id="input-loose-qty" oninput="calculateCV()" inputmode="numeric" class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 font-black text-lg text-blue-900 mt-1 outline-none text-center" placeholder="0">
-                </div>
-
-                <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100 text-center">
-                    <p class="text-[9px] font-black text-emerald-800 uppercase tracking-widest mb-1">TOTAL STOK ENDING</p>
-                    <div class="text-4xl font-black text-emerald-600" id="calc-result">0</div>
-                    <p class="text-[10px] font-bold text-emerald-700 mt-1" id="calc-unit">PCS</p>
-                </div>
-            </div>
-            
-            <button onclick="calcSave()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl uppercase shadow-lg text-sm active:scale-95 transition-transform"><i class="fa fa-check mr-2"></i>Gunakan Angka Ini</button>
-        </div>
-    </div>
-
     <!-- MODAL CATUR -->
     <div id="promoModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-gray-800 p-6 rounded-3xl text-center w-64 shadow-2xl border border-gray-700">
@@ -391,14 +350,14 @@
                     </div>
                 </div>
 
-                <!-- 1. STOK ENDING (Form Vertikal Masal) -->
+                <!-- 1. STOK ENDING (Form Vertikal Masal Inline) -->
                 <div id="inv-entry" class="p-3 space-y-3 pb-32">
                     <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-200">
                         <h3 id="inv-entry-date-title" class="font-black text-blue-900 text-sm uppercase text-center tracking-widest">INPUT STOK ENDING HARI INI</h3>
                     </div>
                     
                     <!-- Container List Barang Dinamis -->
-                    <div id="inv-entry-list" class="space-y-4"></div>
+                    <div id="inv-entry-list" class="space-y-3"></div>
                 </div>
 
                 <!-- Sticky Bottom Bar Untuk Simpan (Stok Masuk) -->
@@ -410,7 +369,7 @@
                     <button onclick="saveBulkInventory()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black uppercase shadow-lg text-xs active:scale-95 transition-transform"><i class="fa fa-save mr-2"></i>Simpan Stok</button>
                 </div>
 
-                <!-- 2. DATA BARANG (Dashboard Stats Dihapus Sesuai Permintaan) -->
+                <!-- 2. DATA BARANG -->
                 <div id="inv-items" class="p-4 hidden space-y-4">
                     <div class="flex gap-2 sticky top-[60px] z-20 bg-gray-50 py-2 border-b border-dashed border-gray-200">
                          <input type="text" id="inv-search" oninput="renderInvItems()" placeholder="Cari nama barang..." class="flex-1 p-3 rounded-xl border border-gray-200 outline-none text-xs font-bold bg-white text-blue-900 shadow-sm">
@@ -550,11 +509,9 @@
         // ==========================================
         let invItems = {};
         let invTransactions = [];
-        let pendingUpdates = {}; // Menyimpan sementara input stok dari user
-        let calcTargetItemId = null;
-        let calcTargetItemName = "";
+        let pendingUpdates = {}; // Menyimpan sementara objek stok dari user {cv, pcs, mult, total}
 
-        // Data Seed dari "Inventory Book Juni 2026.xlsx" (Urutan Dipertahankan)
+        // Data Seed
         const seedInventoryData = [{"name": "DOUGH SMALL 125 GR", "category": "DOUGH", "spec": "1 × 20 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH MEDIUM 275 GR", "category": "DOUGH", "spec": "1 × 10 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH LARGE 400 GR", "category": "DOUGH", "spec": "1 × 8 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH PAN 325 GR", "category": "DOUGH", "spec": "1 × 9 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "THIN CRUST", "category": "DOUGH", "spec": "4 × 15 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "TORTILLA", "category": "DOUGH", "spec": "10 × 20 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "BEEF TOPPING", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF PEPPERONI", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF RASHER", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF BURGER", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF SAUSAGE CUT", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF FLOSS", "category": "BEEF AND CHICKEN", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN SAUSAGE", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN PEPPERONI", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN WINGS", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN STRIP", "category": "BEEF AND CHICKEN", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN BONELESS HABANERO", "category": "BEEF AND CHICKEN", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHOCO LAVA", "category": "SIDE", "spec": "12 × 750 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MACARONI", "category": "SIDE", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "SPAGHETTI", "category": "SIDE", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "GREEN PEPPER SLICED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "CHAMPIGNON MUSHROOM", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "MUSHROOM PACKED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "ONION SLICED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "LOCAL TOMATO", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "SLICED CHEDDAR CHEESE", "category": "CHEESE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "STRING CHEESE", "category": "CHEESE", "spec": "1 × 6804 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MOZARELLA CHEESE", "category": "CHEESE", "spec": "1 × 12 KG", "unit": "GR", "calcType": "Daily"}, {"name": "PARMESAN CHEESE", "category": "CHEESE", "spec": "1 × 2 KG", "unit": "GR", "calcType": "Daily"}, {"name": "RICOTTA CHEESE", "category": "CHEESE", "spec": "1 × 600 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHILI SAUCE SACHETS", "category": "SAUCE", "spec": "8 x 125 PCS", "unit": "PAC", "calcType": "Daily"}, {"name": "BUTTERSCOTCH", "category": "SAUCE", "spec": "20 x 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MUSTARD SAUCE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "TOMATO POUCH", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "PIZZA SAUCE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "DOMINO'S CONCENTRATE", "category": "SAUCE", "spec": "6 × 3160 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MAYONNAISE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BUMBU PASTA", "category": "SAUCE", "spec": "20 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "YELLOW CHEESE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHEESE SAUCE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHEESE BURST SAUCE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "ALFREDO TRUFFLE SAUCE", "category": "SAUCE", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "RUSTIC SAUCE", "category": "SAUCE", "spec": "20 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "SCIROPPI CHOCOLATE", "category": "SAUCE", "spec": "6 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "DURIAN PASTE", "category": "SAUCE", "spec": "16 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "PIZZA BOX SMALL 6", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA BOX MEDIUM 9.5", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA BOX LARGE 12", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER SMALL 6", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER MEDIUM 9.5", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER LARGE 12", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER MINI BOX", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PASTA BOX", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA SIDE DISH BOX", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "MINI BOX CHOCOLAVA", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PAPER BOWL 12OZ", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID BOWL 12OZ", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID PASTA PENNE", "category": "DRY", "spec": "4 × 125 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMUNIUM PASTA", "category": "DRY", "spec": "20 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "SLEEVE PASTA", "category": "DRY", "spec": "10 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "SAUCE CUP", "category": "DRY", "spec": "20 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMUNIUM FOIL", "category": "DRY", "spec": "1 × 6 ROLL", "unit": "PCS", "calcType": "Daily"}, {"name": "PAPER BOWL 650ML", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID BOWL 650ML", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "WRAPPING SPORK", "category": "DRY", "spec": "30 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID SUPPORT", "category": "DRY", "spec": "30 × 100 PCS", "unit": "PCS", "calcType": "Weekly"}, {"name": "PAPER PARCHMENT", "category": "DRY", "spec": "4 × 500 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "WHITE SPOON", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Weekly"}, {"name": "ALUMINIUM TRAY", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMINIUM TRAY XL", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ECOBAG", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ECOBAG ROPE", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "MULTIFOLD", "category": "DRY", "spec": "1 × 24 PAC", "unit": "PAC", "calcType": "Monthly"}, {"name": "NAPKIN", "category": "DRY", "spec": "1 × 48 PAC", "unit": "PAC", "calcType": "Monthly"}, {"name": "CORNMILLS", "category": "DRY", "spec": "1 × 5 KG", "unit": "GR", "calcType": "Monthly"}, {"name": "TALI RAFIA", "category": "DRY", "spec": "1 × 10 ROLL", "unit": "ROL", "calcType": "Monthly"}, {"name": "BERAS", "category": "AIR COND", "spec": "1 × 5 KG", "unit": "GR", "calcType": "Daily"}, {"name": "WHOLE KERNEL CORN", "category": "AIR COND", "spec": "24 X 260 GR", "unit": "CAN", "calcType": "Daily"}, {"name": "BLACK OLIVES SLICED", "category": "AIR COND", "spec": "6 × 1.560 GR", "unit": "GR", "calcType": "Daily"}, {"name": "ICING SUGAR", "category": "AIR COND", "spec": "1 × 200 GR", "unit": "GR", "calcType": "Daily"}, {"name": "DRY PARSLEY", "category": "AIR COND", "spec": "10 × 100 GR", "unit": "GR", "calcType": "Daily"}, {"name": "GARLIC BREAD SEASONING", "category": "AIR COND", "spec": "16 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "COMPOUND CHIP DARK", "category": "AIR COND", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "WIJEN", "category": "AIR COND", "spec": "1× 100 GR", "unit": "GR", "calcType": "Daily"}, {"name": "BUTTER OIL", "category": "AIR COND", "spec": "1 × 18 KG", "unit": "GR", "calcType": "Daily"}, {"name": "HERB BUTTER OIL", "category": "AIR COND", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "ADES", "category": "DRINK", "spec": "24 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FANTA 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "SPRITE 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COCA COLA 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COKE ZERO 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "SPRITE 1  LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COCA COLA 1  LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FANTA 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COKE ZERO 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FRESHTEA APPLE", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FRESHTEA JASMINE", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}];
 
         window.onload = () => {
@@ -664,79 +621,6 @@
             if(Array.from(cats).includes(currentVal)) catSelect.value = currentVal;
         }
 
-        // ---------- RENDER STOK ENDING VERTICAL ----------
-        function resetPendingUpdates() {
-            pendingUpdates = {};
-            renderInvEntryList();
-        }
-
-        function renderInvEntryList() {
-            let list = document.getElementById('inv-entry-list');
-            
-            let orderedItems = [];
-            let keyMap = {};
-            Object.keys(invItems).forEach(k => { keyMap[invItems[k].name] = { id: k, ...invItems[k] }; });
-            
-            seedInventoryData.forEach(seed => {
-                if(keyMap[seed.name]) orderedItems.push(keyMap[seed.name]);
-            });
-
-            let html = "";
-            let currentCat = "";
-
-            orderedItems.forEach(item => {
-                if(item.category !== currentCat) {
-                    html += `<h4 class="font-black text-white bg-blue-900 py-1.5 px-3 rounded-lg text-[10px] uppercase tracking-widest mt-4 mb-2 shadow-sm sticky top-[108px] z-10">${item.category}</h4>`;
-                    currentCat = item.category;
-                }
-                
-                let currentStock = (item.stock === null || item.stock === undefined) ? 0 : item.stock;
-                let valToDisplay = pendingUpdates[item.id] !== undefined ? pendingUpdates[item.id] : 0;
-                
-                let hasilHtml = "";
-                let isEdited = pendingUpdates[item.id] !== undefined;
-
-                if (isEdited) {
-                    hasilHtml = `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full ml-2 uppercase text-[9px] font-black"><i class="fa fa-arrow-right mr-1"></i>HASIL: ${valToDisplay}</span>`;
-                }
-
-                let btnClass = isEdited ? "bg-emerald-100 border-2 border-emerald-500 text-emerald-800 shadow-inner" : "bg-gray-50 border-2 border-gray-200 text-gray-400";
-
-                html += `
-                <div class="bg-white p-3 rounded-2xl border border-gray-200 mb-2 flex justify-between items-center shadow-sm relative">
-                    <div class="flex-1 pr-2">
-                        <h4 class="font-black text-blue-900 text-[11px] uppercase leading-tight">${item.name}</h4>
-                        <p class="text-[9px] text-gray-400 font-bold mt-1">${item.spec || '-'} • ${item.unit}</p>
-                        <div class="flex items-center mt-2 text-[9px] font-bold text-gray-500">
-                            <span>Stok Awal: <span class="text-black">${currentStock}</span></span>
-                            ${hasilHtml}
-                        </div>
-                    </div>
-                    <div class="w-20 shrink-0">
-                        <div class="${btnClass} rounded-xl p-3 text-center text-lg font-black cursor-pointer transition-colors" 
-                             onclick="openCalculator('${item.id}', '${item.name}')" id="entry-val-${item.id}">
-                            ${valToDisplay > 0 ? valToDisplay : '+'}
-                        </div>
-                    </div>
-                </div>`;
-            });
-            
-            list.innerHTML = html;
-            updateBottomBar();
-        }
-
-        function updateBottomBar() {
-            const bar = document.getElementById('inv-entry-bottom-bar');
-            const totalEdit = Object.keys(pendingUpdates).length;
-            document.getElementById('inv-entry-total-edit').innerText = `${totalEdit} Barang`;
-            
-            if(totalEdit > 0) {
-                bar.classList.remove('translate-y-full');
-            } else {
-                bar.classList.add('translate-y-full');
-            }
-        }
-
         // ---------- LOGIKA MULTIPLIER (CV & SATUAN) ----------
         function parseMultiplier(spec, unit) {
             if(!spec) return 1;
@@ -761,60 +645,140 @@
             return (isNaN(num) || num === 0) ? 1 : num;
         }
 
-        function openCalculator(id, name) {
-            if (!mgtAndCashiers.includes(currentUser) && currentUser !== 'Okta') {
-                return alert("🔒 AKSES DITOLAK!\nStok Ending (Koreksi) hanya dapat dilakukan oleh Management, Kasir, atau Okta.");
-            }
-
-            calcTargetItemId = id;
-            calcTargetItemName = name;
-            let item = invItems[id];
-            
-            document.getElementById('calc-item-name').innerText = name;
-            document.getElementById('calc-item-spec').innerText = item.spec || "-";
-            document.getElementById('calc-unit').innerText = item.unit || "PCS";
-            
-            // Dapatkan multiplier otomatis berdasarkan data Spec
-            let defaultMultiplier = parseMultiplier(item.spec, item.unit);
-            
-            // Setel Input
-            document.getElementById('input-cv-multiplier').value = defaultMultiplier;
-            document.getElementById('input-cv-qty').value = "";
-            document.getElementById('input-loose-qty').value = "";
-            
-            // Apabila user sebelumnya sudah mengedit barang ini (edit ulang)
-            if(pendingUpdates[id] !== undefined) {
-                document.getElementById('input-loose-qty').value = pendingUpdates[id];
-                document.getElementById('input-cv-qty').value = 0;
-            }
-
-            calculateCV();
-            document.getElementById('calc-modal').style.display = 'flex';
-        }
-
-        function closeCalc() {
-            document.getElementById('calc-modal').style.display = 'none';
-        }
-
-        function calculateCV() {
-            let cvQty = parseFloat(document.getElementById('input-cv-qty').value) || 0;
-            let cvMult = parseFloat(document.getElementById('input-cv-multiplier').value) || 1;
-            let loose = parseFloat(document.getElementById('input-loose-qty').value) || 0;
-            
-            let total = (cvQty * cvMult) + loose;
-            document.getElementById('calc-result').innerText = total;
-        }
-
-        function calcSave() {
-            let total = parseFloat(document.getElementById('calc-result').innerText) || 0;
-            if(total < 0) return alert("Hasil stok tidak boleh negatif!");
-            
-            if (total > 0 || pendingUpdates[calcTargetItemId] !== undefined) {
-                pendingUpdates[calcTargetItemId] = total;
-            }
-            
-            closeCalc();
+        // ---------- RENDER STOK ENDING INLINE (Menggantikan Tombol Plus) ----------
+        function resetPendingUpdates() {
+            pendingUpdates = {};
             renderInvEntryList();
+        }
+
+        function calcInline(id) {
+            // Blokir akses jika bukan otoritas
+            if (!mgtAndCashiers.includes(currentUser) && currentUser !== 'Okta') {
+                document.getElementById('cv-' + id).value = "";
+                document.getElementById('pcs-' + id).value = "";
+                alert("🔒 AKSES DITOLAK!\nStok Ending (Koreksi) hanya dapat dilakukan oleh Management, Kasir, atau Okta.");
+                return;
+            }
+
+            let mult = parseFloat(document.getElementById('mult-' + id).value) || 0;
+            let cv = parseFloat(document.getElementById('cv-' + id).value) || 0;
+            let pcs = parseFloat(document.getElementById('pcs-' + id).value) || 0;
+            
+            // Kalkulator: (Jumlah CV × Isi Multiplier) + Jumlah PCS Eceran
+            let total = (cv * mult) + pcs;
+            
+            document.getElementById('total-' + id).innerText = total;
+            
+            let card = document.getElementById('card-' + id);
+            
+            if (cv > 0 || pcs > 0 || total > 0) {
+                // Simpan ke memori temporary saat diubah
+                pendingUpdates[id] = { cv: cv, pcs: pcs, mult: mult, total: total };
+                
+                // Ubah style jadi hijau agar terlihat sudah diedit
+                if (card) {
+                    card.classList.add('border-emerald-400', 'bg-emerald-50/20');
+                    card.classList.remove('border-gray-200');
+                    document.getElementById('total-' + id).classList.add('text-emerald-600');
+                    document.getElementById('total-' + id).classList.remove('text-gray-300');
+                }
+            } else {
+                delete pendingUpdates[id];
+                
+                // Kembalikan style default
+                if (card) {
+                    card.classList.remove('border-emerald-400', 'bg-emerald-50/20');
+                    card.classList.add('border-gray-200');
+                    document.getElementById('total-' + id).classList.remove('text-emerald-600');
+                    document.getElementById('total-' + id).classList.add('text-gray-300');
+                }
+            }
+            updateBottomBar();
+        }
+
+        function renderInvEntryList() {
+            let list = document.getElementById('inv-entry-list');
+            
+            let orderedItems = [];
+            let keyMap = {};
+            Object.keys(invItems).forEach(k => { keyMap[invItems[k].name] = { id: k, ...invItems[k] }; });
+            
+            seedInventoryData.forEach(seed => {
+                if(keyMap[seed.name]) orderedItems.push(keyMap[seed.name]);
+            });
+
+            let html = "";
+            let currentCat = "";
+
+            orderedItems.forEach(item => {
+                if(item.category !== currentCat) {
+                    html += `<h4 class="font-black text-white bg-blue-900 py-1.5 px-3 rounded-lg text-[10px] uppercase tracking-widest mt-4 mb-2 shadow-sm sticky top-[108px] z-10">${item.category}</h4>`;
+                    currentCat = item.category;
+                }
+                
+                let currentStock = (item.stock === null || item.stock === undefined) ? 0 : item.stock;
+                
+                // Setel nilai dari memory temporary jika ada
+                let pending = pendingUpdates[item.id] || null;
+                let defaultMult = parseMultiplier(item.spec, item.unit);
+                let valMult = pending ? pending.mult : defaultMult;
+                let valCV = pending && pending.cv > 0 ? pending.cv : "";
+                // Agar input pcs dapat memperlihatkan 0 (jika cv sudah diinput)
+                let valPcs = (pending && pending.pcs > 0) || (pending && pending.pcs === 0 && pending.cv > 0) ? pending.pcs : "";
+                let valTotal = pending ? pending.total : 0;
+                let isEdited = pending !== null;
+
+                html += `
+                <div id="card-${item.id}" class="bg-white p-3 rounded-2xl border ${isEdited ? 'border-emerald-400 bg-emerald-50/20' : 'border-gray-200'} mb-2 flex justify-between items-center shadow-sm relative transition-colors">
+                    <div class="flex-1 pr-1 min-w-0">
+                        <h4 class="font-black text-blue-900 text-[10px] uppercase leading-tight truncate">${item.name}</h4>
+                        
+                        <!-- Input Edit Multiplier / Satuan per CV -->
+                        <div class="flex items-center gap-1 mt-1.5">
+                            <span class="text-[8px] text-gray-400 font-bold whitespace-nowrap">Isi/CV:</span>
+                            <input type="number" inputmode="numeric" id="mult-${item.id}" value="${valMult}" oninput="calcInline('${item.id}')" class="w-10 bg-gray-100 border border-gray-200 rounded text-center text-[9px] font-black text-blue-600 outline-none py-0.5">
+                            <span class="text-[8px] text-gray-400 font-bold truncate">${item.unit}</span>
+                        </div>
+                        
+                        <div class="text-[9px] font-bold text-gray-500 mt-1">Stok Awal: <span class="text-black font-black">${currentStock}</span></div>
+                    </div>
+                    
+                    <!-- Inline Calculator Menggantikan Tombol Plus -->
+                    <div class="flex items-center gap-1 shrink-0 ml-1">
+                        <div class="flex flex-col items-center">
+                            <label class="text-[7px] font-black text-blue-900 uppercase">CV</label>
+                            <input type="number" inputmode="numeric" id="cv-${item.id}" value="${valCV}" oninput="calcInline('${item.id}')" class="w-9 h-8 bg-gray-50 rounded border border-gray-300 font-black text-xs text-blue-900 text-center outline-none focus:border-blue-500" placeholder="0">
+                        </div>
+                        <div class="text-gray-300 font-black text-[10px] mt-2">+</div>
+                        <div class="flex flex-col items-center">
+                            <label class="text-[7px] font-black text-blue-900 uppercase">PCS</label>
+                            <input type="number" inputmode="numeric" id="pcs-${item.id}" value="${valPcs !== "" ? valPcs : ""}" oninput="calcInline('${item.id}')" class="w-9 h-8 bg-gray-50 rounded border border-gray-300 font-black text-xs text-blue-900 text-center outline-none focus:border-blue-500" placeholder="0">
+                        </div>
+                        <div class="text-gray-300 font-black text-[10px] mt-2">=</div>
+                        
+                        <!-- Kolom Total PCS yang dihasilkan -->
+                        <div class="flex flex-col items-center bg-emerald-50 px-1.5 py-1 rounded border border-emerald-200 min-w-[32px]">
+                            <label class="text-[7px] font-black text-emerald-800 uppercase">TOT</label>
+                            <span class="text-sm font-black ${isEdited ? 'text-emerald-600' : 'text-gray-300'} leading-none mt-0.5" id="total-${item.id}">${valTotal}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            list.innerHTML = html;
+            updateBottomBar();
+        }
+
+        function updateBottomBar() {
+            const bar = document.getElementById('inv-entry-bottom-bar');
+            const totalEdit = Object.keys(pendingUpdates).length;
+            document.getElementById('inv-entry-total-edit').innerText = `${totalEdit} Barang`;
+            
+            if(totalEdit > 0) {
+                bar.classList.remove('translate-y-full');
+            } else {
+                bar.classList.add('translate-y-full');
+            }
         }
 
         // ---------- SAVE BULK INVENTORY ----------
@@ -832,7 +796,8 @@
             let promises = [];
             
             Object.keys(pendingUpdates).forEach(itemId => {
-                let qty = pendingUpdates[itemId];
+                // Ambil nilai total yang sudah dihitung pada object temporary
+                let qty = pendingUpdates[itemId].total;
                 
                 let itemRef = db.ref('inventory/items/' + itemId);
                 let p = itemRef.transaction(currentData => {
@@ -860,9 +825,9 @@
                 btnSave.innerHTML = origText;
                 btnSave.disabled = false;
                 alert("✅ Berhasil menyimpan semua data Stok Ending ke server!");
-                pendingUpdates = {};
+                pendingUpdates = {}; // Bersihkan riwayat input
                 renderInvEntryList();
-                changeInvTab('items'); // Langsung alihkan ke halaman Barang
+                changeInvTab('items'); // Langsung alihkan ke halaman Barang (Otomatis tertotal menjadi PCS)
             }).catch(err => {
                 btnSave.innerHTML = origText;
                 btnSave.disabled = false;
