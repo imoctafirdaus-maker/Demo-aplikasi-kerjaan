@@ -448,23 +448,25 @@ const seedInventoryData = [{"name": "DOUGH SMALL 125 GR", "category": "DOUGH", "
 
 // Urutan Khusus Sesuai Permintaan Anda
 const customOrderList = [
-"SAUCE CUP", "LID PASTA PENNE", "SCIROPPI CHOCOLATE", "MINI BOX CHOCOLAVA", "ALUMUNIUM PASTA",
-"LOCAL TOMATO", "BERAS", "BEEF BURGER", "LID BOWL 650ML", "NAPKIN", "DOUGH MEDIUM 275 GR",
-"STRING CHEESE", "CHOCO LAVA", "GARLIC BREAD SEASONING", "LID BOWL 12OZ", "PAPER BOWL 12OZ",
-"CHICKEN STRIP", "TORTILLA", "CHEESE SAUCE", "LAYER LARGE 12", "LAYER MEDIUM 9.5", "LAYER SMALL 6",
-"PIZZA BOX MEDIUM 9.5", "COCA COLA 390 ML", "FANTA 390 ML", "SPRITE 390 ML", "FRESHTEA JASMINE",
-"FRESHTEA APPLE", "LAYER MINI BOX", "THIN CRUST", "SPAGHETTI", "MACARONI", "BUMBU PASTA",
-"PIZZA SIDE DISH BOX", "PASTA BOX", "DOUGH SMALL 125 GR", "CHICKEN SAUSAGE", "BUTTER OIL",
-"CHEESE BURST SAUCE", "RICOTTA CHEESE", "PARMESAN CHEESE", "CHICKEN BONELESS HABANERO",
-"ALFREDO TRUFFLE SAUCE", "WRAPPING SPORK", "BUTTERSCOTCH", "BLACK OLIVES SLICED",
-"SLICED CHEDDAR CHEESE", "COMPOUND CHIP DARK", "CHAMPIGNON MUSHROOM", "WIJEN", "ECOBAG",
-"ALUMINIUM TRAY", "MUSHROOM PACKED", "TOMATO POUCH", "ICING SUGAR", "ALUMINIUM TRAY XL",
-"BEEF FLOSS", "COKE ZERO 390 ML", "DURIAN PASTE", "BEEF RASHER", "BEEF PEPPERONI", "BEEF TOPPING",
-"CHICKEN PEPPERONI", "CHILI SAUCE SACHETS", "WHOLE KERNEL CORN", "PIZZA SAUCE", "ADES",
-"DOUGH LARGE 400 GR", "DOUGH PAN 325 GR", "DRY PARSLEY", "GREEN PEPPER SLICED", "MAYONNAISE",
-"MOZARELLA CHEESE", "MULTIFOLD", "MUSTARD SAUCE", "ONION SLICED", "PAPER PARCHMENT",
-"PIZZA BOX LARGE 12", "PIZZA BOX SMALL 6", "SPRITE 1 LTR", "FANTA 1 LTR", "COCA COLA 1 LTR",
-"RUSTIC SAUCE", "SLEEVE PASTA", "SMOKE BEEF SAUSAGE", "CHICKEN WINGS", "ALUMUNIUM FOIL"
+"SAUCE CUP", "LID PASTA PENNE", "SIROPI CHOCOLATE", "MINI BOX CHOCOLAVA", "ALUMINIUM PASTA RE",
+"Local Tomato", "Beras IR 42", "DELMONTE BEEF BBQ", "Lid Bowl 650 ML", "COCKTAIL NAPKIN",
+"DOUGH BALL 275 GR", "STRING CHEESE", "Chocolate Lava Frozen", "GARLIC BREAD", "LID BOWL CUP 12 OZ",
+"PAPER BOWL CUP 12 OZ", "Chicken Strip Original", "TORTILLA gr", "DM CHEESE SAUCE 300GR", "GREASED LAYER LARGE ",
+"GREASED LAYER MEDIUM", "GREASED LAYER SMALL", "PIZZA BOX 9.5\"", "COCA COLA 390ML", "FANTA 390ML",
+"SPRITE 390ML", "JASMINE 350ML", "APPLETEA 350ML", "CHEESE SAUCE", "GREASED LAYER MINI BOX",
+"THIN CRUST PIZZA 9.5\"", "SPAGHETTI", "MACARONI", "BUMBU PASTA", "SIDE DISH BOX",
+"PASTA BOX", "Small HT Dough 125 gr/pcs", "BEEF BURGER @ 1KG", "CHICKEN SAUSAGE @ 1 KG", "BUTTER OIL KG",
+"CHEESE SAUCE BURST", "RICOTTA CHEESE", "PARMESAN CHEESE", "BONELESS WINGS", "TRUFFLE ALFREDO SAUCE",
+"WRAPPING FORK BLACK", "BUTTERSCOTCH SAUCE", "BLACK OLIVES SLICE", "SLICE CHEESE ANCHOR", "COMPOUND CHIP DARK",
+"MUSHROOM SLICE", "WIEN SANGREAL", "ECOBAG SPUNBOND 12\"", "ALUMINIUM TRAY", "MUSHROOM SLICE @485",
+"TOMATO SAUCE POUCH", "ICING SUGAR KG", "ALUMINIUM TRAY EX-180", "BLACK OLIVE SLICED", "BEEF FLOSS",
+"COKE ZERO 390 ML", "DURIAN PASTE PACK", "Budak Sauce 12x1 KG", "BEEF RASHER", "BEEF PEPPERONI @1 KG",
+"BEEF TOPPING @1 KG", "BUTTER OIL", "CHAMPIGNON MUSHROOM", "CHICKEN PEPPERONI", "CHILI SAUCE 8CHT, 8",
+"DELMONTE WHOLE", "DOMINO'S PIZZA SAUCE", "ADES MINERAL WATER", "DOUGH BALL 400 GR", "DOUGH BALL 325 GR",
+"DRY PARSLEY FLAKES", "GREEN PEPPER", "MAYONNAISE", "DICED MOZARELLA", "MULTIFOLD TISSUE",
+"MUSTARD SAUCE", "ONION SLICED @1 KG", "PAPER PARCHMENT", "PIZZA BOX 12\"", "PIZZA BOX 6\"",
+"SPRITE 1 LTR", "FANTA 1 LTR", "COCA COLA 1 LTR", "RUSTIC SAUCE", "SLEEVE PASTA 1x500",
+"SLICE CEDDAR CHESSE", "SMOKE BEEF SAUSAGE", "CHIKEN WINGS @1KG", "ALUMUNIUM FOIL [1cv = 6 roll]"
 ];
 
 window.onload = () => {
@@ -622,9 +624,12 @@ let orderedItems = [];
 let keyMap = {};
 Object.keys(invItems).forEach(k => { keyMap[invItems[k].name.toUpperCase()] = { id: k, ...invItems[k] }; });
 
-// Sortir kustom berdasarkan list dari Anda
 customOrderList.forEach(customName => {
-let match = Object.keys(keyMap).find(k => k.includes(customName.toUpperCase()) || customName.toUpperCase().includes(k));
+let exactName = customName.toUpperCase();
+let match = Object.keys(keyMap).find(k => k === exactName);
+if (!match) {
+match = Object.keys(keyMap).find(k => k.includes(exactName) || exactName.includes(k));
+}
 if (match) {
 orderedItems.push(keyMap[match]);
 delete keyMap[match];
@@ -774,8 +779,26 @@ let list = document.getElementById('inv-items-list');
 let search = document.getElementById('inv-search').value.toLowerCase();
 let catFilt = document.getElementById('inv-category-filter').value;
 list.innerHTML = "";
-let itemsArray = Object.keys(invItems).map(k => ({id: k, ...invItems[k]}));
-itemsArray.sort((a,b) => a.name.localeCompare(b.name));
+
+let keyMap = {};
+Object.keys(invItems).forEach(k => {
+keyMap[invItems[k].name.toUpperCase()] = { id: k, ...invItems[k] };
+});
+
+let itemsArray = [];
+customOrderList.forEach(customName => {
+let exactName = customName.toUpperCase();
+let match = Object.keys(keyMap).find(k => k === exactName);
+if(!match) {
+match = Object.keys(keyMap).find(k => k.includes(exactName) || exactName.includes(k));
+}
+if (match) {
+itemsArray.push(keyMap[match]);
+delete keyMap[match];
+}
+});
+Object.keys(keyMap).forEach(k => { itemsArray.push(keyMap[k]); });
+
 let count = 0;
 itemsArray.forEach(i => {
 if(catFilt !== 'ALL' && i.category !== catFilt) return;
