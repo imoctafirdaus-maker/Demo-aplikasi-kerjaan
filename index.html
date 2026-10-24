@@ -305,6 +305,13 @@
 <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-200">
 <h3 id="inv-entry-date-title" class="font-black text-blue-900 text-sm uppercase text-center tracking-widest">INPUT STOK ENDING HARI INI</h3>
 </div>
+<!-- SEARCH & FILTER BARU UNTUK STOK ENDING -->
+<div class="flex gap-2 sticky top-[80px] z-20 bg-gray-50 py-2 border-b border-dashed border-gray-200">
+<input type="text" id="inv-entry-search" oninput="renderInvEntryList()" placeholder="Cari nama barang..." class="flex-1 p-3 rounded-xl border border-gray-200 outline-none text-xs font-bold bg-white text-blue-900 shadow-sm">
+<select id="inv-entry-category-filter" onchange="renderInvEntryList()" class="w-[40%] p-3 rounded-xl border border-gray-200 outline-none text-[10px] font-black bg-white uppercase text-blue-900 shadow-sm">
+<option value="ALL">ALL CAT</option>
+</select>
+</div>
 <div id="inv-entry-list" class="space-y-3"></div>
 </div>
 <div id="inv-entry-bottom-bar" class="fixed bottom-[70px] left-0 right-0 bg-white p-3 shadow-[0_-15px_25px_rgba(0,0,0,0.08)] border-t flex justify-between items-center z-40 transition-transform transform translate-y-full">
@@ -557,14 +564,22 @@ if(tab === 'reports') generateInvReport();
 }
 
 function populateInvCategories() {
-let catSelect = document.getElementById('inv-category-filter');
-let currentVal = catSelect.value;
+let catSelect1 = document.getElementById('inv-category-filter');
+let catSelect2 = document.getElementById('inv-entry-category-filter');
+
+let currentVal1 = catSelect1.value;
+let currentVal2 = catSelect2 ? catSelect2.value : 'ALL';
+
 let cats = new Set();
 Object.values(invItems).forEach(i => cats.add(i.category));
 let html = `<option value="ALL">SEMUA KATEGORI</option>`;
 Array.from(cats).sort().forEach(c => { html += `<option value="${c}">${c}</option>`; });
-catSelect.innerHTML = html;
-if(Array.from(cats).includes(currentVal)) catSelect.value = currentVal;
+
+catSelect1.innerHTML = html;
+if(catSelect2) catSelect2.innerHTML = html;
+
+if(Array.from(cats).includes(currentVal1)) catSelect1.value = currentVal1;
+if(catSelect2 && Array.from(cats).includes(currentVal2)) catSelect2.value = currentVal2;
 }
 
 // LOGIKA KALKULATOR 3 KOLOM / 2 KOLOM
@@ -582,16 +597,12 @@ let mult2 = parseFloat(document.getElementById('mult2-' + id)?.value) || 0;
 let total = 0;
 
 if (item.name === "WHOLE KERNEL CORN") {
-// Kalkulasi khusus Kernel Corn: CV -> CAN -> GR
 total = (cv * mult1 * mult2) + (mid * mult2) + ecer;
 } else if (item.unit === "GR" && item.spec !== "WEIGHED" && item.category !== "DRY") {
-// Kalkulasi untuk saus/daging/keju dengan CV -> KG -> GR
 total = (cv * mult1 * 1000) + (mid * 1000) + ecer;
 } else if (item.spec === "WEIGHED") {
-// Sayuran timbang: KG -> GR
 total = (mid * 1000) + ecer; 
 } else {
-// Default 2 Kolom (CV -> PCS)
 total = (cv * mult1) + ecer;
 }
 
@@ -620,16 +631,18 @@ updateBottomBar();
 
 function renderInvEntryList() {
 let list = document.getElementById('inv-entry-list');
+let searchInput = document.getElementById('inv-entry-search');
+let search = searchInput ? searchInput.value.toLowerCase() : "";
+let catFilterInput = document.getElementById('inv-entry-category-filter');
+let catFilt = catFilterInput ? catFilterInput.value : "ALL";
+
 let orderedItems = [];
 let keyMap = {};
 
-// Memetakan semua item dari Firebase berdasarkan Namanya (Uppercase)
 Object.keys(invItems).forEach(k => { 
     keyMap[invItems[k].name.toUpperCase()] = { id: k, ...invItems[k] }; 
 });
 
-// MENGIKUTI URUTAN EXCEL UNTUK MENU "STOK ENDING"
-// seedInventoryData memiliki struktur dan urutan yang sama persis dengan File Excel.
 const DaftarUrutExcel = seedInventoryData.map(i => i.name);
 
 DaftarUrutExcel.forEach(namaExcel => {
@@ -643,12 +656,16 @@ DaftarUrutExcel.forEach(namaExcel => {
         delete keyMap[match];
     }
 });
-
-// Menambahkan item sisa (jika ada yang terlewat) di bagian bawah
 Object.keys(keyMap).forEach(k => { orderedItems.push(keyMap[k]); });
 
 let html = "";
+let count = 0;
+
 orderedItems.forEach(item => {
+if (catFilt !== 'ALL' && item.category !== catFilt) return;
+if (search && !item.name.toLowerCase().includes(search)) return;
+count++;
+
 let currentStock = (item.stock === null || item.stock === undefined) ? 0 : item.stock;
 let pending = pendingUpdates[item.id] || null;
 
@@ -671,7 +688,7 @@ let parts = item.spec.split(/x|×/i);
 if(parts.length > 1) {
 mult1 = parseInt(parts[0].replace(/[^\d]/g, '')) || 1;
 mult2 = parseInt(parts[1].replace(/[^\d]/g, '')) || 1;
-if(parts[1].toUpperCase().includes("KG")) mult2 = 1; // Karna KG selalu dikali 1000 nanti
+if(parts[1].toUpperCase().includes("KG")) mult2 = 1;
 }
 } else if (item.spec === "WEIGHED") {
 is3Col = true; mult1 = 0; mult2 = 1; midLabel = "KG"; ecerLabel = "GR";
@@ -680,7 +697,6 @@ let parts = item.spec.split(/x|×/i);
 if(parts.length > 1) mult1 = parseInt(parts[1].replace(/[^\d]/g, '')) || 1;
 }
 
-// Generate Input Kolom
 let inputCols = '';
 if(is3Col) {
 if(item.spec === "WEIGHED") {
@@ -727,6 +743,11 @@ ${inputCols}
 </div>
 </div>`;
 });
+
+if(count === 0) {
+    html = `<div class="text-center text-gray-400 font-bold text-xs mt-4">Barang tidak ditemukan.</div>`;
+}
+
 list.innerHTML = html;
 updateBottomBar();
 }
@@ -797,7 +818,6 @@ keyMap[invItems[k].name.toUpperCase()] = { id: k, ...invItems[k] };
 
 let itemsArray = [];
 
-// MENGIKUTI URUTAN ARTIKEL PULSE UNTUK MENU "BARANG"
 customOrderList.forEach(customName => {
 let exactName = customName.toUpperCase();
 let match = Object.keys(keyMap).find(k => k === exactName);
@@ -809,7 +829,6 @@ itemsArray.push(keyMap[match]);
 delete keyMap[match];
 }
 });
-// Menambahkan item sisa (jika ada yang terlewat) di bagian bawah
 Object.keys(keyMap).forEach(k => { itemsArray.push(keyMap[k]); });
 
 let count = 0;
