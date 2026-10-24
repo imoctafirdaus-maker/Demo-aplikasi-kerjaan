@@ -68,6 +68,45 @@
 <audio id="snd-promote" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3" preload="auto"></audio>
 <audio id="snd-castle" src="https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3" preload="auto"></audio>
 
+<!-- MODAL KALKULATOR -->
+<div id="calcModal" class="fixed inset-0 bg-black/80 z-[10050] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white p-5 rounded-3xl w-full max-w-[300px] shadow-2xl">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-black text-blue-900 text-sm uppercase" id="calcItemName">Kalkulator</h3>
+            <button onclick="closeCalculator()" class="text-red-500 bg-red-50 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="bg-gray-100 rounded-xl p-3 mb-4 text-right border border-gray-200 shadow-inner">
+            <div id="calcExpression" class="text-[10px] text-gray-500 font-bold h-4 tracking-widest"></div>
+            <input type="text" id="calcDisplay" readonly class="w-full bg-transparent text-right font-black text-4xl outline-none text-blue-900 overflow-hidden" value="0">
+        </div>
+        <div class="grid grid-cols-4 gap-2">
+            <button onclick="calcInput('C')" class="bg-red-100 text-red-600 font-black py-3 rounded-xl col-span-2 active:scale-95 shadow-sm text-sm">C</button>
+            <button onclick="calcInput('<-')" class="bg-gray-200 text-gray-700 font-black py-3 rounded-xl active:scale-95 shadow-sm"><i class="fa fa-backspace"></i></button>
+            <button onclick="calcInput('/')" class="bg-blue-100 text-blue-600 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">÷</button>
+
+            <button onclick="calcInput('7')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">7</button>
+            <button onclick="calcInput('8')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">8</button>
+            <button onclick="calcInput('9')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">9</button>
+            <button onclick="calcInput('*')" class="bg-blue-100 text-blue-600 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">×</button>
+
+            <button onclick="calcInput('4')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">4</button>
+            <button onclick="calcInput('5')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">5</button>
+            <button onclick="calcInput('6')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">6</button>
+            <button onclick="calcInput('-')" class="bg-blue-100 text-blue-600 font-black py-3 rounded-xl active:scale-95 shadow-sm text-xl">-</button>
+
+            <button onclick="calcInput('1')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">1</button>
+            <button onclick="calcInput('2')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">2</button>
+            <button onclick="calcInput('3')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">3</button>
+            <button onclick="calcInput('+')" class="bg-blue-100 text-blue-600 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">+</button>
+
+            <button onclick="calcInput('0')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl col-span-2 active:scale-95 shadow-sm text-lg">0</button>
+            <button onclick="calcInput('.')" class="bg-gray-100 text-gray-800 font-black py-3 rounded-xl active:scale-95 shadow-sm text-lg">.</button>
+            <button onclick="calcInput('=')" class="bg-blue-600 text-white font-black py-3 rounded-xl active:scale-95 shadow-sm text-xl">=</button>
+        </div>
+        <button onclick="applyCalculatorResult()" class="w-full bg-emerald-500 text-white font-black py-4 rounded-xl mt-4 uppercase text-xs shadow-lg active:scale-95 transition-transform"><i class="fa fa-arrow-down mr-2"></i>Masukan Ke Kolom Eceran (Total)</button>
+    </div>
+</div>
+
 <div id="promoModal" class="fixed inset-0 bg-black/80 z-[10020] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
 <div class="bg-gray-800 p-6 rounded-3xl text-center w-64 shadow-2xl border border-gray-700">
 <h3 class="font-black text-white uppercase mb-4 text-sm tracking-widest">Promosi Bidak</h3>
@@ -309,42 +348,7 @@
 <h3 id="inv-entry-date-title" class="font-black text-blue-900 text-sm uppercase text-center tracking-widest">INPUT STOK ENDING HARI INI</h3>
 </div>
 
-<!-- KALKULATOR CEPAT DROPDOWN -->
-<div class="bg-blue-50/50 p-4 rounded-3xl shadow-sm border border-blue-200 mt-3 mb-3">
-    <div class="flex justify-between items-center mb-3">
-        <h3 class="font-black text-blue-900 text-xs uppercase"><i class="fa fa-calculator mr-2 text-blue-500"></i>Kalkulator Cepat</h3>
-    </div>
-    
-    <select id="quickCalcSelect" onchange="updateQuickCalc()" class="w-full p-3 rounded-xl border border-blue-200 outline-none text-xs font-black bg-white text-blue-900 shadow-sm mb-3 uppercase tracking-wider">
-        <option value="">-- PILIH BARANG UNTUK DIHITUNG --</option>
-    </select>
-
-    <div class="flex gap-2 items-end">
-        <div class="flex-1 flex flex-col" id="quickCalcCvContainer">
-            <label class="text-[9px] font-black text-blue-900 uppercase mb-1 text-center">CARTON/CV</label>
-            <input type="number" inputmode="decimal" id="quickCalcCV" oninput="runQuickCalc()" placeholder="0" class="w-full h-10 bg-white rounded-xl border border-blue-200 font-black text-sm text-center outline-none focus:border-blue-500">
-        </div>
-        <div class="flex-1 flex flex-col hidden" id="quickCalcMidContainer">
-            <label id="quickCalcMidLabel" class="text-[9px] font-black text-blue-900 uppercase mb-1 text-center">KG/CAN</label>
-            <input type="number" inputmode="decimal" id="quickCalcMid" oninput="runQuickCalc()" placeholder="0" class="w-full h-10 bg-white rounded-xl border border-blue-200 font-black text-sm text-center outline-none focus:border-blue-500">
-        </div>
-        <div class="flex-1 flex flex-col">
-            <label id="quickCalcEcerLabel" class="text-[9px] font-black text-blue-900 uppercase mb-1 text-center">ECERAN</label>
-            <input type="number" inputmode="decimal" id="quickCalcEcer" oninput="runQuickCalc()" placeholder="0" class="w-full h-10 bg-white rounded-xl border border-blue-200 font-black text-sm text-center outline-none focus:border-blue-500">
-        </div>
-    </div>
-
-    <div class="mt-3 bg-emerald-100 p-3 rounded-xl border border-emerald-200 flex justify-between items-center">
-        <span class="text-[10px] font-black text-emerald-800 uppercase">Total Hitungan:</span>
-        <div>
-            <span id="quickCalcTotal" class="text-xl font-black text-emerald-600">0</span>
-            <span id="quickCalcUnit" class="text-[10px] font-black text-emerald-600 ml-1">PCS</span>
-        </div>
-    </div>
-</div>
-<!-- END KALKULATOR CEPAT -->
-
-<div class="flex gap-2 sticky top-[105px] z-20 bg-gray-50 py-2 border-b border-dashed border-gray-200">
+<div class="flex gap-2 sticky top-[105px] z-20 bg-gray-50 py-2 border-b border-dashed border-gray-200 mt-2">
 <input type="text" id="inv-entry-search" oninput="renderInvEntryList()" placeholder="Cari nama barang..." class="flex-1 p-3 rounded-xl border border-gray-200 outline-none text-xs font-bold bg-white text-blue-900 shadow-sm">
 <select id="inv-entry-category-filter" onchange="renderInvEntryList()" class="w-[40%] p-3 rounded-xl border border-gray-200 outline-none text-[10px] font-black bg-white uppercase text-blue-900 shadow-sm">
 <option value="ALL">ALL CAT</option>
@@ -574,7 +578,6 @@ invItems = s.val() || {};
 renderInvEntryList();
 renderInvItems();
 populateInvCategories();
-populateQuickCalcDropdown();
 });
 db.ref('inventory/transactions').orderByChild('timestamp').limitToLast(300).on('value', s => {
 let txs = [];
@@ -630,37 +633,6 @@ renderInvEntryList();
 alert("✅ Seluruh inputan stok berhasil direset/dikosongkan.");
 } else {
 alert("❌ PIN Salah! Reset dibatalkan.");
-}
-}
-
-// FUNGSI KALKULATOR OTOMATIS SAAT ICON DIKLIK
-function runAutoCalc(id) {
-if (!mgtAndCashiers.includes(currentUser) && currentUser !== 'Okta') {
-alert("🔒 AKSES DITOLAK!\nStok Ending hanya dapat dilakukan oleh Management, Kasir, atau Okta.");
-return;
-}
-let item = invItems[id];
-let cvEl = document.getElementById('cv-' + id);
-let mult1El = document.getElementById('mult1-' + id);
-
-let cv = parseFloat(cvEl?.value) || 0;
-let mult1 = parseFloat(mult1El?.value) || 1;
-
-if (cv > 0) {
-let ecerEl = document.getElementById('ecer-' + id);
-let midEl = document.getElementById('mid-' + id);
-
-// Menghitung hasilnya lalu memasukkan ke input field [PCS] / [GR] yang sesuai (atau MID untuk 3 kolom)
-if (midEl && item.name !== "WHOLE KERNEL CORN") { 
-// Untuk item 3-kolom non-corn, CV masuk ke MID (contoh: KG)
-midEl.value = cv * mult1;
-} else if (ecerEl) {
-// Untuk item 2-kolom dan umum, CV langsung dikalikan Cv/Isi lalu masuk ke ECER (PCS / GR)
-ecerEl.value = cv * mult1;
-}
-
-if (cvEl) cvEl.value = ''; // Reset CV agar tidak Double-Count ke perhitungan total
-calcInline(id);
 }
 }
 
@@ -817,8 +789,8 @@ ${is3Col && item.spec !== "WEIGHED" ? `<span class="text-gray-400">x</span><inpu
 </div>
 
 <div class="flex items-center justify-center px-1">
-<button onclick="runAutoCalc('${item.id}')" class="w-7 h-7 rounded flex items-center justify-center transition-all active:scale-95 mx-1" title="Kalkulator">
-<img src="file_0000000051648211bebe9749b08a095b_2.png" class="w-full h-full object-contain">
+<button onclick="openCalculator('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center transition-all active:scale-95 mx-1 border border-blue-200 shadow-sm" title="Buka Kalkulator">
+<i class="fa fa-calculator"></i>
 </button>
 </div>
 
@@ -1657,117 +1629,79 @@ else { myTimer.className = 'timer-inactive px-4 py-2 rounded font-mono font-bold
 }
 function showAlert(msg, color) { const alertBox = document.getElementById('chessAlert'); alertBox.innerText = msg; alertBox.style.display = 'flex'; setTimeout(() => { alertBox.style.display = 'none'; }, 3000); }
 
-// ==========================================
-// LOGIKA KALKULATOR DROPDOWN OTOMATIS
-// ==========================================
-let activeQuickCalcItem = null;
 
-function populateQuickCalcDropdown() {
-    let select = document.getElementById('quickCalcSelect');
-    if(!select) return;
-    
-    let currentVal = select.value;
-    select.innerHTML = '<option value="">-- PILIH BARANG UNTUK DIHITUNG --</option>';
-    
-    // Urutkan berdasarkan nama agar mudah dicari di dropdown
-    let sortedKeys = Object.keys(invItems).sort((a, b) => invItems[a].name.localeCompare(invItems[b].name));
-    
-    sortedKeys.forEach(k => {
-        select.innerHTML += `<option value="${k}">${invItems[k].name}</option>`;
-    });
-    
-    if(currentVal && invItems[currentVal]) select.value = currentVal;
-}
+// ==========================================
+// LOGIKA KALKULATOR POPUP UNTUK ECERAN
+// ==========================================
+let activeCalcItemId = null;
+let calcValue = '0';
+let calcExpr = '';
 
-function updateQuickCalc() {
-    let id = document.getElementById('quickCalcSelect').value;
-    if(!id) {
-        activeQuickCalcItem = null;
-        document.getElementById('quickCalcTotal').innerText = "0";
-        document.getElementById('quickCalcUnit').innerText = "";
+function openCalculator(itemId, itemName) {
+    if (!mgtAndCashiers.includes(currentUser) && currentUser !== 'Okta') {
+        alert("🔒 AKSES DITOLAK!\nStok Ending hanya dapat dilakukan oleh Management, Kasir, atau Okta.");
         return;
     }
-    
-    activeQuickCalcItem = invItems[id];
-    let item = activeQuickCalcItem;
-
-    // Reset input setiap ganti barang
-    document.getElementById('quickCalcCV').value = '';
-    document.getElementById('quickCalcMid').value = '';
-    document.getElementById('quickCalcEcer').value = '';
-
-    // Deteksi jenis perhitungan (2 Kolom atau 3 Kolom)
-    let is3Col = false;
-    let midLabel = "KG";
-    let ecerLabel = "GR";
-
-    if (item.name === "WHOLE KERNEL CORN") {
-        is3Col = true; midLabel = "CAN"; ecerLabel = "GR";
-    } else if (item.unit === "GR" && item.spec !== "WEIGHED" && item.category !== "DRY") {
-        is3Col = true; midLabel = "KG"; ecerLabel = "GR";
-    } else if (item.spec === "WEIGHED") {
-        is3Col = true; midLabel = "KG"; ecerLabel = "GR";
-        document.getElementById('quickCalcCvContainer').classList.add('hidden'); // Weighed tidak ada CV
-    } else {
-        ecerLabel = item.unit;
-        document.getElementById('quickCalcCvContainer').classList.remove('hidden');
-    }
-
-    if(is3Col && item.spec !== "WEIGHED") document.getElementById('quickCalcCvContainer').classList.remove('hidden');
-
-    if(is3Col) {
-        document.getElementById('quickCalcMidContainer').classList.remove('hidden');
-        document.getElementById('quickCalcMidLabel').innerText = midLabel;
-    } else {
-        document.getElementById('quickCalcMidContainer').classList.add('hidden');
-    }
-    
-    document.getElementById('quickCalcEcerLabel').innerText = ecerLabel;
-    document.getElementById('quickCalcUnit').innerText = ecerLabel;
-    
-    runQuickCalc();
+    activeCalcItemId = itemId;
+    calcValue = '0';
+    calcExpr = '';
+    document.getElementById('calcItemName').innerText = itemName;
+    updateCalcDisplay();
+    document.getElementById('calcModal').style.display = 'flex';
 }
 
-function runQuickCalc() {
-    if(!activeQuickCalcItem) return;
-    let item = activeQuickCalcItem;
-    
-    let cv = parseFloat(document.getElementById('quickCalcCV').value) || 0;
-    let mid = parseFloat(document.getElementById('quickCalcMid').value) || 0;
-    let ecer = parseFloat(document.getElementById('quickCalcEcer').value) || 0;
+function closeCalculator() {
+    document.getElementById('calcModal').style.display = 'none';
+    activeCalcItemId = null;
+}
 
-    // Ekstrak multiplier persis seperti logika calcInline bawaan
-    let mult1 = 1, mult2 = 1;
-    if (item.name === "WHOLE KERNEL CORN") {
-        mult1 = 24; mult2 = 260;
-    } else if (item.unit === "GR" && item.spec !== "WEIGHED" && item.category !== "DRY") {
-        let parts = item.spec.split(/x|×/i);
-        if(parts.length > 1) {
-            mult1 = parseInt(parts[0].replace(/[^\d]/g, '')) || 1;
-            mult2 = parseInt(parts[1].replace(/[^\d]/g, '')) || 1;
-            if(parts[1].toUpperCase().includes("KG")) mult2 = 1;
+function calcInput(key) {
+    if(key === 'C') {
+        calcValue = '0';
+        calcExpr = '';
+    } else if (key === '<-') {
+        if(calcValue.length > 1) calcValue = calcValue.slice(0, -1);
+        else calcValue = '0';
+    } else if (['+','-','*','/'].includes(key)) {
+        calcExpr += calcValue + ' ' + key + ' ';
+        calcValue = '0';
+    } else if (key === '=') {
+        try {
+            let result = eval((calcExpr + calcValue).replace(/×/g, '*').replace(/÷/g, '/'));
+            calcExpr = '';
+            calcValue = String(result);
+        } catch(e) {
+            calcValue = 'Error';
         }
-    } else if (item.spec === "WEIGHED") {
-        mult1 = 0; mult2 = 1;
+    } else if (key === '.') {
+        if(!calcValue.includes('.')) calcValue += '.';
     } else {
-        let parts = item.spec.split(/x|×/i);
-        if(parts.length > 1) mult1 = parseInt(parts[1].replace(/[^\d]/g, '')) || 1;
+        if(calcValue === '0' || calcValue === 'Error') calcValue = key;
+        else calcValue += key;
     }
+    updateCalcDisplay();
+}
 
-    // Hitung Total
-    let total = 0;
-    if (item.name === "WHOLE KERNEL CORN") {
-        total = (cv * mult1 * mult2) + (mid * mult2) + ecer;
-    } else if (item.unit === "GR" && item.spec !== "WEIGHED" && item.category !== "DRY") {
-        total = (cv * mult1 * 1000) + (mid * 1000) + ecer;
-    } else if (item.spec === "WEIGHED") {
-        total = (mid * 1000) + ecer; 
-    } else {
-        total = (cv * mult1) + ecer;
+function updateCalcDisplay() {
+    document.getElementById('calcDisplay').value = calcValue;
+    document.getElementById('calcExpression').innerText = calcExpr.replace(/\*/g, '×').replace(/\//g, '÷');
+}
+
+function applyCalculatorResult() {
+    if(!activeCalcItemId) return;
+    
+    // Hitung sisa jika pengguna lupa klik '='
+    if(calcExpr !== '') calcInput('=');
+    
+    if(calcValue === 'Error' || isNaN(parseFloat(calcValue))) return alert("Hasil perhitungan tidak valid!");
+
+    let ecerEl = document.getElementById('ecer-' + activeCalcItemId);
+    if(ecerEl) {
+        ecerEl.value = parseFloat(calcValue);
+        // Otomatis update perhitungan total dengan memanggil fungsi bawaan
+        calcInline(activeCalcItemId);
     }
-
-    // Render hasil
-    document.getElementById('quickCalcTotal').innerText = total.toLocaleString('id-ID');
+    closeCalculator();
 }
 </script>
 </body>
