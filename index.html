@@ -446,7 +446,7 @@ let pendingUpdates = {};
 
 const seedInventoryData = [{"name": "DOUGH SMALL 125 GR", "category": "DOUGH", "spec": "1 × 20 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH MEDIUM 275 GR", "category": "DOUGH", "spec": "1 × 10 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH LARGE 400 GR", "category": "DOUGH", "spec": "1 × 8 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "DOUGH PAN 325 GR", "category": "DOUGH", "spec": "1 × 9 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "THIN CRUST", "category": "DOUGH", "spec": "4 × 15 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "TORTILLA", "category": "DOUGH", "spec": "10 × 20 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "BEEF TOPPING", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF PEPPERONI", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF RASHER", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF BURGER", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF SAUSAGE CUT", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BEEF FLOSS", "category": "BEEF AND CHICKEN", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN SAUSAGE", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN PEPPERONI", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN WINGS", "category": "BEEF AND CHICKEN", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN STRIP", "category": "BEEF AND CHICKEN", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHICKEN BONELESS HABANERO", "category": "BEEF AND CHICKEN", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHOCO LAVA", "category": "SIDE", "spec": "12 × 750 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MACARONI", "category": "SIDE", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "SPAGHETTI", "category": "SIDE", "spec": "1 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "GREEN PEPPER SLICED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "CHAMPIGNON MUSHROOM", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "MUSHROOM PACKED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "ONION SLICED", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "LOCAL TOMATO", "category": "VEGGIE", "spec": "WEIGHED", "unit": "GR", "calcType": "Daily"}, {"name": "SLICED CHEDDAR CHEESE", "category": "CHEESE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "STRING CHEESE", "category": "CHEESE", "spec": "1 × 6804 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MOZARELLA CHEESE", "category": "CHEESE", "spec": "1 × 12 KG", "unit": "GR", "calcType": "Daily"}, {"name": "PARMESAN CHEESE", "category": "CHEESE", "spec": "1 × 2 KG", "unit": "GR", "calcType": "Daily"}, {"name": "RICOTTA CHEESE", "category": "CHEESE", "spec": "1 × 600 GR", "unit": "GR", "calcType": "Daily"}, {"name": "CHILI SAUCE SACHETS", "category": "SAUCE", "spec": "8 x 125 PCS", "unit": "PAC", "calcType": "Daily"}, {"name": "BUTTERSCOTCH", "category": "SAUCE", "spec": "20 x 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MUSTARD SAUCE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "TOMATO POUCH", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "PIZZA SAUCE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "DOMINO'S CONCENTRATE", "category": "SAUCE", "spec": "6 × 3160 GR", "unit": "GR", "calcType": "Daily"}, {"name": "MAYONNAISE", "category": "SAUCE", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "BUMBU PASTA", "category": "SAUCE", "spec": "20 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "YELLOW CHEESE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHEESE SAUCE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "CHEESE BURST SAUCE", "category": "SAUCE", "spec": "12 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "ALFREDO TRUFFLE SAUCE", "category": "SAUCE", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "RUSTIC SAUCE", "category": "SAUCE", "spec": "20 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "SCIROPPI CHOCOLATE", "category": "SAUCE", "spec": "6 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "DURIAN PASTE", "category": "SAUCE", "spec": "16 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "PIZZA BOX SMALL 6", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA BOX MEDIUM 9.5", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA BOX LARGE 12", "category": "DRY", "spec": "1 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER SMALL 6", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER MEDIUM 9.5", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER LARGE 12", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LAYER MINI BOX", "category": "DRY", "spec": "1 × 1000 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PASTA BOX", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PIZZA SIDE DISH BOX", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "MINI BOX CHOCOLAVA", "category": "DRY", "spec": "1 × 200 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "PAPER BOWL 12OZ", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID BOWL 12OZ", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID PASTA PENNE", "category": "DRY", "spec": "4 × 125 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMUNIUM PASTA", "category": "DRY", "spec": "20 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "SLEEVE PASTA", "category": "DRY", "spec": "10 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "SAUCE CUP", "category": "DRY", "spec": "20 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMUNIUM FOIL", "category": "DRY", "spec": "1 × 6 ROLL", "unit": "PCS", "calcType": "Daily"}, {"name": "PAPER BOWL 650ML", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID BOWL 650ML", "category": "DRY", "spec": "25 × 50 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "WRAPPING SPORK", "category": "DRY", "spec": "30 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "LID SUPPORT", "category": "DRY", "spec": "30 × 100 PCS", "unit": "PCS", "calcType": "Weekly"}, {"name": "PAPER PARCHMENT", "category": "DRY", "spec": "4 × 500 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "WHITE SPOON", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Weekly"}, {"name": "ALUMINIUM TRAY", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ALUMINIUM TRAY XL", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ECOBAG", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "ECOBAG ROPE", "category": "DRY", "spec": "1 × 100 PCS", "unit": "PCS", "calcType": "Daily"}, {"name": "MULTIFOLD", "category": "DRY", "spec": "1 × 24 PAC", "unit": "PAC", "calcType": "Monthly"}, {"name": "NAPKIN", "category": "DRY", "spec": "1 × 48 PAC", "unit": "PAC", "calcType": "Monthly"}, {"name": "CORNMILLS", "category": "DRY", "spec": "1 × 5 KG", "unit": "GR", "calcType": "Monthly"}, {"name": "TALI RAFIA", "category": "DRY", "spec": "1 × 10 ROLL", "unit": "ROL", "calcType": "Monthly"}, {"name": "BERAS", "category": "AIR COND", "spec": "1 × 5 KG", "unit": "GR", "calcType": "Daily"}, {"name": "WHOLE KERNEL CORN", "category": "AIR COND", "spec": "24 X 260 GR", "unit": "CAN", "calcType": "Daily"}, {"name": "BLACK OLIVES SLICED", "category": "AIR COND", "spec": "6 × 1.560 GR", "unit": "GR", "calcType": "Daily"}, {"name": "ICING SUGAR", "category": "AIR COND", "spec": "1 × 200 GR", "unit": "GR", "calcType": "Daily"}, {"name": "DRY PARSLEY", "category": "AIR COND", "spec": "10 × 100 GR", "unit": "GR", "calcType": "Daily"}, {"name": "GARLIC BREAD SEASONING", "category": "AIR COND", "spec": "16 × 500 GR", "unit": "GR", "calcType": "Daily"}, {"name": "COMPOUND CHIP DARK", "category": "AIR COND", "spec": "1 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "WIJEN", "category": "AIR COND", "spec": "1× 100 GR", "unit": "GR", "calcType": "Daily"}, {"name": "BUTTER OIL", "category": "AIR COND", "spec": "1 × 18 KG", "unit": "GR", "calcType": "Daily"}, {"name": "HERB BUTTER OIL", "category": "AIR COND", "spec": "10 × 1 KG", "unit": "GR", "calcType": "Daily"}, {"name": "ADES", "category": "DRINK", "spec": "24 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FANTA 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "SPRITE 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COCA COLA 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COKE ZERO 390 ML", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "SPRITE 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COCA COLA 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FANTA 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "COKE ZERO 1 LTR", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FRESHTEA APPLE", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}, {"name": "FRESHTEA JASMINE", "category": "DRINK", "spec": "12 × 1 BTL", "unit": "BTL", "calcType": "Daily"}];
 
-// Urutan Khusus Sesuai Permintaan Anda
+// Urutan Khusus Menu BARANG Sesuai Artikel PULSE
 const customOrderList = [
 "SAUCE CUP", "LID PASTA PENNE", "SIROPI CHOCOLATE", "MINI BOX CHOCOLAVA", "ALUMINIUM PASTA RE",
 "Local Tomato", "Beras IR 42", "DELMONTE BEEF BBQ", "Lid Bowl 650 ML", "COCKTAIL NAPKIN",
@@ -622,19 +622,29 @@ function renderInvEntryList() {
 let list = document.getElementById('inv-entry-list');
 let orderedItems = [];
 let keyMap = {};
-Object.keys(invItems).forEach(k => { keyMap[invItems[k].name.toUpperCase()] = { id: k, ...invItems[k] }; });
 
-customOrderList.forEach(customName => {
-let exactName = customName.toUpperCase();
-let match = Object.keys(keyMap).find(k => k === exactName);
-if (!match) {
-match = Object.keys(keyMap).find(k => k.includes(exactName) || exactName.includes(k));
-}
-if (match) {
-orderedItems.push(keyMap[match]);
-delete keyMap[match];
-}
+// Memetakan semua item dari Firebase berdasarkan Namanya (Uppercase)
+Object.keys(invItems).forEach(k => { 
+    keyMap[invItems[k].name.toUpperCase()] = { id: k, ...invItems[k] }; 
 });
+
+// MENGIKUTI URUTAN EXCEL UNTUK MENU "STOK ENDING"
+// seedInventoryData memiliki struktur dan urutan yang sama persis dengan File Excel.
+const DaftarUrutExcel = seedInventoryData.map(i => i.name);
+
+DaftarUrutExcel.forEach(namaExcel => {
+    let exactName = namaExcel.toUpperCase();
+    let match = Object.keys(keyMap).find(k => k === exactName);
+    if (!match) {
+        match = Object.keys(keyMap).find(k => k.includes(exactName) || exactName.includes(k));
+    }
+    if (match) {
+        orderedItems.push(keyMap[match]);
+        delete keyMap[match];
+    }
+});
+
+// Menambahkan item sisa (jika ada yang terlewat) di bagian bawah
 Object.keys(keyMap).forEach(k => { orderedItems.push(keyMap[k]); });
 
 let html = "";
@@ -786,6 +796,8 @@ keyMap[invItems[k].name.toUpperCase()] = { id: k, ...invItems[k] };
 });
 
 let itemsArray = [];
+
+// MENGIKUTI URUTAN ARTIKEL PULSE UNTUK MENU "BARANG"
 customOrderList.forEach(customName => {
 let exactName = customName.toUpperCase();
 let match = Object.keys(keyMap).find(k => k === exactName);
@@ -797,6 +809,7 @@ itemsArray.push(keyMap[match]);
 delete keyMap[match];
 }
 });
+// Menambahkan item sisa (jika ada yang terlewat) di bagian bawah
 Object.keys(keyMap).forEach(k => { itemsArray.push(keyMap[k]); });
 
 let count = 0;
