@@ -628,9 +628,19 @@ function promptResetInventory() {
 let pinInput = prompt("🗑️ KONFIRMASI RESET STOK ENDING\nMasukkan PIN 4 digit akun Anda (" + currentUser + ") untuk mereset seluruh perhitungan:");
 if(pinInput === null) return;
 if(pinInput === userPins[currentUser]) {
+let updates = {};
+Object.keys(invItems).forEach(itemId => {
+updates[itemId + '/stock'] = null;
+updates[itemId + '/lastUpdate'] = Date.now();
+});
+db.ref('inventory/items').update(updates).then(() => {
 pendingUpdates = {};
 renderInvEntryList();
-alert("✅ Seluruh inputan stok berhasil direset/dikosongkan.");
+renderInvItems();
+alert("✅ Seluruh qty & inputan stok berhasil direset/dikosongkan dari database.");
+}).catch(err => {
+alert("Terjadi kesalahan saat menghapus data.");
+});
 } else {
 alert("❌ PIN Salah! Reset dibatalkan.");
 }
