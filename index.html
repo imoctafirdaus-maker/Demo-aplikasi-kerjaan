@@ -421,7 +421,7 @@ onclick="openFullImg(this.src, currentUser)">
 <div class="flex items-center gap-2">
 <span id="chessOpponentName" class="font-black text-gray-200 text-sm">Opponent</span>
 </div>
-<span id="chessOpponentScore" class="text-[9px] text-yellow-400 font-bold"> Win : 0  Lose : 0  Draw : 0</span>
+<span id="chessOpponentScore" class="text-[9px] text-yellow-400 font-bold">🏆 Win : 0 ❌ Lose : 0 🤝 Draw : 0</span>
 </div>
 </div>
 <div id="chessOpponentTimerBox" class="timer-inactive px-4 py-2 rounded font-mono font-bold text-lg">
@@ -438,7 +438,7 @@ onclick="openFullImg(this.src, currentUser)">
 </div>
 <div class="flex items-center gap-2">
 <span class="text-[9px] text-gray-500 font-bold" id="myChessColorLabel">White</span>
-<span id="myChessScore" class="text-[9px] text-yellow-400 font-bold"> Win : 0  Lose : 0  Draw : 0</span>
+<span id="myChessScore" class="text-[9px] text-yellow-400 font-bold">🏆 Win : 0 ❌ Lose : 0 🤝 Draw : 0</span>
 </div>
 </div>
 </div>
@@ -691,7 +691,8 @@ let pendingChatAction = null;
 // =========================================================================
 let invItems = {};
 let invTransactions = [];
-let pendingUpdates = {}; 
+// Mengambil draft yang belum tersimpan dari local storage hp agar tidak hilang
+let pendingUpdates = JSON.parse(localStorage.getItem('jtm_inventory_drafts')) || {}; 
 let activeCalcItemId = null;
 let calcValue = '0';
 let calcExpr = '';
@@ -1078,6 +1079,8 @@ updates[itemId + '/lastUpdate'] = Date.now();
 });
 db.ref('inventory/items').update(updates).then(() => {
 pendingUpdates = {};
+// Bersihkan memori draft HP saat reset
+localStorage.removeItem('jtm_inventory_drafts');
 renderInvEntryList();
 renderInvItems();
 alert("✅ Seluruh qty & inputan stok berhasil direset/dikosongkan dari database.");
@@ -1133,6 +1136,9 @@ document.getElementById('total-' + id).classList.add('text-gray-400');
 }
 }
 updateBottomBar();
+
+// Simpan catatan sementara agar tidak hilang jika keluar aplikasi
+localStorage.setItem('jtm_inventory_drafts', JSON.stringify(pendingUpdates));
 }
 
 function renderInvEntryList() {
@@ -1274,48 +1280,56 @@ else bar.classList.add('translate-y-full');
 }
 
 function saveBulkInventory() {
-if(Object.keys(pendingUpdates).length === 0) return alert("Belum ada angka yang diinput!");
-let note = prompt(`Menyimpan ${Object.keys(pendingUpdates).length} barang sebagai Stok Ending.\nMasukkan Catatan (Opsional):`, `Input ${currentUser}`);
-if(note === null) return; 
-const btnSave = document.querySelector('#inv-entry-bottom-bar button');
-let origText = btnSave.innerHTML;
-btnSave.innerHTML = "<i class='fa fa-spinner fa-spin mr-2'></i>Menyimpan...";
-btnSave.disabled = true;
-let promises = [];
-Object.keys(pendingUpdates).forEach(itemId => {
-let qty = pendingUpdates[itemId].total;
-let itemRef = db.ref('inventory/items/' + itemId);
-let p = itemRef.transaction(currentData => {
-if(!currentData) return null;
-currentData.stock = qty; 
-currentData.lastUpdate = Date.now();
-return currentData;
-}).then(result => {
-if(result.committed) {
-let newData = result.snapshot.val();
-let oldData = invItems[itemId];
-let prevStockDisp = (oldData && (oldData.stock === undefined || oldData.stock === null)) ? 0 : ((oldData) ? oldData.stock : 0);
-return db.ref('inventory/transactions').push({
-itemId: itemId, itemName: newData.name, type: 'opname',
-amount: qty, stockBefore: prevStockDisp, stockAfter: newData.stock,
-unit: newData.unit, timestamp: Date.now(), user: currentUser, note: note || "-"
-});
-}
-});
-promises.push(p);
-});
-Promise.all(promises).then(() => {
-btnSave.innerHTML = origText;
-btnSave.disabled = false;
-alert("✅ Berhasil menyimpan semua data Stok Ending ke server!");
-pendingUpdates = {}; 
-renderInvEntryList();
-changeInvTab('items'); 
-}).catch(err => {
-btnSave.innerHTML = origText;
-btnSave.disabled = false;
-alert("Terjadi kesalahan saat sinkronisasi ke server.");
-});
+    if(Object.keys(pendingUpdates).length === 0) return alert("Belum ada angka yang diinput!");
+    let note = prompt(`Menyimpan ${Object.keys(pendingUpdates).length} barang sebagai Stok Ending.\nMasukkan Catatan (Opsional):`, `Input ${currentUser}`);
+    if(note === null) return; 
+    const btnSave = document.querySelector('#inv-entry-bottom-bar button');
+    let origText = btnSave.innerHTML;
+    btnSave.innerHTML = "<i class='fa fa-spinner fa-spin mr-2'></i>Menyimpan...";
+    btnSave.disabled = true;
+    let promises = [];
+    
+    Object.keys(pendingUpdates).forEach(itemId => {
+        let qty = pendingUpdates[itemId].total;
+        let itemRef = db.ref('inventory/items/' + itemId);
+        let p = itemRef.transaction(currentData => {
+            if(!currentData) return null;
+            
+            // Otomatis Menambahkan Qty Baru ke Qty Sebelumnya
+            currentData.stock = (currentData.stock || 0) + qty; 
+            currentData.lastUpdate = Date.now();
+            return currentData;
+        }).then(result => {
+            if(result.committed) {
+                let newData = result.snapshot.val();
+                let oldData = invItems[itemId];
+                let prevStockDisp = (oldData && (oldData.stock === undefined || oldData.stock === null)) ? 0 : ((oldData) ? oldData.stock : 0);
+                return db.ref('inventory/transactions').push({
+                    itemId: itemId, itemName: newData.name, type: 'opname',
+                    amount: qty, stockBefore: prevStockDisp, stockAfter: newData.stock,
+                    unit: newData.unit, timestamp: Date.now(), user: currentUser, note: note || "-"
+                });
+            }
+        });
+        promises.push(p);
+    });
+    
+    Promise.all(promises).then(() => {
+        btnSave.innerHTML = origText;
+        btnSave.disabled = false;
+        alert("✅ Berhasil menyimpan dan menambahkan semua data stok ke server!");
+        pendingUpdates = {}; 
+        
+        // Hapus catatan tertahan karena sudah berhasil disimpan
+        localStorage.removeItem('jtm_inventory_drafts');
+        
+        renderInvEntryList();
+        changeInvTab('items'); 
+    }).catch(err => {
+        btnSave.innerHTML = origText;
+        btnSave.disabled = false;
+        alert("Terjadi kesalahan saat sinkronisasi ke server.");
+    });
 }
 
 function renderInvItems() {
